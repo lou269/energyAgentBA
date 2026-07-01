@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+
+# IDE
+.vscode/
+.idea/
+
+# Data
+data/
+data/raw/
+data/processed/
+data/cleaned/
+*.h5
+*.hdf5
+*.parquet
+
+# Output
+output/
+*.log
+
+# OS
+.DS_Store
