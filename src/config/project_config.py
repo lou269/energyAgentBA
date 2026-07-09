@@ -28,11 +28,13 @@ class ProjectConfig:
 
     data_dir: Path = project_root / "data"
     raw_dir: Path = data_dir / "raw" 
+    meta_dir: Path = raw_dir / "metadata"
     processed_dir: Path = data_dir / "processed"
     cleaned_dir: Path = data_dir / "cleaned"
 
     output_dir: Path = project_root / "output"
     eda_output_dir: Path = output_dir / "eda"
+    meta_output_dir: Path = output_dir / "metadata"
     plots_output_dir: Path = output_dir / "plots"
     cleaned_plots_output_dir: Path = output_dir / "plots_cleaned"
     consistency_output_dir: Path = output_dir / "data_consistency"
@@ -41,10 +43,17 @@ class ProjectConfig:
 
     datetime_column: str = "datetime"
     power_column: str = "power"
+    
+    metadata_files: list[str] = field(
+        default_factory=lambda: ["dataset.yaml", "meter_devices.yaml"]
+    )
 
     url_base: str = (
         "https://dap.ceda.ac.uk/edc/d1/b3baa0aa-05ac-4ec8-b608-da5751758698/"
         "data/version_0"
+    )
+    url_metadata: str = (
+        "https://raw.githubusercontent.com/JackKelly/UK-DALE_metadata/master"
     )
 
     houses: list[str] = field(
@@ -61,10 +70,12 @@ def ensure_project_directories(config: ProjectConfig) -> None:
     directories = [
         config.data_dir,
         config.raw_dir,
+        config.meta_dir,
         config.processed_dir,
         config.cleaned_dir,
         config.output_dir,
         config.eda_output_dir,
+        config.meta_output_dir,
         config.plots_output_dir,
         config.cleaned_plots_output_dir,
         config.consistency_output_dir,

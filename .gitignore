@@ -22,5 +22,8 @@ data/cleaned/
 output/
 *.log
 
+# src
+src/ingestion/try.py
+
 # OS
 .DS_Store
