@@ -10,7 +10,7 @@ from src.analysis.eda.io import df_to_csv
 from src.analysis.analysis_config import AnalysisConfig
 from src.analysis.eda.metadata_exploration import build_channel_registry
 from src.analysis.eda.channel_quality import build_channel_quality
-from src.analysis.eda.house_quality import build_house_quality 
+from src.analysis.eda.house_eligibility import build_house_eligibility 
 from src.config.project_config import ProjectConfig, ensure_project_directories
 from src.analysis.eda.plots import build_channel_quality_plots
 
@@ -42,42 +42,52 @@ class AnalysisRunner:
             filename="channel_registry",
         )
         
-        channel_quality_df = build_channel_quality(
+        channel_quality_df, good_sections_df = build_channel_quality(
             dataset=dataset,
             canonical_ac_type=self.eda_config.canonical_ac_type,
             min_duration_days=self.eda_config.min_duration_days,
-            min_longest_good_section_days=self.eda_config.min_longest_good_section_days,
+            min_longest_good_section_days=(
+                self.eda_config.min_longest_good_section_days
+            ),
             min_sample_count=self.eda_config.min_sample_count,
-            min_mean_power=self.eda_config.min_mean_power,
             max_zero_share=self.eda_config.max_zero_share,
-            max_median_sample_period_seconds=self.eda_config.max_median_sample_period_seconds,
-            max_p99_sample_period_seconds=self.eda_config.max_p99_sample_period_seconds,
-            max_longest_gap_seconds=self.eda_config.max_longest_gap_seconds,
-            reject_negative_values=self.eda_config.reject_negative_values,
+            min_mean_power=self.eda_config.min_mean_power,
+            max_dropout_rate=self.eda_config.max_dropout_rate,
+            max_irregular_gap_share=(
+                self.eda_config.max_irregular_gap_share
+            ),
+            reject_negative_values=(
+                self.eda_config.reject_negative_values
+            ),
         )
         
         df_to_csv(
             df=channel_quality_df,
             output_path=self.project_config.eda_output_dir,
-            filename="channel_quality_summary"
+            filename="channel_quality",
         )
-        
-        house_quality_df = build_house_quality(
+
+        df_to_csv(
+            df=good_sections_df,
+            output_path=self.project_config.eda_output_dir,
+            filename="good_sections",
+        )
+        house_eligibility_df = build_house_eligibility(
             channel_quality=channel_quality_df,
             min_usable_channels=self.eda_config.min_usable_channels,
         )
         
         
         df_to_csv(
-            df=house_quality_df,
+            df=house_eligibility_df,
             output_path=self.project_config.eda_output_dir,
-            filename="house_quality_summary"
+            filename="house_eligibility_summary"
         )
         
-        
+        '''
         channel_selection_df = build_channel_selection(
             channel_quality=channel_quality_df,
-            house_quality = house_quality_df
+            house_eligibility = house_eligibility_df
 
         )
         
@@ -111,6 +121,8 @@ class AnalysisRunner:
             min_overlap_days=180,
             max_dropout_rate=0.10,
         )
+        '''
+        
         
 def main() -> None:
     logging.basicConfig(level=logging.INFO)

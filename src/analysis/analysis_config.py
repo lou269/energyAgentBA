@@ -6,7 +6,7 @@ from dataclasses import dataclass
 class AnalysisConfig:
     # Einheit / AC-Type
     canonical_ac_type: str = "active"
-
+    
     # House-/Window-Auswahl
     candidate_houses: tuple[int, ...] = (1, 2, 5)
     min_window_days: int = 84          # 12 Wochen
@@ -17,19 +17,18 @@ class AnalysisConfig:
     max_mains_missing_share: float = 0.05
 
     # Channel-Qualität auf Rohdatenebene
+    canonical_ac_type: str = "active"
+
     min_duration_days: int = 84
     min_longest_good_section_days: int = 45
     min_sample_count: int = 100
+
     min_mean_power: float = 0.1
     max_zero_share: float = 0.95
-    max_missing_share: float = 0.10
-    max_longest_gap_seconds: int = 3600
+    max_dropout_rate: float = 0.10
+    max_irregular_gap_share: float = 0.01
     reject_negative_values: bool = True
-
-    # Sample-Rate-Sanity
-    expected_sample_period_seconds: int = 6
-    max_median_sample_period_seconds: int = 12
-    max_p99_sample_period_seconds: int = 60
+   
 
     # 1h-Aggregation / späteres Prophet-Target
     target_freq: str = "1h"

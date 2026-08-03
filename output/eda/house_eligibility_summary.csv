@@ -1,0 +1,6 @@
+house,mains_configuration,mains_count,active_mains_count,usable_mains_count,has_active_mains,all_mains_usable,active_submeter_count,usable_submeter_count,has_sufficient_submeters,eligible_for_active_pipeline,exclusion_reasons
+1,54,1,1,0,True,False,48,0,False,False,mains_quality_insufficient|insufficient_usable_submeters
+2,20,1,1,0,True,False,18,0,False,False,mains_quality_insufficient|insufficient_usable_submeters
+3,,1,0,0,False,False,4,0,False,False,no_active_mains|insufficient_usable_submeters
+4,,1,0,0,False,False,5,0,False,False,no_active_mains|insufficient_usable_submeters
+5,26,1,1,0,True,False,24,0,False,False,mains_quality_insufficient|insufficient_usable_submeters

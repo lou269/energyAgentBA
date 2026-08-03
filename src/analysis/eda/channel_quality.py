@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from typing import Any
+import logging
+from typing import Any, Dict, List, Optional, Tuple
+
 import pandas as pd
 from nilmtk import DataSet
-import logging
-from time import perf_counter
 
 logger = logging.getLogger(__name__)
 
@@ -19,78 +19,116 @@ def build_channel_quality(
     min_sample_count: int,
     max_zero_share: float,
     min_mean_power: float,
-    max_median_sample_period_seconds: int,
-    max_p99_sample_period_seconds: int,
-    max_longest_gap_seconds: int,
+    max_dropout_rate: float,
+    max_irregular_gap_share: float,
     reject_negative_values: bool,
     chunksize: int = 1_000_000,
-    
-) -> pd.DataFrame:
-    
-    rows: list[dict[str, Any]] = []
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Create one quality row per meter and one row per NILMTK good section."""
 
-    logger.info(
-        "Buildings available in dataset: %s",
-        list(dataset.buildings.keys()),
-    )
+    quality_rows: List[Dict[str, Any]] = []
+    section_rows: List[Dict[str, Any]] = []
 
     for house_id, building in dataset.buildings.items():
-        meters = list(building.elec.meters)
-
-        logger.info(
-            "House %s: evaluating %s meters.",
-            house_id,
-            len(meters),
-        )
-
-        for meter in meters:
+        for meter in building.elec.meters:
             meter_instance = meter.instance()
+            ac_types = _get_ac_types(meter)
+            start, end = _get_timeframe(meter)
+            channel_duration = _duration_days(start, end)
+
+            row: Dict[str, Any] = {
+                "house": house_id,
+                "meter_instance": meter_instance,
+                "meter_type": (
+                    "mains" if meter.is_site_meter() else "submeter"
+                ),
+                "appliances": _appliance_names(meter),
+                "ac_types": ", ".join(ac_types),
+                "has_canonical_ac_type": canonical_ac_type in ac_types,
+                "start": start,
+                "end": end,
+                "duration_days": channel_duration,
+            }
+
+            if canonical_ac_type not in ac_types:
+                row.update(_empty_stats())
+                row["sampling_stable"] = False
+                row["usable_for_active_pipeline"] = False
+                quality_rows.append(row)
+                continue
+
+            sections = _get_good_sections(
+                meter=meter,
+                ac_type=canonical_ac_type,
+                chunksize=chunksize,
+            )
+            meter_sections = _sections_to_rows(
+                house_id=house_id,
+                meter_instance=meter_instance,
+                sections=sections,
+            )
 
             try:
-                ac_types = list(
-                    meter.available_ac_types("power")
+                raw_stats = _summarize_chunks(
+                    meter=meter,
+                    ac_type=canonical_ac_type,
+                    chunksize=chunksize,
                 )
             except Exception as error:
                 logger.warning(
-                    "House %s meter %s: could not read AC types: %s",
+                    "House %s meter %s: diagnostics failed: %s",
                     house_id,
                     meter_instance,
                     error,
                 )
-                continue
+                raw_stats = _empty_stats()
 
-            if canonical_ac_type not in ac_types:
-                logger.info(
-                    "Skipping house %s meter %s because active power "
-                    "is not available.",
-                    house_id,
-                    meter_instance,
-                )
-                continue
-            
-
-            meter_type = (
-                "mains"
-                if meter.is_site_meter()
-                else "submeter"
-            )
-
-
-
-            '''
-            logger.info(
-                "House %s meter %s (%s): using AC type '%s'.",
-                house_id,
-                meter_instance,
-                meter_type,
-                selected_ac_type,
-            )
-            '''
-            
-            row = get_meter_quality(
-                house_id=house_id,
+            dropout_rate = _get_dropout_rate(
                 meter=meter,
-                canonical_ac_type = canonical_ac_type,
+                ac_type=canonical_ac_type,
+                sections=sections,
+                chunksize=chunksize,
+            )
+
+            durations = [
+                float(section["duration_days"])
+                for section in meter_sections
+            ]
+            good_duration = float(sum(durations))
+            good_coverage = (
+                min(good_duration / channel_duration, 1.0)
+                if channel_duration is not None and channel_duration > 0
+                else None
+            )
+
+            row.update(raw_stats)
+            row.update(
+                {
+                    "good_sections_count": len(meter_sections),
+                    "good_duration_days": good_duration,
+                    "longest_good_section_days": (
+                        max(durations) if durations else 0.0
+                    ),
+                    "good_section_coverage_share": good_coverage,
+                    "dropout_rate": dropout_rate,
+                }
+            )
+
+            irregular_share = _optional_float(
+                row.get("irregular_gap_share")
+            )
+            duplicate_count = int(
+                row.get("duplicate_timestamp_count", 0)
+            )
+
+            row["sampling_stable"] = bool(
+                irregular_share is not None
+                and irregular_share <= max_irregular_gap_share
+                and duplicate_count == 0
+            )
+
+            row["usable_for_active_pipeline"] = _is_usable(
+                row=row,
                 min_duration_days=min_duration_days,
                 min_longest_good_section_days=(
                     min_longest_good_section_days
@@ -98,203 +136,54 @@ def build_channel_quality(
                 min_sample_count=min_sample_count,
                 max_zero_share=max_zero_share,
                 min_mean_power=min_mean_power,
-                max_median_sample_period_seconds=(
-                    max_median_sample_period_seconds
-                ),
-                max_p99_sample_period_seconds=(
-                    max_p99_sample_period_seconds
-                ),
-                max_longest_gap_seconds=max_longest_gap_seconds,
+                max_dropout_rate=max_dropout_rate,
                 reject_negative_values=reject_negative_values,
-                chunksize=chunksize,
             )
 
-            row["meter_type"] = meter_type
-            rows.append(row)
+            quality_rows.append(row)
+            section_rows.extend(meter_sections)
 
-    return pd.DataFrame(rows)
+    channel_quality = pd.DataFrame(quality_rows)
+    good_sections = pd.DataFrame(section_rows)
 
+    if not channel_quality.empty:
+        channel_quality = channel_quality.sort_values(
+            ["house", "meter_type", "meter_instance"]
+        ).reset_index(drop=True)
 
-def appliance_names(meter: Any) -> str:
-    appliances = getattr(meter, "appliances", [])
-    names = [
-        app.identifier.type
-        for app in appliances
-        if hasattr(app, "identifier")
-    ]
-    return ", ".join(names)
+    if not good_sections.empty:
+        good_sections = good_sections.sort_values(
+            ["house", "meter_instance", "section_id"]
+        ).reset_index(drop=True)
 
-
-def duration_days(start: Any, end: Any) -> float | None:
-    if start is None or end is None:
-        return None
-
-    if pd.isna(start) or pd.isna(end):
-        return None
-
-    try:
-        duration_seconds = (
-            pd.Timestamp(end) - pd.Timestamp(start)
-        ).total_seconds()
-
-    except (
-        TypeError,
-        ValueError,
-    ):
-        return None
-
-    return (
-        max(float(duration_seconds), 0.0)
-        / SECONDS_PER_DAY
-    )
+    return channel_quality, good_sections
 
 
-def empty_quality_stats() -> dict[str, Any]:
-    return {
-        "sample_count": 0,
-        "median_sample_period_seconds": None,
-        "p99_sample_period_seconds": None,
-        "longest_gap_seconds": None,
-        "gaps_le_12s": 0,
-        "gaps_le_1min": 0,
-        "gaps_le_10min": 0,
-        "gaps_le_1h": 0,
-        "gaps_le_1d": 0,
-        "gaps_gt_1d": 0,
-        "good_sections_count": 0,
-        "good_duration_days": 0.0,
-        "longest_good_section_days": 0.0,
-        "dropout_rate": None,
-        "min_power": None,
-        "max_power": None,
-        "mean_power": None,
-        "zero_share": None,
-        "negative_share": None,
-    }
-
-
-def get_meter_quality(
-    house_id: int,
-    meter: Any,
-    canonical_ac_type: str,
-    min_duration_days: int,
-    min_longest_good_section_days: int,
-    min_sample_count: int,
-    max_zero_share: float,
-    min_mean_power: float,
-    max_median_sample_period_seconds: int,
-    max_p99_sample_period_seconds: int,
-    max_longest_gap_seconds: int,
-    reject_negative_values: bool = True,
-    chunksize: int = 1_000_000,
-) -> dict[str, Any]:
-    meter_instance = meter.instance()
-
-    try:
-        ac_types = list(meter.available_ac_types("power"))
-    except Exception as error:
-        logger.warning(
-            "Could not read ac types for house %s meter %s: %s",
-            house_id,
-            meter_instance,
-            error,
-        )
-        ac_types = []
-
-    try:
-        timeframe = meter.get_timeframe()
-        start = timeframe.start
-        end = timeframe.end
-
-    except Exception as error:
-        logger.warning(
-            "Could not read timeframe for house %s meter %s: %s",
-            house_id,
-            meter_instance,
-            error,
-        )
-        start = None
-        end = None
-
-
-    try:
-        quality_stats = summarize_power_chunks(
-            meter=meter,
-            ac_type=canonical_ac_type,
-            chunksize=chunksize,
-        )
-
-    except Exception as error:
-        logger.warning(
-            "Could not summarize house %s mains meter %s: %s",
-            house_id,
-            meter_instance,
-            error,
-        )
-        quality_stats = empty_quality_stats()
-
-
-    row: dict[str, Any] = {
-        "house": house_id,
-        "meter_instance": meter_instance,
-        "meter_type": "mains",
-        "appliances": appliance_names(meter),
-        "ac_types": ", ".join(ac_types),
-        "has_canonical_ac_type": canonical_ac_type in ac_types,
-        "start": start,
-        "end": end,
-        "duration_days": duration_days(start, end),
-    }
-
-    row.update(quality_stats)
-
-    row["usable_for_active_pipeline"] = (
-        is_usable_channel(
-            row=row,
-            min_duration_days=min_duration_days,
-            min_longest_good_section_days=(
-                min_longest_good_section_days
-            ),
-            min_sample_count=min_sample_count,
-            max_zero_share=max_zero_share,
-            min_mean_power=min_mean_power,
-            max_median_sample_period_seconds=(
-                max_median_sample_period_seconds
-            ),
-            max_p99_sample_period_seconds=(
-                max_p99_sample_period_seconds
-            ),
-            max_longest_gap_seconds=(
-                max_longest_gap_seconds
-            ),
-            reject_negative_values=(
-                reject_negative_values
-            ),
-        )
-    )
-
-    return row
-
-
-def summarize_power_chunks(
+def _summarize_chunks(
     meter: Any,
     ac_type: str,
-    chunksize: int = 1_000_000,
-) -> dict[str, Any]:
-    device = meter.device or {}
+    chunksize: int,
+) -> Dict[str, Any]:
+    """One custom pass for metrics which NILMTK does not expose directly."""
 
-    sample_period = device.get("sample_period")
-    max_sample_period = device.get("max_sample_period")
-
-    values_count = 0
+    sample_count = 0
     values_sum = 0.0
-    values_min: float | None = None
-    values_max: float | None = None
+    min_power: Optional[float] = None
+    max_power: Optional[float] = None
     zero_count = 0
     negative_count = 0
 
-    gap_values: list[pd.Series] = []
-    previous_timestamp: pd.Timestamp | None = None
+    gap_stats: Dict[str, Any] = {
+        "gap_count_total": 0,
+        "duplicate_timestamp_count": 0,
+        "irregular_gap_count": 0,
+        "longest_gap_seconds": None,
+    }
+
+    max_sample_period = _positive_float(
+        (meter.device or {}).get("max_sample_period")
+    )
+    previous_timestamp: Optional[pd.Timestamp] = None
 
     for chunk in meter.load(
         physical_quantity="power",
@@ -315,23 +204,26 @@ def summarize_power_chunks(
         if not series.index.is_monotonic_increasing:
             series = series.sort_index()
 
-        values_count += int(series.size)
+        sample_count += int(series.size)
         values_sum += float(series.sum())
+        zero_count += int(series.eq(0).sum())
+        negative_count += int(series.lt(0).sum())
 
         current_min = float(series.min())
         current_max = float(series.max())
-        values_min = current_min if values_min is None else min(values_min, current_min)
-        values_max = current_max if values_max is None else max(values_max, current_max)
+        min_power = (
+            current_min if min_power is None else min(min_power, current_min)
+        )
+        max_power = (
+            current_max if max_power is None else max(max_power, current_max)
+        )
 
-        zero_count += int((series == 0).sum())
-        negative_count += int((series < 0).sum())
-
-        first_timestamp = pd.Timestamp(series.index[0])
-        last_timestamp = pd.Timestamp(series.index[-1])
+        timestamps = pd.DatetimeIndex(series.index)
+        gap_parts: List[pd.Series] = []
 
         if previous_timestamp is not None:
             boundary_gap = (
-                first_timestamp - previous_timestamp
+                pd.Timestamp(timestamps[0]) - previous_timestamp
             ).total_seconds()
 
             if boundary_gap < 0:
@@ -339,259 +231,287 @@ def summarize_power_chunks(
                     "Timestamps are not ordered across chunks."
                 )
 
-            gap_values.append(
-                pd.Series(
-                    [boundary_gap],
-                    dtype="float64",
-                )
+            gap_parts.append(
+                pd.Series([boundary_gap], dtype="float64")
             )
 
-        if len(series) >= 2:
-            gaps = pd.Series(
-                series.index[1:] - series.index[:-1],
+        if len(timestamps) >= 2:
+            internal_gaps = pd.Series(
+                timestamps[1:] - timestamps[:-1],
                 dtype="timedelta64[ns]",
             ).dt.total_seconds()
 
-            gaps = gaps.dropna()
-
-            if gaps.lt(0).any():
+            if internal_gaps.lt(0).any():
                 raise ValueError(
                     "Timestamps are not ordered within a chunk."
                 )
 
-            gap_values.append(
-                gaps.astype("float64")
+            gap_parts.append(internal_gaps.astype("float64"))
+
+        if gap_parts:
+            _update_gap_stats(
+                stats=gap_stats,
+                gaps=pd.concat(gap_parts, ignore_index=True),
+                max_sample_period=max_sample_period,
             )
 
-        previous_timestamp = last_timestamp
+        previous_timestamp = pd.Timestamp(timestamps[-1])
 
-    if values_count == 0:
-        return empty_quality_stats()
+    if sample_count == 0:
+        return _empty_stats()
 
-    all_gaps = (
-        pd.concat(gap_values, ignore_index=True)
-        if gap_values
-        else pd.Series(dtype="float64")
+    gap_count = int(gap_stats["gap_count_total"])
+    irregular_share = (
+        int(gap_stats["irregular_gap_count"]) / gap_count
+        if gap_count > 0 and max_sample_period is not None
+        else None
     )
-
-    result: dict[str, Any] = {
-        "sample_count": values_count,
-        "median_sample_period_seconds": (
-            float(all_gaps.median())
-            if not all_gaps.empty
-            else None
-        ),
-        "p99_sample_period_seconds": (
-            float(all_gaps.quantile(0.99))
-            if not all_gaps.empty
-            else None
-        ),
-        "longest_gap_seconds": (
-            float(all_gaps.max())
-            if not all_gaps.empty
-            else None
-        ),
-        "min_power": values_min,
-        "max_power": values_max,
-        "mean_power": values_sum / values_count,
-        "zero_share": zero_count / values_count,
-        "negative_share": negative_count / values_count,
-    }
-
-    result.update(
-        summarize_good_sections(
-            gaps=all_gaps,
-            sample_period=sample_period,
-            max_sample_period=max_sample_period,
-        )
-    )
-
-    return result
-
-
-def positive_float(value: Any) -> float | None:
-    try:
-        number = float(value)
-    except (TypeError, ValueError):
-        return None
-
-    if pd.isna(number) or number <= 0:
-        return None
-
-    return number
-
-def summarize_good_sections(
-    gaps: pd.Series,
-    sample_period: float | None,
-    max_sample_period: float | None,
-) -> dict[str, Any]:
-    """Leitet Good Sections aus den Abständen der Zeitstempel ab."""
-
-    empty_result = {
-        "good_sections_count": 0,
-        "good_duration_days": 0.0,
-        "longest_good_section_days": 0.0,
-        "dropout_rate": None,
-    }
-
-    if gaps.empty:
-        return empty_result
-
-    if max_sample_period is None:
-        return empty_result
-
-    good_gap_mask = gaps.le(
-        max_sample_period
-    )
-
-    if not good_gap_mask.any():
-        return empty_result
-
-    previous_mask = good_gap_mask.shift(
-        periods=1,
-        fill_value=False,
-    )
-
-    group_ids = (
-        good_gap_mask
-        .ne(previous_mask)
-        .cumsum()
-    )
-
-    good_gaps = gaps[
-        good_gap_mask
-    ]
-
-    good_group_ids = group_ids[
-        good_gap_mask
-    ]
-
-    section_durations = (
-        good_gaps
-        .groupby(good_group_ids)
-        .sum()
-    )
-
-    section_gap_counts = (
-        good_gaps
-        .groupby(good_group_ids)
-        .size()
-    )
-
-    section_sample_counts = (
-        section_gap_counts + 1
-    )
-
-    dropout_rate: float | None = None
-
-    if sample_period is not None:
-        expected_sample_counts = (
-            section_durations
-            .div(sample_period)
-            .round()
-            .astype("int64")
-            .add(1)
-            .clip(lower=1)
-        )
-
-        section_dropout_rates = (
-            1.0
-            - section_sample_counts.div(
-                expected_sample_counts
-            )
-        ).clip(
-            lower=0.0,
-            upper=1.0,
-        )
-
-        total_section_samples = int(
-            section_sample_counts.sum()
-        )
-
-        if total_section_samples > 0:
-            weighted_dropout_sum = float(
-                section_dropout_rates
-                .mul(section_sample_counts)
-                .sum()
-            )
-
-            dropout_rate = (
-                weighted_dropout_sum
-                / total_section_samples
-            )
 
     return {
-        "good_sections_count": int(
-            section_durations.size
+        "sample_count": sample_count,
+        "nominal_sample_period_seconds": _get_sample_period(meter),
+        "max_sample_period_seconds": max_sample_period,
+        "gap_count_total": gap_count,
+        "duplicate_timestamp_count": int(
+            gap_stats["duplicate_timestamp_count"]
         ),
-        "good_duration_days": float(
-            section_durations.sum()
-            / SECONDS_PER_DAY
-        ),
-        "longest_good_section_days": float(
-            section_durations.max()
-            / SECONDS_PER_DAY
-        ),
-        "dropout_rate": dropout_rate,
+        "irregular_gap_count": int(gap_stats["irregular_gap_count"]),
+        "irregular_gap_share": irregular_share,
+        "longest_gap_seconds": gap_stats["longest_gap_seconds"],
+        "min_power": min_power,
+        "max_power": max_power,
+        "mean_power": values_sum / sample_count,
+        "zero_share": zero_count / sample_count,
+        "negative_share": negative_count / sample_count,
     }
 
 
-def is_usable_channel(
-    row: dict[str, Any],
+def _update_gap_stats(
+    stats: Dict[str, Any],
+    gaps: pd.Series,
+    max_sample_period: Optional[float],
+) -> None:
+    stats["gap_count_total"] += int(gaps.size)
+    stats["duplicate_timestamp_count"] += int(gaps.eq(0).sum())
+
+    if max_sample_period is not None:
+        stats["irregular_gap_count"] += int(
+            gaps.gt(max_sample_period).sum()
+        )
+
+    longest = float(gaps.max())
+    stats["longest_gap_seconds"] = (
+        longest
+        if stats["longest_gap_seconds"] is None
+        else max(float(stats["longest_gap_seconds"]), longest)
+    )
+
+
+def _get_good_sections(
+    meter: Any,
+    ac_type: str,
+    chunksize: int,
+) -> List[Any]:
+    try:
+        return list(
+            meter.good_sections(
+                physical_quantity="power",
+                ac_type=ac_type,
+                chunksize=chunksize,
+            )
+        )
+    except Exception as error:
+        logger.warning(
+            "Meter %s: good_sections failed: %s",
+            meter.instance(),
+            error,
+        )
+        return []
+
+
+def _get_dropout_rate(
+    meter: Any,
+    ac_type: str,
+    sections: List[Any],
+    chunksize: int,
+) -> Optional[float]:
+    if not sections:
+        return None
+
+    try:
+        return _optional_float(
+            meter.dropout_rate(
+                ignore_gaps=False,
+                sections=sections,
+                physical_quantity="power",
+                ac_type=ac_type,
+                chunksize=chunksize,
+            )
+        )
+    except Exception as error:
+        logger.warning(
+            "Meter %s: dropout_rate failed: %s",
+            meter.instance(),
+            error,
+        )
+        return None
+
+
+def _sections_to_rows(
+    house_id: int,
+    meter_instance: int,
+    sections: List[Any],
+) -> List[Dict[str, Any]]:
+    rows: List[Dict[str, Any]] = []
+
+    for section_id, section in enumerate(sections, start=1):
+        start = getattr(section, "start", None)
+        end = getattr(section, "end", None)
+        days = _duration_days(start, end)
+
+        if days is None or days <= 0:
+            continue
+
+        rows.append(
+            {
+                "house": house_id,
+                "meter_instance": meter_instance,
+                "section_id": section_id,
+                "start": start,
+                "end": end,
+                "duration_seconds": days * SECONDS_PER_DAY,
+                "duration_days": days,
+            }
+        )
+
+    return rows
+
+
+def _is_usable(
+    row: Dict[str, Any],
     min_duration_days: int,
     min_longest_good_section_days: int,
     min_sample_count: int,
     max_zero_share: float,
     min_mean_power: float,
-    max_median_sample_period_seconds: int,
-    max_p99_sample_period_seconds: int,
-    max_longest_gap_seconds: int,
-    reject_negative_values: bool = True,
+    max_dropout_rate: float,
+    reject_negative_values: bool,
 ) -> bool:
+    checks = [
+        bool(row.get("has_canonical_ac_type", False)),
+        _meets_min(row.get("duration_days"), min_duration_days),
+        _meets_min(
+            row.get("longest_good_section_days"),
+            min_longest_good_section_days,
+        ),
+        _meets_min(row.get("sample_count"), min_sample_count),
+        _meets_max(row.get("dropout_rate"), max_dropout_rate),
+        _meets_max(row.get("zero_share"), max_zero_share),
+        _meets_min(row.get("mean_power"), min_mean_power),
+        bool(row.get("sampling_stable", False)),
+    ]
 
-    if not row["has_canonical_ac_type"]:
-        return False
+    if reject_negative_values:
+        checks.append(_meets_max(row.get("negative_share"), 0.0))
 
-    if row["duration_days"] is None or row["duration_days"] < min_duration_days:
-        return False
-
-    if row["longest_good_section_days"] < min_longest_good_section_days:
-        return False
-
-    if row["sample_count"] is None or row["sample_count"] < min_sample_count:
-        return False
-
-    if row["zero_share"] is not None and row["zero_share"] > max_zero_share:
-        return False
-
-    if row["mean_power"] is not None and row["mean_power"] < min_mean_power:
-        return False
-
-    if (
-        row["median_sample_period_seconds"] is not None
-        and row["median_sample_period_seconds"] > max_median_sample_period_seconds
-    ):
-        return False
-
-    if (
-        row["p99_sample_period_seconds"] is not None
-        and row["p99_sample_period_seconds"] > max_p99_sample_period_seconds
-    ):
-        return False
-    '''
-    if (
-        row["longest_gap_seconds"] is not None
-        and row["longest_gap_seconds"] > max_longest_gap_seconds
-    ):
-        return False
-    '''
-
-    if reject_negative_values and row["negative_share"] is not None and row["negative_share"] > 0:
-        return False
-
-    return True
+    return all(checks)
 
 
+def _empty_stats() -> Dict[str, Any]:
+    return {
+        "sample_count": 0,
+        "nominal_sample_period_seconds": None,
+        "max_sample_period_seconds": None,
+        "gap_count_total": 0,
+        "duplicate_timestamp_count": 0,
+        "irregular_gap_count": 0,
+        "irregular_gap_share": None,
+        "longest_gap_seconds": None,
+        "good_sections_count": 0,
+        "good_duration_days": 0.0,
+        "longest_good_section_days": 0.0,
+        "good_section_coverage_share": None,
+        "dropout_rate": None,
+        "min_power": None,
+        "max_power": None,
+        "mean_power": None,
+        "zero_share": None,
+        "negative_share": None,
+    }
 
 
+def _get_ac_types(meter: Any) -> List[str]:
+    try:
+        return list(meter.available_ac_types("power"))
+    except Exception:
+        return []
 
+
+def _get_timeframe(
+    meter: Any,
+) -> Tuple[Optional[pd.Timestamp], Optional[pd.Timestamp]]:
+    try:
+        timeframe = meter.get_timeframe()
+        return timeframe.start, timeframe.end
+    except Exception:
+        return None, None
+
+
+def _get_sample_period(meter: Any) -> Optional[float]:
+    try:
+        return _positive_float(meter.sample_period())
+    except Exception:
+        return _positive_float(
+            (meter.device or {}).get("sample_period")
+        )
+
+
+def _appliance_names(meter: Any) -> str:
+    names: List[str] = []
+
+    for appliance in getattr(meter, "appliances", []):
+        identifier = getattr(appliance, "identifier", None)
+        appliance_type = getattr(identifier, "type", None)
+        if appliance_type is not None:
+            names.append(str(appliance_type))
+
+    return ", ".join(sorted(set(names)))
+
+
+def _duration_days(start: Any, end: Any) -> Optional[float]:
+    if start is None or end is None or pd.isna(start) or pd.isna(end):
+        return None
+
+    try:
+        seconds = (
+            pd.Timestamp(end) - pd.Timestamp(start)
+        ).total_seconds()
+    except (TypeError, ValueError):
+        return None
+
+    return max(float(seconds), 0.0) / SECONDS_PER_DAY
+
+
+def _optional_float(value: Any) -> Optional[float]:
+    if value is None or pd.isna(value):
+        return None
+
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _positive_float(value: Any) -> Optional[float]:
+    number = _optional_float(value)
+    return number if number is not None and number > 0 else None
+
+
+def _meets_min(value: Any, threshold: float) -> bool:
+    number = _optional_float(value)
+    return number is not None and number >= threshold
+
+
+def _meets_max(value: Any, threshold: float) -> bool:
+    number = _optional_float(value)
+    return number is not None and number <= threshold
