@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from typing import Any
 import pandas as pd
 from nilmtk import DataSet
 
@@ -18,65 +19,100 @@ def get_mains_meters(elec) -> list:
 
     return [mains]
 
+def get_appliance_names(meter: Any) -> str:
+    appliances = getattr(meter, "appliances", [])
 
-def check_ac_types(dataset: DataSet) -> pd.DataFrame:
-    summary = []
+    names = [
+        appliance.identifier.type
+        for appliance in appliances
+        if hasattr(appliance, "identifier")
+    ]
+
+    return ", ".join(names)
+
+def build_channel_registry(
+    dataset: DataSet,
+    canonical_ac_type: str = "active",
+) -> pd.DataFrame:
+    rows: list[dict[str, Any]] = []
 
     for house_id, building in dataset.buildings.items():
         elec = building.elec
-        mains_instances = {meter.instance() for meter in get_mains_meters(elec)}
+
+        mains_instances = {
+            meter.instance()
+            for meter in get_mains_meters(elec)
+        }
 
         for meter in elec.meters:
+            meter_instance = meter.instance()
+            metadata_error: str | None = None
+
             try:
-                ac_types = meter.available_ac_types("power")
+                ac_types = list(
+                    meter.available_ac_types("power")
+                )
             except Exception as error:
-                ac_types = [f"ERROR: {error}"]
+                logger.warning(
+                    "House %s meter %s: could not read AC types: %s",
+                    house_id,
+                    meter_instance,
+                    error,
+                )
+                ac_types = []
+                metadata_error = str(error)
 
-            appliance_names = [
-                app.identifier.type
-                for app in meter.appliances
-                if hasattr(app, "identifier")
-            ]
-            
+            try:
+                label = meter.label()
+            except Exception as error:
+                logger.warning(
+                    "House %s meter %s: could not read label: %s",
+                    house_id,
+                    meter_instance,
+                    error,
+                )
+                label = None
 
-            summary.append({
-                "house": house_id,
-                "meter_instance": meter.instance(),
-                "meter_type": "mains" if meter.instance() in mains_instances else "submeter",
-                "ac_types": ", ".join(ac_types),
-                "has_canonical_ac_type": "active" in ac_types,
-                "has_apparent": "apparent" in ac_types,
-                "appliances": ", ".join(appliance_names),
-            })
+                if metadata_error is None:
+                    metadata_error = str(error)
 
-    return pd.DataFrame(summary)
+            device = meter.device or {}
 
+            meter_type = (
+                "mains"
+                if meter_instance in mains_instances
+                else "submeter"
+            )
 
-def inspect_mains(dataset: DataSet) -> pd.DataFrame:
-    summary = []
+            rows.append(
+                {
+                    "house": house_id,
+                    "meter_instance": meter_instance,
+                    "meter_key": str(meter.key),
+                    "meter_type": meter_type,
+                    "site_meter": meter.is_site_meter(),
+                    "label": label,
+                    "appliances": get_appliance_names(meter),
+                    "ac_types": ", ".join(ac_types),
+                    "has_canonical_ac_type": (canonical_ac_type in ac_types),
+                    "sample_period_seconds": device.get("sample_period"),
+                    "max_sample_period_seconds": device.get("max_sample_period"),
+                    "metadata_error": metadata_error,
+                }
+            )
 
-    for house_id, building in dataset.buildings.items():
-        elec = building.elec
+    registry = pd.DataFrame(rows)
 
-        for mains in get_mains_meters(elec):
-            ac_types = mains.available_ac_types("power")
+    if registry.empty:
+        logger.warning(
+            "Channel registry is empty."
+        )
+        return registry
 
-            summary.append({
-                "house": house_id,
-                "instance": mains.instance(),
-                "key": str(mains.key),
-                "label": mains.label(),
-                "ac_types": ", ".join(ac_types),
-                "has_canonical_ac_type": "active" in ac_types,
-                "has_apparent": "apparent" in ac_types,
-                "site_meter": mains.is_site_meter(),
-                "submeter_instances": ", ".join(
-                    str(meter.instance()) for meter in elec.submeters().meters
-                ),
-            })
-
-
-    return pd.DataFrame(summary)
+    return registry.sort_values(
+        by=["house", "meter_type", "meter_instance"],
+        ascending=[True, True, True],
+    ).reset_index(drop=True)
 
 
 

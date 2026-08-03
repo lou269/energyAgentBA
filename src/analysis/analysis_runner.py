@@ -8,7 +8,7 @@ from src.analysis.selection.timeframe_selection import select_common_timeframe
 from src.analysis.selection.channel_selection import build_channel_selection
 from src.analysis.eda.io import df_to_csv
 from src.analysis.analysis_config import AnalysisConfig
-from src.analysis.eda.metadata_exploration import check_ac_types, inspect_mains
+from src.analysis.eda.metadata_exploration import build_channel_registry
 from src.analysis.eda.channel_quality import build_channel_quality
 from src.analysis.eda.house_quality import build_house_quality 
 from src.config.project_config import ProjectConfig, ensure_project_directories
@@ -30,22 +30,16 @@ class AnalysisRunner:
         logger.info("Starting EDA...")
         dataset=DataSet(self.project_config.processed_dir / "ukdale.h5")
         
-        '''
-        df_summary_mains = inspect_mains(dataset)
         
-        
-        df_to_csv(
-            df=df_summary_mains,
-            output_path=self.project_config.meta_output_dir,
-            filename="mains_summary"
+        channel_registry_df = build_channel_registry(
+            dataset=dataset,
+            canonical_ac_type=self.eda_config.canonical_ac_type,
         )
-        
-        df_summary_ac_types = check_ac_types(dataset)
-         
+
         df_to_csv(
-            df=df_summary_ac_types,
+            df=channel_registry_df,
             output_path=self.project_config.meta_output_dir,
-            filename="ac_types_summary"
+            filename="channel_registry",
         )
         
         channel_quality_df = build_channel_quality(
@@ -106,7 +100,7 @@ class AnalysisRunner:
             output_path=self.project_config.eda_output_dir,
             filename="selected_timeframe",
         )
-        '''
+        
         channel_quality_df = pd.read_csv(self.project_config.eda_output_dir / "channel_quality.csv")
         channel_selection_df = pd.read_csv(self.project_config.eda_output_dir / "channel_selection.csv")
         
