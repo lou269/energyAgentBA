@@ -18,7 +18,7 @@ class AnalysisConfig:
 
     # Channel-Qualität auf Rohdatenebene
     min_duration_days: int = 84
-    min_longest_good_section_days: int = 84
+    min_longest_good_section_days: int = 45
     min_sample_count: int = 100
     min_mean_power: float = 0.1
     max_zero_share: float = 0.95

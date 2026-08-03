@@ -1,0 +1,6 @@
+house,instance,key,label,ac_types,has_canonical_ac_type,has_apparent,site_meter,submeter_instances
+1,54,/building1/elec/meter54,Site meter,"active, apparent",True,True,True,"2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53"
+2,20,/building2/elec/meter20,Site meter,"active, apparent",True,True,True,"2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19"
+3,1,/building3/elec/meter1,Site meter,apparent,False,True,True,"2, 3, 4, 5"
+4,1,/building4/elec/meter1,Site meter,apparent,False,True,True,"2, 3, 4, 5, 6"
+5,26,/building5/elec/meter26,Site meter,"active, apparent",True,True,True,"2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25"

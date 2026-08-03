@@ -19,7 +19,7 @@ data/cleaned/
 *.parquet
 
 # Output
-output/
+#output/
 *.log
 
 # src

@@ -44,7 +44,7 @@ def check_ac_types(dataset: DataSet) -> pd.DataFrame:
                 "meter_instance": meter.instance(),
                 "meter_type": "mains" if meter.instance() in mains_instances else "submeter",
                 "ac_types": ", ".join(ac_types),
-                "has_active": "active" in ac_types,
+                "has_canonical_ac_type": "active" in ac_types,
                 "has_apparent": "apparent" in ac_types,
                 "appliances": ", ".join(appliance_names),
             })
@@ -67,7 +67,7 @@ def inspect_mains(dataset: DataSet) -> pd.DataFrame:
                 "key": str(mains.key),
                 "label": mains.label(),
                 "ac_types": ", ".join(ac_types),
-                "has_active": "active" in ac_types,
+                "has_canonical_ac_type": "active" in ac_types,
                 "has_apparent": "apparent" in ac_types,
                 "site_meter": mains.is_site_meter(),
                 "submeter_instances": ", ".join(

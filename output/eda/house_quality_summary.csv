@@ -1,0 +1,6 @@
+house,mains_instance,mains_ac_types,has_canonical_ac_type_mains,mains_start,mains_end,mains_duration_days,mains_good_duration_days,mains_longest_good_section_days,meters_total,active_submeter_count,usable_submeter_count,eligible_for_active_pipeline
+1,54.0,"active, apparent",True,2013-03-17 19:12:43.099999905+00:00,2015-01-05 06:27:12+00:00,658.4683900462974,655.7561238427548,158.25737615744694,49,48,24,True
+2,20.0,"active, apparent",True,2013-04-16 21:45:16.299999952+01:00,2013-10-10 06:16:00.500000+01:00,176.3546782407413,140.74334722222395,75.82214351853038,19,18,13,True
+3,,,False,,,,,,4,4,0,False
+4,,,False,,,,,,5,5,3,False
+5,26.0,"active, apparent",True,2014-06-29 17:23:43.200000048+01:00,2014-11-13 20:35:25.099999905+00:00,137.17479050925758,131.8520347222179,5.533940972222428,25,24,6,True

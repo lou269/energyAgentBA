@@ -163,6 +163,7 @@ def _download_house(
 ) -> None:
     
     house_dir = raw_dir / house_name
+    house_dir.mkdir(parents=True, exist_ok=True)
 
     labels_url = f"{url_base.rstrip('/')}/{house_name}/labels.dat"
     labels_output_path = house_dir / "labels.dat"

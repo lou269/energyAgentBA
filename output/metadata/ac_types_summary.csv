@@ -1,0 +1,109 @@
+house,meter_instance,meter_type,ac_types,has_canonical_ac_type,has_apparent,appliances
+1,2,submeter,apparent,False,True,boiler
+1,3,submeter,apparent,False,True,solar thermal pumping station
+1,4,submeter,active,True,False,"laptop computer, laptop computer"
+1,5,submeter,active,True,False,"washer dryer, washer dryer"
+1,6,submeter,active,True,False,dish washer
+1,7,submeter,active,True,False,television
+1,8,submeter,apparent,False,True,"light, light"
+1,9,submeter,active,True,False,HTPC
+1,10,submeter,active,True,False,"kettle, food processor, toasted sandwich maker"
+1,11,submeter,active,True,False,"toaster, kitchen aid, food processor"
+1,12,submeter,active,True,False,fridge freezer
+1,13,submeter,active,True,False,microwave
+1,14,submeter,active,True,False,computer monitor
+1,15,submeter,active,True,False,audio system
+1,16,submeter,active,True,False,breadmaker
+1,17,submeter,active,True,False,audio amplifier
+1,18,submeter,active,True,False,"broadband router, broadband router"
+1,19,submeter,active,True,False,"light, bouncy castle pump"
+1,20,submeter,active,True,False,soldering iron
+1,21,submeter,active,True,False,"ethernet switch, USB hub"
+1,22,submeter,active,True,False,vacuum cleaner
+1,23,submeter,active,True,False,light
+1,24,submeter,active,True,False,light
+1,25,submeter,apparent,False,True,light
+1,26,submeter,active,True,False,light
+1,27,submeter,active,True,False,tablet computer charger
+1,28,submeter,active,True,False,active subwoofer
+1,29,submeter,active,True,False,light
+1,30,submeter,active,True,False,radio
+1,31,submeter,active,True,False,light
+1,32,submeter,active,True,False,"wireless phone charger, audio system"
+1,33,submeter,active,True,False,light
+1,34,submeter,active,True,False,mobile phone charger
+1,35,submeter,active,True,False,light
+1,36,submeter,active,True,False,coffee maker
+1,37,submeter,active,True,False,radio
+1,38,submeter,active,True,False,"mobile phone charger, baby monitor, radio"
+1,39,submeter,active,True,False,hair dryer
+1,40,submeter,active,True,False,hair straighteners
+1,41,submeter,active,True,False,clothes iron
+1,42,submeter,active,True,False,oven
+1,43,submeter,active,True,False,"computer, external hard disk"
+1,44,submeter,active,True,False,light
+1,45,submeter,active,True,False,light
+1,46,submeter,active,True,False,baby monitor
+1,47,submeter,active,True,False,charger
+1,48,submeter,active,True,False,light
+1,49,submeter,active,True,False,light
+1,50,submeter,active,True,False,light
+1,51,submeter,active,True,False,desktop computer
+1,52,submeter,active,True,False,fan
+1,53,submeter,active,True,False,printer
+1,54,mains,"active, apparent",True,True,"immersion heater, water pump, security alarm, fan, drill, laptop computer"
+2,2,submeter,active,True,False,laptop computer
+2,3,submeter,active,True,False,computer monitor
+2,4,submeter,active,True,False,active speaker
+2,5,submeter,active,True,False,computer
+2,6,submeter,active,True,False,broadband router
+2,7,submeter,active,True,False,external hard disk
+2,8,submeter,active,True,False,kettle
+2,9,submeter,active,True,False,rice cooker
+2,10,submeter,active,True,False,running machine
+2,11,submeter,active,True,False,laptop computer
+2,12,submeter,active,True,False,washing machine
+2,13,submeter,active,True,False,dish washer
+2,14,submeter,active,True,False,fridge
+2,15,submeter,active,True,False,microwave
+2,16,submeter,active,True,False,toaster
+2,17,submeter,active,True,False,games console
+2,18,submeter,active,True,False,modem
+2,19,submeter,active,True,False,cooker
+2,20,mains,"active, apparent",True,True,
+3,1,mains,apparent,False,True,
+3,2,submeter,active,True,False,kettle
+3,3,submeter,active,True,False,electric space heater
+3,4,submeter,active,True,False,laptop computer
+3,5,submeter,active,True,False,projector
+4,1,mains,apparent,False,True,
+4,2,submeter,active,True,False,"television, DVD player, set top box, light"
+4,3,submeter,active,True,False,"kettle, radio"
+4,4,submeter,active,True,False,boiler
+4,5,submeter,active,True,False,freezer
+4,6,submeter,active,True,False,"washing machine, microwave, breadmaker"
+5,2,submeter,active,True,False,active speaker
+5,3,submeter,active,True,False,desktop computer
+5,4,submeter,active,True,False,hair dryer
+5,5,submeter,active,True,False,television
+5,6,submeter,active,True,False,computer monitor
+5,7,submeter,active,True,False,running machine
+5,8,submeter,active,True,False,network attached storage
+5,9,submeter,active,True,False,server computer
+5,10,submeter,active,True,False,computer monitor
+5,11,submeter,active,True,False,games console
+5,12,submeter,active,True,False,clothes iron
+5,13,submeter,active,True,False,coffee maker
+5,14,submeter,active,True,False,desktop computer
+5,15,submeter,active,True,False,toaster
+5,16,submeter,active,True,False,audio amplifier
+5,17,submeter,active,True,False,set top box
+5,18,submeter,active,True,False,kettle
+5,19,submeter,active,True,False,fridge freezer
+5,20,submeter,active,True,False,electric oven
+5,21,submeter,active,True,False,electric stove
+5,22,submeter,active,True,False,dish washer
+5,23,submeter,active,True,False,microwave
+5,24,submeter,active,True,False,washer dryer
+5,25,submeter,active,True,False,vacuum cleaner
+5,26,mains,"active, apparent",True,True,
