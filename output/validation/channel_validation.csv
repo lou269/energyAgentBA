@@ -1,0 +1,15 @@
+selection_role,candidate_id,meter_key,channel_role,balance,coverage_share,missing_share,longest_missing_run_seconds
+primary,H1-M54,/building1/elec/meter54,mains,False,0.9999995611931509,4.388068490728231e-07,6
+primary,H1-M54,/building1/elec/meter43,auxiliary,True,0.8499710606883036,0.15002893931169636,360
+primary,H1-M54,/building1/elec/meter19,auxiliary,True,0.8490855484668747,0.1509144515331253,360
+primary,H1-M54,/building1/elec/meter35,auxiliary,True,0.8492088531914641,0.15079114680853584,360
+primary,H1-M54,/building1/elec/meter44,auxiliary,True,0.8489969094833619,0.15100309051663802,360
+primary,H1-M54,/building1/elec/meter17,auxiliary,True,0.8488117329930532,0.15118826700694676,360
+primary,H1-M54,/building1/elec/meter26,auxiliary,True,0.8489855005052861,0.1510144994947139,360
+fallback,H2-M20,/building2/elec/meter20,mains,False,1.0,0.0,0
+fallback,H2-M20,/building2/elec/meter5,auxiliary,True,0.97596165735058,0.024038342649419925,42
+fallback,H2-M20,/building2/elec/meter2,auxiliary,True,0.9712457605929079,0.028754239407092073,42
+fallback,H2-M20,/building2/elec/meter10,auxiliary,True,0.9749651734367429,0.025034826563257038,72
+fallback,H2-M20,/building2/elec/meter13,auxiliary,True,0.9754927237440685,0.024507276255931507,54
+fallback,H2-M20,/building2/elec/meter3,auxiliary,True,0.9756346860663523,0.024365313933647728,42
+fallback,H2-M20,/building2/elec/meter8,auxiliary,True,0.9756887233374152,0.02431127666258487,42

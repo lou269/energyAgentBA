@@ -1,0 +1,15 @@
+selection_role,candidate_id,house,meter_instance,meter_key,channel_role,appliance,balance,explanation,experiment,window_start,window_end
+primary,H1-M54,1,54,/building1/elec/meter54,mains,,False,False,False,2013-05-17 08:29:11+00:00,2013-10-22 14:39:48.299999952+00:00
+primary,H1-M54,1,43,/building1/elec/meter43,auxiliary,"computer, external hard disk",True,True,True,2013-05-17 08:29:11+00:00,2013-10-22 14:39:48.299999952+00:00
+primary,H1-M54,1,19,/building1/elec/meter19,auxiliary,"bouncy castle pump, light",True,True,False,2013-05-17 08:29:11+00:00,2013-10-22 14:39:48.299999952+00:00
+primary,H1-M54,1,35,/building1/elec/meter35,auxiliary,light,True,True,False,2013-05-17 08:29:11+00:00,2013-10-22 14:39:48.299999952+00:00
+primary,H1-M54,1,44,/building1/elec/meter44,auxiliary,light,True,True,False,2013-05-17 08:29:11+00:00,2013-10-22 14:39:48.299999952+00:00
+primary,H1-M54,1,17,/building1/elec/meter17,auxiliary,audio amplifier,True,False,False,2013-05-17 08:29:11+00:00,2013-10-22 14:39:48.299999952+00:00
+primary,H1-M54,1,26,/building1/elec/meter26,auxiliary,light,True,False,False,2013-05-17 08:29:11+00:00,2013-10-22 14:39:48.299999952+00:00
+fallback,H2-M20,2,20,/building2/elec/meter20,mains,,False,False,False,2013-05-21 10:54:09+00:00,2013-08-05 06:38:02.200000048+00:00
+fallback,H2-M20,2,5,/building2/elec/meter5,auxiliary,computer,True,True,True,2013-05-21 10:54:09+00:00,2013-08-05 06:38:02.200000048+00:00
+fallback,H2-M20,2,2,/building2/elec/meter2,auxiliary,laptop computer,True,True,False,2013-05-21 10:54:09+00:00,2013-08-05 06:38:02.200000048+00:00
+fallback,H2-M20,2,10,/building2/elec/meter10,auxiliary,running machine,True,True,False,2013-05-21 10:54:09+00:00,2013-08-05 06:38:02.200000048+00:00
+fallback,H2-M20,2,13,/building2/elec/meter13,auxiliary,dish washer,True,True,False,2013-05-21 10:54:09+00:00,2013-08-05 06:38:02.200000048+00:00
+fallback,H2-M20,2,3,/building2/elec/meter3,auxiliary,computer monitor,True,False,False,2013-05-21 10:54:09+00:00,2013-08-05 06:38:02.200000048+00:00
+fallback,H2-M20,2,8,/building2/elec/meter8,auxiliary,kettle,True,False,False,2013-05-21 10:54:09+00:00,2013-08-05 06:38:02.200000048+00:00

@@ -1,10 +1,12 @@
+# python -m src.ingestion.ingestion_runner
+
 from __future__ import annotations
 
 import logging
 from pathlib import Path
 
 from src.config.project_config import ProjectConfig, ensure_project_directories
-from src.ingestion.loader import download_dataset_raw
+from src.ingestion.downloader import download_dataset_raw
 from src.ingestion.converter import convert_raw_to_hdf5
 
 logger = logging.getLogger(__name__)
@@ -37,7 +39,7 @@ class IngestionRunner:
             meta_dir=self.config.meta_dir,
             houses=self.config.houses,
             metadata_files=self.config.metadata_files,
-            overwrite=overwrite,
+            overwrite=True,
         )
 
         logger.info("Finished UK-DALE ingestion: %s", hdf5_path)

@@ -1,21 +1,3 @@
-"""
-project_config.py
-
-Zentrale Projektkonfiguration.
-
-Diese Datei enthält nur allgemeine Einstellungen, die von mehreren
-Pipeline-Bereichen gemeinsam genutzt werden:
-
-- Projektpfade
-- Datenpfade
-- Output-Pfade
-- gemeinsame Dateinamen / Frequenzen
-- UK-DALE-Metadaten
-
-Spezifische Einstellungen bleiben in den jeweiligen Configs:
-- EDAConfig: EDA-Thresholds, Pattern-Thresholds, Plot-Settings
-- PipelineConfig: Scope, Channel-Auswahl, Pipeline-Outputs
-"""
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -26,34 +8,29 @@ from pathlib import Path
 class ProjectConfig:
     project_root: Path = Path(__file__).resolve().parents[2]
 
+    # Data
     data_dir: Path = project_root / "data"
-    raw_dir: Path = data_dir / "raw" 
+    raw_dir: Path = data_dir / "raw"
     meta_dir: Path = raw_dir / "metadata"
     processed_dir: Path = data_dir / "processed"
-    cleaned_dir: Path = data_dir / "cleaned"
 
+    # Outputs
     output_dir: Path = project_root / "output"
-    eda_output_dir: Path = output_dir / "eda"
     meta_output_dir: Path = output_dir / "metadata"
-    plots_output_dir: Path = output_dir / "plots"
-    cleaned_plots_output_dir: Path = output_dir / "plots_cleaned"
-    consistency_output_dir: Path = output_dir / "data_consistency"
+    diagnostics_output_dir: Path = output_dir / "diagnostics"
+    selection_output_dir: Path = output_dir / "selection"
+    preparation_output_dir: Path = output_dir / "preparation"
+    validation_output_dir: Path = output_dir / "validation"
+    canonical_output_dir: Path = output_dir / "canonical"
 
-    target_freq: str = "1h"
+    # Dataset
+    dataset_filename: str = "ukdale.h5"
 
-    datetime_column: str = "datetime"
-    power_column: str = "power"
-    
     metadata_files: list[str] = field(
-        default_factory=lambda: ["dataset.yaml", "meter_devices.yaml"]
-    )
-
-    url_base: str = (
-        "https://dap.ceda.ac.uk/edc/d1/b3baa0aa-05ac-4ec8-b608-da5751758698/"
-        "data/version_0"
-    )
-    url_metadata: str = (
-        "https://raw.githubusercontent.com/JackKelly/UK-DALE_metadata/master"
+        default_factory=lambda: [
+            "dataset.yaml",
+            "meter_devices.yaml",
+        ]
     )
 
     houses: list[str] = field(
@@ -65,20 +42,37 @@ class ProjectConfig:
             "house_5",
         ]
     )
-    
+
+    # UK-DALE sources
+    url_base: str = (
+        "https://dap.ceda.ac.uk/edc/d1/"
+        "b3baa0aa-05ac-4ec8-b608-da5751758698/"
+        "data/version_0"
+    )
+
+    url_metadata: str = (
+        "https://raw.githubusercontent.com/"
+        "JackKelly/UK-DALE_metadata/master"
+    )
+
+    @property
+    def dataset_path(self) -> Path:
+        return self.processed_dir / self.dataset_filename
+
+
 def ensure_project_directories(config: ProjectConfig) -> None:
     directories = [
         config.data_dir,
         config.raw_dir,
         config.meta_dir,
         config.processed_dir,
-        config.cleaned_dir,
         config.output_dir,
-        config.eda_output_dir,
         config.meta_output_dir,
-        config.plots_output_dir,
-        config.cleaned_plots_output_dir,
-        config.consistency_output_dir,
+        config.diagnostics_output_dir,
+        config.selection_output_dir,
+        config.preparation_output_dir,
+        config.validation_output_dir,
+        config.canonical_output_dir,
     ]
 
     for directory in directories:

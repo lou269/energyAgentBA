@@ -19,11 +19,14 @@ data/cleaned/
 *.parquet
 
 # Output
+# Generated aligned datasets
+output/preparation/selected_data_*.csv
+output/canonical/canonical_data.csv
 #output/
 *.log
 
 # src
-src/ingestion/try.py
+src/old/
 
 # OS
 .DS_Store
