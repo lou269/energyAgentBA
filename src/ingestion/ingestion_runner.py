@@ -39,7 +39,7 @@ class IngestionRunner:
             meta_dir=self.config.meta_dir,
             houses=self.config.houses,
             metadata_files=self.config.metadata_files,
-            overwrite=True,
+            overwrite=overwrite,
         )
 
         logger.info("Finished UK-DALE ingestion: %s", hdf5_path)

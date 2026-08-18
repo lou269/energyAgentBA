@@ -22,7 +22,8 @@ class ProjectConfig:
     preparation_output_dir: Path = output_dir / "preparation"
     validation_output_dir: Path = output_dir / "validation"
     canonical_output_dir: Path = output_dir / "canonical"
-
+    preprocessing_output_dir: Path = output_dir / "preprocessing"
+    
     # Dataset
     dataset_filename: str = "ukdale.h5"
 
@@ -73,6 +74,8 @@ def ensure_project_directories(config: ProjectConfig) -> None:
         config.preparation_output_dir,
         config.validation_output_dir,
         config.canonical_output_dir,
+        config.preprocessing_output_dir,
+
     ]
 
     for directory in directories:

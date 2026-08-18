@@ -27,6 +27,7 @@ output/canonical/canonical_data.csv
 
 # src
 src/old/
+src/visualization/
 
 # OS
 .DS_Store
