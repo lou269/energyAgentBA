@@ -9,7 +9,7 @@ SECONDS_PER_DAY = 86_400.0
 MERGE_KEYS = ["house", "meter_instance", "meter_key"]
 
 
-AUXILIARY_SELECTION_COLUMNS = [
+AUXILIARY_AVAILABILITY_COLUMNS = [
     "selection_role",
     "candidate_id",
     "house",
@@ -21,9 +21,7 @@ AUXILIARY_SELECTION_COLUMNS = [
     "longest_good_section_days",
     "selected_window_coverage_share",
     "longest_selected_window_overlap_days",
-    "balance",
-    "explanation",
-    "experiment",
+    "availability_rank",
 ]
 
 
@@ -34,10 +32,13 @@ def build_auxiliary_appliance_selection(
     channel_quality: pd.DataFrame,
     good_sections: pd.DataFrame,
     min_window_coverage_share: float,
-    max_balance_channels: int,
-    max_explanation_channels: int,
 ) -> pd.DataFrame:
-    
+    """Ermittelt zeitlich verfügbare Geräte für ausgewählte Kandidaten.
+
+    Die Rangfolge beschreibt ausschließlich die zeitliche Datenverfügbarkeit.
+    Sie trifft keine Aussage über die Eignung eines Geräts für Bilanzierung,
+    Erklärungen oder Experimente.
+    """
     _validate_inputs(
         candidate_profiles,
         provisional_selection,
@@ -45,8 +46,6 @@ def build_auxiliary_appliance_selection(
         channel_quality,
         good_sections,
         min_window_coverage_share,
-        max_balance_channels,
-        max_explanation_channels,
     )
 
     candidates = provisional_selection.merge(
@@ -59,31 +58,58 @@ def build_auxiliary_appliance_selection(
             ]
         ],
         on="candidate_id",
-        how="inner",
+        how="left",
         validate="one_to_one",
+        indicator=True,
     )
 
-    appliances = (
-        channel_registry.loc[
-            channel_registry["meter_type"].eq("submeter"),
-            MERGE_KEYS + ["appliances"],
-        ]
-        .merge(
-            channel_quality[
-                MERGE_KEYS
-                + [
-                    "sampling_share",
-                    "good_section_count",
-                    "good_section_coverage_share",
-                    "longest_good_section_days",
-                    "quality_error",
-                ]
-            ],
-            on=MERGE_KEYS,
-            how="inner",
-            validate="one_to_one",
+    missing_candidates = candidates.loc[
+        candidates["_merge"].ne("both"),
+        "candidate_id",
+    ].astype(str).tolist()
+
+    if missing_candidates:
+        raise ValueError(
+            "Missing candidate profiles for provisional selection: "
+            + ", ".join(missing_candidates)
         )
+
+    candidates = candidates.drop(columns="_merge")
+
+    appliances = channel_registry.loc[
+        channel_registry["meter_type"].eq("submeter")
+        & channel_registry["has_canonical_ac_type"]
+        .fillna(False)
+        .astype(bool),
+        MERGE_KEYS + ["appliances"],
+    ].merge(
+        channel_quality[
+            MERGE_KEYS
+            + [
+                "sampling_share",
+                "good_section_coverage_share",
+                "longest_good_section_days",
+                "quality_error",
+            ]
+        ],
+        on=MERGE_KEYS,
+        how="left",
+        validate="one_to_one",
+        indicator=True,
     )
+
+    missing_quality = appliances.loc[
+        appliances["_merge"].ne("both"),
+        MERGE_KEYS,
+    ].to_dict(orient="records")
+
+    if missing_quality:
+        raise ValueError(
+            "Missing channel quality for auxiliary channels: "
+            f"{missing_quality}"
+        )
+
+    appliances = appliances.drop(columns="_merge")
 
     appliances["appliances"] = (
         appliances["appliances"]
@@ -99,34 +125,29 @@ def build_auxiliary_appliance_selection(
         .astype(str)
         .str.strip()
         .eq("")
-        & (
-            pd.to_numeric(
-                appliances["good_section_count"],
-                errors="coerce",
-            )
-            >= 1
-        )
     ]
 
-    sections_by_channel = _build_section_index(
-        good_sections
-    )
-
-    rows = []
+    sections_by_channel = _build_section_index(good_sections)
+    result_rows = []
 
     for candidate in candidates.itertuples(index=False):
         window_start = pd.to_datetime(
             candidate.longest_segment_start,
             utc=True,
         )
-
         window_end = pd.to_datetime(
             candidate.longest_segment_end,
             utc=True,
         )
 
-        if window_end <= window_start:
-            continue
+        if (
+            pd.isna(window_start)
+            or pd.isna(window_end)
+            or window_end <= window_start
+        ):
+            raise ValueError(
+                f"Invalid selection window for {candidate.candidate_id}."
+            )
 
         window = TimeFrameGroup(
             [
@@ -144,13 +165,13 @@ def build_auxiliary_appliance_selection(
         ]
 
         for appliance in house_appliances.itertuples(index=False):
-            key = (
-                appliance.house,
-                appliance.meter_instance,
-                appliance.meter_key,
+            channel_key = (
+                int(appliance.house),
+                int(appliance.meter_instance),
+                str(appliance.meter_key),
             )
 
-            sections = sections_by_channel.get(key)
+            sections = sections_by_channel.get(channel_key)
 
             if sections is None or len(sections) == 0:
                 continue
@@ -177,13 +198,17 @@ def build_auxiliary_appliance_selection(
                 {
                     "selection_role": candidate.selection_role,
                     "candidate_id": candidate.candidate_id,
-                    "house": candidate.house,
+                    "house": int(candidate.house),
                     "meter_instance": int(appliance.meter_instance),
                     "meter_key": str(appliance.meter_key),
                     "appliance": appliance.appliances,
                     "sampling_share": appliance.sampling_share,
-                    "good_section_coverage_share": appliance.good_section_coverage_share,
-                    "longest_good_section_days": appliance.longest_good_section_days,
+                    "good_section_coverage_share": (
+                        appliance.good_section_coverage_share
+                    ),
+                    "longest_good_section_days": (
+                        appliance.longest_good_section_days
+                    ),
                     "selected_window_coverage_share": coverage_share,
                     "longest_selected_window_overlap_days": (
                         longest_overlap.timedelta.total_seconds()
@@ -216,31 +241,12 @@ def build_auxiliary_appliance_selection(
             kind="mergesort",
         ).reset_index(drop=True)
 
-        balance_count = min(max_balance_channels, len(ranked))
-        explanation_count = min(max_explanation_channels, balance_count)
-
-        ranked["balance"] = False
-        ranked["explanation"] = False
-        ranked["experiment"] = False
-
-        ranked.loc[
-            ranked.index[:balance_count],
-            "balance",
-        ] = True
-
-        ranked.loc[
-            ranked.index[:explanation_count],
-            "explanation",
-        ] = True
-
-        if balance_count:
-            ranked.loc[0, "experiment"] = True
-
-        rows.extend(ranked.to_dict(orient="records"))
+        ranked["availability_rank"] = ranked.index + 1
+        result_rows.extend(ranked.to_dict(orient="records"))
 
     result = pd.DataFrame(
-        rows,
-        columns=AUXILIARY_SELECTION_COLUMNS,
+        result_rows,
+        columns=AUXILIARY_AVAILABILITY_COLUMNS,
     )
 
     if result.empty:
@@ -250,18 +256,7 @@ def build_auxiliary_appliance_selection(
         [
             "selection_role",
             "candidate_id",
-            "balance",
-            "explanation",
-            "experiment",
-            "meter_instance",
-        ],
-        ascending=[
-            True,
-            True,
-            False,
-            False,
-            False,
-            True,
+            "availability_rank",
         ],
         kind="mergesort",
     ).reset_index(drop=True)
@@ -269,31 +264,58 @@ def build_auxiliary_appliance_selection(
 
 def _build_section_index(
     good_sections: pd.DataFrame,
-) -> dict:
-    """Übersetzt Good Sections einmal pro Kanal in NILMTK TimeFrameGroups."""
-    result = {}
+) -> dict[tuple[int, int, str], TimeFrameGroup]:
+    """Übersetzt Good Sections einmal pro Kanal in TimeFrameGroups."""
+    sections_by_channel: dict[
+        tuple[int, int, str],
+        TimeFrameGroup,
+    ] = {}
 
-    for key, rows in good_sections.groupby(
+    for _, rows in good_sections.groupby(
         MERGE_KEYS,
         sort=False,
     ):
-        timeframes = []
+        first_row = rows.iloc[0]
 
-        for row in rows.itertuples(index=False):
-            if pd.isna(row.start) or pd.isna(row.end):
-                continue
+        channel_key = (
+            int(first_row["house"]),
+            int(first_row["meter_instance"]),
+            str(first_row["meter_key"]),
+        )
 
-            start = pd.to_datetime(str(row.start), utc=True)
-            end = pd.to_datetime(str(row.end), utc=True)
+        timeframes: list[TimeFrame] = []
 
-            if end > start:
-                timeframes.append(
-                    TimeFrame(start=start, end=end)
+        for start_value, end_value in rows[
+            ["start", "end"]
+        ].itertuples(index=False, name=None):
+            start = pd.to_datetime(
+                str(start_value),
+                utc=True,
+                errors="coerce",
+            )
+            end = pd.to_datetime(
+                str(end_value),
+                utc=True,
+                errors="coerce",
+            )
+
+            if pd.isna(start) or pd.isna(end) or end <= start:
+                raise ValueError(
+                    f"Invalid good section for channel {channel_key}."
                 )
 
-        result[key] = TimeFrameGroup(timeframes)
+            timeframes.append(
+                TimeFrame(
+                    start=start,
+                    end=end,
+                )
+            )
 
-    return result
+        sections_by_channel[channel_key] = TimeFrameGroup(
+            timeframes
+        )
+
+    return sections_by_channel
 
 
 def _validate_inputs(
@@ -303,8 +325,6 @@ def _validate_inputs(
     channel_quality: pd.DataFrame,
     good_sections: pd.DataFrame,
     min_window_coverage_share: float,
-    max_balance_channels: int,
-    max_explanation_channels: int,
 ) -> None:
     required_columns = {
         "candidate_profiles": (
@@ -318,7 +338,10 @@ def _validate_inputs(
         ),
         "provisional_selection": (
             provisional_selection,
-            {"selection_role", "candidate_id"},
+            {
+                "selection_role",
+                "candidate_id",
+            },
         ),
         "channel_registry": (
             channel_registry,
@@ -328,6 +351,7 @@ def _validate_inputs(
                 "meter_key",
                 "meter_type",
                 "appliances",
+                "has_canonical_ac_type",
             },
         ),
         "channel_quality": (
@@ -337,7 +361,6 @@ def _validate_inputs(
                 "meter_instance",
                 "meter_key",
                 "sampling_share",
-                "good_section_count",
                 "good_section_coverage_share",
                 "longest_good_section_days",
                 "quality_error",
@@ -357,6 +380,7 @@ def _validate_inputs(
 
     for name, (frame, columns) in required_columns.items():
         missing = columns.difference(frame.columns)
+
         if missing:
             raise ValueError(
                 f"{name} is missing required columns: "
@@ -366,14 +390,4 @@ def _validate_inputs(
     if not 0.0 <= min_window_coverage_share <= 1.0:
         raise ValueError(
             "min_window_coverage_share must be between 0 and 1."
-        )
-
-    if max_balance_channels <= 0:
-        raise ValueError(
-            "max_balance_channels must be greater than 0."
-        )
-
-    if max_explanation_channels <= 0:
-        raise ValueError(
-            "max_explanation_channels must be greater than 0."
         )

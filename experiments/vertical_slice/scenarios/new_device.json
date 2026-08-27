@@ -1,0 +1,20 @@
+{
+  "name": "new_device",
+  "context": {
+    "calendar_available": true,
+    "currently_absent": false,
+    "events": []
+  },
+  "detector_evidence": {
+    "persistent_shift_detected": true,
+    "seasonal_shift_detected": false,
+    "temporary_high_deviation_detected": false,
+    "measurement_issue_detected": false,
+    "change_point_offset_hours": -72,
+    "duration_hours": 72
+  },
+  "expected": {
+    "classification": "new_pattern",
+    "adaptation_required": true
+  }
+}

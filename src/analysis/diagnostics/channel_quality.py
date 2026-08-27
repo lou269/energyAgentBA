@@ -6,6 +6,8 @@ import pandas as pd
 from nilmtk import DataSet
 from nilmtk.stats.goodsections import GoodSections
 
+import warnings
+
 
 logger = logging.getLogger(__name__)
 
@@ -174,25 +176,34 @@ def _profile_meter(
     start = None
     end = None
 
-    for chunk in meter.load(**load_kwargs):
-        if chunk.empty:
-            continue
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message=r"If you are using `preprocessing` to resample.*",
+            category=UserWarning,
+            module=r"nilmtk\.electric",
+        )
 
-        series = chunk.iloc[:, 0]
-        sample_count = int(series.count())
+        for chunk in meter.load(**load_kwargs):
+            if chunk.empty:
+                continue
 
-        if sample_count == 0:
-            continue
+            series = chunk.iloc[:, 0]
+            sample_count = int(series.count())
 
-        valid_sample_count += sample_count
+            if sample_count == 0:
+                continue
 
-        first_valid = series.first_valid_index()
-        last_valid = series.last_valid_index()
+            valid_sample_count += sample_count
 
-        if start is None:
-            start = first_valid
+            first_valid = series.first_valid_index()
+            last_valid = series.last_valid_index()
 
-        end = last_valid
+            if start is None:
+                start = first_valid
+
+            end = last_valid
+            
     good_section_results = good_sections_stat.results
 
     if good_section_results is None:

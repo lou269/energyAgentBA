@@ -11,7 +11,7 @@ from src.analysis.io import df_to_csv
 from src.config.data_preparation_config import DataPreparationConfig
 from src.config.project_config import ProjectConfig, ensure_project_directories
 from src.data_preparation.selected_data import build_selected_data
-from src.data_preparation.selected_candidate_validation import build_selected_candidate_validation
+from src.data_preparation.selected_candidate_validation import build_selected_candidate_validation, select_candidate_role
 
 
 
@@ -53,7 +53,7 @@ class DataPreparationRunner:
             sample_period=self.data_config.alignment_sample_period_seconds,
             canonical_ac_type=self.data_config.canonical_ac_type,
             include_fallback=self.data_config.include_fallback,
-            chunksize=self.data_config.selected_data_chunksize,
+            chunksize=None,
         )
         
         df_to_csv(
@@ -78,14 +78,21 @@ class DataPreparationRunner:
         # 9. Post-alignment validation
         logger.info("Validating selected candidates...")
         
-        channel_validation_df, candidate_validation_df, selected_role = build_selected_candidate_validation(
+        channel_validation_df, candidate_validation_df = build_selected_candidate_validation(
             aligned_data=aligned_data,
             manifest=selected_channels_df,
             sample_period=self.data_config.alignment_sample_period_seconds,
             min_mains_coverage_share=self.data_config.min_mains_coverage_share,
-            min_balance_channel_coverage_share=self.data_config.min_balance_channel_coverage_share,
-            min_simultaneous_valid_duration_days=self.data_config.min_simultaneous_valid_duration_days,
+            min_mains_valid_duration_days=self.data_config.min_mains_valid_duration_days
         )
+        
+        selected_role = select_candidate_role(candidate_validation_df)
+
+        if selected_role is None:
+            raise ValueError(
+                "Neither primary nor fallback passed validation. "
+                "See candidate_validation.csv."
+            )
         
         df_to_csv(
             channel_validation_df,
@@ -106,15 +113,39 @@ class DataPreparationRunner:
         
         logger.info("Selected canonical candidate role: %s.", selected_role)
         
-        # 10. Canonical selection
-        canonical_data = aligned_data[selected_role]
-        
+        # 10. Canonical selection        
         canonical_manifest = selected_channels_df.loc[
-            selected_channels_df["selection_role"].eq(selected_role)
+            selected_channels_df["selection_role"].eq(
+                selected_role
+            )
+            & selected_channels_df["channel_role"].eq("mains")
         ].copy()
+
+        mains_keys = (
+            canonical_manifest["meter_key"]
+            .astype(str)
+            .tolist()
+        )
+
+        canonical_data = (
+            aligned_data[selected_role]
+            .loc[:, mains_keys]
+            .copy()
+        )
+
+        df_to_csv(
+            canonical_manifest,
+            self.project_config.canonical_output_dir,
+            "canonical_manifest",
+        )
+
+        df_to_csv(
+            canonical_data.reset_index(),
+            self.project_config.canonical_output_dir,
+            "canonical_data",
+        )
         
-        df_to_csv(canonical_manifest, self.project_config.canonical_output_dir, "canonical_manifest")
-        df_to_csv(canonical_data.reset_index(), self.project_config.canonical_output_dir, "canonical_data")
+
 
         logger.info(
             "Data preparation completed successfully. "

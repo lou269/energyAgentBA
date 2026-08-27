@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Mapping
 
 from nilmtk import DataSet
 
 from src.analysis.diagnostics.channel_quality import build_channel_quality
 from src.analysis.diagnostics.house_eligibility import build_house_eligibility
 from src.analysis.inventory.channel_registry import build_channel_registry
-from src.analysis.io import df_to_csv
+from src.analysis.io import load_or_build_csv, load_or_build_csv_pair
 from src.analysis.selection.auxiliary_appliance_selection import build_auxiliary_appliance_selection
 from src.analysis.selection.candidate_profiling import build_candidate_profiles
 from src.analysis.selection.provisional_selection import build_provisional_selection
@@ -29,108 +30,121 @@ class AnalysisRunner:
         self.project_config = project_config or ProjectConfig()
         self.analysis_config = analysis_config or AnalysisConfig()
 
-    def run(self) -> None:
+    def run(self, overwrite: Mapping[str, bool] | None = None) -> None:
         ensure_project_directories(self.project_config)
 
+        overwrite = overwrite or {}
         dataset = DataSet(self.project_config.dataset_path)
-        logger.info("Starting analysis pipeline...")
 
-        # 3. Metadata inventory
+        logger.info("Starting analysis pipeline.")
+
+        # Step 1: Build the complete channel inventory.
         logger.info("Building channel registry...")
-
-        channel_registry_df = build_channel_registry(
-            dataset=dataset,
-            canonical_ac_type=self.analysis_config.canonical_ac_type,
+        channel_registry = load_or_build_csv(
+            output_path=self.project_config.meta_output_dir,
+            filename="channel_registry",
+            overwrite=overwrite.get("channel_registry", False),
+            build=lambda: build_channel_registry(
+                dataset=dataset,
+                canonical_ac_type=self.analysis_config.canonical_ac_type,
+            ),
         )
+        logger.info("Channel registry completed.")
 
-        df_to_csv(channel_registry_df, self.project_config.meta_output_dir, "channel_registry")
-
-        logger.info("Channel registry built with %d rows.", len(channel_registry_df))
-
-        # 4. Raw diagnostics
-        logger.info("Building channel quality and good sections...")
-
-        channel_quality_df, good_sections_df = build_channel_quality(
-            dataset=dataset,
-            channel_registry=channel_registry_df,
-            canonical_ac_type=self.analysis_config.canonical_ac_type,
-            chunksize=None,
+        # Step 2: Analyze channel quality and identify good sections.
+        logger.info("Building channel quality...")
+        channel_quality, good_sections = load_or_build_csv_pair(
+            output_path=self.project_config.diagnostics_output_dir,
+            first_filename="channel_quality",
+            second_filename="good_sections",
+            overwrite=overwrite.get("channel_quality", False),
+            build=lambda: build_channel_quality(
+                dataset=dataset,
+                channel_registry=channel_registry,
+                canonical_ac_type=self.analysis_config.canonical_ac_type,
+                chunksize=None,
+            ),
         )
+        logger.info("Channel quality completed.")
 
-        df_to_csv(channel_quality_df, self.project_config.diagnostics_output_dir, "channel_quality")
-        df_to_csv(good_sections_df, self.project_config.diagnostics_output_dir, "good_sections")
-
-        logger.info(
-            "Channel quality built with %d channels and %d good sections.",
-            len(channel_quality_df),
-            len(good_sections_df),
-        )
-
+        # Step 3: Determine eligible houses.
         logger.info("Building house eligibility...")
-
-        house_eligibility_df = build_house_eligibility(
-            channel_registry=channel_registry_df,
-            channel_quality=channel_quality_df,
-            min_valid_sample_count=self.analysis_config.min_valid_sample_count,
+        house_eligibility = load_or_build_csv(
+            output_path=self.project_config.diagnostics_output_dir,
+            filename="house_eligibility",
+            overwrite=overwrite.get("house_eligibility", False),
+            build=lambda: build_house_eligibility(
+                channel_registry=channel_registry,
+                channel_quality=channel_quality,
+                min_valid_sample_count=self.analysis_config.min_valid_sample_count,
+            ),
         )
+        logger.info("House eligibility completed.")
 
-        df_to_csv(house_eligibility_df, self.project_config.diagnostics_output_dir, "house_eligibility")
-
-        logger.info("House eligibility built with %d rows.", len(house_eligibility_df))
-
-        # 5. Candidate quality profiling
+        # Step 4: Build profiles for eligible candidates.
         logger.info("Building candidate profiles...")
-
-        profiles_df = build_candidate_profiles(
-            channel_registry=channel_registry_df,
-            channel_quality=channel_quality_df,
-            house_eligibility=house_eligibility_df,
-            good_sections=good_sections_df,
+        profiles = load_or_build_csv(
+            output_path=self.project_config.selection_output_dir,
+            filename="profiles",
+            overwrite=overwrite.get("profiles", False),
+            build=lambda: build_candidate_profiles(
+                channel_registry=channel_registry,
+                channel_quality=channel_quality,
+                house_eligibility=house_eligibility,
+                good_sections=good_sections,
+            ),
         )
+        logger.info("Candidate profiles completed.")
 
-        df_to_csv(profiles_df, self.project_config.selection_output_dir, "profiles")
-
-        logger.info("Candidate profiles built with %d rows.", len(profiles_df))
-
-        # 6. Provisional selection
+        # Step 5: Select provisional candidates.
         logger.info("Building provisional selection...")
-
-        provisional_selection_df = build_provisional_selection(
-            candidate_profiles=profiles_df,
-            min_longest_segment_days=self.analysis_config.min_longest_segment_days,
+        provisional_selection = load_or_build_csv(
+            output_path=self.project_config.selection_output_dir,
+            filename="provisional_selection",
+            overwrite=overwrite.get("provisional_selection", False),
+            build=lambda: build_provisional_selection(
+                candidate_profiles=profiles,
+                min_longest_segment_days=self.analysis_config.min_longest_segment_days,
+            ),
         )
+        logger.info("Provisional selection completed.")
 
-        df_to_csv(provisional_selection_df, self.project_config.selection_output_dir, "provisional_selection",)
-
-        logger.info("Provisional selection built with %d rows.", len(provisional_selection_df))
-
-        # 7. Auxiliary appliance selection
+        # Step 6: Select available auxiliary appliances.
         logger.info("Building auxiliary appliance selection...")
-
-        auxiliary_selection_df = build_auxiliary_appliance_selection(
-            candidate_profiles=profiles_df,
-            provisional_selection=provisional_selection_df,
-            channel_registry=channel_registry_df,
-            channel_quality=channel_quality_df,
-            good_sections=good_sections_df,
-            min_window_coverage_share=self.analysis_config.min_auxiliary_window_coverage_share,
-            max_balance_channels=self.analysis_config.max_balance_channels,
-            max_explanation_channels=self.analysis_config.max_explanation_channels,
+        load_or_build_csv(
+            output_path=self.project_config.selection_output_dir,
+            filename="auxiliary_appliance_selection",
+            overwrite=overwrite.get(
+                "auxiliary_appliance_selection",
+                False,
+            ),
+            build=lambda: build_auxiliary_appliance_selection(
+                candidate_profiles=profiles,
+                provisional_selection=provisional_selection,
+                channel_registry=channel_registry,
+                channel_quality=channel_quality,
+                good_sections=good_sections,
+                min_window_coverage_share=self.analysis_config.min_auxiliary_window_coverage_share,
+            ),
         )
+        logger.info("Auxiliary appliance selection completed.")
 
-        df_to_csv(auxiliary_selection_df, self.project_config.selection_output_dir, "auxiliary_appliance_selection")
-
-        logger.info(
-            "Auxiliary appliance selection built with %d rows.",
-            len(auxiliary_selection_df)
-        )
-        
         logger.info("Analysis pipeline completed successfully.")
 
 
 def main() -> None:
     logging.basicConfig(level=logging.INFO)
-    AnalysisRunner().run()
+
+    AnalysisRunner().run(
+        overwrite={
+            "channel_registry": False,
+            "channel_quality": False,
+            "house_eligibility": False,
+            "profiles": False,
+            "provisional_selection": False,
+            "auxiliary_appliance_selection": False,
+        }
+    )
 
 
 if __name__ == "__main__":

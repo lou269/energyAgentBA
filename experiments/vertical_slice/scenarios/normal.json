@@ -1,0 +1,20 @@
+{
+  "name": "normal",
+  "context": {
+    "calendar_available": true,
+    "currently_absent": false,
+    "events": []
+  },
+  "detector_evidence": {
+    "persistent_shift_detected": false,
+    "seasonal_shift_detected": false,
+    "temporary_high_deviation_detected": false,
+    "measurement_issue_detected": false,
+    "change_point_offset_hours": null,
+    "duration_hours": null
+  },
+  "expected": {
+    "classification": "normal",
+    "adaptation_required": false
+  }
+}

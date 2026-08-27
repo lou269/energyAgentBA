@@ -10,7 +10,7 @@ class AnalysisConfig:
     canonical_ac_type: str = "active"
 
     # Channel quality
-    channel_quality_chunksize: int = 1000000
+    channel_quality_chunksize: int = 1_000_000
 
     # House eligibility
     min_valid_sample_count: int = 2
@@ -20,7 +20,5 @@ class AnalysisConfig:
 
     # Auxiliary appliance selection
     min_auxiliary_window_coverage_share: float = 0.0
-    max_balance_channels: int = 6
-    max_explanation_channels: int = 4
 
         

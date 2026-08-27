@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 def convert_raw_to_hdf5(
     raw_dir: Path,
-    processed_dir: Path,
+    output_path: Path,
     meta_dir: Path,
     houses: list[str],
     metadata_files: list[str],
@@ -21,7 +21,6 @@ def convert_raw_to_hdf5(
         metadata_files=metadata_files,
     )
     
-    output_path = processed_dir / "ukdale.h5"
     
     if output_path.exists():
         if not overwrite:

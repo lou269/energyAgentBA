@@ -35,7 +35,7 @@ class IngestionRunner:
 
         hdf5_path = convert_raw_to_hdf5(
             raw_dir=self.config.raw_dir,
-            processed_dir=self.config.processed_dir,
+            output_path=self.config.dataset_path,
             meta_dir=self.config.meta_dir,
             houses=self.config.houses,
             metadata_files=self.config.metadata_files,

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pandas as pd
 
 
@@ -9,7 +11,19 @@ def build_gap_treated_data(
     test_data: pd.DataFrame,
     test_quality: pd.DataFrame,
     max_gap_intervals: int,
-):
+) -> tuple[
+    pd.DataFrame,
+    pd.DataFrame,
+    pd.DataFrame,
+    pd.DataFrame,
+    pd.DataFrame,
+    pd.DataFrame,
+]:
+    """Imputiert kurze Gaps kausal über chronologische Splits."""
+
+    if max_gap_intervals < 1:
+        raise ValueError("max_gap_intervals must be at least 1.")
+
     train_data, train_mask, last_values = _causal_impute(
         train_data,
         train_quality,
@@ -44,43 +58,51 @@ def _causal_impute(
     data: pd.DataFrame,
     quality: pd.DataFrame,
     max_gap_intervals: int,
-    initial_values=None,
-):
+    initial_values: pd.Series | None = None,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.Series]:
+    """Füllt höchstens die konfigurierte Anzahl vergangener Intervalle."""
+
     treated = data.copy()
     imputation_mask = pd.DataFrame(
         False,
         index=data.index,
         columns=data.columns,
+        dtype=bool,
     )
+
+    if data.empty:
+        if initial_values is None:
+            last_values = pd.Series(index=data.columns, dtype=float)
+        else:
+            last_values = initial_values.reindex(data.columns).copy()
+
+        return treated, imputation_mask, last_values
 
     for column in data.columns:
         coverage_mask = quality[f"{column}_coverage_mask"]
-
         series = treated[column].mask(~coverage_mask)
 
         if initial_values is not None:
             previous = pd.Series(
                 [initial_values[column]],
-                index=[
-                    series.index[0] - pd.Timedelta(nanoseconds=1)
-                ],
+                index=[series.index[0] - pd.Timedelta(nanoseconds=1)],
             )
             series = pd.concat([previous, series])
 
         original_missing = series.isna()
-
         series = series.ffill(limit=max_gap_intervals)
 
         if initial_values is not None:
             series = series.iloc[1:]
             original_missing = original_missing.iloc[1:]
 
-        imputation_mask[column] = (
+        imputation_mask.loc[:, column] = (
             original_missing & series.notna()
         )
+        treated.loc[:, column] = series
 
-        treated[column] = series
-
-    last_values = treated.ffill().iloc[-1]
+    # Kein erneutes unbegrenztes ffill: Eine lange terminale Lücke
+    # bleibt fehlend und kann keinen veralteten Zustand weitergeben.
+    last_values = treated.iloc[-1].copy()
 
     return treated, imputation_mask, last_values

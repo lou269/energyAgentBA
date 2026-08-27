@@ -58,7 +58,9 @@ def build_structured_state(
     cutoff: pd.Timestamp,
     prophet_summary: dict,
     calendar_context: dict,
+    detector_evidence: dict | None = None
 ) -> dict:
+
     cutoff = pd.Timestamp(cutoff)
 
     current = data.loc[[cutoff]].iloc[0]
@@ -123,6 +125,7 @@ def build_structured_state(
         },
 
         "context": calendar_context,
+        "detector_evidence": detector_evidence or {},
     }
 
 

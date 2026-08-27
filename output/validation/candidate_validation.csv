@@ -1,3 +1,3 @@
-selection_role,candidate_id,grid_complete,mains_coverage_share,min_balance_channel_coverage_share,simultaneous_coverage_share,simultaneous_valid_duration_days,longest_simultaneous_missing_run_seconds,valid_energy_interval_count,mean_residual_power_w,explained_power_share,negative_residual_share,residual_energy_share,energy_closure_share,duplicate_counting,validation_passed,rejection_reason
-primary,H1-M54,True,0.9999995611931509,0.8488117329930532,0.5957974590450598,94.289375,360,1357767,264.6348571777344,0.06259006962880084,1.4730067824597299e-05,0.937443694741954,0.06252249392710929,False,True,
-fallback,H2-M20,True,1.0,0.9712457605929079,0.8742625973243308,66.28847222222223,72,954554,184.44821166992188,0.3906300046560607,0.0007773263744115052,0.6131582777094308,0.3830531907305851,False,True,
+selection_role,candidate_id,grid_complete,mains_coverage_share,mains_valid_duration_days,validation_passed,rejection_reason
+primary,H1-M54,True,0.9999995611931509,158.25736111111112,True,
+fallback,H2-M20,True,1.0,75.82215277777777,True,

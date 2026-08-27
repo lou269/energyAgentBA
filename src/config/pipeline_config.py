@@ -31,5 +31,10 @@ PIPELINE_STAGES = [
         module="src.preprocessing.preprocessing_runner",
         environment="forecasting-env",
     ),
+    PipelineStage(
+        name="numerical_analysis",
+        module="src.numerical_analysis.num_analysis_runner",
+        environment="forecasting-env",
+    ),
 ]
 

@@ -3,6 +3,7 @@ from __future__ import annotations
 import pandas as pd
 from nilmtk import DataSet, TimeFrame
 
+import warnings
 
 MANIFEST_COLUMNS = [
     "selection_role",
@@ -12,9 +13,6 @@ MANIFEST_COLUMNS = [
     "meter_key",
     "channel_role",
     "appliance",
-    "balance",
-    "explanation",
-    "experiment",
     "window_start",
     "window_end",
 ]
@@ -27,7 +25,10 @@ REQUIRED_COLUMNS = {
         "longest_segment_start",
         "longest_segment_end",
     },
-    "provisional_selection": {"selection_role", "candidate_id"},
+    "provisional_selection": {
+        "selection_role",
+        "candidate_id",
+    },
     "auxiliary_selection": {
         "selection_role",
         "candidate_id",
@@ -35,9 +36,6 @@ REQUIRED_COLUMNS = {
         "meter_instance",
         "meter_key",
         "appliance",
-        "balance",
-        "explanation",
-        "experiment",
     },
     "channel_registry": {
         "house",
@@ -48,7 +46,6 @@ REQUIRED_COLUMNS = {
 }
 
 
-
 def build_selected_data(
     dataset: DataSet,
     candidate_profiles: pd.DataFrame,
@@ -56,7 +53,7 @@ def build_selected_data(
     auxiliary_selection: pd.DataFrame,
     channel_registry: pd.DataFrame,
     *,
-    sample_period: int = 6,
+    sample_period: int,
     canonical_ac_type: str,
     include_fallback: bool,
     chunksize: int | None = None,
@@ -126,7 +123,14 @@ def build_selected_data(
             if chunksize is not None:
                 kwargs["chunksize"] = chunksize
 
-            loaded = meter.power_series_all_data(**kwargs)
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    "ignore",
+                    message=r"Not all resample_kwargs were consumed: \{'limit': \d+\}",
+                    category=UserWarning,
+                    module=r"nilmtk\.utils",
+                )
+                loaded = meter.power_series_all_data(**kwargs)
 
             if loaded is None:
                 loaded = pd.Series(dtype="float64")
@@ -158,12 +162,6 @@ def _build_manifest(
 ) -> pd.DataFrame:
     rows = []
 
-    selected_auxiliary = auxiliary_selection.loc[
-        auxiliary_selection[
-            ["balance", "explanation", "experiment"]
-        ].eq(True).any(axis=1)
-    ]
-
     for candidate in candidates.to_dict(orient="records"):
         start = pd.to_datetime(
             str(candidate["longest_segment_start"]),
@@ -177,10 +175,10 @@ def _build_manifest(
         house = int(candidate["house"])
         mains_instance = int(candidate["mains_instance"])
 
-
         if end <= start:
             raise ValueError(
-                f"Invalid extraction window for {candidate['candidate_id']}."
+                f"Invalid extraction window for "
+                f"{candidate['candidate_id']}."
             )
 
         base = {
@@ -194,62 +192,70 @@ def _build_manifest(
         mains = channel_registry.loc[
             channel_registry["house"].eq(house)
             & channel_registry["meter_type"].eq("mains")
-            & channel_registry["meter_instance"].eq(mains_instance)
+            & channel_registry["meter_instance"].eq(
+                mains_instance
+            )
         ]
 
         if len(mains) != 1:
             raise ValueError(
-                f"Could not resolve mains for {candidate['candidate_id']}."
+                f"Could not resolve mains for "
+                f"{candidate['candidate_id']}."
             )
 
-        meter = mains.iloc[0]
+        mains_meter = mains.iloc[0]
 
         rows.append(
             {
                 **base,
-                "meter_instance": int(meter["meter_instance"]),
-                "meter_key": str(meter["meter_key"]),
+                "meter_instance": int(
+                    mains_meter["meter_instance"]
+                ),
+                "meter_key": str(mains_meter["meter_key"]),
                 "channel_role": "mains",
                 "appliance": "",
-                "balance": False,
-                "explanation": False,
-                "experiment": False,
             }
         )
 
-        auxiliary = selected_auxiliary.loc[
-            selected_auxiliary["candidate_id"].eq(
+        auxiliary = auxiliary_selection.loc[
+            auxiliary_selection["candidate_id"].eq(
                 candidate["candidate_id"]
             )
-            & selected_auxiliary["selection_role"].eq(
+            & auxiliary_selection["selection_role"].eq(
                 candidate["selection_role"]
             )
-            & selected_auxiliary["house"].eq(house)
+            & auxiliary_selection["house"].eq(house)
         ]
 
         for meter in auxiliary.itertuples(index=False):
             rows.append(
                 {
                     **base,
-                    "meter_instance": int(meter.meter_instance),
+                    "meter_instance": int(
+                        meter.meter_instance
+                    ),
                     "meter_key": str(meter.meter_key),
                     "channel_role": "auxiliary",
                     "appliance": str(meter.appliance),
-                    "balance": bool(meter.balance),
-                    "explanation": bool(meter.explanation),
-                    "experiment": bool(meter.experiment),
                 }
             )
 
-    manifest = pd.DataFrame(rows, columns=MANIFEST_COLUMNS)
+    manifest = pd.DataFrame(
+        rows,
+        columns=MANIFEST_COLUMNS,
+    )
 
     if manifest.empty:
-        raise ValueError("No channels selected for extraction.")
+        raise ValueError(
+            "No channels selected for extraction."
+        )
 
     if manifest.duplicated(
         ["selection_role", "house", "meter_instance"]
     ).any():
-        raise ValueError("Selected channel manifest contains duplicates.")
+        raise ValueError(
+            "Selected channel manifest contains duplicates."
+        )
 
     return manifest.reset_index(drop=True)
 

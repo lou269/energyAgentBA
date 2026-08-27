@@ -6,6 +6,20 @@ from nilmtk import DataSet
 
 logger = logging.getLogger(__name__)
 
+CHANNEL_REGISTRY_COLUMNS = [
+    "house",
+    "meter_instance",
+    "meter_key",
+    "meter_type",
+    "site_meter",
+    "label",
+    "appliances",
+    "ac_types",
+    "has_canonical_ac_type",
+    "sample_period_seconds",
+    "max_sample_period_seconds",
+    "ac_type_error",
+]
 
 def _get_appliance_names(meter) -> str:
     names = []
@@ -67,7 +81,10 @@ def build_channel_registry(
                 }
             )
 
-    registry = pd.DataFrame(rows)
+    registry = pd.DataFrame(
+        rows,
+        columns=CHANNEL_REGISTRY_COLUMNS,
+    )
 
     if registry.empty:
         logger.warning("Channel registry is empty.")
