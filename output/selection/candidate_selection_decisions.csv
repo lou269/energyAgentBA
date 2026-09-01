@@ -1,0 +1,4 @@
+candidate_id,eligible_for_selection,selection_rank,selection_role,decision_reason,min_longest_segment_days,longest_segment_days,window_start,window_end
+H1-M54,True,1,primary,highest_ranked_eligible_candidate,45.0,158.25737615740687,2013-05-17 08:29:11+00:00,2013-10-22 14:39:48.299999952+00:00
+H2-M20,True,2,fallback,highest_ranked_candidate_from_different_house,45.0,75.82214351851907,2013-05-21 10:54:09+00:00,2013-08-05 06:38:02.200000048+00:00
+H5-M26,False,3,not_selected,longest_segment_below_threshold,45.0,5.533940972222222,2014-09-09 07:03:33.299999952+00:00,2014-09-14 19:52:25.799999952+00:00

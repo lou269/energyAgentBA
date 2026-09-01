@@ -31,7 +31,6 @@ def build_auxiliary_appliance_selection(
     channel_registry: pd.DataFrame,
     channel_quality: pd.DataFrame,
     good_sections: pd.DataFrame,
-    min_window_coverage_share: float,
 ) -> pd.DataFrame:
     """Ermittelt zeitlich verfügbare Geräte für ausgewählte Kandidaten.
 
@@ -45,7 +44,6 @@ def build_auxiliary_appliance_selection(
         channel_registry,
         channel_quality,
         good_sections,
-        min_window_coverage_share,
     )
 
     candidates = provisional_selection.merge(
@@ -185,9 +183,10 @@ def build_auxiliary_appliance_selection(
                 overlap.uptime().total_seconds()
                 / (window_end - window_start).total_seconds()
             )
-
-            if coverage_share < min_window_coverage_share:
+            
+            if coverage_share <= 0.0:
                 continue
+
 
             longest_overlap = max(
                 overlap,
@@ -324,7 +323,6 @@ def _validate_inputs(
     channel_registry: pd.DataFrame,
     channel_quality: pd.DataFrame,
     good_sections: pd.DataFrame,
-    min_window_coverage_share: float,
 ) -> None:
     required_columns = {
         "candidate_profiles": (
@@ -386,8 +384,3 @@ def _validate_inputs(
                 f"{name} is missing required columns: "
                 + ", ".join(sorted(missing))
             )
-
-    if not 0.0 <= min_window_coverage_share <= 1.0:
-        raise ValueError(
-            "min_window_coverage_share must be between 0 and 1."
-        )

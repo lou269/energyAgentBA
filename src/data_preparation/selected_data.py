@@ -29,14 +29,6 @@ REQUIRED_COLUMNS = {
         "selection_role",
         "candidate_id",
     },
-    "auxiliary_selection": {
-        "selection_role",
-        "candidate_id",
-        "house",
-        "meter_instance",
-        "meter_key",
-        "appliance",
-    },
     "channel_registry": {
         "house",
         "meter_instance",
@@ -50,7 +42,6 @@ def build_selected_data(
     dataset: DataSet,
     candidate_profiles: pd.DataFrame,
     provisional_selection: pd.DataFrame,
-    auxiliary_selection: pd.DataFrame,
     channel_registry: pd.DataFrame,
     *,
     sample_period: int,
@@ -62,7 +53,6 @@ def build_selected_data(
     _validate_inputs(
         candidate_profiles,
         provisional_selection,
-        auxiliary_selection,
         channel_registry,
         sample_period,
     )
@@ -91,7 +81,6 @@ def build_selected_data(
 
     manifest = _build_manifest(
         candidates,
-        auxiliary_selection,
         channel_registry,
     )
 
@@ -157,7 +146,6 @@ def build_selected_data(
 
 def _build_manifest(
     candidates: pd.DataFrame,
-    auxiliary_selection: pd.DataFrame,
     channel_registry: pd.DataFrame,
 ) -> pd.DataFrame:
     rows = []
@@ -217,28 +205,6 @@ def _build_manifest(
             }
         )
 
-        auxiliary = auxiliary_selection.loc[
-            auxiliary_selection["candidate_id"].eq(
-                candidate["candidate_id"]
-            )
-            & auxiliary_selection["selection_role"].eq(
-                candidate["selection_role"]
-            )
-            & auxiliary_selection["house"].eq(house)
-        ]
-
-        for meter in auxiliary.itertuples(index=False):
-            rows.append(
-                {
-                    **base,
-                    "meter_instance": int(
-                        meter.meter_instance
-                    ),
-                    "meter_key": str(meter.meter_key),
-                    "channel_role": "auxiliary",
-                    "appliance": str(meter.appliance),
-                }
-            )
 
     manifest = pd.DataFrame(
         rows,
@@ -263,14 +229,12 @@ def _build_manifest(
 def _validate_inputs(
     candidate_profiles: pd.DataFrame,
     provisional_selection: pd.DataFrame,
-    auxiliary_selection: pd.DataFrame,
     channel_registry: pd.DataFrame,
     sample_period: int,
 ) -> None:
     frames = {
         "candidate_profiles": candidate_profiles,
         "provisional_selection": provisional_selection,
-        "auxiliary_selection": auxiliary_selection,
         "channel_registry": channel_registry,
     }
 

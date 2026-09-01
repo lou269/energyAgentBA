@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
-
 
 @dataclass(frozen=True)
 class AnalysisConfig:
@@ -19,6 +17,6 @@ class AnalysisConfig:
     min_longest_segment_days: float = 45.0
 
     # Auxiliary appliance selection
-    min_auxiliary_window_coverage_share: float = 0.0
+    min_auxiliary_window_coverage_share: float = 0.8
 
         

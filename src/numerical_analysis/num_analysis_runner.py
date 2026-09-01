@@ -4,7 +4,7 @@ import logging
 
 import pandas as pd
 
-from src.analysis.io import df_to_csv
+from src.pipeline.io import df_to_csv
 from src.config.numerical_analysis_config import NumericalAnalysisConfig
 from src.config.project_config import ProjectConfig, ensure_project_directories
 from src.numerical_analysis.anomaly_detection import build_anomaly_detection

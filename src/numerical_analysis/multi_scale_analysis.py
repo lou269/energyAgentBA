@@ -20,6 +20,27 @@ def build_multi_scale_analysis(
     train_data = train_data.sort_index()
     validation_data = validation_data.sort_index()
     test_data = test_data.sort_index()
+    
+    splits = {
+        "train": train_data,
+        "validation": validation_data,
+        "test": test_data,
+    }
+
+    for name, split_data in splits.items():
+        if split_data.empty:
+            raise ValueError(f"{name} split must not be empty.")
+        if not split_data.index.is_unique:
+            raise ValueError(f"{name} split contains duplicate timestamps.")
+
+    if not (
+        train_data.index.max() < validation_data.index.min()
+        and validation_data.index.max() < test_data.index.min()
+    ):
+        raise ValueError(
+            "Splits must be non-overlapping and ordered: "
+            "train < validation < test."
+        )
 
     data = pd.concat([train_data, validation_data, test_data])
 

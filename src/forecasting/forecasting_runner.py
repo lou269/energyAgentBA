@@ -11,20 +11,11 @@ from typing import Literal, cast
 
 import pandas as pd
 
-from src.analysis.io import df_to_csv
+from src.pipeline.io import df_to_csv
 from src.config.forecasting_config import ForecastingConfig
-from src.config.project_config import (
-    ProjectConfig,
-    ensure_project_directories,
-)
-from src.forecasting.evaluation import (
-    evaluate_forecasts,
-    select_primary_naive_reference,
-)
-from src.forecasting.walk_forward import (
-    ProphetVariantParameters,
-    build_walk_forward_forecasts,
-)
+from src.config.project_config import ProjectConfig, ensure_project_directories
+from src.forecasting.evaluation import evaluate_forecasts, select_primary_naive_reference
+from src.forecasting.walk_forward import ProphetVariantParameters, build_walk_forward_forecasts
 
 
 logger = logging.getLogger(__name__)
@@ -45,9 +36,7 @@ class ForecastingRunner:
             forecasting_config or ForecastingConfig()
         )
 
-    def run(
-        self,
-        split: EvaluationSplit = "validation",
+    def run(self, split: EvaluationSplit = "validation",
     ) -> None:
         ensure_project_directories(self.project_config)
 
@@ -66,28 +55,24 @@ class ForecastingRunner:
         )
 
         treated_hourly = pd.read_csv(
-            self.project_config.preprocessing_output_dir
-            / "treated_hourly.csv",
+            self.project_config.preprocessing_output_dir / "treated_hourly.csv",
             parse_dates=["timestamp"],
             index_col="timestamp",
         )
 
         imputation_mask_hourly = pd.read_csv(
-            self.project_config.preprocessing_output_dir
-            / "imputation_mask_hourly.csv",
+            self.project_config.preprocessing_output_dir / "imputation_mask_hourly.csv",
             parse_dates=["timestamp"],
             index_col="timestamp",
         )
 
         split_manifest = pd.read_csv(
-            self.project_config.preprocessing_output_dir
-            / "split_manifest.csv",
+            self.project_config.preprocessing_output_dir / "split_manifest.csv",
             parse_dates=["start", "end"],
         )
 
         canonical_manifest = pd.read_csv(
-            self.project_config.canonical_output_dir
-            / "canonical_manifest.csv"
+            self.project_config.canonical_output_dir / "canonical_manifest.csv"
         )
 
         target_column = canonical_manifest.loc[
@@ -143,35 +128,18 @@ class ForecastingRunner:
             ),
             run_id=run_id,
             split=split,
-            horizon_hours=(
-                self.forecasting_config.horizon_hours
-            ),
-            forecast_origin_step_hours=(
-                self.forecasting_config
-                .forecast_origin_step_hours
-            ),
-            baseline_model_ids=(
-                self.forecasting_config.baseline_model_ids
-            ),
+            horizon_hours=self.forecasting_config.horizon_hours,
+            forecast_origin_step_hours=self.forecasting_config.forecast_origin_step_hours,
+            baseline_model_ids= self.forecasting_config.baseline_model_ids,
             prophet_variants=prophet_variants,
             growth=self.forecasting_config.growth,
-            daily_seasonality=(
-                self.forecasting_config.daily_seasonality
-            ),
-            yearly_seasonality=(
-                self.forecasting_config.yearly_seasonality
-            ),
-            interval_width=(
-                self.forecasting_config.interval_width
-            ),
+            daily_seasonality= self.forecasting_config.daily_seasonality,
+            yearly_seasonality=self.forecasting_config.yearly_seasonality,
+            interval_width=self.forecasting_config.interval_width,
             clip_negative_forecasts=(
-                self.forecasting_config
-                .negative_forecast_handling
-                == "clip_zero"
+                self.forecasting_config.negative_forecast_handling == "clip_zero"
             ),
-            config_version=(
-                self.forecasting_config.config_version
-            ),
+            config_version=self.forecasting_config.config_version,
         )
 
         prophet_model_ids = tuple(

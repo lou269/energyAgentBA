@@ -19,38 +19,45 @@ def build_gap_treated_data(
     pd.DataFrame,
     pd.DataFrame,
 ]:
-    """Imputiert kurze Gaps kausal über chronologische Splits."""
+    """Imputiert kurze Lücken kausal über alle chronologischen Splits."""
 
-    if max_gap_intervals < 1:
-        raise ValueError("max_gap_intervals must be at least 1.")
+    if (
+        isinstance(max_gap_intervals, bool)
+        or not isinstance(max_gap_intervals, int)
+        or max_gap_intervals < 1
+    ):
+        raise ValueError(
+            "max_gap_intervals must be a positive integer."
+        )
 
-    train_data, train_mask, last_values = _causal_impute(
-        train_data,
-        train_quality,
-        max_gap_intervals=max_gap_intervals,
+    combined_data = pd.concat(
+        [
+            train_data,
+            validation_data,
+            test_data,
+        ]
+    )
+    combined_quality = pd.concat(
+        [
+            train_quality,
+            validation_quality,
+            test_quality,
+        ]
     )
 
-    validation_data, validation_mask, last_values = _causal_impute(
-        validation_data,
-        validation_quality,
+    treated, imputation_mask = _causal_impute(
+        combined_data,
+        combined_quality,
         max_gap_intervals=max_gap_intervals,
-        initial_values=last_values,
-    )
-
-    test_data, test_mask, _ = _causal_impute(
-        test_data,
-        test_quality,
-        max_gap_intervals=max_gap_intervals,
-        initial_values=last_values,
     )
 
     return (
-        train_data,
-        train_mask,
-        validation_data,
-        validation_mask,
-        test_data,
-        test_mask,
+        treated.loc[train_data.index],
+        imputation_mask.loc[train_data.index],
+        treated.loc[validation_data.index],
+        imputation_mask.loc[validation_data.index],
+        treated.loc[test_data.index],
+        imputation_mask.loc[test_data.index],
     )
 
 
@@ -58,8 +65,7 @@ def _causal_impute(
     data: pd.DataFrame,
     quality: pd.DataFrame,
     max_gap_intervals: int,
-    initial_values: pd.Series | None = None,
-) -> tuple[pd.DataFrame, pd.DataFrame, pd.Series]:
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Füllt höchstens die konfigurierte Anzahl vergangener Intervalle."""
 
     treated = data.copy()
@@ -70,39 +76,16 @@ def _causal_impute(
         dtype=bool,
     )
 
-    if data.empty:
-        if initial_values is None:
-            last_values = pd.Series(index=data.columns, dtype=float)
-        else:
-            last_values = initial_values.reindex(data.columns).copy()
-
-        return treated, imputation_mask, last_values
-
     for column in data.columns:
         coverage_mask = quality[f"{column}_coverage_mask"]
         series = treated[column].mask(~coverage_mask)
 
-        if initial_values is not None:
-            previous = pd.Series(
-                [initial_values[column]],
-                index=[series.index[0] - pd.Timedelta(nanoseconds=1)],
-            )
-            series = pd.concat([previous, series])
-
         original_missing = series.isna()
         series = series.ffill(limit=max_gap_intervals)
-
-        if initial_values is not None:
-            series = series.iloc[1:]
-            original_missing = original_missing.iloc[1:]
 
         imputation_mask.loc[:, column] = (
             original_missing & series.notna()
         )
         treated.loc[:, column] = series
 
-    # Kein erneutes unbegrenztes ffill: Eine lange terminale Lücke
-    # bleibt fehlend und kann keinen veralteten Zustand weitergeben.
-    last_values = treated.iloc[-1].copy()
-
-    return treated, imputation_mask, last_values
+    return treated, imputation_mask

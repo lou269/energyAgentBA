@@ -7,7 +7,7 @@ import logging
 import pandas as pd
 from nilmtk import DataSet
 
-from src.analysis.io import df_to_csv
+from src.pipeline.io import df_to_csv
 from src.config.data_preparation_config import DataPreparationConfig
 from src.config.project_config import ProjectConfig, ensure_project_directories
 from src.data_preparation.selected_data import build_selected_data
@@ -39,7 +39,6 @@ class DataPreparationRunner:
         channel_registry_df = pd.read_csv(self.project_config.meta_output_dir / "channel_registry.csv")
         profiles_df = pd.read_csv(self.project_config.selection_output_dir / "profiles.csv")
         provisional_selection_df = pd.read_csv(self.project_config.selection_output_dir / "provisional_selection.csv")
-        auxiliary_selection_df = pd.read_csv(self.project_config.selection_output_dir / "auxiliary_appliance_selection.csv")    
 
         # 8. Selected data extraction + temporal alignment
         logger.info("Building selected aligned data...")
@@ -48,7 +47,6 @@ class DataPreparationRunner:
             dataset=dataset,
             candidate_profiles=profiles_df,
             provisional_selection=provisional_selection_df,
-            auxiliary_selection=auxiliary_selection_df,
             channel_registry=channel_registry_df,
             sample_period=self.data_config.alignment_sample_period_seconds,
             canonical_ac_type=self.data_config.canonical_ac_type,
@@ -78,22 +76,17 @@ class DataPreparationRunner:
         # 9. Post-alignment validation
         logger.info("Validating selected candidates...")
         
-        channel_validation_df, candidate_validation_df = build_selected_candidate_validation(
-            aligned_data=aligned_data,
-            manifest=selected_channels_df,
-            sample_period=self.data_config.alignment_sample_period_seconds,
-            min_mains_coverage_share=self.data_config.min_mains_coverage_share,
-            min_mains_valid_duration_days=self.data_config.min_mains_valid_duration_days
-        )
-        
-        selected_role = select_candidate_role(candidate_validation_df)
-
-        if selected_role is None:
-            raise ValueError(
-                "Neither primary nor fallback passed validation. "
-                "See candidate_validation.csv."
+        channel_validation_df, candidate_validation_df = (
+            build_selected_candidate_validation(
+                aligned_data=aligned_data,
+                manifest=selected_channels_df,
+                sample_period=self.data_config.alignment_sample_period_seconds,
+                min_mains_coverage_share=self.data_config.min_mains_coverage_share,
+                min_mains_valid_duration_days=self.data_config.min_mains_valid_duration_days,
             )
-        
+        )
+
+        # Ergebnisse vor einem möglichen Abbruch speichern
         df_to_csv(
             channel_validation_df,
             self.project_config.validation_output_dir,
@@ -104,7 +97,9 @@ class DataPreparationRunner:
             self.project_config.validation_output_dir,
             "candidate_validation",
         )
-        
+
+        selected_role = select_candidate_role(candidate_validation_df)
+
         if selected_role is None:
             raise ValueError(
                 "Neither primary nor fallback passed validation. "

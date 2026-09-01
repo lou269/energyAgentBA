@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+import json
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
@@ -45,3 +47,27 @@ def load_or_build_csv_pair(
     df_to_csv(second_dataframe, output_path, second_filename)
 
     return first_dataframe, second_dataframe
+
+def save_json(
+    data: dict[str, Any],
+    output_file: Path,
+) -> None:
+    """Save JSON atomically."""
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+
+    temporary_file = output_file.with_suffix(
+        output_file.suffix + ".tmp"
+    )
+
+    try:
+        temporary_file.write_text(
+            json.dumps(
+                data,
+                indent=2,
+                sort_keys=True,
+            ),
+            encoding="utf-8",
+        )
+        temporary_file.replace(output_file)
+    finally:
+        temporary_file.unlink(missing_ok=True)
