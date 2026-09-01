@@ -91,12 +91,13 @@ class NumericalAnalysisRunner:
             test_data=test_15min,
             target_column=target_column,
             short_term_window=self.analysis_config.short_term_window_15min,
+            sample_period_hours=self.analysis_config.sample_period_hours_15min,
             long_term_window=self.analysis_config.long_term_window_15min,
             min_daily_reference_samples=self.analysis_config.min_daily_reference_samples,
             min_weekly_reference_samples=self.analysis_config.min_weekly_reference_samples,
             trend_threshold=self.analysis_config.trend_threshold,
         )
-
+        
         anomaly_15min = build_anomaly_detection(
             analysis_results=analysis_15min,
             min_reference_samples=self.analysis_config.min_reference_samples,
@@ -112,6 +113,7 @@ class NumericalAnalysisRunner:
             test_data=test_hourly,
             target_column=target_column,
             short_term_window=self.analysis_config.short_term_window_hourly,
+            sample_period_hours=self.analysis_config.sample_period_hours_hourly,
             long_term_window=self.analysis_config.long_term_window_hourly,
             min_daily_reference_samples=self.analysis_config.min_daily_reference_samples,
             min_weekly_reference_samples=self.analysis_config.min_weekly_reference_samples,

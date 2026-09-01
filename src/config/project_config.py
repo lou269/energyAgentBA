@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 
@@ -9,7 +9,8 @@ class ProjectConfig:
     project_root: Path = Path(__file__).resolve().parents[2]
 
     # Data
-    data_dir: Path = project_root / "data"
+    data_dir: Path = project_root / "data_2017"
+    archive_path: Path = data_dir / "ukdale.zip"
     raw_dir: Path = data_dir / "raw"
     meta_dir: Path = raw_dir / "metadata"
     processed_dir: Path = data_dir / "processed"
@@ -24,38 +25,23 @@ class ProjectConfig:
     canonical_output_dir: Path = output_dir / "canonical"
     preprocessing_output_dir: Path = output_dir / "preprocessing"
     numerical_analysis_output_dir: Path = output_dir / "numerical_analysis"
+    forecasting_output_dir: Path = output_dir / "forecasting"
 
-    
     # Dataset
+    dataset_release: str = "UK-DALE April 2017"
+    dataset_doi: str = "10.5286/UKERC.EDC.000004"
     dataset_filename: str = "ukdale.h5"
 
-    metadata_files: list[str] = field(
-        default_factory=lambda: [
-            "dataset.yaml",
-            "meter_devices.yaml",
-        ]
-    )
-
-    houses: list[str] = field(
-        default_factory=lambda: [
-            "house_1",
-            "house_2",
-            "house_3",
-            "house_4",
-            "house_5",
-        ]
-    )
-
-    # UK-DALE sources
-    url_base: str = (
-        "https://dap.ceda.ac.uk/edc/d1/"
-        "b3baa0aa-05ac-4ec8-b608-da5751758698/"
+    # CEDA directories
+    url_data: str = (
+        "https://data.ceda.ac.uk/edc/d1/"
+        "7d78f943-f9fe-413b-af52-1816f9d968b0/"
         "data/version_0"
     )
-
     url_metadata: str = (
-        "https://raw.githubusercontent.com/"
-        "JackKelly/UK-DALE_metadata/master"
+        "https://data.ceda.ac.uk/edc/d1/"
+        "7d78f943-f9fe-413b-af52-1816f9d968b0/"
+        "documents"
     )
 
     @property
@@ -78,7 +64,7 @@ def ensure_project_directories(config: ProjectConfig) -> None:
         config.canonical_output_dir,
         config.preprocessing_output_dir,
         config.numerical_analysis_output_dir,
-
+        config.forecasting_output_dir,
     ]
 
     for directory in directories:

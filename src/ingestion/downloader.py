@@ -1,175 +1,159 @@
 from __future__ import annotations
 
-import logging
-import re
-import shutil
+import json
+import subprocess
 from pathlib import Path
-from urllib.error import HTTPError, URLError
-from urllib.request import urlopen
-
-logger = logging.getLogger(__name__)
-
-LABELS_PATTERN = re.compile(r"^\s*(\d+)\s+(.+?)\s*$")
+from zipfile import ZipFile
+from typing import Any
 
 def download_dataset_raw(
     raw_dir: Path,
     meta_dir: Path,
-    url_base: str,
+    archive_path: Path,
+    url_data: str,
     url_metadata: str,
-    houses: list[str],
-    metadata_files: list[str],
-    overwrite: bool = False,
-) -> None:    
-    
-    _download_metadata(
-        meta_dir=meta_dir,
-        url_metadata=url_metadata,
-        houses=houses,
-        metadata_files=metadata_files,
+    overwrite: bool,
+) -> tuple[list[str], list[str]]:
+    """Download and extract UK-DALE and download all metadata."""
+    data_files = _load_file_listing(url_data)
+
+    archive_info = next(
+        (
+            file_info
+            for file_info in data_files
+            if file_info["name"] == archive_path.name
+        ),
+        None,
+    )
+    if archive_info is None:
+        raise FileNotFoundError(
+            f"Archive not listed by CEDA: {archive_path.name}"
+        )
+
+    _download_file(
+        url=str(archive_info["download"]),
+        output_path=archive_path,
+        expected_size=int(archive_info["size"]),
         overwrite=overwrite,
     )
-    
-    for house in houses:
-        _download_house(
-            raw_dir=raw_dir,
-            house_name=house,
-            url_base=url_base,
+
+    with ZipFile(archive_path) as archive:
+        houses = sorted(
+            {
+                Path(member).parts[0]
+                for member in archive.namelist()
+                if member.startswith("house_")
+            },
+            key=lambda house: int(house[len("house_"):]),
+        )
+
+        if not houses:
+            raise ValueError(
+                "No UK-DALE houses found in archive"
+            )
+
+        raw_data_exists = all(
+            (raw_dir / house / "labels.dat").is_file()
+            for house in houses
+        )
+
+        if overwrite or not raw_data_exists:
+            raw_dir.mkdir(parents=True, exist_ok=True)
+            archive.extractall(raw_dir)
+
+    metadata_info = [
+        file_info
+        for file_info in _load_file_listing(url_metadata)
+        if file_info["type"] == "file"
+    ]
+
+    for file_info in metadata_info:
+        _download_file(
+            url=str(file_info["download"]),
+            output_path=meta_dir / str(file_info["name"]),
+            expected_size=int(file_info["size"]),
             overwrite=overwrite,
         )
 
-
-def _parse_labels_file(labels_path: Path) -> dict[int, str]:
-    if not labels_path.exists():
-        raise FileNotFoundError(f"labels.dat not found: {labels_path}")
-
-    mapping: dict[int, str] = {}
-
-    for raw_line in labels_path.read_text(encoding="utf-8").splitlines():
-        match = LABELS_PATTERN.match(raw_line.strip())
-
-        if not match:
-            if raw_line.strip():
-                logger.warning("Skip unrecognized labels.dat line: %r", raw_line)
-            continue
-
-        mapping[int(match.group(1))] = match.group(2).strip()
-
-    if not mapping:
-        raise ValueError(f"No channel mappings found in labels.dat: {labels_path}")
-
-    return dict(sorted(mapping.items()))
-    
-
-        
-def _download_file(url: str, output_path: Path, overwrite: bool = False) -> bool:
-    if output_path.exists() and not overwrite:
-        return True
-
-    temp_path = output_path.with_suffix(output_path.suffix + ".tmp")
+    metadata_files = [
+        str(file_info["name"])
+        for file_info in metadata_info
+    ]
+    return houses, metadata_files
 
 
-    try:
-        with urlopen(url, timeout=60) as response, temp_path.open("wb") as file:
-            shutil.copyfileobj(response, file)
+def _load_file_listing(
+    directory_url: str,
+) -> list[dict[str, Any]]:
+    result = subprocess.run(
+        [
+            "curl",
+            "--fail",
+            "--location",
+            "--silent",
+            "--show-error",
+            f"{directory_url.rstrip('/')}?json=",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return json.loads(result.stdout)["items"]
 
-        temp_path.replace(output_path)
-        return True
 
-    except (HTTPError, URLError, TimeoutError) as error:
-        if temp_path.exists():
-            temp_path.unlink()
-
-        logger.warning("Download failed for %s: %s", url, error)
-        return False
-    
-
-def _download_required_file(
+def _download_file(
     url: str,
     output_path: Path,
-    overwrite: bool = False,
+    expected_size: int,
+    overwrite: bool,
 ) -> None:
-    if not _download_file(url=url, output_path=output_path, overwrite=overwrite):
-        raise RuntimeError(f"Required file could not be downloaded: {url}")
-
-
-def _download_optional_file(
-    url: str,
-    output_path: Path,
-    overwrite: bool = False,
-) -> None:
-    success = _download_file(url=url, output_path=output_path, overwrite=overwrite)
-
-    if not success:
-        logger.info("Optional file not available, continue: %s", url)
-
-
-
-def _download_metadata(
-    meta_dir: Path,
-    url_metadata: str,
-    houses: list[str],
-    metadata_files: list[str],
-    overwrite: bool = False,
-) -> None:
-
-
-
-    for metadata_file in metadata_files:
-        output_path = meta_dir / metadata_file
-        url = f"{url_metadata.rstrip('/')}/{metadata_file}"
-        _download_required_file(url=url, output_path=output_path, overwrite=overwrite)
-        
-        
-  
-    for house in houses:
-        house_number = int(house.split("_")[1])
-        building_url = f"{url_metadata.rstrip('/')}/building{house_number}.yaml"
-        building_output_path = meta_dir / f"building{house_number}.yaml"
-
-        _download_required_file(
-            url=building_url,
-            output_path=building_output_path,
-            overwrite=overwrite,
-        )
-            
-            
-def _download_house(
-    raw_dir: Path,
-    house_name: str,
-    url_base: str,
-    overwrite: bool = False,
-) -> None:
-    
-    house_dir = raw_dir / house_name
-    house_dir.mkdir(parents=True, exist_ok=True)
-
-    labels_url = f"{url_base.rstrip('/')}/{house_name}/labels.dat"
-    labels_output_path = house_dir / "labels.dat"
-
-    _download_required_file(
-        url=labels_url,
-        output_path=labels_output_path,
-        overwrite=overwrite,
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    partial_path = output_path.with_suffix(
+        output_path.suffix + ".part"
     )
-    
-    _download_optional_file(
-        url=f"{url_base.rstrip('/')}/{house_name}/mains.dat",
-        output_path=house_dir / "mains.dat",
-        overwrite=overwrite,
+
+    if overwrite:
+        output_path.unlink(missing_ok=True)
+        partial_path.unlink(missing_ok=True)
+
+    if output_path.exists():
+        _validate_size(output_path, expected_size)
+        return
+
+    if (
+        partial_path.exists()
+        and partial_path.stat().st_size == expected_size
+    ):
+        partial_path.replace(output_path)
+        return
+
+    subprocess.run(
+        [
+            "curl",
+            "--fail",
+            "--location",
+            "--continue-at",
+            "-",
+            "--output",
+            str(partial_path),
+            url,
+        ],
+        check=True,
     )
-    
-    labels_map = _parse_labels_file(labels_output_path)
+
+    _validate_size(partial_path, expected_size)
+    partial_path.replace(output_path)
 
 
-    for channel in labels_map:
-        channel_path = house_dir / f"channel_{channel}.dat"
+def _validate_size(
+    path: Path,
+    expected_size: int,
+) -> None:
+    actual_size = path.stat().st_size
 
-        _download_required_file(
-            url=f"{url_base.rstrip('/')}/{house_name}/channel_{channel}.dat",
-            output_path=channel_path,
-            overwrite=overwrite,
+    if actual_size != expected_size:
+        raise ValueError(
+            f"Invalid file size for {path}: "
+            f"expected {expected_size} bytes, "
+            f"got {actual_size} bytes"
         )
-        
-    
-
-        

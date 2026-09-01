@@ -9,6 +9,7 @@ def build_multi_scale_analysis(
     target_column: str,
     *,
     short_term_window: int,
+    sample_period_hours: float,
     long_term_window: int,
     min_daily_reference_samples: int,
     min_weekly_reference_samples: int,
@@ -45,6 +46,20 @@ def build_multi_scale_analysis(
         window=long_term_window,
         min_periods=long_term_window,
     ).mean()
+    
+    trend_time = np.arange(short_term_window) * sample_period_hours
+    centered_trend_time = trend_time - trend_time.mean()
+    trend_denominator = np.square(centered_trend_time).sum()
+
+    result["trend_slope_w_per_hour"] = previous_power.rolling(
+        window=short_term_window,
+        min_periods=short_term_window,
+    ).apply(
+        lambda values: (
+            np.dot(values, centered_trend_time) / trend_denominator
+        ),
+        raw=True,
+    )
 
     train_reference = pd.DataFrame(
         {
@@ -149,9 +164,15 @@ def build_multi_scale_analysis(
         result["current_power"] - long_term_reference
     ) / long_term_reference
 
-    result["trend_change"] = (
+    result["level_change"] = (
         result["short_term_mean"] - long_term_reference
     ) / long_term_reference
+
+    trend_window_hours = short_term_window * sample_period_hours
+
+    result["trend_change"] = (
+        result["trend_slope_w_per_hour"] * trend_window_hours
+    ) / short_term_reference
 
     result["trend"] = "stable"
 
