@@ -7,16 +7,16 @@ from pathlib import Path
 
 import pandas as pd
 
-from experiments.vertical_slice.llm.llm_client_new import (
+from experiments.prototypes.vertical_slice.llm.llm_client_new import (
     interpret_structured_state,
 )
-from experiments.vertical_slice.forecasting.baselines import (
+from experiments.prototypes.vertical_slice.forecasting.baselines import (
     build_baseline_forecasts,
 )
-from experiments.vertical_slice.forecasting.prophet_forecast import (
+from experiments.prototypes.vertical_slice.forecasting.prophet_forecast import (
     build_prophet_forecasts,
 )
-from experiments.vertical_slice.state.build_structured_state import (
+from experiments.prototypes.vertical_slice.state.build_structured_state import (
     build_structured_state,
     summarize_prophet_forecast,
 )

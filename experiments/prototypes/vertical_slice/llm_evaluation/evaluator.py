@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from experiments.vertical_slice.llm_evaluation.evaluation_cases import (
+from experiments.prototypes.vertical_slice.llm_evaluation.evaluation_cases import (
     EvaluationCase,
 )
 

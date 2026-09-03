@@ -5,10 +5,10 @@ from collections.abc import Mapping
 import pandas as pd
 
 from src.context.calendar_schema import (
-    ALLOWED_EVENT_FIELDS,
     REQUIRED_EVENT_FIELDS,
     CalendarContext,
     CalendarEvent,
+    validate_calendar_context,
 )
 
 
@@ -19,15 +19,14 @@ def build_calendar_context(
     source: str,
     retrieved_at: str | pd.Timestamp,
     decision_time: str | pd.Timestamp,
+    window_start: str | pd.Timestamp,
     window_end: str | pd.Timestamp,
 ) -> CalendarContext:
     """
-    Überführt bereits abgerufene Kalenderereignisse in kausal
-    verfügbaren Kontext.
+    Überführt bereits abgerufene Kalenderereignisse in kausal verfügbaren Kontext.
 
-    Ereignisintervalle werden als [start, end) interpretiert.
-    Informationen, die beim Abruf noch nicht bekannt waren, werden
-    nicht weitergegeben.
+    Kontext- und Ereignisintervalle werden als [start, end) interpretiert.
+    Informationen, die beim Abruf noch nicht bekannt waren, werden nicht weitergegeben.
     """
 
     if not isinstance(source_available, bool):
@@ -42,33 +41,33 @@ def build_calendar_context(
     source = source.strip()
     retrieved_at = _to_utc_timestamp(retrieved_at, "retrieved_at")
     decision_time = _to_utc_timestamp(decision_time, "decision_time")
+    window_start = _to_utc_timestamp(window_start, "window_start")
     window_end = _to_utc_timestamp(window_end, "window_end")
 
     if retrieved_at > decision_time:
-        raise ValueError(
-            "retrieved_at must not be after decision_time."
-        )
+        raise ValueError("retrieved_at must not be after decision_time.")
+
+    if window_start > decision_time:
+        raise ValueError("window_start must not be after decision_time.")
 
     if window_end <= decision_time:
-        raise ValueError(
-            "window_end must be after decision_time."
-        )
+        raise ValueError("window_end must be after decision_time.")
 
     context: CalendarContext = {
         "source_available": source_available,
         "source": source,
         "retrieved_at": retrieved_at.isoformat(),
         "decision_time": decision_time.isoformat(),
+        "window_start": window_start.isoformat(),
         "window_end": window_end.isoformat(),
         "events": [],
     }
 
     if not source_available:
         if events:
-            raise ValueError(
-                "Unavailable calendar source must not provide events."
-            )
+            raise ValueError("Unavailable calendar source must not provide events.")
 
+        validate_calendar_context(context)
         return context
 
     normalized_events: list[CalendarEvent] = []
@@ -79,87 +78,56 @@ def build_calendar_context(
             raise TypeError("Each event must be a mapping.")
 
         missing_fields = REQUIRED_EVENT_FIELDS.difference(event)
-
         if missing_fields:
             raise ValueError(
-                "Calendar event is missing required fields: "
-                + ", ".join(sorted(missing_fields))
+                "Calendar event is missing required fields: , ".join(sorted(missing_fields))
             )
 
-        unexpected_fields = set(event).difference(
-            ALLOWED_EVENT_FIELDS
-        )
-
+        unexpected_fields = set(event).difference(REQUIRED_EVENT_FIELDS)
         if unexpected_fields:
             raise ValueError(
-                "Calendar event contains unexpected fields: "
-                + ", ".join(
-                    sorted(str(field) for field in unexpected_fields)
-                )
+                "Calendar event contains unexpected fields:, ".join(sorted(str(field) for field in unexpected_fields))
             )
 
         event_id = event["event_id"]
         event_type = event["event_type"]
-        status = event.get("status")
 
         if not isinstance(event_id, str) or not event_id.strip():
-            raise ValueError(
-                "event_id must be a non-empty string."
-            )
+            raise ValueError("event_id must be a non-empty string.")
 
         if not isinstance(event_type, str) or not event_type.strip():
-            raise ValueError(
-                "event_type must be a non-empty string."
-            )
-
-        if status is not None:
-            if not isinstance(status, str) or not status.strip():
-                raise ValueError(
-                    "status must be a non-empty string when provided."
-                )
-
-            status = status.strip()
+            raise ValueError("event_type must be a non-empty string.")
 
         event_id = event_id.strip()
         event_type = event_type.strip()
 
         if event_id in event_ids:
-            raise ValueError(
-                f"Duplicate calendar event_id: {event_id}"
-            )
+            raise ValueError(f"Duplicate calendar event_id: {event_id}")
 
         event_ids.add(event_id)
 
         start = _to_utc_timestamp(event["start"], "start")
         end = _to_utc_timestamp(event["end"], "end")
-        known_at = _to_utc_timestamp(
-            event["known_at"],
-            "known_at",
-        )
+        known_at = _to_utc_timestamp(event["known_at"], "known_at")
 
         if start >= end:
-            raise ValueError(
-                f"Calendar event {event_id} must end after it starts."
-            )
+            raise ValueError(f"Calendar event {event_id} must end after it starts.")
 
         if known_at > retrieved_at:
             continue
 
-        if start >= window_end or end <= decision_time:
+        if start >= window_end or end <= window_start:
             continue
 
-        normalized_event: CalendarEvent = {
-            "event_id": event_id,
-            "event_type": event_type,
-            "start": start.isoformat(),
-            "end": end.isoformat(),
-            "known_at": known_at.isoformat(),
-        }
-
-        if status is not None:
-            normalized_event["status"] = status
-
-        normalized_events.append(normalized_event)
+        normalized_events.append(
+            {
+                "event_id": event_id,
+                "event_type": event_type,
+                "start": start.isoformat(),
+                "end": end.isoformat(),
+                "known_at": known_at.isoformat(),
+            }
+        )
 
     normalized_events.sort(
         key=lambda event: (
@@ -170,29 +138,21 @@ def build_calendar_context(
     )
 
     context["events"] = normalized_events
+    validate_calendar_context(context)
 
     return context
 
 
-def _to_utc_timestamp(
-    value: object,
-    field_name: str,
-) -> pd.Timestamp:
+def _to_utc_timestamp(value: object, field_name: str) -> pd.Timestamp:
     try:
-        timestamp = pd.Timestamp(value)
+        timestamp = pd.Timestamp(value)  # type: ignore[arg-type]
     except (TypeError, ValueError, OverflowError) as error:
-        raise ValueError(
-            f"{field_name} must be a valid timestamp."
-        ) from error
+        raise ValueError(f"{field_name} must be a valid timestamp.") from error
 
     if pd.isna(timestamp):
-        raise ValueError(
-            f"{field_name} must not be missing."
-        )
+        raise ValueError(f"{field_name} must not be missing.")
 
     if timestamp.tzinfo is None:
-        raise ValueError(
-            f"{field_name} must contain timezone information."
-        )
+        raise ValueError(f"{field_name} must contain timezone information.")
 
     return timestamp.tz_convert("UTC")

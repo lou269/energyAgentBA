@@ -7,8 +7,11 @@ import pandas as pd
 
 FORECAST_OUTPUT_COLUMNS = [
     "run_id",
+    "experiment_id",
+    "scenario_id",
     "split",
     "model_id",
+    "seasonality_config",
     "forecast_origin",
     "target_timestamp",
     "horizon_step",
@@ -22,6 +25,7 @@ FORECAST_OUTPUT_COLUMNS = [
     "target_imputed",
     "history_mode",
     "history_hours",
+    "history_observation_count",
     "history_start",
     "history_end",
     "retrained",
@@ -41,14 +45,22 @@ FORECAST_KEY_COLUMNS = [
 
 RUN_METADATA_FIELDS = [
     "run_id",
+    "experiment_id",
+    "scenario_id",
+    "split",
     "config_version",
+    "config_hash",
     "data_version",
     "code_version",
+    "input_hashes",
+    "output_hashes",
     "candidate_id",
     "split_boundaries",
     "forecast_origins",
     "python_version",
     "prophet_version",
+    "seed",
+    "uncertainty_samples",
     "model_parameters",
     "seasonalities",
     "history_rules",
@@ -65,16 +77,13 @@ def validate_forecast_output(
     forecasts: pd.DataFrame,
     *,
     horizon_hours: int,
-    complete_horizons_only: bool = True,
 ) -> None:
     """Validiert die zentralen Garantien des Forecast-Artefakts."""
 
     if horizon_hours < 1:
         raise ValueError("horizon_hours must be at least 1.")
 
-    missing_columns = set(FORECAST_OUTPUT_COLUMNS).difference(
-        forecasts.columns
-    )
+    missing_columns = set(FORECAST_OUTPUT_COLUMNS).difference(forecasts.columns)
 
     if missing_columns:
         raise ValueError(
@@ -90,6 +99,7 @@ def validate_forecast_output(
         for column in FORECAST_OUTPUT_COLUMNS
         if column
         not in {
+            "scenario_id",
             "y_lower",
             "y_upper",
             "y_true",
@@ -110,9 +120,7 @@ def validate_forecast_output(
         )
 
     if forecasts.duplicated(FORECAST_KEY_COLUMNS).any():
-        raise ValueError(
-            "Forecast output contains duplicate forecast records."
-        )
+        raise ValueError("Forecast output contains duplicate forecast records.")
 
     expected_target_timestamps = (
         forecasts["forecast_origin"]
@@ -122,9 +130,7 @@ def validate_forecast_output(
         )
     )
 
-    invalid_time_relation = (
-        forecasts["target_timestamp"] != expected_target_timestamps
-    )
+    invalid_time_relation = forecasts["target_timestamp"] != expected_target_timestamps
 
     if invalid_time_relation.any():
         raise ValueError(
@@ -134,45 +140,41 @@ def validate_forecast_output(
 
     invalid_history = (
         (forecasts["history_hours"] < 1)
+        | (forecasts["history_observation_count"] < 1)
+        | (forecasts["history_observation_count"] > forecasts["history_hours"])
         | (forecasts["history_start"] > forecasts["history_end"])
         | (forecasts["history_end"] >= forecasts["forecast_origin"])
     )
 
     if invalid_history.any():
-        raise ValueError(
-            "Forecast output contains invalid or non-causal history."
-        )
+        raise ValueError("Forecast output contains invalid or non-causal history.")
 
-    if complete_horizons_only:
-        horizon_summary = forecasts.groupby(
-            [
-                "run_id",
-                "split",
-                "model_id",
-                "forecast_origin",
-            ]
-        )["horizon_step"].agg(
-            row_count="size",
-            unique_steps="nunique",
-            first_step="min",
-            last_step="max",
-        )
+    horizon_summary = forecasts.groupby(
+        [
+            "run_id",
+            "split",
+            "model_id",
+            "forecast_origin",
+        ]
+    )["horizon_step"].agg(
+        row_count="size",
+        unique_steps="nunique",
+        first_step="min",
+        last_step="max",
+    )
 
-        incomplete_horizons = (
-            (horizon_summary["row_count"] != horizon_hours)
-            | (horizon_summary["unique_steps"] != horizon_hours)
-            | (horizon_summary["first_step"] != 1)
-            | (horizon_summary["last_step"] != horizon_hours)
-        )
+    incomplete_horizons = (
+        (horizon_summary["row_count"] != horizon_hours)
+        | (horizon_summary["unique_steps"] != horizon_hours)
+        | (horizon_summary["first_step"] != 1)
+        | (horizon_summary["last_step"] != horizon_hours)
+    )
 
-        if incomplete_horizons.any():
-            raise ValueError(
-                "Forecast output contains incomplete horizons."
-            )
+    if incomplete_horizons.any():
+        raise ValueError("Forecast output contains incomplete horizons.")
 
     interval_mismatch = (
-        forecasts["y_lower"].isna()
-        != forecasts["y_upper"].isna()
+        forecasts["y_lower"].isna() != forecasts["y_upper"].isna()
     )
 
     invalid_intervals = (
@@ -201,14 +203,11 @@ def validate_forecast_output(
         )
 
     event_mismatch = (
-        forecasts["event_id"].isna()
-        != forecasts["steps_since_event"].isna()
+        forecasts["event_id"].isna() != forecasts["steps_since_event"].isna()
     )
 
     if event_mismatch.any():
-        raise ValueError(
-            "event_id and steps_since_event must be provided together."
-        )
+        raise ValueError("event_id and steps_since_event must be provided together.")
 
     target_metadata = [
         "y_true",
@@ -226,9 +225,25 @@ def validate_forecast_output(
     )
 
     if target_consistency.any().any():
-        raise ValueError(
-            "Models use inconsistent ground truth or eligibility data."
-        )
+        raise ValueError("Models use inconsistent ground truth or eligibility data.")
+
+    model_metadata = [
+        "experiment_id",
+        "scenario_id",
+        "seasonality_config",
+        "config_version",
+    ]
+
+    model_metadata_consistency = (
+        forecasts.groupby(
+            ["run_id", "split", "model_id"]
+        )[model_metadata]
+        .nunique(dropna=False)
+        .gt(1)
+    )
+
+    if model_metadata_consistency.any().any():
+        raise ValueError("Forecast output contains inconsistent model metadata.")
 
 
 def validate_run_metadata(metadata: Mapping[str, object]) -> None:
@@ -241,6 +256,12 @@ def validate_run_metadata(metadata: Mapping[str, object]) -> None:
             "Run metadata is missing required fields: "
             + ", ".join(sorted(missing_fields))
         )
+
+    for field in ("run_id", "experiment_id", "split", "config_version"):
+        value = metadata[field]
+
+        if not isinstance(value, str) or not value:
+            raise ValueError(f"{field} must be a non-empty string.")
 
     runtime_seconds = metadata["runtime_seconds"]
 

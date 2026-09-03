@@ -1,4 +1,4 @@
-# python -m pytest src/tests/test_data_preparation.py -v
+# python -m pytest tests/unit/test_data_preparation.py -v
 
 from __future__ import annotations
 
@@ -7,10 +7,7 @@ from unittest.mock import Mock
 import pandas as pd
 import pytest
 
-from src.data_preparation.selected_candidate_validation import (
-    build_selected_candidate_validation,
-    select_candidate_role,
-)
+from src.data_preparation.selected_candidate_validation import build_selected_candidate_validation, select_candidate_role
 from src.data_preparation.selected_data import build_selected_data
 
 

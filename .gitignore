@@ -30,7 +30,9 @@ output/canonical/canonical_data.csv
 
 # src
 src/old/
-src/visualization/
+src/llm/
+
+.history/ 
 
 # OS
 .DS_Store

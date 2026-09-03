@@ -4,8 +4,8 @@
 from __future__ import annotations
 
 import argparse
-import logging
 from dataclasses import asdict
+import logging
 from datetime import UTC, datetime
 from typing import Literal, cast
 
@@ -16,7 +16,6 @@ from src.config.forecasting_config import ForecastingConfig
 from src.config.project_config import ProjectConfig, ensure_project_directories
 from src.forecasting.evaluation import evaluate_forecasts, select_primary_naive_reference
 from src.forecasting.walk_forward import ProphetVariantParameters, build_walk_forward_forecasts
-
 
 logger = logging.getLogger(__name__)
 
@@ -32,27 +31,21 @@ class ForecastingRunner:
         forecasting_config: ForecastingConfig | None = None,
     ) -> None:
         self.project_config = project_config or ProjectConfig()
-        self.forecasting_config = (
-            forecasting_config or ForecastingConfig()
-        )
+        self.forecasting_config = forecasting_config or ForecastingConfig()
 
-    def run(self, split: EvaluationSplit = "validation",
-    ) -> None:
+    def run(self, split: EvaluationSplit = "validation") -> None:
         ensure_project_directories(self.project_config)
 
         if (
             split == "test"
-            and self.forecasting_config.primary_naive_reference is None
+            and self.forecasting_config.primary_naive_reference
+            not in self.forecasting_config.baseline_model_ids
         ):
             raise ValueError(
-                "primary_naive_reference must be frozen before "
-                "running the test split."
+                "primary_naive_reference must be one of the configured naive baselines before running the test split."
             )
 
-        logger.info(
-            "Starting forecasting for split %s...",
-            split,
-        )
+        logger.info("Starting forecasting for split %s...", split)
 
         treated_hourly = pd.read_csv(
             self.project_config.preprocessing_output_dir / "treated_hourly.csv",
@@ -75,13 +68,15 @@ class ForecastingRunner:
             self.project_config.canonical_output_dir / "canonical_manifest.csv"
         )
 
-        target_column = canonical_manifest.loc[
-            canonical_manifest["candidate_id"].eq(
-                self.forecasting_config.candidate_id
-            )
-            & canonical_manifest["channel_role"].eq("mains"),
-            "meter_key",
-        ].iloc[0]
+        mains_targets = canonical_manifest.loc[
+            canonical_manifest["channel_role"].eq("mains"),
+            ["candidate_id", "meter_key"],
+        ].drop_duplicates()
+
+        if len(mains_targets) != 1:
+            raise ValueError("Canonical manifest must contain exactly one mains target.")
+
+        target_column = str(mains_targets.iloc[0]["meter_key"])
 
         hourly_splits = split_manifest.loc[
             split_manifest["frequency"].eq("hourly")
@@ -100,95 +95,65 @@ class ForecastingRunner:
             target_column,
         ]
 
-        evaluation_imputation_mask = (
-            imputation_mask_hourly.loc[
-                split_start:split_end,
-                target_column,
-            ]
-        )
-
-        prophet_variants = tuple(
-            cast(
-                ProphetVariantParameters,
-                asdict(variant),
-            )
-            for variant in self.forecasting_config.prophet_variants
-        )
+        evaluation_imputation_mask = imputation_mask_hourly.loc[
+            split_start:split_end,
+            target_column,
+        ]
 
         run_id = (
             f"{split}_"
             f"{datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ')}"
         )
 
+        prophet_variant = cast(
+            ProphetVariantParameters,
+            asdict(self.forecasting_config.selected_prophet_variant),
+        )
+
+        prophet_variants = (prophet_variant,)
         forecasts = build_walk_forward_forecasts(
             fixed_history=fixed_history,
             evaluation_targets=evaluation_targets,
-            evaluation_imputation_mask=(
-                evaluation_imputation_mask
-            ),
+            evaluation_imputation_mask=evaluation_imputation_mask,
             run_id=run_id,
+            experiment_id=self.forecasting_config.experiment_id,
             split=split,
             horizon_hours=self.forecasting_config.horizon_hours,
             forecast_origin_step_hours=self.forecasting_config.forecast_origin_step_hours,
-            baseline_model_ids= self.forecasting_config.baseline_model_ids,
+            baseline_model_ids=self.forecasting_config.baseline_model_ids,
             prophet_variants=prophet_variants,
             growth=self.forecasting_config.growth,
-            daily_seasonality= self.forecasting_config.daily_seasonality,
+            daily_seasonality=self.forecasting_config.daily_seasonality,
             yearly_seasonality=self.forecasting_config.yearly_seasonality,
             interval_width=self.forecasting_config.interval_width,
+            uncertainty_samples=self.forecasting_config.uncertainty_samples,
             clip_negative_forecasts=(
                 self.forecasting_config.negative_forecast_handling == "clip_zero"
             ),
             config_version=self.forecasting_config.config_version,
         )
 
-        prophet_model_ids = tuple(
-            variant["model_id"]
-            for variant in prophet_variants
-        )
-
         evaluation_results = evaluate_forecasts(
             forecasts,
-            horizon_hours=(
-                self.forecasting_config.horizon_hours
-            ),
-            complete_horizons_only=(
-                self.forecasting_config.complete_horizons_only
-            ),
-            comparison_model_ids=prophet_model_ids,
-            reference_model_ids=(
-                *self.forecasting_config.baseline_model_ids,
-                "P1",
-            ),
-            nominal_interval_level=(
-                self.forecasting_config.interval_width
-            ),
+            horizon_hours=self.forecasting_config.horizon_hours,
+            comparison_model_ids=(self.forecasting_config.selected_prophet_variant.model_id,),
+            reference_model_ids=self.forecasting_config.baseline_model_ids,
+            nominal_interval_level=self.forecasting_config.interval_width,
         )
 
         if split == "validation":
-            primary_naive_reference = (
-                select_primary_naive_reference(
-                    evaluation_results["overall_metrics"],
-                    self.forecasting_config.baseline_model_ids,
-                )
+            primary_naive_reference = select_primary_naive_reference(
+                evaluation_results["overall_metrics"],
+                self.forecasting_config.baseline_model_ids,
             )
 
             df_to_csv(
-                pd.DataFrame(
-                    {
-                        "model_id": [
-                            primary_naive_reference
-                        ]
-                    }
-                ),
+                pd.DataFrame({"model_id": [primary_naive_reference]}),
                 self.project_config.forecasting_output_dir,
                 "primary_naive_reference_validation",
             )
         else:
-            primary_naive_reference = (
-                self.forecasting_config
-                .primary_naive_reference
-            )
+            primary_naive_reference = self.forecasting_config.primary_naive_reference
 
         df_to_csv(
             forecasts,
@@ -204,8 +169,7 @@ class ForecastingRunner:
             )
 
         logger.info(
-            "Forecasting completed: split=%s, origins=%d, "
-            "primary naive reference=%s.",
+            "Forecasting completed: split=%s, origins=%d, primary naive reference=%s.",
             split,
             forecasts["forecast_origin"].nunique(),
             primary_naive_reference,

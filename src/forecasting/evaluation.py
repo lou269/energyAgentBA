@@ -15,7 +15,6 @@ def evaluate_forecasts(
     forecasts: pd.DataFrame,
     *,
     horizon_hours: int,
-    complete_horizons_only: bool,
     comparison_model_ids: tuple[str, ...],
     reference_model_ids: tuple[str, ...],
     nominal_interval_level: float,
@@ -30,7 +29,6 @@ def evaluate_forecasts(
     validate_forecast_output(
         forecasts,
         horizon_hours=horizon_hours,
-        complete_horizons_only=complete_horizons_only,
     )
     _validate_evaluation_input(
         forecasts,
@@ -138,9 +136,6 @@ def _validate_evaluation_input(
 ) -> None:
     """Prüft ausschließlich die zusätzlichen Garantien der Evaluation."""
 
-    if not comparison_model_ids:
-        raise ValueError("comparison_model_ids must not be empty.")
-
     if not reference_model_ids:
         raise ValueError("reference_model_ids must not be empty.")
 
@@ -184,14 +179,11 @@ def _validate_evaluation_input(
     )
 
     unequal_target_sets = (
-        target_model_counts["actual_model_count"]
-        != target_model_counts["expected_model_count"]
+        target_model_counts["actual_model_count"] != target_model_counts["expected_model_count"]
     )
 
     if unequal_target_sets.any():
-        raise ValueError(
-            "Models must use identical forecast origins and target timestamps."
-        )
+        raise ValueError("Models must use identical forecast origins and target timestamps.")
 
     origin_metadata = (
         forecasts.groupby(ORIGIN_GROUP_COLUMNS)[
@@ -202,18 +194,14 @@ def _validate_evaluation_input(
     )
 
     if origin_metadata.any().any():
-        raise ValueError(
-            "Retraining metadata must be constant within each forecast origin."
-        )
+        raise ValueError("Retraining metadata must be constant within each forecast origin.")
 
     finite_values = forecasts[
         ["y_pred", "y_pred_raw", "refit_runtime_seconds"]
     ].to_numpy(dtype="float64")
 
     if not np.isfinite(finite_values).all():
-        raise ValueError(
-            "Forecast values and refit runtimes must be finite."
-        )
+        raise ValueError("Forecast values and refit runtimes must be finite.")
 
     eligible_truth = forecasts.loc[
         forecasts["target_eligible"],
@@ -309,9 +297,7 @@ def _calculate_error_metrics(
         "mape_pct": mape,
         "mape_target_count": mape_count,
         "mape_excluded_target_count": possible_count - mape_count,
-        "mape_non_positive_target_count": int(
-            (eligible & forecasts["y_true"].le(0)).sum()
-        ),
+        "mape_non_positive_target_count": int((eligible & forecasts["y_true"].le(0)).sum()),
         "negative_forecast_count": negative_count,
         "negative_forecast_share": negative_count / possible_count,
     }
@@ -338,10 +324,8 @@ def _add_operational_metrics(
             total_refit_runtime_seconds=("refit_runtime_seconds", "sum"),
         )
     )
-    operational_metrics["retraining_count"] = (
-        operational_metrics["retraining_count"].astype("int64")
-    )
-
+    operational_metrics["retraining_count"] = operational_metrics["retraining_count"].astype("int64")
+    
     return overall_metrics.merge(
         operational_metrics,
         on=BASE_GROUP_COLUMNS,
@@ -389,15 +373,15 @@ def _calculate_paired_origin_differences(
     """Berechnet gepaarte Fehlerdifferenzen je Forecast-Ursprung."""
 
     key_columns = ["run_id", "split", "forecast_origin"]
-    difference_columns = [
-        f"{metric}_difference" for metric in ERROR_METRIC_COLUMNS
-    ]
+    difference_columns = [f"{metric}_difference" for metric in ERROR_METRIC_COLUMNS]
+    
     output_columns = [
         *key_columns,
         "model_id",
         "reference_model_id",
         *difference_columns,
     ]
+    
     result_frames: list[pd.DataFrame] = []
 
     comparisons = origin_metrics.loc[
@@ -426,9 +410,7 @@ def _calculate_paired_origin_differences(
         paired["reference_model_id"] = reference_model_id
 
         for metric in ERROR_METRIC_COLUMNS:
-            paired[f"{metric}_difference"] = (
-                paired[metric] - paired[f"reference_{metric}"]
-            )
+            paired[f"{metric}_difference"] = paired[metric] - paired[f"reference_{metric}"]
 
         result_frames.append(paired[output_columns])
 
@@ -544,16 +526,12 @@ def _calculate_interval_metrics(
             if not isinstance(keys, tuple):
                 keys = (keys,)
 
-            intervals_available = (
-                group["y_lower"].notna() & group["y_upper"].notna()
-            )
+            intervals_available = group["y_lower"].notna() & group["y_upper"].notna()
 
             if not intervals_available.any():
                 continue
 
-            evaluable = group.loc[
-                intervals_available & group["target_eligible"]
-            ]
+            evaluable = group.loc[intervals_available & group["target_eligible"]]
 
             if evaluable.empty:
                 coverage = np.nan
@@ -573,9 +551,7 @@ def _calculate_interval_metrics(
                     **dict(zip(group_columns, keys, strict=True)),
                     "scope": scope,
                     "nominal_interval_level": nominal_interval_level,
-                    "interval_available_count": int(
-                        intervals_available.sum()
-                    ),
+                    "interval_available_count": int(intervals_available.sum()),
                     "interval_evaluated_count": len(evaluable),
                     "empirical_coverage": coverage,
                     "mean_interval_width_w": mean_width,
@@ -629,22 +605,17 @@ def _calculate_target_exclusions(
         .rename(columns={"size": "excluded_target_count"})
     )
     exclusions = exclusions.merge(
-        overall_metrics[
-            [*BASE_GROUP_COLUMNS, "possible_target_count"]
-        ],
+        overall_metrics[[*BASE_GROUP_COLUMNS, "possible_target_count"]],
         on=BASE_GROUP_COLUMNS,
         how="left",
         validate="many_to_one",
     )
     exclusions["excluded_target_share"] = (
-        exclusions["excluded_target_count"]
-        / exclusions["possible_target_count"]
+        exclusions["excluded_target_count"] / exclusions["possible_target_count"]
     )
 
     return (
         exclusions[columns]
-        .sort_values(
-            [*BASE_GROUP_COLUMNS, "target_exclusion_reason"]
-        )
+        .sort_values([*BASE_GROUP_COLUMNS, "target_exclusion_reason"])
         .reset_index(drop=True)
     )

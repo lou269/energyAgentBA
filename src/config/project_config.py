@@ -26,6 +26,7 @@ class ProjectConfig:
     preprocessing_output_dir: Path = output_dir / "preprocessing"
     numerical_analysis_output_dir: Path = output_dir / "numerical_analysis"
     forecasting_output_dir: Path = output_dir / "forecasting"
+    structured_state_output_dir: Path = output_dir / "structured_state"
 
     # Dataset
     dataset_release: str = "UK-DALE April 2017"
@@ -34,14 +35,10 @@ class ProjectConfig:
 
     # CEDA directories
     url_data: str = (
-        "https://data.ceda.ac.uk/edc/d1/"
-        "7d78f943-f9fe-413b-af52-1816f9d968b0/"
-        "data/version_0"
+        "https://data.ceda.ac.uk/edc/d1/7d78f943-f9fe-413b-af52-1816f9d968b0/data/version_0"
     )
     url_metadata: str = (
-        "https://data.ceda.ac.uk/edc/d1/"
-        "7d78f943-f9fe-413b-af52-1816f9d968b0/"
-        "documents"
+        "https://data.ceda.ac.uk/edc/d1/7d78f943-f9fe-413b-af52-1816f9d968b0/documents"
     )
 
     @property
@@ -65,6 +62,7 @@ def ensure_project_directories(config: ProjectConfig) -> None:
         config.preprocessing_output_dir,
         config.numerical_analysis_output_dir,
         config.forecasting_output_dir,
+        config.structured_state_output_dir,
     ]
 
     for directory in directories:

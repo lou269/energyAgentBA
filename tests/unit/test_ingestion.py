@@ -1,3 +1,5 @@
+# python -m pytest tests/unit/test_ingestion.py -v
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -76,9 +78,7 @@ def test_download_overwrites_existing_files(
         assert not output_path.exists()
         assert not partial_path.exists()
 
-        curl_output_path = Path(
-            command[command.index("--output") + 1]
-        )
+        curl_output_path = Path(command[command.index("--output") + 1])
         curl_output_path.write_bytes(b"new")
 
     monkeypatch.setattr(downloader.subprocess, "run", fake_run)

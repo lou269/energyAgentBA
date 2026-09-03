@@ -13,6 +13,7 @@ def fit_prophet_model(
     weekly_seasonality: bool,
     yearly_seasonality: bool,
     interval_width: float,
+    uncertainty_samples: int,
 ) -> Prophet:
     """Fittet Prophet auf der für den Forecast erlaubten History."""
 
@@ -26,6 +27,7 @@ def fit_prophet_model(
         weekly_seasonality=weekly_seasonality,  # pyright: ignore[reportArgumentType]
         yearly_seasonality=yearly_seasonality,  # pyright: ignore[reportArgumentType]
         interval_width=interval_width,
+        uncertainty_samples=uncertainty_samples,
     )
     model.fit(prophet_data)
 
@@ -110,16 +112,12 @@ def _prepare_prophet_data(history: pd.Series) -> pd.DataFrame:
     valid_history = history.dropna()
 
     if len(valid_history) < 2:
-        raise ValueError(
-            "history must contain at least two valid observations."
-        )
+        raise ValueError("history must contain at least two valid observations.")
 
     try:
         values = valid_history.to_numpy(dtype="float64")
     except (TypeError, ValueError) as error:
-        raise TypeError(
-            "history must contain numeric values."
-        ) from error
+        raise TypeError("history must contain numeric values.") from error
 
     if not np.isfinite(values).all():
         raise ValueError("history contains infinite values.")

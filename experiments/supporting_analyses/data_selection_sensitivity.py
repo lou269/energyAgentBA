@@ -85,9 +85,7 @@ def evaluate_auxiliary_coverage(
         for selected_candidate in provisional_selection.itertuples(index=False):
             candidate_appliances = auxiliary_selection.loc[
                 auxiliary_selection["candidate_id"].eq(selected_candidate.candidate_id)
-                & auxiliary_selection[
-                    "selected_window_coverage_share"
-                ].ge(coverage_share)
+                & auxiliary_selection["selected_window_coverage_share"].ge(coverage_share)
             ].sort_values("availability_rank")
 
             rows.append(
@@ -128,16 +126,14 @@ def main() -> None:
     channel_quality = pd.read_csv(input_paths["channel_quality"])
     good_sections = pd.read_csv(input_paths["good_sections"])
 
-    # build_candidate_selection_outputs erwartet run_id aktuell
-    # indirekt als Spalte für das Entscheidungsprotokoll.
+    # build_candidate_selection_outputs erwartet run_id aktuell indirekt als Spalte für das Entscheidungsprotokoll
     candidate_profiles["run_id"] = run_id
 
     logger.info("Evaluating minimum segment duration...")
 
     segment_results, segment_decisions = evaluate_segment_duration(candidate_profiles)
 
-    # Die Segmentdauer bleibt fixiert, damit anschließend
-    # ausschließlich die Hilfsgeräte-Abdeckung verändert wird.
+    # Die Segmentdauer bleibt fixiert, damit anschließen ausschließlich die Hilfsgeräte-Abdeckung verändert wird
     default_selection, _ = build_candidate_selection_outputs(
         candidate_profiles=candidate_profiles,
         min_longest_segment_days=DEFAULT_CONFIG.min_longest_segment_days,
@@ -153,12 +149,7 @@ def main() -> None:
         good_sections=good_sections,
     )
 
-    output_dir = (
-        project_config.output_dir
-        / "sensitivity_analysis"
-        / "data_selection"
-        / run_id
-    )
+    output_dir = project_config.output_dir / "sensitivity_analysis" / "data_selection" / run_id
     output_dir.mkdir(parents=True, exist_ok=False)
 
     segment_results.to_csv(

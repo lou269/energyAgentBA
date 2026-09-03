@@ -9,20 +9,20 @@ from time import perf_counter
 
 import pandas as pd
 
-from experiments.vertical_slice.llm.llm_client_new import (
+from experiments.prototypes.vertical_slice.llm.llm_client_new import (
     interpret_structured_state,
 )
-from experiments.vertical_slice.llm_evaluation.run_evaluation import run_llm_evaluation
+from experiments.prototypes.vertical_slice.llm_evaluation.run_evaluation import run_llm_evaluation
 from src.config.project_config import ProjectConfig
-from experiments.vertical_slice.forecasting.prophet_forecast import (
+from experiments.prototypes.vertical_slice.forecasting.prophet_forecast import (
     build_prophet_forecasts,
 )
-from experiments.vertical_slice.context.simulated_calendar import (
+from experiments.prototypes.vertical_slice.context.simulated_calendar import (
     build_no_calendar_context,
     build_normal_calendar_context,
     build_vacation_calendar_context,
 )
-from experiments.vertical_slice.state.build_structured_state import (
+from experiments.prototypes.vertical_slice.state.build_structured_state import (
     build_structured_state,
     summarize_prophet_forecast,
 )

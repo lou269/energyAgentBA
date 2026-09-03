@@ -7,14 +7,14 @@ from pathlib import Path
 
 import pandas as pd
 
-from experiments.vertical_slice.llm.llm_client_new import (
+from experiments.prototypes.vertical_slice.llm.llm_client_new import (
     interpret_structured_state,
 )
 
-from experiments.vertical_slice.llm_evaluation.evaluation_cases import (
+from experiments.prototypes.vertical_slice.llm_evaluation.evaluation_cases import (
     build_evaluation_cases,
 )
-from experiments.vertical_slice.llm_evaluation.evaluator import (
+from experiments.prototypes.vertical_slice.llm_evaluation.evaluator import (
     evaluate_output,
 )
 

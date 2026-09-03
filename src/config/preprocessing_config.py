@@ -1,4 +1,7 @@
 from dataclasses import dataclass
+from typing import Literal
+
+ProductionGapMethod = Literal["ffill", "none"]
 
 
 @dataclass(frozen=True)
@@ -8,6 +11,7 @@ class PreprocessingConfig:
     train_share: float = 0.70
     validation_share: float = 0.15
 
+    gap_treatment_method: ProductionGapMethod = "ffill"
     max_imputation_gap_15min: int = 4
     max_imputation_gap_hourly: int = 2
 

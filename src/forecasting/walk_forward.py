@@ -36,6 +36,7 @@ def build_walk_forward_forecasts(
     evaluation_imputation_mask: pd.Series,
     *,
     run_id: str,
+    experiment_id: str,
     split: str,
     horizon_hours: int,
     forecast_origin_step_hours: int,
@@ -46,20 +47,41 @@ def build_walk_forward_forecasts(
     yearly_seasonality: bool,
     interval_width: float,
     clip_negative_forecasts: bool,
+    uncertainty_samples: int,
     config_version: str,
+    initial_history_start: pd.Timestamp | None = None,
+    initial_history_hours: int | None = None,
+    scenario_id: str | None = None,
 ) -> pd.DataFrame:
     """
-    Erstellt nicht überlappende Walk-Forward-Forecasts für einen Split.
+    Erstellt nicht überlappende Walk-Forward-Forecasts.
 
-    `fixed_history` enthält die vor Beginn des Evaluation-Splits verfügbare
-    History. Vergangene Evaluation-Werte werden erst an späteren
-    Forecast-Ursprüngen als History freigegeben.
+    Vergangene Evaluation-Werte werden erst an späteren Forecast-Ursprüngen
+    als History freigegeben.
     """
+
+    if initial_history_start is not None:
+        if str(initial_history_start.tz) != "UTC":
+            raise ValueError("initial_history_start must use UTC.")
+        fixed_history = fixed_history.loc[fixed_history.index >= initial_history_start]
+
+    if initial_history_hours is not None:
+        if initial_history_hours < 1:
+            raise ValueError("initial_history_hours must be at least 1.")
+        fixed_history = fixed_history.iloc[:initial_history_hours]
+        if len(fixed_history) != initial_history_hours:
+            raise ValueError(
+                f"Initial history must contain exactly {initial_history_hours} hours, "
+                f"got {len(fixed_history)}."
+            )
 
     _validate_walk_forward_data(fixed_history, evaluation_targets, evaluation_imputation_mask)
 
     if not run_id:
         raise ValueError("run_id must not be empty.")
+
+    if not experiment_id:
+        raise ValueError("experiment_id must not be empty.")
 
     if not split:
         raise ValueError("split must not be empty.")
@@ -83,8 +105,10 @@ def build_walk_forward_forecasts(
     if unknown_baselines:
         raise ValueError("Unsupported baseline model IDs: " + ", ".join(sorted(unknown_baselines)))
 
-    model_ids = list(baseline_model_ids)
-    model_ids.extend(variant["model_id"] for variant in prophet_variants)
+    model_ids = [
+        *baseline_model_ids,
+        *(variant["model_id"] for variant in prophet_variants),
+    ]
 
     if not model_ids:
         raise ValueError("At least one forecast model must be configured.")
@@ -157,12 +181,16 @@ def build_walk_forward_forecasts(
         target_exclusion_reason.loc[target_values.isna()] = "missing_target"
 
         for model_id in baseline_model_ids:
-            raw_predictions = _BASELINE_BUILDERS[model_id](available_history, target_index)
+            raw_predictions = _BASELINE_BUILDERS[model_id](
+                available_history,
+                target_index,
+            )
 
-            if clip_negative_forecasts:
-                predictions = raw_predictions.clip(lower=0.0)
-            else:
-                predictions = raw_predictions.copy()
+            predictions = (
+                raw_predictions.clip(lower=0.0)
+                if clip_negative_forecasts
+                else raw_predictions.copy()
+            )
 
             model_forecast = pd.DataFrame(
                 {
@@ -182,8 +210,11 @@ def build_walk_forward_forecasts(
                     target_eligible=target_eligible,
                     target_exclusion_reason=target_exclusion_reason,
                     run_id=run_id,
+                    experiment_id=experiment_id,
+                    scenario_id=scenario_id,
                     split=split,
                     model_id=model_id,
+                    seasonality_config="not_applicable",
                     forecast_origin=forecast_origin,
                     history_mode="expanding",
                     history=available_history,
@@ -197,9 +228,10 @@ def build_walk_forward_forecasts(
             model_id = variant["model_id"]
             history_mode = variant["history_mode"]
             retraining_interval_hours = variant["retraining_interval_hours"]
-            state = prophet_states.get(model_id)
 
-            fit_required = state is None
+            state = prophet_states.get(model_id)
+            had_fitted_model = state is not None
+            fit_required = not had_fitted_model
 
             if state is not None and history_mode != "fixed_train":
                 _, fitted_at_origin, _ = state
@@ -233,15 +265,15 @@ def build_walk_forward_forecasts(
                     weekly_seasonality=variant["weekly_seasonality"],
                     yearly_seasonality=yearly_seasonality,
                     interval_width=interval_width,
+                    uncertainty_samples=uncertainty_samples,
                 )
 
-                fit_runtime = (pd.Timestamp.now() - fit_start).total_seconds()
+                refit_runtime_seconds = (
+                    pd.Timestamp.now() - fit_start
+                ).total_seconds()
+
                 state = (model, forecast_origin, model_history)
                 prophet_states[model_id] = state
-
-                # Das einmalige Fitten von P1 ist Initialtraining, kein Retraining.
-                if history_mode != "fixed_train":
-                    refit_runtime_seconds = fit_runtime
 
             if state is None:
                 raise RuntimeError(f"No fitted model exists for {model_id}.")
@@ -254,6 +286,12 @@ def build_walk_forward_forecasts(
                 clip_negative_forecasts=clip_negative_forecasts,
             )
 
+            seasonality_config = (
+                f"daily={daily_seasonality};"
+                f"weekly={variant['weekly_seasonality']};"
+                f"yearly={yearly_seasonality}"
+            )
+
             forecast_outputs.append(
                 _build_forecast_output(
                     model_forecast,
@@ -262,12 +300,15 @@ def build_walk_forward_forecasts(
                     target_eligible=target_eligible,
                     target_exclusion_reason=target_exclusion_reason,
                     run_id=run_id,
+                    experiment_id=experiment_id,
+                    scenario_id=scenario_id,
                     split=split,
                     model_id=model_id,
+                    seasonality_config=seasonality_config,
                     forecast_origin=forecast_origin,
                     history_mode=history_mode,
                     history=model_history,
-                    retrained=fit_required and history_mode != "fixed_train",
+                    retrained=fit_required and had_fitted_model,
                     refit_runtime_seconds=refit_runtime_seconds,
                     config_version=config_version,
                 )
@@ -279,8 +320,17 @@ def build_walk_forward_forecasts(
     validate_forecast_output(
         forecasts,
         horizon_hours=horizon_hours,
-        complete_horizons_only=True,
     )
+
+    expected_model_count = len(model_ids)
+    models_per_target = forecasts.groupby(
+        ["forecast_origin", "target_timestamp"]
+    )["model_id"].nunique()
+
+    if not models_per_target.eq(expected_model_count).all():
+        raise ValueError(
+            "Forecast variants do not use identical forecast origins and targets."
+        )
 
     return forecasts
 
@@ -316,8 +366,11 @@ def _build_forecast_output(
     target_eligible: pd.Series,
     target_exclusion_reason: pd.Series,
     run_id: str,
+    experiment_id: str,
+    scenario_id: str | None,
     split: str,
     model_id: str,
+    seasonality_config: str,
     forecast_origin: pd.Timestamp,
     history_mode: str,
     history: pd.Series,
@@ -332,18 +385,25 @@ def _build_forecast_output(
     output = output.reset_index()
 
     output["run_id"] = run_id
+    output["experiment_id"] = experiment_id
+    output["scenario_id"] = scenario_id
     output["split"] = split
     output["model_id"] = model_id
+    output["seasonality_config"] = seasonality_config
     output["forecast_origin"] = forecast_origin
     output["horizon_step"] = np.arange(1, len(output) + 1)
+
     output["y_true"] = target_values.to_numpy(dtype="float64")
     output["target_eligible"] = target_eligible.to_numpy(dtype=bool)
     output["target_exclusion_reason"] = target_exclusion_reason.to_numpy()
     output["target_imputed"] = target_imputed.to_numpy(dtype=bool)
+
     output["history_mode"] = history_mode
     output["history_hours"] = len(history)
+    output["history_observation_count"] = int(history.notna().sum())
     output["history_start"] = history.index[0]
     output["history_end"] = history.index[-1]
+
     output["retrained"] = retrained
     output["refit_runtime_seconds"] = refit_runtime_seconds
     output["event_id"] = None
@@ -382,20 +442,29 @@ def _validate_walk_forward_data(
         if str(series.index.tz) != "UTC":
             raise ValueError(f"{name} must use UTC.")
 
-        expected_index = pd.date_range(start=series.index[0], periods=len(series), freq="1h")
+        expected_index = pd.date_range(
+            start=series.index[0],
+            periods=len(series),
+            freq="1h",
+        )
 
         if not series.index.equals(expected_index):
             raise ValueError(f"{name} must contain a continuous hourly index.")
 
         try:
-            values = pd.to_numeric(series, errors="raise").to_numpy(dtype="float64")
+            values = pd.to_numeric(
+                series,
+                errors="raise",
+            ).to_numpy(dtype="float64")
         except (TypeError, ValueError) as error:
             raise TypeError(f"{name} must contain numeric values.") from error
 
         if np.isinf(values).any():
             raise ValueError(f"{name} contains infinite values.")
 
-    expected_evaluation_start = fixed_history.index[-1] + pd.Timedelta(hours=1)
+    expected_evaluation_start = (
+        fixed_history.index[-1] + pd.Timedelta(hours=1)
+    )
 
     if evaluation_targets.index[0] != expected_evaluation_start:
         raise ValueError(

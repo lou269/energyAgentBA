@@ -1,4 +1,4 @@
-# python -m pytest src/tests/test_analysis.py -v
+# python -m pytest tests/unit/test_analysis.py -v
 
 from __future__ import annotations
 
@@ -139,12 +139,8 @@ def test_candidate_profile_uses_longest_good_section() -> None:
     assert result.loc[0, "candidate_id"] == "H1-M1"
     assert result.loc[0, "segment_count"] == 2
     assert result.loc[0, "longest_segment_days"] == pytest.approx(45.0)
-    assert result.loc[0, "longest_segment_start"] == pd.Timestamp(
-        "2020-02-01T00:00:00Z"
-    )
-    assert result.loc[0, "longest_segment_end"] == pd.Timestamp(
-        "2020-03-17T00:00:00Z"
-    )
+    assert result.loc[0, "longest_segment_start"] == pd.Timestamp("2020-02-01T00:00:00Z")
+    assert result.loc[0, "longest_segment_end"] == pd.Timestamp("2020-03-17T00:00:00Z")
 
 
 def test_candidate_at_45_day_boundary_is_eligible() -> None:
@@ -188,8 +184,7 @@ def test_candidate_at_45_day_boundary_is_eligible() -> None:
     assert bool(decisions.loc["H1-M1", "eligible_for_selection"])
     assert not bool(decisions.loc["H2-M1", "eligible_for_selection"])
     assert (
-        decisions.loc["H2-M1", "decision_reason"]
-        == "longest_segment_below_threshold"
+        decisions.loc["H2-M1", "decision_reason"] == "longest_segment_below_threshold"
     )
 
 
@@ -289,10 +284,8 @@ def test_fallback_is_selected_from_different_house() -> None:
 
     assert decisions.loc["H1-M2", "selection_role"] == "not_selected"
     assert (
-        decisions.loc["H1-M2", "decision_reason"]
-        == "same_house_as_primary"
+        decisions.loc["H1-M2", "decision_reason"] == "same_house_as_primary"
     )
     assert (
-        decisions.loc["H2-M1", "decision_reason"]
-        == "highest_ranked_candidate_from_different_house"
+        decisions.loc["H2-M1", "decision_reason"] == "highest_ranked_candidate_from_different_house"
     )
