@@ -15,6 +15,7 @@ from src.pipeline.io import df_to_csv
 from src.config.forecasting_config import ForecastingConfig
 from src.config.project_config import ProjectConfig, ensure_project_directories
 from src.forecasting.evaluation import evaluate_forecasts, select_primary_naive_reference
+
 from src.forecasting.walk_forward import ProphetVariantParameters, build_walk_forward_forecasts
 
 logger = logging.getLogger(__name__)
@@ -23,8 +24,6 @@ EvaluationSplit = Literal["validation", "test"]
 
 
 class ForecastingRunner:
-    """Orchestriert Forecast-Erzeugung, Evaluation und Speicherung."""
-
     def __init__(
         self,
         project_config: ProjectConfig | None = None,
@@ -41,9 +40,7 @@ class ForecastingRunner:
             and self.forecasting_config.primary_naive_reference
             not in self.forecasting_config.baseline_model_ids
         ):
-            raise ValueError(
-                "primary_naive_reference must be one of the configured naive baselines before running the test split."
-            )
+            raise ValueError("primary_naive_reference must be one of the configured naive baselines before running the test split.")
 
         logger.info("Starting forecasting for split %s...", split)
 
@@ -64,9 +61,7 @@ class ForecastingRunner:
             parse_dates=["start", "end"],
         )
 
-        canonical_manifest = pd.read_csv(
-            self.project_config.canonical_output_dir / "canonical_manifest.csv"
-        )
+        canonical_manifest = pd.read_csv(self.project_config.canonical_output_dir / "canonical_manifest.csv")
 
         mains_targets = canonical_manifest.loc[
             canonical_manifest["channel_role"].eq("mains"),
@@ -85,25 +80,13 @@ class ForecastingRunner:
         split_start = hourly_splits.loc[split, "start"]
         split_end = hourly_splits.loc[split, "end"]
 
-        fixed_history = treated_hourly.loc[
-            treated_hourly.index < split_start,
-            target_column,
-        ]
+        fixed_history = treated_hourly.loc[treated_hourly.index < split_start, target_column]
 
-        evaluation_targets = treated_hourly.loc[
-            split_start:split_end,
-            target_column,
-        ]
+        evaluation_targets = treated_hourly.loc[split_start:split_end, target_column]
 
-        evaluation_imputation_mask = imputation_mask_hourly.loc[
-            split_start:split_end,
-            target_column,
-        ]
+        evaluation_imputation_mask = imputation_mask_hourly.loc[split_start:split_end, target_column]
 
-        run_id = (
-            f"{split}_"
-            f"{datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ')}"
-        )
+        run_id = f"{split}_{datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ')}"
 
         prophet_variant = cast(
             ProphetVariantParameters,
@@ -127,9 +110,7 @@ class ForecastingRunner:
             yearly_seasonality=self.forecasting_config.yearly_seasonality,
             interval_width=self.forecasting_config.interval_width,
             uncertainty_samples=self.forecasting_config.uncertainty_samples,
-            clip_negative_forecasts=(
-                self.forecasting_config.negative_forecast_handling == "clip_zero"
-            ),
+            clip_negative_forecasts=self.forecasting_config.negative_forecast_handling == "clip_zero",
             config_version=self.forecasting_config.config_version,
         )
 
@@ -156,16 +137,16 @@ class ForecastingRunner:
             primary_naive_reference = self.forecasting_config.primary_naive_reference
 
         df_to_csv(
-            forecasts,
-            self.project_config.forecasting_output_dir,
-            f"forecasts_{split}",
+            forecasts, 
+            self.project_config.forecasting_output_dir, 
+            f"forecasts_{split}"
         )
 
         for name, result in evaluation_results.items():
             df_to_csv(
-                result,
-                self.project_config.forecasting_output_dir,
-                f"{name}_{split}",
+                result, 
+                self.project_config.forecasting_output_dir, 
+                f"{name}_{split}"
             )
 
         logger.info(
@@ -178,18 +159,12 @@ class ForecastingRunner:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--split",
-        choices=("validation", "test"),
-        default="validation",
-    )
+    parser.add_argument("--split", choices=("validation", "test"), default="validation")
     arguments = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO)
 
-    ForecastingRunner().run(
-        split=cast(EvaluationSplit, arguments.split)
-    )
+    ForecastingRunner().run(split=cast(EvaluationSplit, arguments.split))
 
 
 if __name__ == "__main__":

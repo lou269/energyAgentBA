@@ -1,0 +1,12 @@
+{
+  "attempts": [
+    {
+      "attempt_number": 1,
+      "generation_seconds": 112.58323874999769,
+      "raw_content": "{\n  \"schema_version\": \"1.0\",\n  \"classification\": \"normal\",\n  \"explanation\": \"Die verf\u00fcgbaren numerischen Daten weisen keine relevanten ungew\u00f6hnlichen Situationen auf. Die Anomalie ist im 'normal' Zustand, was bedeutet, dass die Konsumtion innerhalb der erwarteten Variation liegt.\",\n  \"evidence_references\": [\n    {\n      \"path\": \"anomaly.level\",\n      \"value\": \"normal\"\n    },\n    {\n      \"path\": \"anomaly.direction\",\n      \"value\": \"low\"\n    }\n  ],\n  \"user_recommendation\": \"Keine spezifischen Ma\u00dfnahmen empfohlen\",\n  \"uncertainty\": \"Keine\"\n}",
+      "valid": true,
+      "validation_error": null
+    }
+  ],
+  "run_id": "llm_20260903T160734267762Z"
+}

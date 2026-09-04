@@ -35,8 +35,7 @@ def _aggregate(
     min_coverage_share: float,
 ):
     expected_count = int(
-        pd.Timedelta(frequency).total_seconds()
-        / sample_period_seconds
+        pd.Timedelta(frequency).total_seconds() / sample_period_seconds
     )
 
     resampled = data.resample(frequency)

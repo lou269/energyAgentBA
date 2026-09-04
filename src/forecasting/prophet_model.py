@@ -15,12 +15,9 @@ def fit_prophet_model(
     interval_width: float,
     uncertainty_samples: int,
 ) -> Prophet:
-    """Fittet Prophet auf der für den Forecast erlaubten History."""
 
     prophet_data = _prepare_prophet_data(history)
 
-    # Prophet unterstützt bool, obwohl die bereitgestellten Typinformationen
-    # für die Seasonality-Parameter nur str ausweisen.
     model = Prophet(
         growth=growth,
         daily_seasonality=daily_seasonality,  # pyright: ignore[reportArgumentType]
@@ -40,38 +37,20 @@ def build_prophet_forecast(
     *,
     clip_negative_forecasts: bool,
 ) -> pd.DataFrame:
-    """
-    Erstellt Prognosen für die explizit übergebenen Zielzeitpunkte.
-
-    Rohprognosen und Vorhersageintervalle bleiben unverändert erhalten.
-    Optionales Clipping betrifft ausschließlich y_pred.
-    """
-
     _validate_utc_index(target_index, name="target_index")
 
     if model.history is None or model.history.empty:
         raise ValueError("model must be fitted before forecasting.")
 
-    history_end = pd.Timestamp(
-        model.history["ds"].max()
-    ).tz_localize("UTC")
+    history_end = pd.Timestamp(model.history["ds"].max()).tz_localize("UTC")
 
     if history_end >= target_index[0]:
         raise ValueError(
-            "The fitted model contains history at or after the "
-            "forecast origin."
+            "The fitted model contains history at or after the forecast origin."
         )
 
     # Prophet verarbeitet keine timezone-aware Zeitstempel.
-    future = pd.DataFrame(
-        {
-            "ds": (
-                target_index
-                .tz_convert("UTC")
-                .tz_localize(None)
-            )
-        }
-    )
+    future = pd.DataFrame({"ds": (target_index.tz_convert("UTC").tz_localize(None))})
 
     forecast = model.predict(future)
 
@@ -91,18 +70,10 @@ def build_prophet_forecast(
 
     result.index.name = "target_timestamp"
 
-    return result[
-        [
-            "y_pred",
-            "y_pred_raw",
-            "y_lower",
-            "y_upper",
-        ]
-    ]
+    return result[["y_pred", "y_pred_raw", "y_lower", "y_upper"]]
 
 
 def _prepare_prophet_data(history: pd.Series) -> pd.DataFrame:
-    """Überführt eine UTC-Zeitreihe in Prophets ds-y-Schema."""
 
     if not isinstance(history, pd.Series):
         raise TypeError("history must be a pandas Series.")
@@ -126,10 +97,7 @@ def _prepare_prophet_data(history: pd.Series) -> pd.DataFrame:
     timestamps = pd.DatetimeIndex(valid_history.index)
 
     return pd.DataFrame(
-        {
-            "ds": timestamps.tz_convert("UTC").tz_localize(None),
-            "y": values,
-        }
+        {"ds": timestamps.tz_convert("UTC").tz_localize(None), "y": values}
     )
 
 
@@ -138,7 +106,6 @@ def _validate_utc_index(
     *,
     name: str,
 ) -> None:
-    """Prüft die gemeinsamen Zeitindex-Garantien des Moduls."""
 
     if not isinstance(index, pd.DatetimeIndex):
         raise TypeError(f"{name} must be a DatetimeIndex.")

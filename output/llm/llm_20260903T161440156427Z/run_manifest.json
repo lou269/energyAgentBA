@@ -1,0 +1,108 @@
+{
+  "code_version": {
+    "git_commit": "6a8267e5dcf89db65758323aec94575e45b2026b",
+    "git_dirty": true,
+    "source_fingerprint": {
+      "files": {
+        "src/config/llm_config.py": "754307d2c94e050746236864910dd555a0ae51793b084e1e600066e6a4590b40",
+        "src/llm/client.py": "9b55bceb4578112d625408901946af8fa1e504f515cb731f90bf4fda2b154f62",
+        "src/llm/inference.py": "87676d93b367cd69ee5981ab4d309260d90272f11c64dfb14835c79e6007a818",
+        "src/llm/llm_run_artifacts.py": "20cb23308c1e0f350dd2608f8481bad2e80e9a301b8c8c61875b57b34bdc446d",
+        "src/llm/llm_run_manifest.py": "03683543e3c86bb48763072d65e665c62775ffb586952ced58ac0a64ff35bc88",
+        "src/llm/llm_runner.py": "756a5e7152dea6acd1cab755273582cd41ddbf53c9a262cb253798e4b1d93738",
+        "src/llm/llm_schema.py": "a67873326e56f6b25a8e9f05ecf7e7d4e05ea9efb9f518045e2b950f0bd793e2",
+        "src/llm/validation.py": "67ab1de361e78cb68f21661efbc2a333cce9930a00c5c8dbfc490f9aa28c9ef3",
+        "src/structured_state/builder.py": "0e9a134ed4064ebc5d1d03e14690e6cc85215d115530411c755ad287f7083642",
+        "src/structured_state/structured_state_runner.py": "0d2ca01f16a833462372d8bdf86bc800d39bb7dae2121af6e4b587c2b8c22e40",
+        "src/structured_state/structured_state_schema.py": "8a744fb23ae1f9a37aaca96b7c948120371add9abe441708f6b4fe198102398f"
+      },
+      "sha256": "979d9dce8606ae65c49361a587cfb7c2c0f333e0096f615ed6aa1acc781d4c14"
+    }
+  },
+  "config": {
+    "sha256": "d4a86780bf6c621796e13ab7c7702fa2334dcdb1e47a5168affe765944f8e48a",
+    "values": {
+      "max_attempts": 2,
+      "model": "qwen3.5:9b",
+      "prompt_version": "v2",
+      "request_timeout_seconds": 120.0,
+      "seed": 42,
+      "temperature": 0.0
+    }
+  },
+  "created_at_utc": "2026-09-03T16:16:12.937067+00:00",
+  "decision_time": "2013-09-06T03:00:00+00:00",
+  "error": {
+    "message": "LLM returned no valid output after 2 attempt(s).",
+    "type": "LLMInferenceError"
+  },
+  "forecast": {
+    "run_id": "validation_20260903T100733Z"
+  },
+  "inference": {
+    "attempt_count": 2,
+    "attempts": [
+      {
+        "attempt_number": 1,
+        "generation_seconds": 58.307487790996674,
+        "raw_content_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "valid": false,
+        "validation_error": "ValueError: LLM returned an empty response."
+      },
+      {
+        "attempt_number": 2,
+        "generation_seconds": 34.40622045798227,
+        "raw_content_sha256": "6e2a8bbd2ee8b92c898ad10a8718c04de827e20697821099dfe0e1f280b03840",
+        "valid": false,
+        "validation_error": "JSONDecodeError: Expecting value: line 5 column 27 (char 281)"
+      }
+    ],
+    "first_attempt_valid": false,
+    "retry_used": true,
+    "runtime_seconds": 92.75421883299714,
+    "timing_scope": "model_metadata_and_inference",
+    "valid_attempt": null
+  },
+  "inputs": {
+    "prompt": {
+      "path": "src/llm/prompts/prompt_v2.txt",
+      "sha256": "fe068a812a48a1b316510906f201e0fcd0523baaa3fbd955ae3ec1fbe09d8ee1",
+      "size_bytes": 2304
+    },
+    "structured_state": {
+      "path": "output/structured_state/structured_state.json",
+      "sha256": "cbc6ab5535b7deee1d6ff514c95395ac5173958c6945c4d0d39df045dc250ce3",
+      "size_bytes": 6205
+    }
+  },
+  "model": {
+    "digest": "6488c96fa5faab64bb65cbd30d4289e20e6130ef535a93ef9a49f42eda893ea7",
+    "name": "qwen3.5:9b"
+  },
+  "outputs": {
+    "attempts": {
+      "path": "output/llm/llm_20260903T161440156427Z/attempts.json",
+      "sha256": "84eecf49959f4d5e906b16a5fa5c730ee72af7edad654a3f23d4c0442d798975",
+      "size_bytes": 804
+    },
+    "prompt": {
+      "path": "output/llm/llm_20260903T161440156427Z/prompt.txt",
+      "sha256": "fe068a812a48a1b316510906f201e0fcd0523baaa3fbd955ae3ec1fbe09d8ee1",
+      "size_bytes": 2304
+    },
+    "structured_state": {
+      "path": "output/llm/llm_20260903T161440156427Z/structured_state.json",
+      "sha256": "cbc6ab5535b7deee1d6ff514c95395ac5173958c6945c4d0d39df045dc250ce3",
+      "size_bytes": 6205
+    }
+  },
+  "run_id": "llm_20260903T161440156427Z",
+  "runtime_version": {
+    "ollama_client": "0.6.2",
+    "pandas": "3.0.5",
+    "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+    "python": "3.14.6",
+    "python_implementation": "CPython"
+  },
+  "status": "invalid_output"
+}

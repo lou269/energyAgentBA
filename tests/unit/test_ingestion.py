@@ -13,8 +13,7 @@ from src.ingestion import downloader
 
 
 def test_download_continues_partial_file(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     output_path = tmp_path / "dataset.zip"
     partial_path = tmp_path / "dataset.zip.part"
@@ -22,9 +21,7 @@ def test_download_continues_partial_file(
 
     def fake_run(command: list[str], **_: object) -> None:
         assert command[command.index("--continue-at") + 1] == "-"
-        curl_output_path = Path(
-            command[command.index("--output") + 1]
-        )
+        curl_output_path = Path(command[command.index("--output") + 1])
         assert curl_output_path == partial_path
 
         with curl_output_path.open("ab") as file:
@@ -44,8 +41,7 @@ def test_download_continues_partial_file(
 
 
 def test_download_rejects_wrong_file_size(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     output_path = tmp_path / "dataset.zip"
     output_path.write_bytes(b"wrong-size")
@@ -65,8 +61,7 @@ def test_download_rejects_wrong_file_size(
 
 
 def test_download_overwrites_existing_files(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     output_path = tmp_path / "dataset.zip"
     partial_path = tmp_path / "dataset.zip.part"
@@ -94,22 +89,18 @@ def test_download_overwrites_existing_files(
     assert not partial_path.exists()
 
 
-def test_empty_hdf5_file_is_rejected(
-    tmp_path: Path,
-) -> None:
+def test_empty_hdf5_file_is_rejected(tmp_path: Path) -> None:
     output_path = tmp_path / "dataset.h5"
     output_path.touch()
 
     with pytest.raises(RuntimeError, match="Missing or empty"):
         converter._validate_hdf5_output(
-            output_path=output_path,
-            expected_house_numbers=[1],
+            output_path=output_path, expected_house_numbers=[1]
         )
 
 
 def test_damaged_hdf5_file_is_rejected(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     output_path = tmp_path / "dataset.h5"
     output_path.write_bytes(b"damaged")
@@ -121,34 +112,24 @@ def test_damaged_hdf5_file_is_rejected(
 
     with pytest.raises(RuntimeError, match="Invalid NILMTK HDF5"):
         converter._validate_hdf5_output(
-            output_path=output_path,
-            expected_house_numbers=[1],
+            output_path=output_path, expected_house_numbers=[1]
         )
 
 
 def test_hdf5_with_missing_building_is_rejected(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     output_path = tmp_path / "dataset.h5"
     output_path.write_bytes(b"non-empty")
 
     store = Mock()
-    dataset = SimpleNamespace(
-        store=store,
-        buildings={1: object()},
-    )
+    dataset = SimpleNamespace(store=store, buildings={1: object()})
 
-    monkeypatch.setattr(
-        converter,
-        "DataSet",
-        lambda _: dataset,
-    )
+    monkeypatch.setattr(converter, "DataSet", lambda _: dataset)
 
     with pytest.raises(RuntimeError, match="missing buildings: 2"):
         converter._validate_hdf5_output(
-            output_path=output_path,
-            expected_house_numbers=[1, 2],
+            output_path=output_path, expected_house_numbers=[1, 2]
         )
 
     store.close.assert_called_once_with()

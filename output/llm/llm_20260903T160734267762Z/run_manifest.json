@@ -1,0 +1,103 @@
+{
+  "code_version": {
+    "git_commit": "6a8267e5dcf89db65758323aec94575e45b2026b",
+    "git_dirty": true,
+    "source_fingerprint": {
+      "files": {
+        "src/config/llm_config.py": "754307d2c94e050746236864910dd555a0ae51793b084e1e600066e6a4590b40",
+        "src/llm/client.py": "9b55bceb4578112d625408901946af8fa1e504f515cb731f90bf4fda2b154f62",
+        "src/llm/inference.py": "87676d93b367cd69ee5981ab4d309260d90272f11c64dfb14835c79e6007a818",
+        "src/llm/llm_run_artifacts.py": "20cb23308c1e0f350dd2608f8481bad2e80e9a301b8c8c61875b57b34bdc446d",
+        "src/llm/llm_run_manifest.py": "03683543e3c86bb48763072d65e665c62775ffb586952ced58ac0a64ff35bc88",
+        "src/llm/llm_runner.py": "2e6bf97872f87649b7d6823d7566b1c688820a9af2931d1c2a25d5a1ab38ac5e",
+        "src/llm/llm_schema.py": "a67873326e56f6b25a8e9f05ecf7e7d4e05ea9efb9f518045e2b950f0bd793e2",
+        "src/llm/validation.py": "67ab1de361e78cb68f21661efbc2a333cce9930a00c5c8dbfc490f9aa28c9ef3",
+        "src/structured_state/builder.py": "0e9a134ed4064ebc5d1d03e14690e6cc85215d115530411c755ad287f7083642",
+        "src/structured_state/structured_state_runner.py": "0d2ca01f16a833462372d8bdf86bc800d39bb7dae2121af6e4b587c2b8c22e40",
+        "src/structured_state/structured_state_schema.py": "8a744fb23ae1f9a37aaca96b7c948120371add9abe441708f6b4fe198102398f"
+      },
+      "sha256": "61e9a5b9d858016d42527e3c50debd469d8e1b4c4b9260f14c59a6ba60308109"
+    }
+  },
+  "config": {
+    "sha256": "f03b43dca3d6c9cfb1dca5484119c7a670ca8b15fe18842a1ea9fde4069a7845",
+    "values": {
+      "max_attempts": 2,
+      "model": "qwen3:4b",
+      "prompt_version": "v2",
+      "request_timeout_seconds": 120.0,
+      "seed": 42,
+      "temperature": 0.0
+    }
+  },
+  "created_at_utc": "2026-09-03T16:09:26.928826+00:00",
+  "decision_time": "2013-09-06T03:00:00+00:00",
+  "error": null,
+  "forecast": {
+    "run_id": "validation_20260903T100733Z"
+  },
+  "inference": {
+    "attempt_count": 1,
+    "attempts": [
+      {
+        "attempt_number": 1,
+        "generation_seconds": 112.58323874999769,
+        "raw_content_sha256": "1aee8c2bbddf87e5f9fa8354fb22376463250a90e1e5052a0ed6f275fa974bb9",
+        "valid": true,
+        "validation_error": null
+      }
+    ],
+    "first_attempt_valid": true,
+    "retry_used": false,
+    "runtime_seconds": 112.64939024997875,
+    "timing_scope": "model_metadata_and_inference",
+    "valid_attempt": 1
+  },
+  "inputs": {
+    "prompt": {
+      "path": "src/llm/prompts/prompt_v2.txt",
+      "sha256": "fe068a812a48a1b316510906f201e0fcd0523baaa3fbd955ae3ec1fbe09d8ee1",
+      "size_bytes": 2304
+    },
+    "structured_state": {
+      "path": "output/structured_state/structured_state.json",
+      "sha256": "cbc6ab5535b7deee1d6ff514c95395ac5173958c6945c4d0d39df045dc250ce3",
+      "size_bytes": 6205
+    }
+  },
+  "model": {
+    "digest": "359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7",
+    "name": "qwen3:4b"
+  },
+  "outputs": {
+    "attempts": {
+      "path": "output/llm/llm_20260903T160734267762Z/attempts.json",
+      "sha256": "4c35ec0cf82d638c3a7139a2be688ccc1f413caa2e393ede9e2d60d169ee8358",
+      "size_bytes": 842
+    },
+    "llm_output": {
+      "path": "output/llm/llm_20260903T160734267762Z/llm_output.json",
+      "sha256": "7f2f17bf5f42f2723ef9ceb70ec762ec1b37b0e2f2147689240fcc0993fbbd60",
+      "size_bytes": 559
+    },
+    "prompt": {
+      "path": "output/llm/llm_20260903T160734267762Z/prompt.txt",
+      "sha256": "fe068a812a48a1b316510906f201e0fcd0523baaa3fbd955ae3ec1fbe09d8ee1",
+      "size_bytes": 2304
+    },
+    "structured_state": {
+      "path": "output/llm/llm_20260903T160734267762Z/structured_state.json",
+      "sha256": "cbc6ab5535b7deee1d6ff514c95395ac5173958c6945c4d0d39df045dc250ce3",
+      "size_bytes": 6205
+    }
+  },
+  "run_id": "llm_20260903T160734267762Z",
+  "runtime_version": {
+    "ollama_client": "0.6.2",
+    "pandas": "3.0.5",
+    "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+    "python": "3.14.6",
+    "python_implementation": "CPython"
+  },
+  "status": "valid"
+}

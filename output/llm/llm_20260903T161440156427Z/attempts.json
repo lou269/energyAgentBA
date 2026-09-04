@@ -1,0 +1,19 @@
+{
+  "attempts": [
+    {
+      "attempt_number": 1,
+      "generation_seconds": 58.307487790996674,
+      "raw_content": "",
+      "valid": false,
+      "validation_error": "ValueError: LLM returned an empty response."
+    },
+    {
+      "attempt_number": 2,
+      "generation_seconds": 34.40622045798227,
+      "raw_content": "{\n  \"schema_version\": \"1.0\",\n  \"classification\": \"normal\",\n  \"explanation\": \"Die verf\u00fcgbaren numerischen Evidenzen zeigen keine relevante ungew\u00f6hnliche Situation an. Der Anomalie-Level ist 'normal' und es liegen keine relevanten Kalenderereignisse vor.\",\n  \"evidence_references\": [",
+      "valid": false,
+      "validation_error": "JSONDecodeError: Expecting value: line 5 column 27 (char 281)"
+    }
+  ],
+  "run_id": "llm_20260903T161440156427Z"
+}

@@ -6,17 +6,12 @@ from typing import Literal, TypedDict
 
 import pandas as pd
 
-from src.context.calendar_schema import (
-    CALENDAR_CONTEXT_FIELDS,
-    CalendarEvent,
-    validate_calendar_context,
-)
+from src.context.calendar_schema import CALENDAR_CONTEXT_FIELDS, CalendarEvent, validate_calendar_context
 
 
 SCHEMA_VERSION = "1.0"
 FORECAST_HORIZON_HOURS = 24
 
-# Nur für unvermeidbare Float-Rundung beim Berechnen und Serialisieren.
 FLOAT_COMPARISON_REL_TOL = 1e-9
 FLOAT_COMPARISON_ABS_TOL = 1e-9
 
@@ -25,36 +20,16 @@ TrendName = Literal["stable", "increasing", "decreasing"]
 AnomalyLevel = Literal["normal", "unusual", "strong_anomaly"]
 AnomalyDirection = Literal["high", "low"]
 
-TREND_NAMES: tuple[TrendName, ...] = (
-    "stable",
-    "increasing",
-    "decreasing",
-)
+TREND_NAMES: tuple[TrendName, ...] = ("stable", "increasing", "decreasing")
 
-ANOMALY_LEVELS: tuple[AnomalyLevel, ...] = (
-    "normal",
-    "unusual",
-    "strong_anomaly",
-)
+ANOMALY_LEVELS: tuple[AnomalyLevel, ...] = ("normal", "unusual", "strong_anomaly")
 
-ANOMALY_DIRECTIONS: tuple[AnomalyDirection, ...] = (
-    "high",
-    "low",
-)
+ANOMALY_DIRECTIONS: tuple[AnomalyDirection, ...] = ("high", "low")
 
-SCALE_NAMES: tuple[ScaleName, ...] = (
-    "short_term",
-    "daily",
-    "weekly",
-    "long_term",
-)
+SCALE_NAMES: tuple[ScaleName, ...] = ("short_term", "daily", "weekly", "long_term")
 
 OBSERVATION_FIELDS = frozenset(
-    {
-        "observation_start",
-        "observation_end",
-        "current_power_w",
-    }
+    {"observation_start", "observation_end", "current_power_w"}
 )
 
 ANALYSIS_FIELDS = frozenset(
@@ -93,21 +68,11 @@ FORECAST_FIELDS = frozenset(
 )
 
 FORECAST_POINT_FIELDS = frozenset(
-    {
-        "timestamp",
-        "predicted_power_w",
-        "lower_w",
-        "upper_w",
-    }
+    {"timestamp", "predicted_power_w", "lower_w", "upper_w"}
 )
 
 FORECAST_SUMMARY_FIELDS = frozenset(
-    {
-        "mean_w",
-        "peak_w",
-        "peak_timestamp",
-        "mean_interval_width_w",
-    }
+    {"mean_w", "peak_w", "peak_timestamp", "mean_interval_width_w"}
 )
 
 CONTEXT_FIELDS = CALENDAR_CONTEXT_FIELDS - {"decision_time"}
@@ -201,8 +166,6 @@ class StructuredState(TypedDict):
 
 
 def validate_structured_state(state: Mapping[str, object]) -> None:
-    """Validiert Schema und State-spezifische Garantien."""
-
     _validate_fields(state, STRUCTURED_STATE_FIELDS, "Structured State")
 
     if state["schema_version"] != SCHEMA_VERSION:
@@ -214,12 +177,10 @@ def validate_structured_state(state: Mapping[str, object]) -> None:
     _validate_fields(observation, OBSERVATION_FIELDS, "observation")
 
     observation_start = _timestamp(
-        observation["observation_start"],
-        "observation.observation_start",
+        observation["observation_start"], "observation.observation_start"
     )
     observation_end = _timestamp(
-        observation["observation_end"],
-        "observation.observation_end",
+        observation["observation_end"], "observation.observation_end"
     )
 
     if observation_start != decision_time - pd.Timedelta(hours=1):
@@ -231,9 +192,7 @@ def validate_structured_state(state: Mapping[str, object]) -> None:
         raise ValueError("observation_end must equal decision_time.")
 
     _number(
-        observation["current_power_w"],
-        "observation.current_power_w",
-        nullable=True,
+        observation["current_power_w"], "observation.current_power_w", nullable=True
     )
 
     analysis = _mapping(state["analysis"], "analysis")
@@ -263,26 +222,26 @@ def validate_structured_state(state: Mapping[str, object]) -> None:
     if anomaly["level"] is not None and anomaly["level"] not in ANOMALY_LEVELS:
         raise ValueError("anomaly.level contains an unsupported value.")
 
-    if anomaly["direction"] is not None and anomaly["direction"] not in ANOMALY_DIRECTIONS:
+    if (
+        anomaly["direction"] is not None
+        and anomaly["direction"] not in ANOMALY_DIRECTIONS
+    ):
         raise ValueError("anomaly.direction contains an unsupported value.")
 
-    if anomaly["dominant_scale"] is not None and anomaly["dominant_scale"] not in SCALE_NAMES:
+    if (
+        anomaly["dominant_scale"] is not None
+        and anomaly["dominant_scale"] not in SCALE_NAMES
+    ):
         raise ValueError("anomaly.dominant_scale contains an unsupported value.")
 
     scale_scores = _mapping(anomaly["scale_scores"], "anomaly.scale_scores")
-    _validate_fields(
-        scale_scores,
-        frozenset(SCALE_NAMES),
-        "anomaly.scale_scores",
-    )
+    _validate_fields(scale_scores, frozenset(SCALE_NAMES), "anomaly.scale_scores")
 
     validated_scale_scores: dict[ScaleName, float] = {}
 
     for scale in SCALE_NAMES:
         scale_score = _number(
-            scale_scores[scale],
-            f"anomaly.scale_scores.{scale}",
-            nullable=True,
+            scale_scores[scale], f"anomaly.scale_scores.{scale}", nullable=True
         )
         if scale_score is not None:
             validated_scale_scores[scale] = float(scale_score)
@@ -295,42 +254,27 @@ def validate_structured_state(state: Mapping[str, object]) -> None:
     expected_scales = list(validated_scale_scores)
 
     if available_scales != expected_scales:
-        raise ValueError(
-            "anomaly.available_scales must match available scale_scores."
-        )
+        raise ValueError("anomaly.available_scales must match available scale_scores.")
 
     if not available_scales:
         if any(
             anomaly[field] is not None
-            for field in (
-                "score",
-                "level",
-                "direction",
-                "dominant_scale",
-            )
+            for field in ("score", "level", "direction", "dominant_scale")
         ):
-            raise ValueError(
-                "Aggregate anomaly fields must be null when no scale "
-                "scores are available."
-            )
+            raise ValueError("Aggregate anomaly fields must be null when no scale scores are available.")
     else:
         if anomaly["score"] is None or anomaly["level"] is None:
-            raise ValueError(
-                "anomaly.score and anomaly.level are required when "
-                "scale scores are available."
-            )
+            raise ValueError("anomaly.score and anomaly.level are required when scale scores are available.")
 
         if anomaly["dominant_scale"] not in available_scales:
-            raise ValueError(
-                "anomaly.dominant_scale must be an available scale."
-            )
+            raise ValueError("anomaly.dominant_scale must be an available scale.")
 
-        expected_score = max(abs(scale_score) for scale_score in validated_scale_scores.values())
+        expected_score = max(
+            abs(scale_score) for scale_score in validated_scale_scores.values()
+        )
 
         if score is None or not _float_matches(float(score), expected_score):
-            raise ValueError(
-                "anomaly.score must match the largest absolute available scale score."
-            )
+            raise ValueError("anomaly.score must match the largest absolute available scale score.")
 
         dominant_scales = [
             scale
@@ -339,10 +283,7 @@ def validate_structured_state(state: Mapping[str, object]) -> None:
         ]
 
         if anomaly["dominant_scale"] not in dominant_scales:
-            raise ValueError(
-                "anomaly.dominant_scale must reference a scale with the largest "
-                "absolute scale score."
-            )
+            raise ValueError("anomaly.dominant_scale must reference a scale with the largest absolute scale score.")
 
         dominant_score = next(
             scale_score
@@ -356,14 +297,10 @@ def validate_structured_state(state: Mapping[str, object]) -> None:
             )
 
         if dominant_score < 0 and anomaly["direction"] != "low":
-            raise ValueError(
-                "anomaly.direction must be 'low' for a negative dominant scale score."
-            )
+            raise ValueError("anomaly.direction must be 'low' for a negative dominant scale score.")
 
         if dominant_score == 0 and anomaly["direction"] is not None:
-            raise ValueError(
-                "anomaly.direction must be null when the dominant scale score is zero."
-            )
+            raise ValueError("anomaly.direction must be null when the dominant scale score is zero.")
 
     forecast = _mapping(state["forecast"], "forecast")
     _validate_fields(forecast, FORECAST_FIELDS, "forecast")
@@ -381,9 +318,7 @@ def validate_structured_state(state: Mapping[str, object]) -> None:
         or not isinstance(forecast["horizon_hours"], int)
         or forecast["horizon_hours"] != FORECAST_HORIZON_HOURS
     ):
-        raise ValueError(
-            f"forecast.horizon_hours must be {FORECAST_HORIZON_HOURS}."
-        )
+        raise ValueError(f"forecast.horizon_hours must be {FORECAST_HORIZON_HOURS}.")
 
     points = forecast["points"]
 
@@ -391,10 +326,7 @@ def validate_structured_state(state: Mapping[str, object]) -> None:
         raise TypeError("forecast.points must be a list.")
 
     if len(points) != FORECAST_HORIZON_HOURS:
-        raise ValueError(
-            f"forecast.points must contain exactly "
-            f"{FORECAST_HORIZON_HOURS} points."
-        )
+        raise ValueError(f"forecast.points must contain exactly {FORECAST_HORIZON_HOURS} points.")
 
     interval_states: list[bool] = []
     point_timestamps: list[pd.Timestamp] = []
@@ -403,57 +335,28 @@ def validate_structured_state(state: Mapping[str, object]) -> None:
 
     for index, point_value in enumerate(points):
         point = _mapping(point_value, f"forecast.points[{index}]")
-        _validate_fields(
-            point,
-            FORECAST_POINT_FIELDS,
-            f"forecast.points[{index}]",
-        )
+        _validate_fields(point, FORECAST_POINT_FIELDS, f"forecast.points[{index}]")
 
-        timestamp = _timestamp(
-            point["timestamp"],
-            f"forecast.points[{index}].timestamp",
-        )
+        timestamp = _timestamp(point["timestamp"], f"forecast.points[{index}].timestamp")
 
         if timestamp != forecast_origin + pd.Timedelta(hours=index):
-            raise ValueError(
-                "Forecast point timestamps must be consecutive hourly "
-                "timestamps starting at forecast.origin."
-            )
+            raise ValueError("Forecast point timestamps must be consecutive hourly timestamps starting at forecast.origin.")
 
-        prediction = _number(
-            point["predicted_power_w"],
-            f"forecast.points[{index}].predicted_power_w",
-        )
+        prediction = _number(point["predicted_power_w"], f"forecast.points[{index}].predicted_power_w")
         assert prediction is not None
         predictions.append(float(prediction))
 
-        lower = _number(
-            point["lower_w"],
-            f"forecast.points[{index}].lower_w",
-            nullable=True,
-        )
-        upper = _number(
-            point["upper_w"],
-            f"forecast.points[{index}].upper_w",
-            nullable=True,
-        )
+        lower = _number(point["lower_w"], f"forecast.points[{index}].lower_w", nullable=True)
+        upper = _number(point["upper_w"], f"forecast.points[{index}].upper_w", nullable=True)
 
         if (lower is None) != (upper is None):
-            raise ValueError(
-                "Forecast lower_w and upper_w must be provided together."
-            )
+            raise ValueError("Forecast lower_w and upper_w must be provided together.")
 
         if lower is not None and upper is not None and lower > upper:
             raise ValueError("Forecast lower_w must not exceed upper_w.")
 
-        if (
-            lower is not None
-            and upper is not None
-            and not lower <= prediction <= upper
-        ):
-            raise ValueError(
-                "Forecast prediction must lie within its prediction interval."
-            )
+        if lower is not None and upper is not None and not lower <= prediction <= upper:
+            raise ValueError("Forecast prediction must lie within its prediction interval.")
 
         interval_states.append(lower is not None)
         point_timestamps.append(timestamp)
@@ -462,17 +365,10 @@ def validate_structured_state(state: Mapping[str, object]) -> None:
             interval_widths.append(float(upper - lower))
 
     if len(set(interval_states)) > 1:
-        raise ValueError(
-            "Prediction intervals must be available for all forecast "
-            "points or for none."
-        )
+        raise ValueError("Prediction intervals must be available for all forecast points or for none.")
 
     summary = _mapping(forecast["summary"], "forecast.summary")
-    _validate_fields(
-        summary,
-        FORECAST_SUMMARY_FIELDS,
-        "forecast.summary",
-    )
+    _validate_fields(summary, FORECAST_SUMMARY_FIELDS, "forecast.summary")
 
     mean_w = _number(summary["mean_w"], "forecast.summary.mean_w")
     peak_w = _number(summary["peak_w"], "forecast.summary.peak_w")
@@ -488,10 +384,7 @@ def validate_structured_state(state: Mapping[str, object]) -> None:
     if not _float_matches(float(peak_w), expected_peak_w):
         raise ValueError("forecast.summary.peak_w must match forecast points.")
 
-    peak_timestamp = _timestamp(
-        summary["peak_timestamp"],
-        "forecast.summary.peak_timestamp",
-    )
+    peak_timestamp = _timestamp(summary["peak_timestamp"], "forecast.summary.peak_timestamp")
 
     expected_peak_timestamps = {
         timestamp
@@ -500,9 +393,7 @@ def validate_structured_state(state: Mapping[str, object]) -> None:
     }
 
     if peak_timestamp not in expected_peak_timestamps:
-        raise ValueError(
-            "forecast.summary.peak_timestamp must reference a peak forecast point."
-        )
+        raise ValueError("forecast.summary.peak_timestamp must reference a peak forecast point.")
 
     mean_interval_width = _number(
         summary["mean_interval_width_w"],
@@ -511,18 +402,13 @@ def validate_structured_state(state: Mapping[str, object]) -> None:
     )
 
     if interval_states[0] != (mean_interval_width is not None):
-        raise ValueError(
-            "mean_interval_width_w must be present exactly when prediction "
-            "intervals are available."
-        )
+        raise ValueError("mean_interval_width_w must be present exactly when prediction intervals are available.")
 
     if mean_interval_width is not None:
         expected_interval_width = sum(interval_widths) / len(interval_widths)
 
         if not _float_matches(float(mean_interval_width), expected_interval_width):
-            raise ValueError(
-                "forecast.summary.mean_interval_width_w must match forecast points."
-            )
+            raise ValueError("forecast.summary.mean_interval_width_w must match forecast points.")
 
     context = _mapping(state["context"], "context")
     _validate_fields(context, CONTEXT_FIELDS, "context")
@@ -533,24 +419,16 @@ def validate_structured_state(state: Mapping[str, object]) -> None:
 
 
 def _validate_fields(
-    value: Mapping[str, object],
-    expected: frozenset[str],
-    name: str,
+    value: Mapping[str, object], expected: frozenset[str], name: str
 ) -> None:
     missing = expected.difference(value)
     unexpected = set(value).difference(expected)
 
     if missing:
-        raise ValueError(
-            f"{name} is missing required fields: "
-            + ", ".join(sorted(missing))
-        )
+        raise ValueError(f"{name} is missing required fields: " + ", ".join(sorted(missing)))
 
     if unexpected:
-        raise ValueError(
-            f"{name} contains unexpected fields: "
-            + ", ".join(sorted(str(field) for field in unexpected))
-        )
+        raise ValueError(f"{name} contains unexpected fields: " + ", ".join(sorted(str(field) for field in unexpected)))
 
 
 def _mapping(value: object, field_name: str) -> Mapping[str, object]:
@@ -576,12 +454,7 @@ def _float_matches(actual: float, expected: float) -> bool:
     )
 
 
-def _number(
-    value: object,
-    field_name: str,
-    *,
-    nullable: bool = False,
-) -> float | None:
+def _number(value: object, field_name: str, *, nullable: bool = False) -> float | None:
     if value is None:
         if nullable:
             return None

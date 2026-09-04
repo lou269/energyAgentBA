@@ -26,7 +26,9 @@ class PreprocessingRunner:
         preprocessing_config: PreprocessingConfig | None = None,
     ) -> None:
         self.project_config = project_config or ProjectConfig()
-        self.data_preparation_config = data_preparation_config or DataPreparationConfig()
+        self.data_preparation_config = (
+            data_preparation_config or DataPreparationConfig()
+        )
         self.preprocessing_config = preprocessing_config or PreprocessingConfig()
 
     def run(self) -> None:
@@ -42,15 +44,12 @@ class PreprocessingRunner:
 
         logger.info("Building forecast aggregations...")
 
-        (
-            data_15min,
-            quality_15min,
-            data_hourly,
-            quality_hourly,
-        ) = build_aggregated_data(
-            canonical_data,
-            sample_period_seconds=self.data_preparation_config.alignment_sample_period_seconds,
-            min_coverage_share=self.preprocessing_config.min_aggregation_coverage_share,
+        (data_15min, quality_15min, data_hourly, quality_hourly) = (
+            build_aggregated_data(
+                canonical_data,
+                sample_period_seconds=self.data_preparation_config.alignment_sample_period_seconds,
+                min_coverage_share=self.preprocessing_config.min_aggregation_coverage_share,
+            )
         )
 
         logger.info(
@@ -143,8 +142,7 @@ class PreprocessingRunner:
         )
 
         logger.info(
-            "Chronological split completed: "
-            "%d/%d/%d 15-minute rows, %d/%d/%d hourly rows.",
+            "Chronological split completed: %d/%d/%d 15-minute rows, %d/%d/%d hourly rows.",
             len(train_15min),
             len(validation_15min),
             len(test_15min),
@@ -235,9 +233,7 @@ class PreprocessingRunner:
                 name,
             )
 
-        logger.info(
-            "Preprocessing completed successfully: %d output artifacts."
-        )
+        logger.info("Preprocessing completed successfully: %d output artifacts.")
 
 
 def main() -> None:

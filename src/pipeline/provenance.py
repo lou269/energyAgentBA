@@ -9,11 +9,7 @@ from typing import Any
 
 
 def json_sha256(value: Any) -> str:
-    serialized_value = json.dumps(
-        value,
-        sort_keys=True,
-        separators=(",", ":"),
-    )
+    serialized_value = json.dumps(value, sort_keys=True, separators=(",", ":"))
     return sha256(serialized_value.encode("utf-8")).hexdigest()
 
 

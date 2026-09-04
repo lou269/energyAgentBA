@@ -12,7 +12,7 @@ from src.forecasting.baselines import (
     build_weekly_naive_forecast,
 )
 from src.forecasting.prophet_model import build_prophet_forecast, fit_prophet_model
-from src.forecasting.schema import FORECAST_OUTPUT_COLUMNS, validate_forecast_output
+from src.forecasting.forecast_schema import FORECAST_OUTPUT_COLUMNS, validate_forecast_output
 
 
 class ProphetVariantParameters(TypedDict):
@@ -53,13 +53,6 @@ def build_walk_forward_forecasts(
     initial_history_hours: int | None = None,
     scenario_id: str | None = None,
 ) -> pd.DataFrame:
-    """
-    Erstellt nicht überlappende Walk-Forward-Forecasts.
-
-    Vergangene Evaluation-Werte werden erst an späteren Forecast-Ursprüngen
-    als History freigegeben.
-    """
-
     if initial_history_start is not None:
         if str(initial_history_start.tz) != "UTC":
             raise ValueError("initial_history_start must use UTC.")
@@ -71,8 +64,7 @@ def build_walk_forward_forecasts(
         fixed_history = fixed_history.iloc[:initial_history_hours]
         if len(fixed_history) != initial_history_hours:
             raise ValueError(
-                f"Initial history must contain exactly {initial_history_hours} hours, "
-                f"got {len(fixed_history)}."
+                f"Initial history must contain exactly {initial_history_hours} hours, got {len(fixed_history)}."
             )
 
     _validate_walk_forward_data(fixed_history, evaluation_targets, evaluation_imputation_mask)
@@ -159,9 +151,7 @@ def build_walk_forward_forecasts(
         raise ValueError("Evaluation split contains no complete forecast horizon.")
 
     forecast_origins = pd.date_range(
-        start=first_origin,
-        end=last_origin,
-        freq=f"{forecast_origin_step_hours}h",
+        start=first_origin, end=last_origin, freq=f"{forecast_origin_step_hours}h"
     )
 
     complete_history = pd.concat([fixed_history, evaluation_targets])
@@ -182,8 +172,7 @@ def build_walk_forward_forecasts(
 
         for model_id in baseline_model_ids:
             raw_predictions = _BASELINE_BUILDERS[model_id](
-                available_history,
-                target_index,
+                available_history, target_index
             )
 
             predictions = (
@@ -239,9 +228,7 @@ def build_walk_forward_forecasts(
                 if retraining_interval_hours is None:
                     raise RuntimeError(f"{model_id} has no retraining interval.")
 
-                elapsed_hours = (
-                    forecast_origin - fitted_at_origin
-                ) / pd.Timedelta(hours=1)
+                elapsed_hours = (forecast_origin - fitted_at_origin) / pd.Timedelta(hours=1)
 
                 fit_required = elapsed_hours >= retraining_interval_hours
 
@@ -268,9 +255,7 @@ def build_walk_forward_forecasts(
                     uncertainty_samples=uncertainty_samples,
                 )
 
-                refit_runtime_seconds = (
-                    pd.Timestamp.now() - fit_start
-                ).total_seconds()
+                refit_runtime_seconds = (pd.Timestamp.now() - fit_start).total_seconds()
 
                 state = (model, forecast_origin, model_history)
                 prophet_states[model_id] = state
@@ -317,10 +302,7 @@ def build_walk_forward_forecasts(
     forecasts = pd.concat(forecast_outputs, ignore_index=True)
     forecasts = forecasts[FORECAST_OUTPUT_COLUMNS]
 
-    validate_forecast_output(
-        forecasts,
-        horizon_hours=horizon_hours,
-    )
+    validate_forecast_output(forecasts, horizon_hours=horizon_hours)
 
     expected_model_count = len(model_ids)
     models_per_target = forecasts.groupby(
@@ -328,9 +310,7 @@ def build_walk_forward_forecasts(
     )["model_id"].nunique()
 
     if not models_per_target.eq(expected_model_count).all():
-        raise ValueError(
-            "Forecast variants do not use identical forecast origins and targets."
-        )
+        raise ValueError("Forecast variants do not use identical forecast origins and targets.")
 
     return forecasts
 
@@ -343,7 +323,6 @@ def _select_prophet_history(
     history_mode: Literal["fixed_train", "expanding", "rolling"],
     rolling_window_hours: int | None,
 ) -> pd.Series:
-    """Wählt die für eine Prophet-Anpassung erlaubte History."""
 
     if history_mode == "fixed_train":
         return fixed_history
@@ -378,7 +357,6 @@ def _build_forecast_output(
     refit_runtime_seconds: float,
     config_version: str,
 ) -> pd.DataFrame:
-    """Ergänzt Modellwerte um das gemeinsame Forecast-Schema."""
 
     output = model_forecast.copy()
     output.index.name = "target_timestamp"
@@ -418,7 +396,6 @@ def _validate_walk_forward_data(
     evaluation_targets: pd.Series,
     evaluation_imputation_mask: pd.Series,
 ) -> None:
-    """Validiert die Walk-Forward-spezifische Datengrenze einmalig."""
 
     for name, series in {
         "fixed_history": fixed_history,
@@ -442,29 +419,20 @@ def _validate_walk_forward_data(
         if str(series.index.tz) != "UTC":
             raise ValueError(f"{name} must use UTC.")
 
-        expected_index = pd.date_range(
-            start=series.index[0],
-            periods=len(series),
-            freq="1h",
-        )
+        expected_index = pd.date_range(start=series.index[0], periods=len(series), freq="1h")
 
         if not series.index.equals(expected_index):
             raise ValueError(f"{name} must contain a continuous hourly index.")
 
         try:
-            values = pd.to_numeric(
-                series,
-                errors="raise",
-            ).to_numpy(dtype="float64")
+            values = pd.to_numeric(series, errors="raise").to_numpy(dtype="float64")
         except (TypeError, ValueError) as error:
             raise TypeError(f"{name} must contain numeric values.") from error
 
         if np.isinf(values).any():
             raise ValueError(f"{name} contains infinite values.")
 
-    expected_evaluation_start = (
-        fixed_history.index[-1] + pd.Timedelta(hours=1)
-    )
+    expected_evaluation_start = fixed_history.index[-1] + pd.Timedelta(hours=1)
 
     if evaluation_targets.index[0] != expected_evaluation_start:
         raise ValueError(
@@ -484,3 +452,4 @@ def _validate_walk_forward_data(
 
     if not pd.api.types.is_bool_dtype(evaluation_imputation_mask.dtype):
         raise TypeError("evaluation_imputation_mask must contain booleans.")
+

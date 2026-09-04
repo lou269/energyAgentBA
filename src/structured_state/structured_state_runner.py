@@ -14,7 +14,10 @@ from src.config.project_config import ProjectConfig, ensure_project_directories
 from src.context.calendar_context import build_calendar_context
 from src.pipeline.io import save_json
 from src.structured_state.builder import build_structured_state
-from src.structured_state.schema import StructuredState, validate_structured_state
+from src.structured_state.structured_state_schema import (
+    StructuredState,
+    validate_structured_state,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -23,10 +26,7 @@ StateSplit = Literal["validation", "test"]
 
 
 class StructuredStateRunner:
-    def __init__(
-        self,
-        project_config: ProjectConfig | None = None,
-    ) -> None:
+    def __init__(self, project_config: ProjectConfig | None = None) -> None:
         self.project_config = project_config or ProjectConfig()
 
     def run(
@@ -67,15 +67,12 @@ class StructuredStateRunner:
         analysis_timestamp = decision_timestamp - pd.Timedelta(hours=1)
 
         analysis_rows = analysis.loc[
-            analysis["timestamp"].eq(analysis_timestamp)
-            & analysis["split"].eq(split)
+            analysis["timestamp"].eq(analysis_timestamp) & analysis["split"].eq(split)
         ]
 
         if len(analysis_rows) != 1:
             raise ValueError(
-                "Expected exactly one numerical-analysis row for "
-                f"{analysis_timestamp.isoformat()} and split {split!r}, "
-                f"found {len(analysis_rows)}."
+                f"Expected exactly one numerical-analysis row for {analysis_timestamp.isoformat()} and split {split!r}, found {len(analysis_rows)}."
             )
 
         forecasts = pd.read_csv(
@@ -109,9 +106,9 @@ class StructuredStateRunner:
         validate_structured_state(state)
 
         output_file = (
-            self.project_config.structured_state_output_dir
-            / "structured_state.json"
+            self.project_config.structured_state_output_dir / "structured_state.json"
         )
+
         save_json(dict(state), output_file)
 
         logger.info("Structured State saved to %s.", output_file)
@@ -124,11 +121,7 @@ def main() -> None:
 
     parser.add_argument("--decision-time", required=True)
     parser.add_argument("--model-id", required=True)
-    parser.add_argument(
-        "--split",
-        choices=("validation", "test"),
-        required=True,
-    )
+    parser.add_argument("--split", choices=("validation", "test"), required=True)
     parser.add_argument(
         "--calendar-events",
         type=Path,
@@ -136,10 +129,7 @@ def main() -> None:
         help="Optional JSON file containing a list of calendar events.",
     )
     parser.add_argument("--calendar-source", required=True)
-    parser.add_argument(
-        "--calendar-source-unavailable",
-        action="store_true",
-    )
+    parser.add_argument("--calendar-source-unavailable", action="store_true")
     parser.add_argument("--calendar-retrieved-at", required=True)
     parser.add_argument("--calendar-window-start", required=True)
     parser.add_argument("--calendar-window-end", required=True)

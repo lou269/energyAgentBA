@@ -30,7 +30,7 @@ output/canonical/canonical_data.csv
 
 # src
 src/old/
-src/llm/
+docs/
 
 .history/ 
 

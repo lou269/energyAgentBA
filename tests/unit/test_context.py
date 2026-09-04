@@ -8,10 +8,7 @@ from collections.abc import Mapping
 import pytest
 
 from src.context.calendar_context import build_calendar_context
-from src.context.calendar_schema import (
-    CalendarContext,
-    validate_calendar_context,
-)
+from src.context.calendar_schema import CalendarContext, validate_calendar_context
 
 
 DECISION_TIME = "2013-09-02T00:00:00+00:00"
@@ -102,10 +99,7 @@ def test_calendar_context_filters_causally_and_uses_half_open_window() -> None:
                 "start": "2013-08-31T12:00:00+00:00",
                 "end": "2013-09-01T00:00:00+00:00",
             },
-            {
-                **EVENT,
-                "event_id": "recently-ended",
-            },
+            {**EVENT, "event_id": "recently-ended"},
             {
                 **EVENT,
                 "event_id": "after-window",

@@ -15,7 +15,6 @@ def build_multi_scale_analysis(
     min_weekly_reference_samples: int,
     trend_threshold: float,
 ) -> pd.DataFrame:
-    """Berechnet kausale Kurz-, Tages-, Wochen- und Langzeitvergleiche."""
 
     train_data = train_data.sort_index()
     validation_data = validation_data.sort_index()
@@ -38,8 +37,7 @@ def build_multi_scale_analysis(
         and validation_data.index.max() < test_data.index.min()
     ):
         raise ValueError(
-            "Splits must be non-overlapping and ordered: "
-            "train < validation < test."
+            "Splits must be non-overlapping and ordered: train < validation < test."
         )
 
     data = pd.concat([train_data, validation_data, test_data])
@@ -59,22 +57,19 @@ def build_multi_scale_analysis(
     previous_power = result["current_power"].shift(1)
 
     result["short_term_mean"] = previous_power.rolling(
-        window=short_term_window,
-        min_periods=short_term_window,
+        window=short_term_window, min_periods=short_term_window
     ).mean()
 
     result["long_term_mean"] = previous_power.rolling(
-        window=long_term_window,
-        min_periods=long_term_window,
+        window=long_term_window, min_periods=long_term_window
     ).mean()
-    
+
     trend_time = np.arange(short_term_window) * sample_period_hours
     centered_trend_time = trend_time - trend_time.mean()
     trend_denominator = np.square(centered_trend_time).sum()
 
     result["trend_slope_w_per_hour"] = previous_power.rolling(
-        window=short_term_window,
-        min_periods=short_term_window,
+        window=short_term_window, min_periods=short_term_window
     ).apply(
         lambda values: (
             np.dot(values, centered_trend_time) / trend_denominator
@@ -102,21 +97,17 @@ def build_multi_scale_analysis(
     ] = np.nan
 
     daily_keys = pd.MultiIndex.from_arrays(
-        [data_index.hour, data_index.minute],
-        names=["hour", "minute"],
+        [data_index.hour, data_index.minute], names=["hour", "minute"]
     )
 
-    result["daily_expected"] = daily_profile["mean"].reindex(
-        daily_keys
-    ).to_numpy()
+    result["daily_expected"] = daily_profile["mean"].reindex(daily_keys).to_numpy()
 
-    train_daily_expected = (
-        train_reference.groupby(["hour", "minute"])["power"]
-        .transform(
-            lambda values: values.shift(1).expanding(
-                min_periods=min_daily_reference_samples
-            ).mean()
-        )
+    train_daily_expected = train_reference.groupby(["hour", "minute"])[
+        "power"
+    ].transform(
+        lambda values: values.shift(1)
+        .expanding(min_periods=min_daily_reference_samples)
+        .mean()
     )
 
     result.loc[train_data.index, "daily_expected"] = train_daily_expected
@@ -126,32 +117,22 @@ def build_multi_scale_analysis(
     )["power"].agg(["mean", "count"])
 
     weekly_profile.loc[
-        weekly_profile["count"] < min_weekly_reference_samples,
-        "mean",
+        weekly_profile["count"] < min_weekly_reference_samples, "mean"
     ] = np.nan
 
     weekly_keys = pd.MultiIndex.from_arrays(
-        [
-            data_index.dayofweek,
-            data_index.hour,
-            data_index.minute,
-        ],
+        [data_index.dayofweek, data_index.hour, data_index.minute],
         names=["day_of_week", "hour", "minute"],
     )
 
-    result["weekly_expected"] = weekly_profile["mean"].reindex(
-        weekly_keys
-    ).to_numpy()
+    result["weekly_expected"] = weekly_profile["mean"].reindex(weekly_keys).to_numpy()
 
-    train_weekly_expected = (
-        train_reference.groupby(
-            ["day_of_week", "hour", "minute"]
-        )["power"]
-        .transform(
-            lambda values: values.shift(1).expanding(
-                min_periods=min_weekly_reference_samples
-            ).mean()
-        )
+    train_weekly_expected = train_reference.groupby(["day_of_week", "hour", "minute"])[
+        "power"
+    ].transform(
+        lambda values: values.shift(1)
+        .expanding(min_periods=min_weekly_reference_samples)
+        .mean()
     )
 
     result.loc[train_data.index, "weekly_expected"] = train_weekly_expected
@@ -197,20 +178,11 @@ def build_multi_scale_analysis(
 
     result["trend"] = "stable"
 
-    result.loc[
-        result["trend_change"] > trend_threshold,
-        "trend",
-    ] = "increasing"
+    result.loc[result["trend_change"] > trend_threshold, "trend"] = "increasing"
 
-    result.loc[
-        result["trend_change"] < -trend_threshold,
-        "trend",
-    ] = "decreasing"
+    result.loc[result["trend_change"] < -trend_threshold, "trend"] = "decreasing"
 
-    result.loc[
-        result["trend_change"].isna(),
-        "trend",
-    ] = pd.NA
+    result.loc[result["trend_change"].isna(), "trend"] = pd.NA
 
     result.index.name = "timestamp"
 

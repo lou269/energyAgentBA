@@ -7,7 +7,7 @@ from typing import TypeVar, cast
 import pandas as pd
 
 from src.context.calendar_schema import CalendarContext
-from src.structured_state.schema import (
+from src.structured_state.structured_state_schema import (
     ANOMALY_DIRECTIONS,
     ANOMALY_LEVELS,
     TREND_NAMES,
@@ -77,15 +77,13 @@ def build_structured_state(
     missing = ANALYSIS_FIELDS.difference(analysis_row.index)
     if missing:
         raise ValueError(
-            "Analysis row is missing required fields: "
-            + ", ".join(sorted(missing))
+            "Analysis row is missing required fields: " + ", ".join(sorted(missing))
         )
 
     missing = FORECAST_COLUMNS.difference(forecast_rows.columns)
     if missing:
         raise ValueError(
-            "Forecast rows are missing required columns: "
-            + ", ".join(sorted(missing))
+            "Forecast rows are missing required columns: " + ", ".join(sorted(missing))
         )
 
     analysis_timestamp = _utc_timestamp(analysis_row["timestamp"], "analysis.timestamp")
@@ -96,8 +94,7 @@ def build_structured_state(
         )
 
     context_decision_time = _utc_timestamp(
-        calendar_context["decision_time"],
-        "calendar_context.decision_time",
+        calendar_context["decision_time"], "calendar_context.decision_time"
     )
 
     if context_decision_time != decision_time:
@@ -105,20 +102,14 @@ def build_structured_state(
 
     scale_scores: ScaleScores = {
         "short_term": _nullable_float(
-            analysis_row["short_term_score"],
-            "analysis.short_term_score",
+            analysis_row["short_term_score"], "analysis.short_term_score"
         ),
-        "daily": _nullable_float(
-            analysis_row["daily_score"],
-            "analysis.daily_score",
-        ),
+        "daily": _nullable_float(analysis_row["daily_score"], "analysis.daily_score"),
         "weekly": _nullable_float(
-            analysis_row["weekly_score"],
-            "analysis.weekly_score",
+            analysis_row["weekly_score"], "analysis.weekly_score"
         ),
         "long_term": _nullable_float(
-            analysis_row["long_term_score"],
-            "analysis.long_term_score",
+            analysis_row["long_term_score"], "analysis.long_term_score"
         ),
     }
 
@@ -148,50 +139,39 @@ def build_structured_state(
             "observation_start": analysis_timestamp.isoformat(),
             "observation_end": decision_time.isoformat(),
             "current_power_w": _nullable_float(
-                analysis_row["current_power"],
-                "analysis.current_power",
+                analysis_row["current_power"], "analysis.current_power"
             ),
         },
         "analysis": {
             "short_term_mean_w": _nullable_float(
-                analysis_row["short_term_mean"],
-                "analysis.short_term_mean",
+                analysis_row["short_term_mean"], "analysis.short_term_mean"
             ),
             "daily_expected_w": _nullable_float(
-                analysis_row["daily_expected"],
-                "analysis.daily_expected",
+                analysis_row["daily_expected"], "analysis.daily_expected"
             ),
             "weekly_expected_w": _nullable_float(
-                analysis_row["weekly_expected"],
-                "analysis.weekly_expected",
+                analysis_row["weekly_expected"], "analysis.weekly_expected"
             ),
             "long_term_mean_w": _nullable_float(
-                analysis_row["long_term_mean"],
-                "analysis.long_term_mean",
+                analysis_row["long_term_mean"], "analysis.long_term_mean"
             ),
             "trend_slope_w_per_hour": _nullable_float(
                 analysis_row["trend_slope_w_per_hour"],
                 "analysis.trend_slope_w_per_hour",
             ),
             "trend_change": _nullable_float(
-                analysis_row["trend_change"],
-                "analysis.trend_change",
+                analysis_row["trend_change"], "analysis.trend_change"
             ),
             "trend": _nullable_text(
-                analysis_row["trend"],
-                "analysis.trend",
-                TREND_NAMES,
+                analysis_row["trend"], "analysis.trend", TREND_NAMES
             ),
         },
         "anomaly": {
             "score": _nullable_float(
-                analysis_row["anomaly_score"],
-                "analysis.anomaly_score",
+                analysis_row["anomaly_score"], "analysis.anomaly_score"
             ),
             "level": _nullable_text(
-                analysis_row["anomaly_level"],
-                "anomaly.level",
-                ANOMALY_LEVELS,
+                analysis_row["anomaly_level"], "anomaly.level", ANOMALY_LEVELS
             ),
             "direction": _nullable_text(
                 analysis_row["anomaly_direction"],
@@ -199,9 +179,7 @@ def build_structured_state(
                 ANOMALY_DIRECTIONS,
             ),
             "dominant_scale": _nullable_text(
-                analysis_row["dominant_scale"],
-                "anomaly.dominant_scale",
-                SCALE_NAMES,
+                analysis_row["dominant_scale"], "anomaly.dominant_scale", SCALE_NAMES
             ),
             "scale_scores": scale_scores,
             "available_scales": available_scales,
@@ -214,10 +192,7 @@ def build_structured_state(
 
 
 def _build_forecast_state(
-    *,
-    forecast_rows: pd.DataFrame,
-    decision_time: pd.Timestamp,
-    analysis_split: object,
+    *, forecast_rows: pd.DataFrame, decision_time: pd.Timestamp, analysis_split: object
 ) -> ForecastState:
     """Baut den Forecast-Teil des States aus einem ausgewählten Forecast."""
 
@@ -240,8 +215,7 @@ def _build_forecast_state(
         raise ValueError("Analysis and forecast must belong to the same split.")
 
     forecast_origin = _utc_timestamp(
-        _single_value(forecast, "forecast_origin"),
-        "forecast.forecast_origin",
+        _single_value(forecast, "forecast_origin"), "forecast.forecast_origin"
     )
 
     if forecast_origin != decision_time:
@@ -253,25 +227,15 @@ def _build_forecast_state(
 
     for index, row in forecast.iterrows():
         timestamp = _utc_timestamp(
-            row["target_timestamp"],
-            f"forecast row {index} target_timestamp",
+            row["target_timestamp"], f"forecast row {index} target_timestamp"
         )
-        prediction = _nullable_float(
-            row["y_pred"],
-            f"forecast row {index} y_pred",
-        )
+        prediction = _nullable_float(row["y_pred"], f"forecast row {index} y_pred")
 
         if prediction is None:
             raise ValueError(f"forecast row {index} y_pred must not be missing.")
 
-        lower = _nullable_float(
-            row["y_lower"],
-            f"forecast row {index} y_lower",
-        )
-        upper = _nullable_float(
-            row["y_upper"],
-            f"forecast row {index} y_upper",
-        )
+        lower = _nullable_float(row["y_lower"], f"forecast row {index} y_lower")
+        upper = _nullable_float(row["y_upper"], f"forecast row {index} y_upper")
 
         if lower is not None and upper is not None:
             interval_widths.append(upper - lower)
@@ -302,9 +266,7 @@ def _build_forecast_state(
             "peak_w": peak_w,
             "peak_timestamp": forecast_points[peak_index]["timestamp"],
             "mean_interval_width_w": (
-                sum(interval_widths) / len(interval_widths)
-                if interval_widths
-                else None
+                sum(interval_widths) / len(interval_widths) if interval_widths else None
             ),
         },
     }
@@ -328,9 +290,7 @@ def _single_text(frame: pd.DataFrame, column: str) -> str:
     value = _single_value(frame, column)
 
     if not isinstance(value, str) or not value.strip():
-        raise ValueError(
-            f"Forecast column {column} must contain a non-empty string."
-        )
+        raise ValueError(f"Forecast column {column} must contain a non-empty string.")
 
     return value
 
@@ -351,9 +311,7 @@ def _nullable_float(value: object, field_name: str) -> float | None:
 
 
 def _nullable_text(
-    value: object,
-    field_name: str,
-    allowed: tuple[TextType, ...],
+    value: object, field_name: str, allowed: tuple[TextType, ...]
 ) -> TextType | None:
     if _is_missing(value):
         return None

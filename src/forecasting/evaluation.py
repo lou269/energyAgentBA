@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from src.forecasting.schema import validate_forecast_output
+from src.forecasting.forecast_schema import validate_forecast_output
 
 
 BASE_GROUP_COLUMNS = ["run_id", "split", "model_id"]
@@ -19,12 +19,7 @@ def evaluate_forecasts(
     reference_model_ids: tuple[str, ...],
     nominal_interval_level: float,
 ) -> dict[str, pd.DataFrame]:
-    """
-    Wertet ein Walk-Forward-Forecast-Artefakt aus.
 
-    Vergleichsmodelle sind typischerweise die Prophet-Varianten.
-    Referenzmodelle sind P1 und die naiven Baselines.
-    """
 
     validate_forecast_output(
         forecasts,
@@ -74,12 +69,6 @@ def select_primary_naive_reference(
     *,
     split: str = "validation",
 ) -> str:
-    """
-    Wählt auf genau einem Validation-Lauf die stärkste naive Baseline.
-
-    MAE ist das Auswahlkriterium. RMSE und model_id lösen nur
-    Gleichstände auf.
-    """
 
     required_columns = {"run_id", "split", "model_id", "mae_w", "rmse_w"}
     missing_columns = required_columns.difference(overall_metrics.columns)
@@ -110,13 +99,11 @@ def select_primary_naive_reference(
 
     if missing_models:
         raise ValueError(
-            "Naive baseline metrics are missing for: "
-            + ", ".join(sorted(missing_models))
+            "Naive baseline metrics are missing for: " + ", ".join(sorted(missing_models))
         )
 
     candidates = candidates.sort_values(
-        ["mae_w", "rmse_w", "model_id"],
-        na_position="last",
+        ["mae_w", "rmse_w", "model_id"], na_position="last"
     )
 
     if pd.isna(candidates.iloc[0]["mae_w"]):
@@ -134,7 +121,6 @@ def _validate_evaluation_input(
     reference_model_ids: tuple[str, ...],
     nominal_interval_level: float,
 ) -> None:
-    """Prüft ausschließlich die zusätzlichen Garantien der Evaluation."""
 
     if not reference_model_ids:
         raise ValueError("reference_model_ids must not be empty.")
@@ -146,9 +132,7 @@ def _validate_evaluation_input(
         raise ValueError("reference_model_ids must be unique.")
 
     if not np.isfinite(nominal_interval_level) or not 0 < nominal_interval_level < 1:
-        raise ValueError(
-            "nominal_interval_level must be finite and between zero and one."
-        )
+        raise ValueError("nominal_interval_level must be finite and between zero and one.")
 
     required_model_ids = set(comparison_model_ids) | set(reference_model_ids)
 
@@ -158,8 +142,7 @@ def _validate_evaluation_input(
 
         if missing_model_ids:
             raise ValueError(
-                f"Run {run_id!r}, split {split!r} is missing models: "
-                + ", ".join(sorted(missing_model_ids))
+                f"Run {run_id!r}, split {split!r} is missing models: " + ", ".join(sorted(missing_model_ids))
             )
 
     model_counts = (
@@ -169,9 +152,9 @@ def _validate_evaluation_input(
         .reset_index()
     )
     target_model_counts = (
-        forecasts.groupby(
-            ["run_id", "split", "forecast_origin", "target_timestamp"]
-        )["model_id"]
+        forecasts.groupby(["run_id", "split", "forecast_origin", "target_timestamp"])[
+            "model_id"
+        ]
         .nunique()
         .rename("actual_model_count")
         .reset_index()
@@ -186,9 +169,7 @@ def _validate_evaluation_input(
         raise ValueError("Models must use identical forecast origins and target timestamps.")
 
     origin_metadata = (
-        forecasts.groupby(ORIGIN_GROUP_COLUMNS)[
-            ["retrained", "refit_runtime_seconds"]
-        ]
+        forecasts.groupby(ORIGIN_GROUP_COLUMNS)[["retrained", "refit_runtime_seconds"]]
         .nunique(dropna=False)
         .gt(1)
     )
@@ -203,17 +184,15 @@ def _validate_evaluation_input(
     if not np.isfinite(finite_values).all():
         raise ValueError("Forecast values and refit runtimes must be finite.")
 
-    eligible_truth = forecasts.loc[
-        forecasts["target_eligible"],
-        "y_true",
-    ].to_numpy(dtype="float64")
+    eligible_truth = forecasts.loc[forecasts["target_eligible"], "y_true"].to_numpy(
+        dtype="float64"
+    )
 
     if not np.isfinite(eligible_truth).all():
         raise ValueError("Eligible ground-truth values must be finite.")
 
     interval_values = forecasts.loc[
-        forecasts["y_lower"].notna(),
-        ["y_lower", "y_upper"],
+        forecasts["y_lower"].notna(), ["y_lower", "y_upper"]
     ].to_numpy(dtype="float64")
 
     if not np.isfinite(interval_values).all():
@@ -227,7 +206,6 @@ def _calculate_grouped_metrics(
     forecasts: pd.DataFrame,
     group_columns: list[str],
 ) -> pd.DataFrame:
-    """Berechnet dieselben Forecast-Metriken für beliebige Auswertungsebenen."""
 
     rows: list[dict[str, object]] = []
 
@@ -249,7 +227,6 @@ def _calculate_grouped_metrics(
 def _calculate_error_metrics(
     forecasts: pd.DataFrame,
 ) -> dict[str, int | float]:
-    """Berechnet die im Forecast-Protokoll definierten Fehlermetriken."""
 
     possible_count = len(forecasts)
     eligible = forecasts["target_eligible"]
@@ -307,25 +284,20 @@ def _add_operational_metrics(
     overall_metrics: pd.DataFrame,
     forecasts: pd.DataFrame,
 ) -> pd.DataFrame:
-    """Ergänzt Laufzeit und Anzahl der Retrainings ohne Horizon-Duplikation."""
 
-    per_origin = (
-        forecasts.groupby(ORIGIN_GROUP_COLUMNS, as_index=False)
-        .agg(
-            retrained=("retrained", "first"),
-            refit_runtime_seconds=("refit_runtime_seconds", "first"),
-        )
+    per_origin = forecasts.groupby(ORIGIN_GROUP_COLUMNS, as_index=False).agg(
+        retrained=("retrained", "first"),
+        refit_runtime_seconds=("refit_runtime_seconds", "first"),
     )
-    operational_metrics = (
-        per_origin.groupby(BASE_GROUP_COLUMNS, as_index=False)
-        .agg(
-            forecast_origin_count=("forecast_origin", "size"),
-            retraining_count=("retrained", "sum"),
-            total_refit_runtime_seconds=("refit_runtime_seconds", "sum"),
-        )
+    operational_metrics = per_origin.groupby(BASE_GROUP_COLUMNS, as_index=False).agg(
+        forecast_origin_count=("forecast_origin", "size"),
+        retraining_count=("retrained", "sum"),
+        total_refit_runtime_seconds=("refit_runtime_seconds", "sum"),
     )
-    operational_metrics["retraining_count"] = operational_metrics["retraining_count"].astype("int64")
-    
+    operational_metrics["retraining_count"] = operational_metrics[
+        "retraining_count"
+    ].astype("int64")
+
     return overall_metrics.merge(
         operational_metrics,
         on=BASE_GROUP_COLUMNS,
@@ -337,7 +309,6 @@ def _add_operational_metrics(
 def _calculate_origin_metric_distribution(
     origin_metrics: pd.DataFrame,
 ) -> pd.DataFrame:
-    """Berechnet Median und Interquartilsabstand über Forecast-Ursprünge."""
 
     rows: list[dict[str, object]] = []
 
@@ -370,7 +341,6 @@ def _calculate_paired_origin_differences(
     comparison_model_ids: tuple[str, ...],
     reference_model_ids: tuple[str, ...],
 ) -> pd.DataFrame:
-    """Berechnet gepaarte Fehlerdifferenzen je Forecast-Ursprung."""
 
     key_columns = ["run_id", "split", "forecast_origin"]
     difference_columns = [f"{metric}_difference" for metric in ERROR_METRIC_COLUMNS]
@@ -438,7 +408,6 @@ def _calculate_mae_skill(
     comparison_model_ids: tuple[str, ...],
     reference_model_ids: tuple[str, ...],
 ) -> pd.DataFrame:
-    """Berechnet den MAE-Skill gegenüber allen Referenzmodellen."""
 
     key_columns = ["run_id", "split"]
     output_columns = [
@@ -458,8 +427,7 @@ def _calculate_mae_skill(
 
     for reference_model_id in reference_model_ids:
         reference = overall_metrics.loc[
-            overall_metrics["model_id"].eq(reference_model_id),
-            [*key_columns, "mae_w"],
+            overall_metrics["model_id"].eq(reference_model_id), [*key_columns, "mae_w"]
         ].rename(columns={"mae_w": "reference_mae_w"})
 
         skill = comparisons.loc[
@@ -472,7 +440,6 @@ def _calculate_mae_skill(
         )
         skill["reference_model_id"] = reference_model_id
 
-        # Kein Epsilon: Skill ist bei einer fehlerfreien Referenz undefiniert.
         skill["mae_skill"] = np.where(
             skill["reference_mae_w"].gt(0),
             1 - skill["mae_w"] / skill["reference_mae_w"],
@@ -486,9 +453,7 @@ def _calculate_mae_skill(
 
     return (
         pd.concat(result_frames, ignore_index=True)
-        .sort_values(
-            ["run_id", "split", "model_id", "reference_model_id"]
-        )
+        .sort_values(["run_id", "split", "model_id", "reference_model_id"])
         .reset_index(drop=True)
     )
 
@@ -498,7 +463,6 @@ def _calculate_interval_metrics(
     *,
     nominal_interval_level: float,
 ) -> pd.DataFrame:
-    """Berechnet Coverage und Breite vorhandener Vorhersageintervalle."""
 
     columns = [
         *BASE_GROUP_COLUMNS,
@@ -518,11 +482,7 @@ def _calculate_interval_metrics(
     ]
 
     for scope, group_columns in grouping_variants:
-        for keys, group in forecasts.groupby(
-            group_columns,
-            sort=True,
-            dropna=False,
-        ):
+        for keys, group in forecasts.groupby(group_columns, sort=True, dropna=False):
             if not isinstance(keys, tuple):
                 keys = (keys,)
 
@@ -542,9 +502,7 @@ def _calculate_interval_metrics(
                     & evaluable["y_true"].le(evaluable["y_upper"])
                 )
                 coverage = float(covered.mean())
-                mean_width = float(
-                    (evaluable["y_upper"] - evaluable["y_lower"]).mean()
-                )
+                mean_width = float((evaluable["y_upper"] - evaluable["y_lower"]).mean())
 
             rows.append(
                 {
@@ -569,20 +527,15 @@ def _calculate_interval_metrics(
     result = result.reindex(columns=columns)
     result["horizon_step"] = result["horizon_step"].astype("Int64")
 
-    return (
-        result.sort_values(
-            ["run_id", "split", "model_id", "scope", "horizon_step"],
-            na_position="first",
-        )
-        .reset_index(drop=True)
-    )
+    return result.sort_values(
+        ["run_id", "split", "model_id", "scope", "horizon_step"], na_position="first"
+    ).reset_index(drop=True)
 
 
 def _calculate_target_exclusions(
     forecasts: pd.DataFrame,
     overall_metrics: pd.DataFrame,
 ) -> pd.DataFrame:
-    """Fasst ausgeschlossene Ground-Truth-Werte nach Ursache zusammen."""
 
     columns = [
         *BASE_GROUP_COLUMNS,
@@ -619,3 +572,6 @@ def _calculate_target_exclusions(
         .sort_values([*BASE_GROUP_COLUMNS, "target_exclusion_reason"])
         .reset_index(drop=True)
     )
+    
+    
+    

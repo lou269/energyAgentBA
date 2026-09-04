@@ -1,0 +1,17 @@
+{
+  "classification": "normal",
+  "evidence_references": [
+    {
+      "path": "anomaly.level",
+      "value": "normal"
+    },
+    {
+      "path": "observation.current_power_w",
+      "value": 207.64739126666663
+    }
+  ],
+  "explanation": "Die verf\u00fcgbaren numerischen Daten zeigen keine Anomalien, die auf ungew\u00f6hnliche Situationen hinweisen. Der aktuelle Stromverbrauch liegt im erwarteten Bereich.",
+  "schema_version": "1.0",
+  "uncertainty": "Die Unsicherheit ist gering, da der aktuelle Verbrauch mit den Modellvorhersagen \u00fcbereinstimmt.",
+  "user_recommendation": "Keine spezifische Aktion erforderlich."
+}

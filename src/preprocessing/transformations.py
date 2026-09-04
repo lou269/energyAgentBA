@@ -25,37 +25,21 @@ def fit_transformations(
 
     selector = VarianceThreshold(threshold=variance_threshold)
 
-    selected_values = cast(
-        np.ndarray,
-        selector.fit_transform(train_features),
-    )
+    selected_values = cast(np.ndarray, selector.fit_transform(train_features))
 
     selected_columns = cast(
-        list[str],
-        train_features.columns[
-            selector.get_support()
-        ].tolist(),
+        list[str], train_features.columns[selector.get_support()].tolist()
     )
 
     scaler = StandardScaler()
 
-    transformed_values = cast(
-        np.ndarray,
-        scaler.fit_transform(selected_values),
-    )
+    transformed_values = cast(np.ndarray, scaler.fit_transform(selected_values))
 
     train_transformed = pd.DataFrame(
-        transformed_values,
-        index=train_features.index,
-        columns=selected_columns,
+        transformed_values, index=train_features.index, columns=selected_columns
     )
 
-    return (
-        train_transformed,
-        selector,
-        scaler,
-        selected_columns,
-    )
+    return (train_transformed, selector, scaler, selected_columns)
 
 
 def apply_transformations(
@@ -64,7 +48,7 @@ def apply_transformations(
     scaler: StandardScaler,
     selected_columns: list[str],
 ) -> pd.DataFrame:
-    """Wendet die auf Training gefitteten Transformationen an."""
+    "Wendet die auf Training gefitteten Transformationen an."
     expected_columns = list(selector.feature_names_in_)
 
     if list(features.columns) != expected_columns:
@@ -72,20 +56,12 @@ def apply_transformations(
             "Feature columns or their order differ from the training schema."
         )
 
-    selected_values = cast(
-        np.ndarray,
-        selector.transform(features),
-    )
+    selected_values = cast(np.ndarray, selector.transform(features))
 
-    transformed_values = cast(
-        np.ndarray,
-        scaler.transform(selected_values),
-    )
+    transformed_values = cast(np.ndarray, scaler.transform(selected_values))
 
     return pd.DataFrame(
-        transformed_values,
-        index=features.index,
-        columns=selected_columns,
+        transformed_values, index=features.index, columns=selected_columns
     )
     
     
@@ -104,15 +80,10 @@ def fit_normalization(
 
     scaler = StandardScaler()
 
-    normalized_values = cast(
-        np.ndarray,
-        scaler.fit_transform(train_data),
-    )
+    normalized_values = cast(np.ndarray, scaler.fit_transform(train_data))
 
     normalized_data = pd.DataFrame(
-        normalized_values,
-        index=train_data.index,
-        columns=train_data.columns,
+        normalized_values, index=train_data.index, columns=train_data.columns
     )
 
     return normalized_data, scaler
@@ -127,14 +98,9 @@ def apply_normalization(
     expected_columns = list(scaler.feature_names_in_)
 
     if list(data.columns) != expected_columns:
-        raise ValueError(
-            "Data columns or their order differ from the training schema."
-        )
+        raise ValueError("Data columns or their order differ from the training schema.")
 
-    normalized_values = cast(
-        np.ndarray,
-        scaler.transform(data),
-    )
+    normalized_values = cast(np.ndarray, scaler.transform(data))
 
     return pd.DataFrame(
         normalized_values,
@@ -153,9 +119,7 @@ def inverse_normalization(
     expected_columns = list(scaler.feature_names_in_)
 
     if source_column not in expected_columns:
-        raise ValueError(
-            f"Unknown normalization source column: {source_column}."
-        )
+        raise ValueError(f"Unknown normalization source column: {source_column}.")
 
     column_position = expected_columns.index(source_column)
 
@@ -163,9 +127,7 @@ def inverse_normalization(
     scales = scaler.scale_
 
     if means is None or scales is None:
-        raise ValueError(
-            "Scaler must be fitted with mean and standard deviation."
-        )
+        raise ValueError("Scaler must be fitted with mean and standard deviation.")
 
     mean = float(means[column_position])
     scale = float(scales[column_position])

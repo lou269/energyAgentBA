@@ -7,11 +7,7 @@ import platform
 from typing import Any
 from uuid import uuid4
 
-from src.pipeline.provenance import (
-    file_sha256,
-    git_output,
-    json_sha256,
-)
+from src.pipeline.provenance import file_sha256, git_output, json_sha256
 
 
 def build_ingestion_manifest(
@@ -47,35 +43,18 @@ def build_ingestion_manifest(
                 "sha256": file_sha256(dataset_path),
             },
         },
-        "config": {
-            "values": config_values,
-            "sha256": json_sha256(config_values),
-        },
+        "config": {"values": config_values, "sha256": json_sha256(config_values)},
         "code_version": {
-            "git_commit": git_output(
-                project_root,
-                "rev-parse",
-                "HEAD",
-            ),
-            "git_dirty": bool(
-                git_output(
-                    project_root,
-                    "status",
-                    "--porcelain",
-                )
-            ),
+            "git_commit": git_output(project_root, "rev-parse", "HEAD"),
+            "git_dirty": bool(git_output(project_root, "status", "--porcelain")),
         },
         "runtime_version": {
             "python": platform.python_version(),
-            "python_implementation": (
-                platform.python_implementation()
-            ),
+            "python_implementation": (platform.python_implementation()),
             "platform": platform.platform(),
             "packages": dict(sorted(package_versions.items())),
         },
-        "run_parameters": {
-            "overwrite": overwrite,
-        },
+        "run_parameters": {"overwrite": overwrite},
     }
 
     return manifest

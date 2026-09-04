@@ -27,6 +27,7 @@ class ProjectConfig:
     numerical_analysis_output_dir: Path = output_dir / "numerical_analysis"
     forecasting_output_dir: Path = output_dir / "forecasting"
     structured_state_output_dir: Path = output_dir / "structured_state"
+    llm_output_dir: Path = output_dir / "llm"
 
     # Dataset
     dataset_release: str = "UK-DALE April 2017"
@@ -63,7 +64,9 @@ def ensure_project_directories(config: ProjectConfig) -> None:
         config.numerical_analysis_output_dir,
         config.forecasting_output_dir,
         config.structured_state_output_dir,
+        config.llm_output_dir,
     ]
 
     for directory in directories:
         directory.mkdir(parents=True, exist_ok=True)
+

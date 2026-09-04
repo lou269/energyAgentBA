@@ -12,7 +12,10 @@ from src.context.calendar_context import build_calendar_context
 from src.context.calendar_schema import CalendarContext
 from src.pipeline.io import save_json
 from src.structured_state.builder import build_structured_state
-from src.structured_state.schema import StructuredState, validate_structured_state
+from src.structured_state.structured_state_schema import (
+    StructuredState,
+    validate_structured_state,
+)
 
 
 DECISION_TIME = pd.Timestamp("2013-09-02T00:00:00+00:00")
@@ -52,8 +55,7 @@ def _forecast_rows() -> pd.DataFrame:
                 "model_id": "B3",
                 "config_version": "0.5",
                 "forecast_origin": DECISION_TIME,
-                "target_timestamp": DECISION_TIME
-                + pd.Timedelta(hours=index),
+                "target_timestamp": DECISION_TIME + pd.Timedelta(hours=index),
                 "y_pred": 100.0 + index,
                 "y_lower": 90.0 + index,
                 "y_upper": 110.0 + index,
@@ -88,9 +90,7 @@ def _build_state(
         analysis_row=analysis_row if analysis_row is not None else _analysis_row(),
         forecast_rows=forecast_rows if forecast_rows is not None else _forecast_rows(),
         calendar_context=(
-            calendar_context
-            if calendar_context is not None
-            else _calendar_context()
+            calendar_context if calendar_context is not None else _calendar_context()
         ),
     )
 
@@ -100,15 +100,12 @@ def test_complete_structured_state_is_valid() -> None:
 
     validate_structured_state(state)
 
-    assert state["observation"]["observation_start"] == (
-        DECISION_TIME - pd.Timedelta(hours=1)
-    ).isoformat()
+    assert (
+        state["observation"]["observation_start"]
+        == (DECISION_TIME - pd.Timedelta(hours=1)).isoformat()
+    )
     assert len(state["forecast"]["points"]) == 24
-    assert state["anomaly"]["available_scales"] == [
-        "short_term",
-        "daily",
-        "long_term",
-    ]
+    assert state["anomaly"]["available_scales"] == ["short_term", "daily", "long_term"]
 
     serialized = json.dumps(state)
     assert "y_true" not in serialized
@@ -162,15 +159,10 @@ def test_forecast_summary_must_match_points() -> None:
 
 @pytest.mark.parametrize(
     ("field", "value"),
-    [
-        ("score", 1.0),
-        ("dominant_scale", "short_term"),
-        ("direction", "low"),
-    ],
+    [("score", 1.0), ("dominant_scale", "short_term"), ("direction", "low")],
 )
 def test_aggregate_anomaly_fields_must_match_scale_scores(
-    field: str,
-    value: object,
+    field: str, value: object
 ) -> None:
     state = _build_state()
     state["anomaly"][field] = value  # type: ignore[literal-required]

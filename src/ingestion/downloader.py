@@ -6,6 +6,7 @@ from pathlib import Path
 from zipfile import ZipFile
 from typing import Any
 
+
 def download_dataset_raw(
     raw_dir: Path,
     meta_dir: Path,
@@ -14,7 +15,7 @@ def download_dataset_raw(
     url_metadata: str,
     overwrite: bool,
 ) -> tuple[list[str], list[str]]:
-    """Download and extract UK-DALE and download all metadata."""
+    "Download and extract UK-DALE and download all metadata."
     data_files = _load_file_listing(url_data)
 
     archive_info = next(
@@ -26,9 +27,7 @@ def download_dataset_raw(
         None,
     )
     if archive_info is None:
-        raise FileNotFoundError(
-            f"Archive not listed by CEDA: {archive_path.name}"
-        )
+        raise FileNotFoundError(f"Archive not listed by CEDA: {archive_path.name}")
 
     _download_file(
         url=str(archive_info["download"]),
@@ -44,17 +43,14 @@ def download_dataset_raw(
                 for member in archive.namelist()
                 if member.startswith("house_")
             },
-            key=lambda house: int(house[len("house_"):]),
+            key=lambda house: int(house[len("house_") :]),
         )
 
         if not houses:
-            raise ValueError(
-                "No UK-DALE houses found in archive"
-            )
+            raise ValueError("No UK-DALE houses found in archive")
 
         raw_data_exists = all(
-            (raw_dir / house / "labels.dat").is_file()
-            for house in houses
+            (raw_dir / house / "labels.dat").is_file() for house in houses
         )
 
         if overwrite or not raw_data_exists:
@@ -75,16 +71,11 @@ def download_dataset_raw(
             overwrite=overwrite,
         )
 
-    metadata_files = [
-        str(file_info["name"])
-        for file_info in metadata_info
-    ]
+    metadata_files = [str(file_info["name"]) for file_info in metadata_info]
     return houses, metadata_files
 
 
-def _load_file_listing(
-    directory_url: str,
-) -> list[dict[str, Any]]:
+def _load_file_listing(directory_url: str) -> list[dict[str, Any]]:
     result = subprocess.run(
         [
             "curl",
@@ -102,15 +93,10 @@ def _load_file_listing(
 
 
 def _download_file(
-    url: str,
-    output_path: Path,
-    expected_size: int,
-    overwrite: bool,
+    url: str, output_path: Path, expected_size: int, overwrite: bool
 ) -> None:
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    partial_path = output_path.with_suffix(
-        output_path.suffix + ".part"
-    )
+    partial_path = output_path.with_suffix(output_path.suffix + ".part")
 
     if overwrite:
         output_path.unlink(missing_ok=True)
@@ -120,10 +106,7 @@ def _download_file(
         _validate_size(output_path, expected_size)
         return
 
-    if (
-        partial_path.exists()
-        and partial_path.stat().st_size == expected_size
-    ):
+    if partial_path.exists() and partial_path.stat().st_size == expected_size:
         partial_path.replace(output_path)
         return
 
@@ -145,15 +128,10 @@ def _download_file(
     partial_path.replace(output_path)
 
 
-def _validate_size(
-    path: Path,
-    expected_size: int,
-) -> None:
+def _validate_size(path: Path, expected_size: int) -> None:
     actual_size = path.stat().st_size
 
     if actual_size != expected_size:
         raise ValueError(
-            f"Invalid file size for {path}: "
-            f"expected {expected_size} bytes, "
-            f"got {actual_size} bytes"
+            f"Invalid file size for {path}: expected {expected_size} bytes, got {actual_size} bytes"
         )
