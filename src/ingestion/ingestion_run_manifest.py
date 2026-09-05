@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from importlib.metadata import distributions
 from pathlib import Path
-import platform
 from typing import Any
 from uuid import uuid4
 
-from src.pipeline.provenance import file_sha256, git_output, json_sha256
+from src.pipeline.provenance import build_code_version, build_environment_reference, file_sha256, json_sha256
 
 
 def build_ingestion_manifest(
@@ -19,13 +17,6 @@ def build_ingestion_manifest(
     config_values: dict[str, Any],
     overwrite: bool,
 ) -> dict[str, Any]:
-    package_versions: dict[str, str] = {}
-
-    for distribution in distributions():
-        package_name = distribution.metadata["Name"]
-        if package_name:
-            package_versions[package_name] = distribution.version
-
     manifest = {
         "run_id": str(uuid4()),
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
@@ -44,16 +35,8 @@ def build_ingestion_manifest(
             },
         },
         "config": {"values": config_values, "sha256": json_sha256(config_values)},
-        "code_version": {
-            "git_commit": git_output(project_root, "rev-parse", "HEAD"),
-            "git_dirty": bool(git_output(project_root, "status", "--porcelain")),
-        },
-        "runtime_version": {
-            "python": platform.python_version(),
-            "python_implementation": (platform.python_implementation()),
-            "platform": platform.platform(),
-            "packages": dict(sorted(package_versions.items())),
-        },
+        "code_version": build_code_version(project_root),
+        "environment": build_environment_reference( project_root, project_root / "environment-nilmtk.yml"),
         "run_parameters": {"overwrite": overwrite},
     }
 

@@ -7,6 +7,7 @@ from zipfile import ZipFile
 from typing import Any
 
 
+
 def download_dataset_raw(
     raw_dir: Path,
     meta_dir: Path,
@@ -15,7 +16,6 @@ def download_dataset_raw(
     url_metadata: str,
     overwrite: bool,
 ) -> tuple[list[str], list[str]]:
-    "Download and extract UK-DALE and download all metadata."
     data_files = _load_file_listing(url_data)
 
     archive_info = next(
@@ -43,19 +43,19 @@ def download_dataset_raw(
                 for member in archive.namelist()
                 if member.startswith("house_")
             },
-            key=lambda house: int(house[len("house_") :]),
+            key=_parse_house_number,
         )
 
         if not houses:
             raise ValueError("No UK-DALE houses found in archive")
 
-        raw_data_exists = all(
-            (raw_dir / house / "labels.dat").is_file() for house in houses
-        )
+        extraction_marker = raw_dir / ".extraction_complete"
+        raw_data_exists = extraction_marker.is_file()
 
         if overwrite or not raw_data_exists:
             raw_dir.mkdir(parents=True, exist_ok=True)
             archive.extractall(raw_dir)
+            extraction_marker.touch()
 
     metadata_info = [
         file_info
@@ -83,6 +83,10 @@ def _load_file_listing(directory_url: str) -> list[dict[str, Any]]:
             "--location",
             "--silent",
             "--show-error",
+            "--connect-timeout",
+            "30",
+            "--max-time",
+            "30",
             f"{directory_url.rstrip('/')}?json=",
         ],
         check=True,
@@ -115,6 +119,8 @@ def _download_file(
             "curl",
             "--fail",
             "--location",
+            "--connect-timeout",
+            "30",
             "--continue-at",
             "-",
             "--output",
@@ -132,6 +138,7 @@ def _validate_size(path: Path, expected_size: int) -> None:
     actual_size = path.stat().st_size
 
     if actual_size != expected_size:
-        raise ValueError(
-            f"Invalid file size for {path}: expected {expected_size} bytes, got {actual_size} bytes"
-        )
+        raise ValueError(f"Invalid file size for {path}: expected {expected_size} bytes, got {actual_size} bytes")
+    
+def _parse_house_number(house: str) -> int:
+    return int(house[len("house_"):])

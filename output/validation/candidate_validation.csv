@@ -1,3 +1,0 @@
-selection_role,candidate_id,grid_complete,mains_coverage_share,mains_valid_duration_days,validation_passed,rejection_reason
-primary,H1-M54,True,0.9999995611931509,158.25736111111112,True,
-fallback,H2-M20,True,1.0,75.82215277777777,True,

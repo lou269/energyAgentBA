@@ -1,22 +1,7 @@
 {
   "code_version": {
-    "git_commit": "38d3f134537a55c5789178a24bc937fa1927b3b0",
-    "git_dirty": true,
-    "source_fingerprint": {
-      "files": {
-        "src/analysis/analysis_run_manifest.py": "a7a87e730929e136fa747527acdcd853134fe13f2ded9e309c944b596b95fd53",
-        "src/analysis/analysis_runner.py": "6c7b002f28bd4b86d81dc39f9eadec5b1d88afccc3904261cae759f565355a55",
-        "src/analysis/diagnostics/channel_quality.py": "4cc4d5eb9a337aedc507c14d30949be543b3db3965b573770660eaa083550ca9",
-        "src/analysis/diagnostics/house_eligibility.py": "daae688feb67956271b5f1193560b031b3fb66f12f6b122a9ed137b4b677df2a",
-        "src/analysis/inventory/channel_registry.py": "bf5780a9be81e57204be94c16ca4f2f0a867c7ca3f3e41513f0dea4b0a4082a7",
-        "src/analysis/selection/auxiliary_appliance_selection.py": "58ab3d55e8d1fe38635c1a43db1a510de2a2207c67bca63532c616730d52b852",
-        "src/analysis/selection/candidate_profiling.py": "539fb6bcbfa7da35c249d41071a2c2ab1f9aa1c3bf72632ddc5b35cb55b851b7",
-        "src/analysis/selection/provisional_selection.py": "4ec49f899672d0e704cdeeb4e2919ceacaf8b133e6acf12687ea5ed35f5904b2",
-        "src/config/analysis_config.py": "a3db9d5487736d6d7dbe2dbee243c8463d906d5603dae0a8ea08ea66c75518c5",
-        "src/pipeline/io.py": "dd453fe09d8f7ee9783504b2ffe206123155b8a8e5131261b4b9c27d84c62a33"
-      },
-      "sha256": "9e9786dbfd5234fc4696ca8990a079aa48b79925a5eb521fe7e2bd281ed8356b"
-    }
+    "git_commit": "5afb4be112e86d9e12e0ec7ae35563196c23b311",
+    "git_dirty": true
   },
   "config": {
     "sha256": "286b4562c9983979b185581570aad0bd3ac273b37d48ca2214b62711753d9ae0",
@@ -28,9 +13,13 @@
       "min_valid_sample_count": 2
     }
   },
-  "created_at_utc": "2026-09-01T17:20:19.610521+00:00",
+  "created_at_utc": "2026-09-05T13:03:52.560019+00:00",
+  "environment": {
+    "file": "environment-nilmtk.yml",
+    "sha256": "3e5da8f0541056c48429b69821a8cc16dc10226743f94991a3740279fe84af51"
+  },
   "ingestion": {
-    "run_id": "47478820-5527-4b3d-8aaa-2e2b6a9f8a8a"
+    "run_id": "ed7a2b0b-b3c6-4292-8130-646862a89a57"
   },
   "input": {
     "hdf5": {
@@ -41,65 +30,45 @@
   },
   "outputs": {
     "output/diagnostics/channel_quality.csv": {
-      "path": "/Users/maloustolzenberg/Uni/BA/energyAgentBA/output/diagnostics/channel_quality.csv",
+      "path": "output/diagnostics/channel_quality.csv",
       "sha256": "bfb03773593726349ce07e2a143059e0ccc72690881e8e8a15fa27b98094af9a",
-      "size_bytes": 21157,
-      "status": "generated"
+      "size_bytes": 21157
     },
     "output/diagnostics/good_sections.csv": {
-      "path": "/Users/maloustolzenberg/Uni/BA/energyAgentBA/output/diagnostics/good_sections.csv",
+      "path": "output/diagnostics/good_sections.csv",
       "sha256": "123ff4ae47079a821a5faac84008024a3861355b4c76e98df2d430aebba27650",
-      "size_bytes": 3014005,
-      "status": "generated"
+      "size_bytes": 3014005
     },
     "output/diagnostics/house_eligibility.csv": {
-      "path": "/Users/maloustolzenberg/Uni/BA/energyAgentBA/output/diagnostics/house_eligibility.csv",
+      "path": "output/diagnostics/house_eligibility.csv",
       "sha256": "475132d157fdd4e5170c89ed8a7af8bc6fc96879910ef2b2f49f47527c1d4b56",
-      "size_bytes": 166,
-      "status": "generated"
+      "size_bytes": 166
     },
     "output/metadata/channel_registry.csv": {
-      "path": "/Users/maloustolzenberg/Uni/BA/energyAgentBA/output/metadata/channel_registry.csv",
-      "sha256": "f294387f771ad893d35483411a856b61ca0106dee394e7ccd71d25c58ea2433c",
-      "size_bytes": 10003,
-      "status": "generated"
+      "path": "output/metadata/channel_registry.csv",
+      "sha256": "3d9685ba17753dff079e34242ec47fdd8ca7cc092775e962d27d34bff6e00c09",
+      "size_bytes": 7254
     },
     "output/selection/auxiliary_appliance_selection.csv": {
-      "path": "/Users/maloustolzenberg/Uni/BA/energyAgentBA/output/selection/auxiliary_appliance_selection.csv",
+      "path": "output/selection/auxiliary_appliance_selection.csv",
       "sha256": "c923dfc1978249dc1775c64cc8dc3ed34affef407d64b7233a9e71ee9c1564cb",
-      "size_bytes": 10087,
-      "status": "generated"
+      "size_bytes": 10087
     },
     "output/selection/candidate_selection_decisions.csv": {
-      "path": "/Users/maloustolzenberg/Uni/BA/energyAgentBA/output/selection/candidate_selection_decisions.csv",
+      "path": "output/selection/candidate_selection_decisions.csv",
       "sha256": "d6453caf1bd4174cf549dd46b6d4e6af21fc7200113e1aab0125ef8e5bfbab3b",
-      "size_bytes": 603,
-      "status": "generated"
+      "size_bytes": 603
     },
     "output/selection/profiles.csv": {
-      "path": "/Users/maloustolzenberg/Uni/BA/energyAgentBA/output/selection/profiles.csv",
+      "path": "output/selection/profiles.csv",
       "sha256": "e72cf28ade53d875a352579912f73dd4e558c3a557ba5ff987f28adaf6a46433",
-      "size_bytes": 1363,
-      "status": "generated"
+      "size_bytes": 1363
     },
     "output/selection/provisional_selection.csv": {
-      "path": "/Users/maloustolzenberg/Uni/BA/energyAgentBA/output/selection/provisional_selection.csv",
+      "path": "output/selection/provisional_selection.csv",
       "sha256": "a62a5925ae41bfc422eae8093f20eb241c1390a32758f46cbf3c01a408bd7763",
-      "size_bytes": 59,
-      "status": "generated"
+      "size_bytes": 59
     }
   },
-  "run_id": "f6444abf-4070-440c-8d1a-719f7fd94afb",
-  "run_parameters": {
-    "overwrite": {
-      "all_analysis_outputs": true
-    }
-  },
-  "runtime_version": {
-    "nilmtk": "0.4.0.dev1+git.303d45b",
-    "pandas": "0.25.3",
-    "platform": "macOS-26.5.2-x86_64-i386-64bit",
-    "python": "3.8.20",
-    "python_implementation": "CPython"
-  }
+  "run_id": "23d8680e-6f18-48f6-a3c0-2e0d62a2a11f"
 }

@@ -33,7 +33,6 @@ COLD_START_PROPHET_VARIANTS: tuple[ProphetVariantConfig, ...] = (
 
 @dataclass(frozen=True)
 class ColdStartExperimentConfig(ForecastingConfig):
-    """Konfiguration für K2: Cold Start und reguläres Retraining."""
 
     config_version: str = "cold-start-0.1"
     experiment_id: str = "K2_cold_start"

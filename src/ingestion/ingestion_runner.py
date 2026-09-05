@@ -25,11 +25,7 @@ class IngestionRunner:
     def run(self, overwrite: bool = False) -> Path:
         ensure_project_directories(self.config)
 
-        logger.info(
-            "Start ingestion: %s, DOI %s",
-            self.config.dataset_release,
-            self.config.dataset_doi,
-        )
+        logger.info("Start ingestion: %s, DOI %s", self.config.dataset_release, self.config.dataset_doi)
 
         houses, metadata_files = download_dataset_raw(
             raw_dir=self.config.raw_dir,
@@ -40,10 +36,7 @@ class IngestionRunner:
             overwrite=overwrite,
         )
 
-        logger.info(
-            "UK-DALE raw data available: %s",
-            self.config.raw_dir,
-        )
+        logger.info("UK-DALE raw data available: %s", self.config.raw_dir)
 
         hdf5_path = convert_raw_to_hdf5(
             raw_dir=self.config.raw_dir,
@@ -78,21 +71,14 @@ class IngestionRunner:
             ingestion_manifest_path
         )
 
-        logger.info(
-            "Saved ingestion manifest: %s",
-            ingestion_manifest_path,
-        )
-        logger.info(
-            "Finished UK-DALE ingestion: %s",
-            hdf5_path,
-        )
+        logger.info("Saved ingestion manifest: %s", ingestion_manifest_path)
+        logger.info("Finished UK-DALE ingestion: %s", hdf5_path)
         return hdf5_path
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Download and convert UK-DALE."
-    )
+    parser = argparse.ArgumentParser(description="Download and convert UK-DALE.")
+    
     parser.add_argument(
         "--overwrite",
         action="store_true",

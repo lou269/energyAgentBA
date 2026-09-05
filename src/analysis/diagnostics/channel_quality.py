@@ -8,6 +8,8 @@ from nilmtk.stats.goodsections import GoodSections
 
 import warnings
 
+from src.analysis.common import require_columns
+
 
 logger = logging.getLogger(__name__)
 
@@ -60,15 +62,7 @@ def build_channel_quality(
     chunksize: int | None,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     
-    missing = REQUIRED_REGISTRY_COLUMNS.difference(
-        channel_registry.columns
-    )
-
-    if missing:
-        raise ValueError(
-            "Channel registry is missing required columns: "
-            + ", ".join(sorted(missing))
-        )
+    require_columns(channel_registry, REQUIRED_REGISTRY_COLUMNS, "Channel registry")
 
     registry = channel_registry.loc[
         channel_registry["has_canonical_ac_type"]
@@ -118,9 +112,7 @@ def build_channel_quality(
 
             quality_row = {
                 **identity,
-                "quality_error": (
-                    f"{type(error).__name__}: {error}"
-                ),
+                "quality_error": f"{type(error).__name__}: {error}"
             }
             section_rows = []
 
@@ -145,8 +137,7 @@ def build_channel_quality(
 
     if not good_sections.empty:
         good_sections = good_sections.sort_values(
-            ["house", "meter_instance", "section_id"],
-            kind="mergesort",
+            ["house", "meter_instance", "section_id"], kind="mergesort"
         ).reset_index(drop=True)
 
     return quality, good_sections
@@ -219,14 +210,8 @@ def _profile_meter(
     ):
         duration_seconds = (end - start).total_seconds()
 
-        expected_sample_count = (
-            int(duration_seconds // sample_period) + 1
-        )
-
-        sampling_share = min(
-            1.0,
-            valid_sample_count / expected_sample_count,
-        )
+        expected_sample_count = int(duration_seconds // sample_period) + 1
+        sampling_share = min(1.0, valid_sample_count / expected_sample_count)
 
         dropout_rate = 1.0 - sampling_share
     else:
@@ -244,9 +229,7 @@ def _profile_meter(
         if section.start is None or section.end is None:
             continue
 
-        section_duration = (
-            section.end - section.start
-        ).total_seconds()
+        section_duration = (section.end - section.start).total_seconds()
 
         section_durations.append(section_duration)
 
@@ -262,10 +245,7 @@ def _profile_meter(
         )
 
     total_good_seconds = sum(section_durations)
-    longest_good_seconds = max(
-        section_durations,
-        default=0.0,
-    )
+    longest_good_seconds = max(section_durations, default=0.0)
 
     quality_row = {
         **identity,
@@ -280,8 +260,8 @@ def _profile_meter(
         "sampling_share": sampling_share,
         "dropout_rate": dropout_rate,
         "good_section_count": len(section_rows),
-        "total_good_section_duration_days": (total_good_seconds / SECONDS_PER_DAY),
-        "longest_good_section_days": (longest_good_seconds / SECONDS_PER_DAY),
+        "total_good_section_duration_days": total_good_seconds / SECONDS_PER_DAY,
+        "longest_good_section_days": longest_good_seconds / SECONDS_PER_DAY,
         "good_section_coverage_share": (
             total_good_seconds / duration_seconds
             if duration_seconds

@@ -1,109 +1,109 @@
-house,meter_instance,meter_key,meter_type,site_meter,label,appliances,ac_types,has_canonical_ac_type,sample_period_seconds,max_sample_period_seconds,ac_type_error
-1,54,/building1/elec/meter54,mains,True,mains,"drill, fan, immersion heater, laptop computer, security alarm, water pump","active, apparent",True,1,3,
-1,2,/building1/elec/meter2,submeter,False,boiler,boiler,apparent,False,6,120,
-1,3,/building1/elec/meter3,submeter,False,solar thermal pumping station,solar thermal pumping station,apparent,False,6,120,
-1,4,/building1/elec/meter4,submeter,False,laptop computer,laptop computer,active,True,6,120,
-1,5,/building1/elec/meter5,submeter,False,washer dryer,washer dryer,active,True,6,120,
-1,6,/building1/elec/meter6,submeter,False,dish washer,dish washer,active,True,6,120,
-1,7,/building1/elec/meter7,submeter,False,television,television,active,True,6,120,
-1,8,/building1/elec/meter8,submeter,False,light,light,apparent,False,6,120,
-1,9,/building1/elec/meter9,submeter,False,HTPC,HTPC,active,True,6,120,
-1,10,/building1/elec/meter10,submeter,False,"food processor, kettle, toasted sandwich maker","food processor, kettle, toasted sandwich maker",active,True,6,120,
-1,11,/building1/elec/meter11,submeter,False,"food processor, kitchen aid, toaster","food processor, kitchen aid, toaster",active,True,6,120,
-1,12,/building1/elec/meter12,submeter,False,fridge freezer,fridge freezer,active,True,6,120,
-1,13,/building1/elec/meter13,submeter,False,microwave,microwave,active,True,6,120,
-1,14,/building1/elec/meter14,submeter,False,computer monitor,computer monitor,active,True,6,120,
-1,15,/building1/elec/meter15,submeter,False,audio system,audio system,active,True,6,120,
-1,16,/building1/elec/meter16,submeter,False,breadmaker,breadmaker,active,True,6,120,
-1,17,/building1/elec/meter17,submeter,False,audio amplifier,audio amplifier,active,True,6,120,
-1,18,/building1/elec/meter18,submeter,False,broadband router,broadband router,active,True,6,120,
-1,19,/building1/elec/meter19,submeter,False,"bouncy castle pump, light","bouncy castle pump, light",active,True,6,120,
-1,20,/building1/elec/meter20,submeter,False,soldering iron,soldering iron,active,True,6,120,
-1,21,/building1/elec/meter21,submeter,False,"USB hub, ethernet switch","USB hub, ethernet switch",active,True,6,120,
-1,22,/building1/elec/meter22,submeter,False,vacuum cleaner,vacuum cleaner,active,True,6,120,
-1,23,/building1/elec/meter23,submeter,False,light,light,active,True,6,120,
-1,24,/building1/elec/meter24,submeter,False,light,light,active,True,6,120,
-1,25,/building1/elec/meter25,submeter,False,light,light,apparent,False,6,120,
-1,26,/building1/elec/meter26,submeter,False,light,light,active,True,6,120,
-1,27,/building1/elec/meter27,submeter,False,tablet computer charger,tablet computer charger,active,True,6,120,
-1,28,/building1/elec/meter28,submeter,False,active subwoofer,active subwoofer,active,True,6,120,
-1,29,/building1/elec/meter29,submeter,False,light,light,active,True,6,120,
-1,30,/building1/elec/meter30,submeter,False,radio,radio,active,True,6,120,
-1,31,/building1/elec/meter31,submeter,False,light,light,active,True,6,120,
-1,32,/building1/elec/meter32,submeter,False,"audio system, wireless phone charger","audio system, wireless phone charger",active,True,6,120,
-1,33,/building1/elec/meter33,submeter,False,light,light,active,True,6,120,
-1,34,/building1/elec/meter34,submeter,False,mobile phone charger,mobile phone charger,active,True,6,120,
-1,35,/building1/elec/meter35,submeter,False,light,light,active,True,6,120,
-1,36,/building1/elec/meter36,submeter,False,coffee maker,coffee maker,active,True,6,120,
-1,37,/building1/elec/meter37,submeter,False,radio,radio,active,True,6,120,
-1,38,/building1/elec/meter38,submeter,False,"baby monitor, mobile phone charger, radio","baby monitor, mobile phone charger, radio",active,True,6,120,
-1,39,/building1/elec/meter39,submeter,False,hair dryer,hair dryer,active,True,6,120,
-1,40,/building1/elec/meter40,submeter,False,hair straighteners,hair straighteners,active,True,6,120,
-1,41,/building1/elec/meter41,submeter,False,clothes iron,clothes iron,active,True,6,120,
-1,42,/building1/elec/meter42,submeter,False,oven,oven,active,True,6,120,
-1,43,/building1/elec/meter43,submeter,False,"computer, external hard disk","computer, external hard disk",active,True,6,120,
-1,44,/building1/elec/meter44,submeter,False,light,light,active,True,6,120,
-1,45,/building1/elec/meter45,submeter,False,light,light,active,True,6,120,
-1,46,/building1/elec/meter46,submeter,False,baby monitor,baby monitor,active,True,6,120,
-1,47,/building1/elec/meter47,submeter,False,charger,charger,active,True,6,120,
-1,48,/building1/elec/meter48,submeter,False,light,light,active,True,6,120,
-1,49,/building1/elec/meter49,submeter,False,light,light,active,True,6,120,
-1,50,/building1/elec/meter50,submeter,False,light,light,active,True,6,120,
-1,51,/building1/elec/meter51,submeter,False,desktop computer,desktop computer,active,True,6,120,
-1,52,/building1/elec/meter52,submeter,False,fan,fan,active,True,6,120,
-1,53,/building1/elec/meter53,submeter,False,printer,printer,active,True,6,120,
-2,20,/building2/elec/meter20,mains,True,mains,,"active, apparent",True,1,3,
-2,2,/building2/elec/meter2,submeter,False,laptop computer,laptop computer,active,True,6,120,
-2,3,/building2/elec/meter3,submeter,False,computer monitor,computer monitor,active,True,6,120,
-2,4,/building2/elec/meter4,submeter,False,active speaker,active speaker,active,True,6,120,
-2,5,/building2/elec/meter5,submeter,False,computer,computer,active,True,6,120,
-2,6,/building2/elec/meter6,submeter,False,broadband router,broadband router,active,True,6,120,
-2,7,/building2/elec/meter7,submeter,False,external hard disk,external hard disk,active,True,6,120,
-2,8,/building2/elec/meter8,submeter,False,kettle,kettle,active,True,6,120,
-2,9,/building2/elec/meter9,submeter,False,rice cooker,rice cooker,active,True,6,120,
-2,10,/building2/elec/meter10,submeter,False,running machine,running machine,active,True,6,120,
-2,11,/building2/elec/meter11,submeter,False,laptop computer,laptop computer,active,True,6,120,
-2,12,/building2/elec/meter12,submeter,False,washing machine,washing machine,active,True,6,120,
-2,13,/building2/elec/meter13,submeter,False,dish washer,dish washer,active,True,6,120,
-2,14,/building2/elec/meter14,submeter,False,fridge,fridge,active,True,6,120,
-2,15,/building2/elec/meter15,submeter,False,microwave,microwave,active,True,6,120,
-2,16,/building2/elec/meter16,submeter,False,toaster,toaster,active,True,6,120,
-2,17,/building2/elec/meter17,submeter,False,games console,games console,active,True,6,120,
-2,18,/building2/elec/meter18,submeter,False,modem,modem,active,True,6,120,
-2,19,/building2/elec/meter19,submeter,False,cooker,cooker,active,True,6,120,
-3,1,/building3/elec/meter1,mains,True,mains,,apparent,False,6,120,
-3,2,/building3/elec/meter2,submeter,False,kettle,kettle,active,True,6,120,
-3,3,/building3/elec/meter3,submeter,False,electric space heater,electric space heater,active,True,6,120,
-3,4,/building3/elec/meter4,submeter,False,laptop computer,laptop computer,active,True,6,120,
-3,5,/building3/elec/meter5,submeter,False,projector,projector,active,True,6,120,
-4,1,/building4/elec/meter1,mains,True,mains,,apparent,False,6,120,
-4,2,/building4/elec/meter2,submeter,False,"DVD player, light, set top box, television","DVD player, light, set top box, television",active,True,6,120,
-4,3,/building4/elec/meter3,submeter,False,"kettle, radio","kettle, radio",active,True,6,120,
-4,4,/building4/elec/meter4,submeter,False,boiler,boiler,active,True,6,120,
-4,5,/building4/elec/meter5,submeter,False,freezer,freezer,active,True,6,120,
-4,6,/building4/elec/meter6,submeter,False,"breadmaker, microwave, washing machine","breadmaker, microwave, washing machine",active,True,6,120,
-5,26,/building5/elec/meter26,mains,True,mains,,"active, apparent",True,1,3,
-5,2,/building5/elec/meter2,submeter,False,active speaker,active speaker,active,True,6,120,
-5,3,/building5/elec/meter3,submeter,False,desktop computer,desktop computer,active,True,6,120,
-5,4,/building5/elec/meter4,submeter,False,hair dryer,hair dryer,active,True,6,120,
-5,5,/building5/elec/meter5,submeter,False,television,television,active,True,6,120,
-5,6,/building5/elec/meter6,submeter,False,computer monitor,computer monitor,active,True,6,120,
-5,7,/building5/elec/meter7,submeter,False,running machine,running machine,active,True,6,120,
-5,8,/building5/elec/meter8,submeter,False,network attached storage,network attached storage,active,True,6,120,
-5,9,/building5/elec/meter9,submeter,False,server computer,server computer,active,True,6,120,
-5,10,/building5/elec/meter10,submeter,False,computer monitor,computer monitor,active,True,6,120,
-5,11,/building5/elec/meter11,submeter,False,games console,games console,active,True,6,120,
-5,12,/building5/elec/meter12,submeter,False,clothes iron,clothes iron,active,True,6,120,
-5,13,/building5/elec/meter13,submeter,False,coffee maker,coffee maker,active,True,6,120,
-5,14,/building5/elec/meter14,submeter,False,desktop computer,desktop computer,active,True,6,120,
-5,15,/building5/elec/meter15,submeter,False,toaster,toaster,active,True,6,120,
-5,16,/building5/elec/meter16,submeter,False,audio amplifier,audio amplifier,active,True,6,120,
-5,17,/building5/elec/meter17,submeter,False,set top box,set top box,active,True,6,120,
-5,18,/building5/elec/meter18,submeter,False,kettle,kettle,active,True,6,120,
-5,19,/building5/elec/meter19,submeter,False,fridge freezer,fridge freezer,active,True,6,120,
-5,20,/building5/elec/meter20,submeter,False,electric oven,electric oven,active,True,6,120,
-5,21,/building5/elec/meter21,submeter,False,electric stove,electric stove,active,True,6,120,
-5,22,/building5/elec/meter22,submeter,False,dish washer,dish washer,active,True,6,120,
-5,23,/building5/elec/meter23,submeter,False,microwave,microwave,active,True,6,120,
-5,24,/building5/elec/meter24,submeter,False,washer dryer,washer dryer,active,True,6,120,
-5,25,/building5/elec/meter25,submeter,False,vacuum cleaner,vacuum cleaner,active,True,6,120,
+house,meter_instance,meter_key,meter_type,appliances,ac_types,has_canonical_ac_type,sample_period_seconds
+1,54,/building1/elec/meter54,mains,"drill, fan, immersion heater, laptop computer, security alarm, water pump","active, apparent",True,1
+1,2,/building1/elec/meter2,submeter,boiler,apparent,False,6
+1,3,/building1/elec/meter3,submeter,solar thermal pumping station,apparent,False,6
+1,4,/building1/elec/meter4,submeter,laptop computer,active,True,6
+1,5,/building1/elec/meter5,submeter,washer dryer,active,True,6
+1,6,/building1/elec/meter6,submeter,dish washer,active,True,6
+1,7,/building1/elec/meter7,submeter,television,active,True,6
+1,8,/building1/elec/meter8,submeter,light,apparent,False,6
+1,9,/building1/elec/meter9,submeter,HTPC,active,True,6
+1,10,/building1/elec/meter10,submeter,"food processor, kettle, toasted sandwich maker",active,True,6
+1,11,/building1/elec/meter11,submeter,"food processor, kitchen aid, toaster",active,True,6
+1,12,/building1/elec/meter12,submeter,fridge freezer,active,True,6
+1,13,/building1/elec/meter13,submeter,microwave,active,True,6
+1,14,/building1/elec/meter14,submeter,computer monitor,active,True,6
+1,15,/building1/elec/meter15,submeter,audio system,active,True,6
+1,16,/building1/elec/meter16,submeter,breadmaker,active,True,6
+1,17,/building1/elec/meter17,submeter,audio amplifier,active,True,6
+1,18,/building1/elec/meter18,submeter,broadband router,active,True,6
+1,19,/building1/elec/meter19,submeter,"bouncy castle pump, light",active,True,6
+1,20,/building1/elec/meter20,submeter,soldering iron,active,True,6
+1,21,/building1/elec/meter21,submeter,"USB hub, ethernet switch",active,True,6
+1,22,/building1/elec/meter22,submeter,vacuum cleaner,active,True,6
+1,23,/building1/elec/meter23,submeter,light,active,True,6
+1,24,/building1/elec/meter24,submeter,light,active,True,6
+1,25,/building1/elec/meter25,submeter,light,apparent,False,6
+1,26,/building1/elec/meter26,submeter,light,active,True,6
+1,27,/building1/elec/meter27,submeter,tablet computer charger,active,True,6
+1,28,/building1/elec/meter28,submeter,active subwoofer,active,True,6
+1,29,/building1/elec/meter29,submeter,light,active,True,6
+1,30,/building1/elec/meter30,submeter,radio,active,True,6
+1,31,/building1/elec/meter31,submeter,light,active,True,6
+1,32,/building1/elec/meter32,submeter,"audio system, wireless phone charger",active,True,6
+1,33,/building1/elec/meter33,submeter,light,active,True,6
+1,34,/building1/elec/meter34,submeter,mobile phone charger,active,True,6
+1,35,/building1/elec/meter35,submeter,light,active,True,6
+1,36,/building1/elec/meter36,submeter,coffee maker,active,True,6
+1,37,/building1/elec/meter37,submeter,radio,active,True,6
+1,38,/building1/elec/meter38,submeter,"baby monitor, mobile phone charger, radio",active,True,6
+1,39,/building1/elec/meter39,submeter,hair dryer,active,True,6
+1,40,/building1/elec/meter40,submeter,hair straighteners,active,True,6
+1,41,/building1/elec/meter41,submeter,clothes iron,active,True,6
+1,42,/building1/elec/meter42,submeter,oven,active,True,6
+1,43,/building1/elec/meter43,submeter,"computer, external hard disk",active,True,6
+1,44,/building1/elec/meter44,submeter,light,active,True,6
+1,45,/building1/elec/meter45,submeter,light,active,True,6
+1,46,/building1/elec/meter46,submeter,baby monitor,active,True,6
+1,47,/building1/elec/meter47,submeter,charger,active,True,6
+1,48,/building1/elec/meter48,submeter,light,active,True,6
+1,49,/building1/elec/meter49,submeter,light,active,True,6
+1,50,/building1/elec/meter50,submeter,light,active,True,6
+1,51,/building1/elec/meter51,submeter,desktop computer,active,True,6
+1,52,/building1/elec/meter52,submeter,fan,active,True,6
+1,53,/building1/elec/meter53,submeter,printer,active,True,6
+2,20,/building2/elec/meter20,mains,,"active, apparent",True,1
+2,2,/building2/elec/meter2,submeter,laptop computer,active,True,6
+2,3,/building2/elec/meter3,submeter,computer monitor,active,True,6
+2,4,/building2/elec/meter4,submeter,active speaker,active,True,6
+2,5,/building2/elec/meter5,submeter,computer,active,True,6
+2,6,/building2/elec/meter6,submeter,broadband router,active,True,6
+2,7,/building2/elec/meter7,submeter,external hard disk,active,True,6
+2,8,/building2/elec/meter8,submeter,kettle,active,True,6
+2,9,/building2/elec/meter9,submeter,rice cooker,active,True,6
+2,10,/building2/elec/meter10,submeter,running machine,active,True,6
+2,11,/building2/elec/meter11,submeter,laptop computer,active,True,6
+2,12,/building2/elec/meter12,submeter,washing machine,active,True,6
+2,13,/building2/elec/meter13,submeter,dish washer,active,True,6
+2,14,/building2/elec/meter14,submeter,fridge,active,True,6
+2,15,/building2/elec/meter15,submeter,microwave,active,True,6
+2,16,/building2/elec/meter16,submeter,toaster,active,True,6
+2,17,/building2/elec/meter17,submeter,games console,active,True,6
+2,18,/building2/elec/meter18,submeter,modem,active,True,6
+2,19,/building2/elec/meter19,submeter,cooker,active,True,6
+3,1,/building3/elec/meter1,mains,,apparent,False,6
+3,2,/building3/elec/meter2,submeter,kettle,active,True,6
+3,3,/building3/elec/meter3,submeter,electric space heater,active,True,6
+3,4,/building3/elec/meter4,submeter,laptop computer,active,True,6
+3,5,/building3/elec/meter5,submeter,projector,active,True,6
+4,1,/building4/elec/meter1,mains,,apparent,False,6
+4,2,/building4/elec/meter2,submeter,"DVD player, light, set top box, television",active,True,6
+4,3,/building4/elec/meter3,submeter,"kettle, radio",active,True,6
+4,4,/building4/elec/meter4,submeter,boiler,active,True,6
+4,5,/building4/elec/meter5,submeter,freezer,active,True,6
+4,6,/building4/elec/meter6,submeter,"breadmaker, microwave, washing machine",active,True,6
+5,26,/building5/elec/meter26,mains,,"active, apparent",True,1
+5,2,/building5/elec/meter2,submeter,active speaker,active,True,6
+5,3,/building5/elec/meter3,submeter,desktop computer,active,True,6
+5,4,/building5/elec/meter4,submeter,hair dryer,active,True,6
+5,5,/building5/elec/meter5,submeter,television,active,True,6
+5,6,/building5/elec/meter6,submeter,computer monitor,active,True,6
+5,7,/building5/elec/meter7,submeter,running machine,active,True,6
+5,8,/building5/elec/meter8,submeter,network attached storage,active,True,6
+5,9,/building5/elec/meter9,submeter,server computer,active,True,6
+5,10,/building5/elec/meter10,submeter,computer monitor,active,True,6
+5,11,/building5/elec/meter11,submeter,games console,active,True,6
+5,12,/building5/elec/meter12,submeter,clothes iron,active,True,6
+5,13,/building5/elec/meter13,submeter,coffee maker,active,True,6
+5,14,/building5/elec/meter14,submeter,desktop computer,active,True,6
+5,15,/building5/elec/meter15,submeter,toaster,active,True,6
+5,16,/building5/elec/meter16,submeter,audio amplifier,active,True,6
+5,17,/building5/elec/meter17,submeter,set top box,active,True,6
+5,18,/building5/elec/meter18,submeter,kettle,active,True,6
+5,19,/building5/elec/meter19,submeter,fridge freezer,active,True,6
+5,20,/building5/elec/meter20,submeter,electric oven,active,True,6
+5,21,/building5/elec/meter21,submeter,electric stove,active,True,6
+5,22,/building5/elec/meter22,submeter,dish washer,active,True,6
+5,23,/building5/elec/meter23,submeter,microwave,active,True,6
+5,24,/building5/elec/meter24,submeter,washer dryer,active,True,6
+5,25,/building5/elec/meter25,submeter,vacuum cleaner,active,True,6

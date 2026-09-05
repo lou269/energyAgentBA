@@ -5,9 +5,10 @@ import pandas as pd
 from nilmtk import TimeFrame
 from nilmtk.timeframegroup import TimeFrameGroup
 
+from src.analysis.common import MERGE_KEYS, require_columns
+
 
 SECONDS_PER_DAY = 86_400.0
-MERGE_KEYS = ["house", "meter_instance", "meter_key"]
 
 PROFILE_COLUMNS = [
     "candidate_id",
@@ -47,9 +48,7 @@ def build_candidate_profiles(
             MERGE_KEYS,
         ]
         .merge(
-            channel_quality[
-                MERGE_KEYS + ["sampling_share"]
-            ],
+            channel_quality[MERGE_KEYS + ["sampling_share"]],
             on=MERGE_KEYS,
             how="inner",
             validate="one_to_one",
@@ -57,9 +56,7 @@ def build_candidate_profiles(
     )
 
     eligible = house_eligibility.loc[
-        house_eligibility[
-            "eligible_for_candidate_profiling"
-        ]
+        house_eligibility["eligible_for_candidate_profiling"]
         .fillna(False)
         .astype(bool)
     ]
@@ -71,8 +68,7 @@ def build_candidate_profiles(
         mains_instance = int(candidate.mains_instance)
 
         mains = mains_channels.loc[
-            mains_channels["house"].eq(house)
-            & mains_channels["meter_instance"].eq(mains_instance)
+            mains_channels["house"].eq(house) & mains_channels["meter_instance"].eq(mains_instance)
         ]
 
         if mains.empty:
@@ -92,10 +88,7 @@ def build_candidate_profiles(
             continue
 
         sections = list(timeframes)
-        longest = max(
-            sections,
-            key=lambda section: section.timedelta,
-        )
+        longest = max(sections,key=lambda section: section.timedelta)
 
         profiles.append(
             {
@@ -130,7 +123,6 @@ def build_candidate_profiles(
 def _to_timeframe_group(
     sections: pd.DataFrame,
 ) -> TimeFrameGroup:
-    """Konvertiert vorhandene Good Sections in NILMTK TimeFrames."""
     if sections.empty:
         return TimeFrameGroup([])
 
@@ -144,9 +136,7 @@ def _to_timeframe_group(
             continue
 
         if end > start:
-            timeframes.append(
-                TimeFrame(start=start, end=end)
-            )
+            timeframes.append(TimeFrame(start=start, end=end))
 
     return TimeFrameGroup(timeframes)
 
@@ -193,22 +183,11 @@ def _validate_inputs(
     house_eligibility: pd.DataFrame,
     good_sections: pd.DataFrame,
 ) -> None:
-    required_columns = {
-        "channel_registry": {"house", "meter_instance", "meter_key", "meter_type"},
-        "channel_quality": {"house", "meter_instance", "meter_key", "sampling_share"},
-        "house_eligibility": {"house", "mains_instance", "eligible_for_candidate_profiling"},
-        "good_sections": {"house", "meter_instance", "meter_key", "start", "end"},
-    }
-
-    dataframes = {
-        "channel_registry": channel_registry,
-        "channel_quality": channel_quality,
-        "house_eligibility": house_eligibility,
-        "good_sections": good_sections,
-    }
-
-    for name, df in dataframes.items():
-        missing = required_columns[name] - set(df.columns)
-
-        if missing:
-            raise ValueError(f"{name} is missing required columns: {sorted(missing)}")
+    require_columns(channel_registry, MERGE_KEYS + ["meter_type"], "channel_registry")
+    require_columns(channel_quality, MERGE_KEYS + ["sampling_share"], "channel_quality")
+    require_columns(
+        house_eligibility,
+        {"house", "mains_instance", "eligible_for_candidate_profiling"},
+        "house_eligibility",
+    )
+    require_columns(good_sections, MERGE_KEYS + ["start", "end"], "good_sections")

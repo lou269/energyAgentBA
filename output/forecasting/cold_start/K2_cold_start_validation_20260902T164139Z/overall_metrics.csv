@@ -1,7 +1,0 @@
-run_id,split,model_id,possible_target_count,evaluated_target_count,excluded_target_count,target_exclusion_share,mae_w,rmse_w,mape_pct,mape_target_count,mape_excluded_target_count,mape_non_positive_target_count,negative_forecast_count,negative_forecast_share,forecast_origin_count,retraining_count,total_refit_runtime_seconds
-K2_cold_start_validation_20260902T164139Z,validation,B1,552,552,0,0.0,150.01388636230072,251.31046205847818,38.0145647814818,552,0,0,0,0.0,23,0,0.0
-K2_cold_start_validation_20260902T164139Z,validation,B2,552,552,0,0.0,159.469553495006,267.6857870025961,54.67890220994678,552,0,0,0,0.0,23,0,0.0
-K2_cold_start_validation_20260902T164139Z,validation,B3,552,552,0,0.0,153.38484645774156,246.94379402094071,56.19863106412932,552,0,0,0,0.0,23,0,0.0
-K2_cold_start_validation_20260902T164139Z,validation,C1,552,552,0,0.0,127.71597683154059,201.20939659525618,45.89541870501556,552,0,0,0,0.0,23,0,0.080373
-K2_cold_start_validation_20260902T164139Z,validation,C2,552,552,0,0.0,121.71256603456034,194.95898172861524,43.61663193440367,552,0,0,0,0.0,23,22,0.9822690000000001
-K2_cold_start_validation_20260902T164139Z,validation,C3,552,552,0,0.0,128.6808946140869,199.63670946290048,47.6436943088836,552,0,0,0,0.0,23,22,0.698468

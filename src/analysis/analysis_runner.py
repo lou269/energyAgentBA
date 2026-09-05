@@ -38,7 +38,6 @@ class AnalysisRunner:
 
         logger.info("Starting analysis pipeline.")
 
-        # Step 1: Vollständiges Kanalinventar
         logger.info("Building channel registry...")
 
         channel_registry = build_channel_registry(
@@ -52,7 +51,6 @@ class AnalysisRunner:
             filename="channel_registry",
         )
 
-        # Step 2: Kanalqualität und gültige Zeitabschnitte
         logger.info("Building channel quality...")
 
         channel_quality, good_sections = build_channel_quality(
@@ -74,7 +72,6 @@ class AnalysisRunner:
             filename="good_sections",
         )
 
-        # Step 3: Eignung der Haushalte
         logger.info("Building house eligibility...")
 
         house_eligibility = build_house_eligibility(
@@ -89,7 +86,6 @@ class AnalysisRunner:
             filename="house_eligibility",
         )
 
-        # Step 4: Kandidatenprofile
         logger.info("Building candidate profiles...")
 
         profiles = build_candidate_profiles(
@@ -105,7 +101,6 @@ class AnalysisRunner:
             filename="profiles",
         )
 
-        # Step 5: Vorläufige Auswahl und Entscheidungsprotokoll
         logger.info("Building candidate selection outputs...")
 
         provisional_selection, candidate_selection_decisions = build_candidate_selection_outputs(
@@ -125,7 +120,6 @@ class AnalysisRunner:
             filename="candidate_selection_decisions",
         )
 
-        # Step 6: Verfügbarkeit zusätzlicher Gerätekanäle
         logger.info("Building auxiliary appliance selection...")
 
         auxiliary_appliance_selection = build_auxiliary_appliance_selection(
@@ -142,16 +136,12 @@ class AnalysisRunner:
             filename="auxiliary_appliance_selection",
         )
 
-        # Step 7: Reproduzierbarkeitsmanifest
         logger.info("Building analysis manifest...")
 
-        ingestion_manifest_path = (
-            self.project_config.meta_output_dir / "ingestion_run_manifest.json"
-        )
+        ingestion_manifest_path = self.project_config.meta_output_dir / "ingestion_run_manifest.json"
 
-        ingestion_manifest = json.loads(
-            ingestion_manifest_path.read_text(encoding="utf-8")
-        )
+
+        ingestion_manifest = json.loads(ingestion_manifest_path.read_text(encoding="utf-8"))
 
         output_paths = (
             self.project_config.meta_output_dir / "channel_registry.csv",
@@ -164,34 +154,12 @@ class AnalysisRunner:
             self.project_config.selection_output_dir / "auxiliary_appliance_selection.csv",
         )
 
-        project_root = self.project_config.project_root
-
-        source_paths = (
-            project_root / "src/analysis/analysis_runner.py",
-            project_root / "src/analysis/analysis_run_manifest.py",
-            project_root / "src/analysis/inventory/channel_registry.py",
-            project_root / "src/analysis/diagnostics/channel_quality.py",
-            project_root / "src/analysis/diagnostics/house_eligibility.py",
-            project_root / "src/analysis/selection/candidate_profiling.py",
-            project_root / "src/analysis/selection/provisional_selection.py",
-            project_root / "src/analysis/selection/auxiliary_appliance_selection.py",
-            project_root / "src/config/analysis_config.py",
-            project_root / "src/pipeline/io.py",
-        )
-
-        output_status = {
-            output_path: "generated"
-            for output_path in output_paths
-        }
-
         analysis_manifest = build_analysis_manifest(
-            project_root=project_root,
+            project_root=self.project_config.project_root,
             ingestion_run_id=ingestion_manifest["run_id"],
             dataset_path=self.project_config.dataset_path,
             config_values=asdict(self.analysis_config),
-            source_paths=source_paths,
-            output_status=output_status,
-            overwrite={"all_analysis_outputs": True},
+            output_paths=output_paths,
         )
 
         save_json(

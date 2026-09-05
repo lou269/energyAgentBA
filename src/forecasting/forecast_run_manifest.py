@@ -2,15 +2,13 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from datetime import datetime, timezone
-from importlib.metadata import version
 from pathlib import Path
-import platform
 from typing import Any
 
 from src.pipeline.provenance import (
-    build_source_fingerprint,
-    file_sha256,
-    git_output,
+    build_code_version,
+    build_environment_reference,
+    build_file_metadata,
     json_sha256,
 )
 
@@ -22,7 +20,6 @@ def build_forecast_run_manifest(
     split: str,
     candidate_id: str,
     config_values: dict[str, Any],
-    source_paths: tuple[Path, ...],
     input_paths: Mapping[str, Path],
     output_paths: Mapping[str, Path],
     split_boundaries: Mapping[str, Any],
@@ -50,12 +47,12 @@ def build_forecast_run_manifest(
         raise ValueError("runtime_seconds must not be negative.")
 
     inputs = {
-        name: _build_file_metadata(project_root, path)
+        name: build_file_metadata(project_root, path)
         for name, path in input_paths.items()
     }
 
     outputs = {
-        name: _build_file_metadata(project_root, path)
+        name: build_file_metadata(project_root, path)
         for name, path in output_paths.items()
     }
 
@@ -70,31 +67,8 @@ def build_forecast_run_manifest(
             "values": config_values,
             "sha256": json_sha256(config_values),
         },
-        "code_version": {
-            "source_fingerprint": build_source_fingerprint(
-                project_root=project_root,
-                source_paths=source_paths,
-            ),
-            "git_commit": git_output(
-                project_root,
-                "rev-parse",
-                "HEAD",
-            ),
-            "git_dirty": bool(
-                git_output(
-                    project_root,
-                    "status",
-                    "--porcelain",
-                )
-            ),
-        },
-        "runtime_version": {
-            "python": platform.python_version(),
-            "python_implementation": platform.python_implementation(),
-            "platform": platform.platform(),
-            "pandas": version("pandas"),
-            "prophet": version("prophet"),
-        },
+        "code_version": build_code_version(project_root),
+        "environment": build_environment_reference(project_root, project_root / "environment-forecasting.yml"),
         "evaluation": {
             "split_boundaries": {
                 name: str(value)
@@ -117,23 +91,4 @@ def build_forecast_run_manifest(
         },
         "runtime_seconds": runtime_seconds,
         "outputs": outputs,
-    }
-
-
-def _build_file_metadata(
-    project_root: Path,
-    path: Path,
-) -> dict[str, Any]:
-    if not path.is_file():
-        raise FileNotFoundError(f"Manifest file does not exist: {path}")
-
-    try:
-        relative_path = str(path.relative_to(project_root))
-    except ValueError:
-        relative_path = str(path)
-
-    return {
-        "path": relative_path,
-        "size_bytes": path.stat().st_size,
-        "sha256": file_sha256(path),
     }

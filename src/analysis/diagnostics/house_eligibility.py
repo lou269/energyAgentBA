@@ -2,12 +2,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-
-MERGE_KEYS = [
-    "house",
-    "meter_instance",
-    "meter_key",
-]
+from src.analysis.common import MERGE_KEYS, require_columns
 
 HOUSE_ELIGIBILITY_COLUMNS = [
     "house",
@@ -61,8 +56,7 @@ def build_house_eligibility(
 
     for house_id in sorted(house_ids):
         house_mains = mains.loc[
-            mains["house"].eq(house_id)
-            & mains["has_canonical_ac_type"].fillna(False)
+            mains["house"].eq(house_id) & mains["has_canonical_ac_type"].fillna(False)
         ]
 
         if house_mains.empty:
@@ -77,9 +71,7 @@ def build_house_eligibility(
             continue
 
         if len(house_mains) > 1:
-            raise ValueError(
-                f"House {house_id} has more than one mains channel."
-            )
+            raise ValueError(f"House {house_id} has more than one mains channel.")
 
         mains_row = house_mains.iloc[0]
 
@@ -100,9 +92,7 @@ def build_house_eligibility(
                 "house": house_id,
                 "mains_instance": int(mains_row["meter_instance"]),
                 "eligible_for_candidate_profiling": usable,
-                "exclusion_reason": (
-                    "" if usable else "mains_quality_insufficient"
-                ),
+                "exclusion_reason": "" if usable else "mains_quality_insufficient"
             }
         )
 
@@ -117,38 +107,17 @@ def _validate_inputs(
     channel_quality: pd.DataFrame,
     min_valid_sample_count: int,
 ) -> None:
-    required_registry = {
-        "house",
-        "meter_instance",
-        "meter_key",
-        "meter_type",
-        "has_canonical_ac_type",
-    }
+    require_columns(
+        channel_registry,
+        MERGE_KEYS + ["meter_type", "has_canonical_ac_type"],
+        "Channel registry",
+    )
 
-    required_quality = {
-        "house",
-        "meter_instance",
-        "meter_key",
-        "valid_sample_count",
-        "good_section_count",
-        "quality_error",
-    }
-
-    missing_registry = required_registry - set(channel_registry.columns)
-    if missing_registry:
-        raise ValueError(
-            "Channel registry is missing columns: "
-            + ", ".join(sorted(missing_registry))
-        )
-
-    missing_quality = required_quality - set(channel_quality.columns)
-    if missing_quality:
-        raise ValueError(
-            "Channel quality is missing columns: "
-            + ", ".join(sorted(missing_quality))
-        )
+    require_columns(
+        channel_quality,
+        MERGE_KEYS + ["valid_sample_count", "good_section_count", "quality_error"],
+        "Channel quality",
+    )
 
     if min_valid_sample_count < 2:
-        raise ValueError(
-            "min_valid_sample_count must be at least 2."
-        )
+        raise ValueError("min_valid_sample_count must be at least 2.")

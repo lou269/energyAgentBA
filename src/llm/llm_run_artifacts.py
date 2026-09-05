@@ -222,11 +222,6 @@ def _save_manifest(
         forecast_run_id=state["forecast"]["run_id"],
         config_values=asdict(llm_config),
         model_metadata=dict(model_metadata),
-        source_paths=(
-            project_root / "src" / "llm",
-            project_root / "src" / "structured_state",
-            project_root / "src" / "config" / "llm_config.py",
-        ),
         input_paths={"structured_state": state_file, "prompt": prompt_file},
         output_paths=output_paths,
         attempt_records=tuple(asdict(attempt) for attempt in attempts),

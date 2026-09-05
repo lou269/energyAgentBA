@@ -1,3 +1,0 @@
-selection_role,candidate_id,meter_key,channel_role,coverage_share,missing_share,longest_missing_run_seconds
-primary,H1-M54,/building1/elec/meter54,mains,0.9999995611931509,4.388068490728231e-07,6
-fallback,H2-M20,/building2/elec/meter20,mains,1.0,0.0,0

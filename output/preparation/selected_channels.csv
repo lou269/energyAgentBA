@@ -1,3 +1,0 @@
-selection_role,candidate_id,house,meter_instance,meter_key,channel_role,appliance,window_start,window_end
-primary,H1-M54,1,54,/building1/elec/meter54,mains,,2013-05-17 08:29:11+00:00,2013-10-22 14:39:48.299999952+00:00
-fallback,H2-M20,2,20,/building2/elec/meter20,mains,,2013-05-21 10:54:09+00:00,2013-08-05 06:38:02.200000048+00:00

@@ -4,9 +4,10 @@ import pandas as pd
 from nilmtk import TimeFrame
 from nilmtk.timeframegroup import TimeFrameGroup
 
+from src.analysis.common import MERGE_KEYS, require_columns
+
 
 SECONDS_PER_DAY = 86_400.0
-MERGE_KEYS = ["house", "meter_instance", "meter_key"]
 
 
 AUXILIARY_AVAILABILITY_COLUMNS = [
@@ -58,21 +59,7 @@ def build_auxiliary_appliance_selection(
         on="candidate_id",
         how="left",
         validate="one_to_one",
-        indicator=True,
     )
-
-    missing_candidates = candidates.loc[
-        candidates["_merge"].ne("both"),
-        "candidate_id",
-    ].astype(str).tolist()
-
-    if missing_candidates:
-        raise ValueError(
-            "Missing candidate profiles for provisional selection: "
-            + ", ".join(missing_candidates)
-        )
-
-    candidates = candidates.drop(columns="_merge")
 
     appliances = channel_registry.loc[
         channel_registry["meter_type"].eq("submeter")
@@ -93,21 +80,7 @@ def build_auxiliary_appliance_selection(
         on=MERGE_KEYS,
         how="left",
         validate="one_to_one",
-        indicator=True,
     )
-
-    missing_quality = appliances.loc[
-        appliances["_merge"].ne("both"),
-        MERGE_KEYS,
-    ].to_dict(orient="records")
-
-    if missing_quality:
-        raise ValueError(
-            "Missing channel quality for auxiliary channels: "
-            f"{missing_quality}"
-        )
-
-    appliances = appliances.drop(columns="_merge")
 
     appliances["appliances"] = (
         appliances["appliances"]
@@ -129,23 +102,15 @@ def build_auxiliary_appliance_selection(
     result_rows = []
 
     for candidate in candidates.itertuples(index=False):
-        window_start = pd.to_datetime(
-            candidate.longest_segment_start,
-            utc=True,
-        )
-        window_end = pd.to_datetime(
-            candidate.longest_segment_end,
-            utc=True,
-        )
+        window_start = pd.to_datetime(candidate.longest_segment_start, utc=True)
+        window_end = pd.to_datetime(candidate.longest_segment_end,utc=True)
 
         if (
             pd.isna(window_start)
             or pd.isna(window_end)
             or window_end <= window_start
         ):
-            raise ValueError(
-                f"Invalid selection window for {candidate.candidate_id}."
-            )
+            raise ValueError(f"Invalid selection window for {candidate.candidate_id}.")
 
         window = TimeFrameGroup(
             [
@@ -158,9 +123,7 @@ def build_auxiliary_appliance_selection(
 
         candidate_rows = []
 
-        house_appliances = appliances.loc[
-            appliances["house"].eq(candidate.house)
-        ]
+        house_appliances = appliances.loc[appliances["house"].eq(candidate.house)]
 
         for appliance in house_appliances.itertuples(index=False):
             channel_key = (
@@ -179,10 +142,8 @@ def build_auxiliary_appliance_selection(
             if len(overlap) == 0:
                 continue
 
-            coverage_share = (
-                overlap.uptime().total_seconds()
-                / (window_end - window_start).total_seconds()
-            )
+            coverage_share = overlap.uptime().total_seconds() / (window_end - window_start).total_seconds()
+
             
             if coverage_share <= 0.0:
                 continue
@@ -202,17 +163,11 @@ def build_auxiliary_appliance_selection(
                     "meter_key": str(appliance.meter_key),
                     "appliance": appliance.appliances,
                     "sampling_share": appliance.sampling_share,
-                    "good_section_coverage_share": (
-                        appliance.good_section_coverage_share
-                    ),
-                    "longest_good_section_days": (
-                        appliance.longest_good_section_days
-                    ),
+                    "good_section_coverage_share": appliance.good_section_coverage_share,
+                    "longest_good_section_days": appliance.longest_good_section_days,
                     "selected_window_coverage_share": coverage_share,
-                    "longest_selected_window_overlap_days": (
-                        longest_overlap.timedelta.total_seconds()
-                        / SECONDS_PER_DAY
-                    ),
+                    "longest_selected_window_overlap_days": longest_overlap.timedelta.total_seconds() / SECONDS_PER_DAY
+    
                 }
             )
 
@@ -243,6 +198,7 @@ def build_auxiliary_appliance_selection(
         ranked["availability_rank"] = ranked.index + 1
         result_rows.extend(ranked.to_dict(orient="records"))
 
+
     result = pd.DataFrame(
         result_rows,
         columns=AUXILIARY_AVAILABILITY_COLUMNS,
@@ -264,7 +220,7 @@ def build_auxiliary_appliance_selection(
 def _build_section_index(
     good_sections: pd.DataFrame,
 ) -> dict[tuple[int, int, str], TimeFrameGroup]:
-    """Übersetzt Good Sections einmal pro Kanal in TimeFrameGroups."""
+    
     sections_by_channel: dict[
         tuple[int, int, str],
         TimeFrameGroup,
@@ -299,9 +255,8 @@ def _build_section_index(
             )
 
             if pd.isna(start) or pd.isna(end) or end <= start:
-                raise ValueError(
-                    f"Invalid good section for channel {channel_key}."
-                )
+                raise ValueError(f"Invalid good section for channel {channel_key}.")
+                
 
             timeframes.append(
                 TimeFrame(
@@ -310,9 +265,7 @@ def _build_section_index(
                 )
             )
 
-        sections_by_channel[channel_key] = TimeFrameGroup(
-            timeframes
-        )
+        sections_by_channel[channel_key] = TimeFrameGroup(timeframes)
 
     return sections_by_channel
 
@@ -324,63 +277,31 @@ def _validate_inputs(
     channel_quality: pd.DataFrame,
     good_sections: pd.DataFrame,
 ) -> None:
-    required_columns = {
-        "candidate_profiles": (
-            candidate_profiles,
-            {
-                "candidate_id",
-                "house",
-                "longest_segment_start",
-                "longest_segment_end",
-            },
-        ),
-        "provisional_selection": (
-            provisional_selection,
-            {
-                "selection_role",
-                "candidate_id",
-            },
-        ),
-        "channel_registry": (
-            channel_registry,
-            {
-                "house",
-                "meter_instance",
-                "meter_key",
-                "meter_type",
-                "appliances",
-                "has_canonical_ac_type",
-            },
-        ),
-        "channel_quality": (
-            channel_quality,
-            {
-                "house",
-                "meter_instance",
-                "meter_key",
-                "sampling_share",
-                "good_section_coverage_share",
-                "longest_good_section_days",
-                "quality_error",
-            },
-        ),
-        "good_sections": (
-            good_sections,
-            {
-                "house",
-                "meter_instance",
-                "meter_key",
-                "start",
-                "end",
-            },
-        ),
-    }
-
-    for name, (frame, columns) in required_columns.items():
-        missing = columns.difference(frame.columns)
-
-        if missing:
-            raise ValueError(
-                f"{name} is missing required columns: "
-                + ", ".join(sorted(missing))
-            )
+    require_columns(
+        candidate_profiles,
+        {"candidate_id", "house", "longest_segment_start", "longest_segment_end"},
+        "candidate_profiles",
+    )
+    require_columns(
+        provisional_selection,
+        {"selection_role", "candidate_id"},
+        "provisional_selection",
+    )
+    
+    require_columns(
+        channel_registry,
+        MERGE_KEYS + ["meter_type", "appliances", "has_canonical_ac_type"],
+        "channel_registry",
+    )
+    require_columns(
+        channel_quality,
+        MERGE_KEYS
+        + [
+            "sampling_share",
+            "good_section_coverage_share",
+            "longest_good_section_days",
+            "quality_error",
+        ],
+        "channel_quality",
+    )
+    require_columns(good_sections, MERGE_KEYS + ["start", "end"], "good_sections")

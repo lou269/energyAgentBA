@@ -35,20 +35,13 @@ def build_candidate_selection_outputs(
     candidate_profiles: pd.DataFrame,
     min_longest_segment_days: float,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Erzeugt die vorläufige Auswahl und alle Auswahlentscheidungen."""
-
     missing = REQUIRED_PROFILE_COLUMNS.difference(candidate_profiles.columns)
 
     if missing:
-        raise ValueError(
-            "candidate_profiles is missing required columns: "
-            + ", ".join(sorted(missing))
-        )
+        raise ValueError("candidate_profiles is missing required columns: " + ", ".join(sorted(missing)))
 
     if min_longest_segment_days <= 0:
-        raise ValueError(
-            "min_longest_segment_days must be greater than 0."
-        )
+        raise ValueError("min_longest_segment_days must be greater than 0.")
 
     ranked = candidate_profiles.copy()
     ranked["longest_segment_days"] = pd.to_numeric(
@@ -74,16 +67,12 @@ def build_candidate_selection_outputs(
     ).reset_index(drop=True)
 
     ranked["selection_rank"] = range(1, len(ranked) + 1)
-    ranked["eligible_for_selection"] = (
-        ranked["longest_segment_days"]
-        >= min_longest_segment_days
-    )
+    ranked["eligible_for_selection"] = ranked["longest_segment_days"] >= min_longest_segment_days
+
     ranked["selection_role"] = "not_selected"
     ranked["decision_reason"] = "longest_segment_below_threshold"
 
-    eligible = ranked.loc[
-        ranked["eligible_for_selection"]
-    ]
+    eligible = ranked.loc[ranked["eligible_for_selection"]]
 
     ranked.loc[
         ranked["eligible_for_selection"],
@@ -123,9 +112,7 @@ def build_candidate_selection_outputs(
             "decision_reason",
         ] = "same_house_as_primary"
 
-        fallback_candidates = eligible.loc[
-            eligible["house"].ne(primary["house"])
-        ]
+        fallback_candidates = eligible.loc[eligible["house"].ne(primary["house"])]
 
         if not fallback_candidates.empty:
             fallback = fallback_candidates.iloc[0]

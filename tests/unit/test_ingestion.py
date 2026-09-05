@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock
+from zipfile import ZipFile
 
 import pytest
 
@@ -133,3 +134,76 @@ def test_hdf5_with_missing_building_is_rejected(
         )
 
     store.close.assert_called_once_with()
+
+
+def test_extraction_is_skipped_once_marker_exists(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    raw_dir = tmp_path / "raw"
+    meta_dir = tmp_path / "meta"
+    archive_path = tmp_path / "dataset.zip"
+
+    with ZipFile(archive_path, "w") as archive:
+        archive.writestr("house_1/labels.dat", "1,fridge\n")
+
+    archive_size = archive_path.stat().st_size
+
+    def fake_listing(directory_url: str) -> list[dict[str, object]]:
+        if directory_url == "https://example.test/data":
+            return [{"name": archive_path.name, "download": "unused", "size": archive_size}]
+        return []
+
+    monkeypatch.setattr(downloader, "_load_file_listing", fake_listing)
+
+    houses, metadata_files = downloader.download_dataset_raw(
+        raw_dir=raw_dir,
+        meta_dir=meta_dir,
+        archive_path=archive_path,
+        url_data="https://example.test/data",
+        url_metadata="https://example.test/meta",
+        overwrite=False,
+    )
+
+    assert houses == ["house_1"]
+    assert metadata_files == []
+
+    extracted_file = raw_dir / "house_1" / "labels.dat"
+    assert extracted_file.is_file()
+    assert (raw_dir / ".extraction_complete").is_file()
+
+    extracted_file.unlink()
+
+    downloader.download_dataset_raw(
+        raw_dir=raw_dir,
+        meta_dir=meta_dir,
+        archive_path=archive_path,
+        url_data="https://example.test/data",
+        url_metadata="https://example.test/meta",
+        overwrite=False,
+    )
+
+    assert not extracted_file.exists()
+
+
+def test_convert_rejects_incomplete_metadata(tmp_path: Path) -> None:
+    raw_dir = tmp_path / "raw"
+    meta_dir = tmp_path / "meta"
+    meta_dir.mkdir()
+    (meta_dir / "dataset.yaml").write_text("name: UK-DALE")
+
+    output_path = tmp_path / "dataset.h5"
+
+    with pytest.raises(FileNotFoundError) as excinfo:
+        converter.convert_raw_to_hdf5(
+            raw_dir=raw_dir,
+            output_path=output_path,
+            meta_dir=meta_dir,
+            houses=["house_1"],
+            metadata_files=["dataset.yaml", "meter_devices.yaml"],
+            overwrite=False,
+        )
+
+    message = str(excinfo.value)
+    assert "building1.yaml" in message
+    assert "meter_devices.yaml" in message
+    assert "dataset.yaml" not in message

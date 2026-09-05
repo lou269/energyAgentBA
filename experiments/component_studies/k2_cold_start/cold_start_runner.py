@@ -7,7 +7,6 @@ import json
 import logging
 from dataclasses import asdict
 from datetime import UTC, datetime
-from pathlib import Path
 from time import perf_counter
 from typing import cast
 
@@ -45,9 +44,7 @@ class ColdStartRunner:
             and self.experiment_config.primary_naive_reference
             not in self.experiment_config.baseline_model_ids
         ):
-            raise ValueError(
-                "primary_naive_reference must be one of the configured naive baselines before running the test split."
-            )
+            raise ValueError("primary_naive_reference must be one of the configured naive baselines before running the test split.")
 
         logger.info("Starting cold-start experiment: split=%s", split)
         run_started = perf_counter()
@@ -166,9 +163,7 @@ class ColdStartRunner:
             yearly_seasonality=self.experiment_config.yearly_seasonality,
             interval_width=self.experiment_config.interval_width,
             uncertainty_samples=self.experiment_config.uncertainty_samples,
-            clip_negative_forecasts=(
-                self.experiment_config.negative_forecast_handling == "clip_zero"
-            ),
+            clip_negative_forecasts=(self.experiment_config.negative_forecast_handling == "clip_zero"),
             config_version=self.experiment_config.config_version,
             initial_history_hours=self.experiment_config.initial_history_hours,
         )
@@ -182,10 +177,7 @@ class ColdStartRunner:
             forecasts,
             horizon_hours=self.experiment_config.horizon_hours,
             comparison_model_ids=prophet_model_ids,
-            reference_model_ids=(
-                *self.experiment_config.baseline_model_ids,
-                "C1",
-            ),
+            reference_model_ids=(*self.experiment_config.baseline_model_ids, "C1"),
             nominal_interval_level=self.experiment_config.interval_width,
         )
 
@@ -240,15 +232,6 @@ class ColdStartRunner:
             split=split,
             candidate_id=candidate_id,
             config_values=asdict(self.experiment_config),
-            source_paths=(
-                Path(__file__),
-                self.project_config.project_root / "experiments/component_studies/k2_cold_start/cold_start_config.py",
-                self.project_config.project_root / "src/forecasting/walk_forward.py",
-                self.project_config.project_root / "src/forecasting/prophet_model.py",
-                self.project_config.project_root / "src/forecasting/baselines.py",
-                self.project_config.project_root / "src/forecasting/evaluation.py",
-                self.project_config.project_root / "src/forecasting/schema.py",
-            ),
             input_paths={
                 "treated_hourly": treated_path,
                 "imputation_mask_hourly": mask_path,
@@ -334,8 +317,7 @@ class ColdStartRunner:
             )
 
         logger.info(
-            "Cold-start experiment completed: run=%s, origins=%d, "
-            "primary naive reference=%s",
+            "Cold-start experiment completed: run=%s, origins=%d, primary naive reference=%s",
             run_id,
             forecasts["forecast_origin"].nunique(),
             primary_naive_reference,

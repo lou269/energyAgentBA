@@ -5,6 +5,8 @@ from pathlib import Path
 from nilmtk import DataSet
 from nilmtk.dataset_converters.ukdale.convert_ukdale import convert_ukdale
 
+from src.ingestion.downloader import _parse_house_number
+
 
 def convert_raw_to_hdf5(
     raw_dir: Path,
@@ -14,27 +16,18 @@ def convert_raw_to_hdf5(
     metadata_files: list[str],
     overwrite: bool,
 ) -> Path:
-    """Convert UK-DALE raw data to a validated NILMTK HDF5 file."""
-    house_numbers = [
-        int(house[len("house_"):])
-        for house in houses
-    ]
+    house_numbers = [_parse_house_number(house) for house in houses]
 
     if output_path.exists() and not overwrite:
         _validate_hdf5_output(output_path, house_numbers)
         return output_path
 
-    expected_meta_dir = raw_dir / "metadata"
-    if meta_dir.resolve() != expected_meta_dir.resolve():
-        raise ValueError(
-            f"NILMTK expects metadata in {expected_meta_dir}, "
-            f"got {meta_dir}"
-        )
 
     required_metadata = {
         "dataset.yaml",
         "meter_devices.yaml",
     }
+    
     required_metadata.update(
         f"building{house_number}.yaml"
         for house_number in house_numbers
@@ -48,15 +41,9 @@ def convert_raw_to_hdf5(
         or not (meta_dir / filename).is_file()
     ]
     if missing_metadata:
-        raise FileNotFoundError(
-            "Missing UK-DALE NILMTK metadata files: "
-            + ", ".join(str(path) for path in missing_metadata)
-        )
+        raise FileNotFoundError("Missing UK-DALE NILMTK metadata files: " + ", ".join(str(path) for path in missing_metadata))
 
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    temp_path = output_path.with_name(
-        f"{output_path.stem}.tmp{output_path.suffix}"
-    )
+    temp_path = output_path.with_name(f"{output_path.stem}.tmp{output_path.suffix}")
     temp_path.unlink(missing_ok=True)
 
     try:
@@ -79,33 +66,22 @@ def _validate_hdf5_output(
     expected_house_numbers: list[int],
 ) -> None:
     if not output_path.is_file() or output_path.stat().st_size == 0:
-        raise RuntimeError(
-            f"Missing or empty NILMTK HDF5 file: {output_path}"
-        )
+        raise RuntimeError(f"Missing or empty NILMTK HDF5 file: {output_path}")
 
     try:
         dataset = DataSet(str(output_path))
     except Exception as error:
-        raise RuntimeError(
-            f"Invalid NILMTK HDF5 file: {output_path}"
-        ) from error
+        raise RuntimeError(f"Invalid NILMTK HDF5 file: {output_path}") from error
 
     store = dataset.store
     if store is None:
-        raise RuntimeError(
-            f"NILMTK HDF5 file has no datastore: {output_path}"
-        )
+        raise RuntimeError(f"NILMTK HDF5 file has no datastore: {output_path}")
 
     try:
         available_buildings = set(dataset.buildings)
     finally:
         store.close()
 
-    missing_buildings = sorted(
-        set(expected_house_numbers) - available_buildings
-    )
+    missing_buildings = sorted(set(expected_house_numbers) - available_buildings)
     if missing_buildings:
-        raise RuntimeError(
-            "NILMTK HDF5 file is missing buildings: "
-            + ", ".join(str(number) for number in missing_buildings)
-        )
+        raise RuntimeError("NILMTK HDF5 file is missing buildings: "+ ", ".join(str(number) for number in missing_buildings))

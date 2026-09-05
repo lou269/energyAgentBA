@@ -11,14 +11,10 @@ CHANNEL_REGISTRY_COLUMNS = [
     "meter_instance",
     "meter_key",
     "meter_type",
-    "site_meter",
-    "label",
     "appliances",
     "ac_types",
     "has_canonical_ac_type",
     "sample_period_seconds",
-    "max_sample_period_seconds",
-    "ac_type_error",
 ]
 
 def _get_appliance_names(meter) -> str:
@@ -39,7 +35,6 @@ def build_channel_registry(
     for house_id, building in dataset.buildings.items():
         for meter in building.elec.meters:
             meter_instance = meter.instance()
-            ac_type_error: str | None = None
 
             try:
                 ac_types = list(meter.available_ac_types("power"))
@@ -51,17 +46,8 @@ def build_channel_registry(
                     error,
                 )
                 ac_types = []
-                ac_type_error = str(error)
 
             site_meter = bool(meter.is_site_meter())
-            appliance_names = _get_appliance_names(meter)
-
-            label = (
-                "mains"
-                if site_meter
-                else appliance_names or f"meter_{meter_instance}"
-            )
-
             device = meter.device or {}
 
             rows.append(
@@ -70,14 +56,10 @@ def build_channel_registry(
                     "meter_instance": meter_instance,
                     "meter_key": str(meter.key),
                     "meter_type": "mains" if site_meter else "submeter",
-                    "site_meter": site_meter,
-                    "label": label,
-                    "appliances": appliance_names,
+                    "appliances": _get_appliance_names(meter),
                     "ac_types": ", ".join(ac_types),
                     "has_canonical_ac_type": canonical_ac_type in ac_types,
                     "sample_period_seconds": device.get("sample_period"),
-                    "max_sample_period_seconds": device.get("max_sample_period"),
-                    "ac_type_error": ac_type_error,
                 }
             )
 

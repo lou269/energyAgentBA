@@ -1,5 +1,5 @@
-# python -m src.forecasting.forecasting_runner
-# python -m src.forecasting.forecasting_runner --split test
+# python -m src.forecasting.forecast_runner
+# python -m src.forecasting.forecast_runner --split test
 
 from __future__ import annotations
 
@@ -7,14 +7,17 @@ import argparse
 from dataclasses import asdict
 import logging
 from datetime import UTC, datetime
+from time import perf_counter
 from typing import Literal, cast
 
+import numpy as np
 import pandas as pd
 
-from src.pipeline.io import df_to_csv
+from src.pipeline.io import df_to_csv, save_json
 from src.config.forecasting_config import ForecastingConfig
 from src.config.project_config import ProjectConfig, ensure_project_directories
 from src.forecasting.evaluation import evaluate_forecasts, select_primary_naive_reference
+from src.forecasting.forecast_run_manifest import build_forecast_run_manifest
 
 from src.forecasting.walk_forward import ProphetVariantParameters, build_walk_forward_forecasts
 
@@ -34,6 +37,8 @@ class ForecastingRunner:
 
     def run(self, split: EvaluationSplit = "validation") -> None:
         ensure_project_directories(self.project_config)
+        np.random.seed(self.forecasting_config.seed)
+        run_started = perf_counter()
 
         if (
             split == "test"
@@ -44,24 +49,29 @@ class ForecastingRunner:
 
         logger.info("Starting forecasting for split %s...", split)
 
+        treated_path = self.project_config.preprocessing_output_dir / "treated_hourly.csv"
+        mask_path = self.project_config.preprocessing_output_dir / "imputation_mask_hourly.csv"
+        split_manifest_path = self.project_config.preprocessing_output_dir / "split_manifest.csv"
+        canonical_manifest_path = self.project_config.canonical_output_dir / "canonical_manifest.csv"
+
         treated_hourly = pd.read_csv(
-            self.project_config.preprocessing_output_dir / "treated_hourly.csv",
+            treated_path,
             parse_dates=["timestamp"],
             index_col="timestamp",
         )
 
         imputation_mask_hourly = pd.read_csv(
-            self.project_config.preprocessing_output_dir / "imputation_mask_hourly.csv",
+            mask_path,
             parse_dates=["timestamp"],
             index_col="timestamp",
         )
 
         split_manifest = pd.read_csv(
-            self.project_config.preprocessing_output_dir / "split_manifest.csv",
+            split_manifest_path,
             parse_dates=["start", "end"],
         )
 
-        canonical_manifest = pd.read_csv(self.project_config.canonical_output_dir / "canonical_manifest.csv")
+        canonical_manifest = pd.read_csv(canonical_manifest_path)
 
         mains_targets = canonical_manifest.loc[
             canonical_manifest["channel_role"].eq("mains"),
@@ -71,6 +81,7 @@ class ForecastingRunner:
         if len(mains_targets) != 1:
             raise ValueError("Canonical manifest must contain exactly one mains target.")
 
+        candidate_id = str(mains_targets.iloc[0]["candidate_id"])
         target_column = str(mains_targets.iloc[0]["meter_key"])
 
         hourly_splits = split_manifest.loc[
@@ -137,17 +148,91 @@ class ForecastingRunner:
             primary_naive_reference = self.forecasting_config.primary_naive_reference
 
         df_to_csv(
-            forecasts, 
-            self.project_config.forecasting_output_dir, 
+            forecasts,
+            self.project_config.forecasting_output_dir,
             f"forecasts_{split}"
         )
 
         for name, result in evaluation_results.items():
             df_to_csv(
-                result, 
-                self.project_config.forecasting_output_dir, 
+                result,
+                self.project_config.forecasting_output_dir,
                 f"{name}_{split}"
             )
+
+        output_paths = {
+            "forecasts": self.project_config.forecasting_output_dir / f"forecasts_{split}.csv",
+            **{
+                name: self.project_config.forecasting_output_dir / f"{name}_{split}.csv"
+                for name in evaluation_results
+            },
+        }
+
+        if split == "validation":
+            output_paths["primary_naive_reference"] = self.project_config.forecasting_output_dir / "primary_naive_reference_validation.csv"
+
+        manifest = build_forecast_run_manifest(
+            project_root=self.project_config.project_root,
+            run_id=run_id,
+            experiment_id=self.forecasting_config.experiment_id,
+            split=split,
+            candidate_id=candidate_id,
+            config_values=asdict(self.forecasting_config),
+            input_paths={
+                "treated_hourly": treated_path,
+                "imputation_mask_hourly": mask_path,
+                "split_manifest": split_manifest_path,
+                "canonical_manifest": canonical_manifest_path,
+            },
+            output_paths=output_paths,
+            split_boundaries={
+                "split_start": split_start,
+                "split_end": split_end,
+                "fixed_history_start": fixed_history.index[0],
+                "fixed_history_end": fixed_history.index[-1],
+                "first_forecast_origin": forecasts["forecast_origin"].min(),
+            },
+            forecast_origins=tuple(forecasts["forecast_origin"].drop_duplicates().sort_values()),
+            model_parameters={
+                "growth": self.forecasting_config.growth,
+                "daily_seasonality": self.forecasting_config.daily_seasonality,
+                "yearly_seasonality": self.forecasting_config.yearly_seasonality,
+                "interval_width": self.forecasting_config.interval_width,
+                "variant": asdict(self.forecasting_config.selected_prophet_variant),
+            },
+            seasonalities={
+                self.forecasting_config.selected_prophet_variant.model_id: {
+                    "daily": self.forecasting_config.daily_seasonality,
+                    "weekly": self.forecasting_config.selected_prophet_variant.weekly_seasonality,
+                    "yearly": self.forecasting_config.yearly_seasonality,
+                }
+            },
+            history_rules={
+                self.forecasting_config.selected_prophet_variant.model_id: {
+                    "history_mode": self.forecasting_config.selected_prophet_variant.history_mode,
+                    "rolling_window_hours": self.forecasting_config.selected_prophet_variant.rolling_window_hours,
+                    "retraining_interval_hours": self.forecasting_config.selected_prophet_variant.retraining_interval_hours,
+                }
+            },
+            metric_definitions={
+                "metrics": ["mae", "rmse", "mape"],
+                "primary_metric": "mae",
+                "mape_positive_targets_only": True,
+            },
+            exclusion_rules={
+                "exclude_imputed_targets": True,
+                "complete_horizons_only": True,
+            },
+            primary_naive_reference=primary_naive_reference,
+            seed=self.forecasting_config.seed,
+            uncertainty_samples=self.forecasting_config.uncertainty_samples,
+            runtime_seconds=perf_counter() - run_started,
+        )
+
+        save_json(
+            manifest,
+            self.project_config.forecasting_output_dir / f"run_manifest_{split}.json",
+        )
 
         logger.info(
             "Forecasting completed: split=%s, origins=%d, primary naive reference=%s.",
