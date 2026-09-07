@@ -18,7 +18,7 @@ class ProjectConfig:
     # Outputs
     output_dir: Path = project_root / "output"
     meta_output_dir: Path = output_dir / "metadata"
-    diagnostics_output_dir: Path = output_dir / "diagnostics"
+    analysis_output_dir: Path = output_dir / "analysis"
     selection_output_dir: Path = output_dir / "selection"
     preparation_output_dir: Path = output_dir / "preparation"
     validation_output_dir: Path = output_dir / "validation"
@@ -35,12 +35,9 @@ class ProjectConfig:
     dataset_filename: str = "ukdale.h5"
 
     # CEDA directories
-    url_data: str = (
-        "https://data.ceda.ac.uk/edc/d1/7d78f943-f9fe-413b-af52-1816f9d968b0/data/version_0"
-    )
-    url_metadata: str = (
-        "https://data.ceda.ac.uk/edc/d1/7d78f943-f9fe-413b-af52-1816f9d968b0/documents"
-    )
+    url_data: str = "https://data.ceda.ac.uk/edc/d1/7d78f943-f9fe-413b-af52-1816f9d968b0/data/version_0"
+    url_metadata: str = "https://data.ceda.ac.uk/edc/d1/7d78f943-f9fe-413b-af52-1816f9d968b0/documents"
+ 
 
     @property
     def dataset_path(self) -> Path:
@@ -55,7 +52,7 @@ def ensure_project_directories(config: ProjectConfig) -> None:
         config.processed_dir,
         config.output_dir,
         config.meta_output_dir,
-        config.diagnostics_output_dir,
+        config.analysis_output_dir,
         config.selection_output_dir,
         config.preparation_output_dir,
         config.validation_output_dir,

@@ -30,9 +30,7 @@ def build_chronological_split(
         or validation_end == train_end
         or validation_end >= len(data)
     ):
-        raise ValueError(
-            "Split shares and data length must produce non-empty train, validation, and test splits."
-        )
+        raise ValueError("Split shares and data length must produce non-empty train, validation, and test splits.")
 
     train_data = data.iloc[:train_end]
     validation_data = data.iloc[train_end:validation_end]

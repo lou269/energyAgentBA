@@ -13,7 +13,7 @@ import pandas as pd
 
 from src.config.data_preparation_config import DataPreparationConfig
 from src.config.project_config import ProjectConfig
-from src.data_preparation.selected_candidate_validation import select_candidate_role
+from old.old_src_vor_umbau.selected_candidate_validation import select_candidate_role
 from src.pipeline.io import save_json
 
 logger = logging.getLogger(__name__)

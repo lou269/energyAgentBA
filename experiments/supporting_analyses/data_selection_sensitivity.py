@@ -8,8 +8,8 @@ import logging
 
 import pandas as pd
 
-from src.analysis.selection.auxiliary_appliance_selection import build_auxiliary_appliance_selection
-from src.analysis.selection.provisional_selection import build_candidate_selection_outputs
+from data_preparation.selection.auxiliary_appliance_selection import build_auxiliary_appliance_selection
+from old.old_src_vor_umbau.provisional_selection import build_candidate_selection_outputs
 from src.config.analysis_config import AnalysisConfig
 from src.config.project_config import ProjectConfig
 from src.pipeline.io import save_json

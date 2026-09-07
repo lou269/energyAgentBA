@@ -24,12 +24,9 @@ def build_gap_treated_data(
     pd.DataFrame,
     pd.DataFrame,
 ]:
-    """Behandelt Lücken einmal über alle chronologischen Splits."""
 
     if method == "linear":
-        raise ValueError(
-            "Linear interpolation must not be applied globally across all splits. Use apply_gap_treatment() only on history available before the relevant forecast cutoff."
-        )
+        raise ValueError("Linear interpolation must not be applied globally across all splits. Use apply_gap_treatment() only on history available before the relevant forecast cutoff.")
 
     combined_data = pd.concat([train_data, validation_data, test_data])
 
@@ -59,14 +56,6 @@ def apply_gap_treatment(
     max_gap_intervals: int,
     method: GapTreatmentMethod,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """
-    Behandelt nur vollständig kurze Lücken.
-
-    Lücken über dem konfigurierten Limit bleiben vollständig leer.
-    Bei linearer Interpolation muss der Aufrufer die Daten vorher auf
-    die zum jeweiligen Cutoff verfügbare Historie begrenzen.
-    """
-
     _validate_inputs(data, quality, max_gap_intervals=max_gap_intervals, method=method)
 
     treated = data.copy()
@@ -114,10 +103,7 @@ def _build_short_gap_mask(
     *,
     max_gap_intervals: int,
 ) -> pd.Series:
-    """Markiert alle Punkte in vollständigen Lücken innerhalb des Limits."""
-
     gap_ids = missing.ne(missing.shift(fill_value=False)).cumsum()
-
     gap_lengths = missing.groupby(gap_ids).transform("sum")
 
     return missing & gap_lengths.le(max_gap_intervals)
@@ -154,12 +140,3 @@ def _validate_inputs(
 
     if method == "linear" and not isinstance(data.index, pd.DatetimeIndex):
         raise TypeError("Linear interpolation requires a DatetimeIndex.")
-
-    missing_quality_columns = {
-        f"{column}_coverage_mask" for column in data.columns
-    }.difference(quality.columns)
-
-    if missing_quality_columns:
-        raise ValueError(
-            "Missing quality columns: " + ", ".join(sorted(missing_quality_columns))
-        )

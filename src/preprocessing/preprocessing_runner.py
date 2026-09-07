@@ -7,10 +7,8 @@ import logging
 import pandas as pd
 
 from src.pipeline.io import df_to_csv
-from src.config.data_preparation_config import DataPreparationConfig
 from src.config.preprocessing_config import PreprocessingConfig
 from src.config.project_config import ProjectConfig, ensure_project_directories
-from src.preprocessing.aggregation import build_aggregated_data
 from src.preprocessing.gap_treatment import build_gap_treated_data
 from src.preprocessing.split import build_chronological_split
 
@@ -22,41 +20,27 @@ class PreprocessingRunner:
     def __init__(
         self,
         project_config: ProjectConfig | None = None,
-        data_preparation_config: DataPreparationConfig | None = None,
         preprocessing_config: PreprocessingConfig | None = None,
     ) -> None:
         self.project_config = project_config or ProjectConfig()
-        self.data_preparation_config = (
-            data_preparation_config or DataPreparationConfig()
-        )
         self.preprocessing_config = preprocessing_config or PreprocessingConfig()
+
+    def _read_canonical(self, name: str) -> pd.DataFrame:
+        return pd.read_csv(
+            self.project_config.canonical_output_dir / f"{name}.csv",
+            parse_dates=["timestamp"],
+            index_col="timestamp",
+        )
 
     def run(self) -> None:
         ensure_project_directories(self.project_config)
 
         logger.info("Starting preprocessing pipeline...")
 
-        canonical_data = pd.read_csv(
-            self.project_config.canonical_output_dir / "canonical_data.csv",
-            parse_dates=["timestamp"],
-            index_col="timestamp",
-        )
-
-        logger.info("Building forecast aggregations...")
-
-        (data_15min, quality_15min, data_hourly, quality_hourly) = (
-            build_aggregated_data(
-                canonical_data,
-                sample_period_seconds=self.data_preparation_config.alignment_sample_period_seconds,
-                min_coverage_share=self.preprocessing_config.min_aggregation_coverage_share,
-            )
-        )
-
-        logger.info(
-            "Forecast aggregation completed: %d 15-minute rows, %d hourly rows.",
-            len(data_15min),
-            len(data_hourly),
-        )
+        data_15min = self._read_canonical("canonical_data_15min")
+        quality_15min = self._read_canonical("canonical_quality_15min")
+        data_hourly = self._read_canonical("canonical_data_hourly")
+        quality_hourly = self._read_canonical("canonical_quality_hourly")
 
         logger.info("Building chronological splits...")
 
@@ -233,7 +217,7 @@ class PreprocessingRunner:
                 name,
             )
 
-        logger.info("Preprocessing completed successfully: %d output artifacts.")
+        logger.info("Preprocessing completed successfully: %d output artifacts.", len(gap_outputs) + 1)
 
 
 def main() -> None:

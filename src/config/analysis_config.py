@@ -10,12 +10,6 @@ class AnalysisConfig:
     # Channel quality
     channel_quality_chunksize: int = 1_000_000
 
-    # House eligibility
-    min_valid_sample_count: int = 2
-
-    # Provisional candidate selection
-    min_longest_segment_days: float = 45.0
-
     # Auxiliary appliance selection
     min_auxiliary_window_coverage_share: float = 0.8
 

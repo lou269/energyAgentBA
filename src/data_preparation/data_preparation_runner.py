@@ -10,9 +10,10 @@ from nilmtk import DataSet
 from src.pipeline.io import df_to_csv
 from src.config.data_preparation_config import DataPreparationConfig
 from src.config.project_config import ProjectConfig, ensure_project_directories
-from src.data_preparation.selected_data import build_selected_data
-from src.data_preparation.selected_candidate_validation import build_selected_candidate_validation, select_candidate_role
-
+from src.data_preparation.aggregation.channel_loading import build_loaded_channels
+from src.data_preparation.aggregation.aggregation import build_aggregated_data
+from src.data_preparation.selection.candidate_availability import build_candidate_availability
+from src.data_preparation.selection.candidate_selection import build_candidate_selection
 
 
 
@@ -35,118 +36,126 @@ class DataPreparationRunner:
 
         logger.info("Starting data preparation pipeline...")
 
-        # Load analysis results
         channel_registry_df = pd.read_csv(self.project_config.meta_output_dir / "channel_registry.csv")
-        profiles_df = pd.read_csv(self.project_config.selection_output_dir / "profiles.csv")
-        provisional_selection_df = pd.read_csv(self.project_config.selection_output_dir / "provisional_selection.csv")
+        channel_quality_df = pd.read_csv(self.project_config.analysis_output_dir / "channel_quality.csv")
 
-        # 8. Selected data extraction + temporal alignment
-        logger.info("Building selected aligned data...")
+        logger.info("Loading channels from dataset...")
         
-        aligned_data, selected_channels_df = build_selected_data(
+        loaded_channels = build_loaded_channels(
             dataset=dataset,
-            candidate_profiles=profiles_df,
-            provisional_selection=provisional_selection_df,
-            channel_registry=channel_registry_df,
-            sample_period=self.data_config.alignment_sample_period_seconds,
+            channel_quality=channel_quality_df,
             canonical_ac_type=self.data_config.canonical_ac_type,
-            include_fallback=self.data_config.include_fallback,
-            chunksize=None,
+            mains_only=True,
+            selected_house_ids=self.data_config.selected_house_ids
         )
+
+        logger.info("Loaded %d channels.", len(loaded_channels))
         
-        df_to_csv(
-            selected_channels_df,
-            self.project_config.preparation_output_dir,
-            "selected_channels",
-        )                
-        
-        for selection_role, frame in aligned_data.items():
-            df_to_csv(
-                frame.reset_index(),
-                self.project_config.preparation_output_dir,
-                f"selected_data_{selection_role}",
-            )
-        
+        logger.info("Aggregating channels to 15min and hourly intervals...")
+
+        sample_periods = dict(zip(channel_registry_df["meter_key"], channel_registry_df["sample_period_seconds"]))
+
+        data_15min, quality_15min, data_hourly, quality_hourly = build_aggregated_data(
+            channels=loaded_channels,
+            sample_periods=sample_periods,
+            min_coverage_share=self.data_config.min_coverage_share,
+        )
+
+        df_to_csv(data_15min.reset_index(), self.project_config.preparation_output_dir, "data_15min")
+        df_to_csv(quality_15min.reset_index(), self.project_config.preparation_output_dir, "quality_15min")
+        df_to_csv(data_hourly.reset_index(), self.project_config.preparation_output_dir, "data_hourly")
+        df_to_csv(quality_hourly.reset_index(), self.project_config.preparation_output_dir, "quality_hourly")
+
         logger.info(
-            "Selected data built: %d channels, roles=%s.",
-            len(selected_channels_df),
-            list(aligned_data),
-        )
-        
-        # 9. Post-alignment validation
-        logger.info("Validating selected candidates...")
-        
-        channel_validation_df, candidate_validation_df = (
-            build_selected_candidate_validation(
-                aligned_data=aligned_data,
-                manifest=selected_channels_df,
-                sample_period=self.data_config.alignment_sample_period_seconds,
-                min_mains_coverage_share=self.data_config.min_mains_coverage_share,
-                min_mains_valid_duration_days=self.data_config.min_mains_valid_duration_days,
-            )
+            "Aggregation completed: %d channels, %d 15min rows, %d hourly rows.",
+            len(loaded_channels),
+            len(data_15min),
+            len(data_hourly),
         )
 
-        # Ergebnisse vor einem möglichen Abbruch speichern
-        df_to_csv(
-            channel_validation_df,
-            self.project_config.validation_output_dir,
-            "channel_validation",
-        )
-        df_to_csv(
-            candidate_validation_df,
-            self.project_config.validation_output_dir,
-            "candidate_validation",
+        availability = build_candidate_availability(
+            data_hourly,
+            quality_hourly,
+            max_gap_intervals=self.data_config.max_availability_gap_hours,
         )
 
-        selected_role = select_candidate_role(candidate_validation_df)
+        df_to_csv(availability, self.project_config.selection_output_dir, "candidate_availability")
 
-        if selected_role is None:
-            raise ValueError(
-                "Neither primary nor fallback passed validation. "
-                "See candidate_validation.csv."
-            )
-        
-        logger.info("Selected canonical candidate role: %s.", selected_role)
-        
-        # 10. Canonical selection        
-        canonical_manifest = selected_channels_df.loc[
-            selected_channels_df["selection_role"].eq(
-                selected_role
-            )
-            & selected_channels_df["channel_role"].eq("mains")
-        ].copy()
+        logger.info("Candidate availability: %d usable spans.", len(availability))
 
-        mains_keys = (
-            canonical_manifest["meter_key"]
-            .astype(str)
-            .tolist()
+        selection, decisions = build_candidate_selection(
+            availability,
+            channel_registry_df,
+            min_valid_duration_days=self.data_config.min_mains_valid_duration_days,
+            min_coverage_share=self.data_config.min_mains_coverage_share,
         )
 
-        canonical_data = (
-            aligned_data[selected_role]
-            .loc[:, mains_keys]
-            .copy()
+        df_to_csv(selection, self.project_config.selection_output_dir, "candidate_selection")
+        df_to_csv(decisions, self.project_config.selection_output_dir, "candidate_selection_decisions")
+
+        logger.info("Candidate selection completed: selected=%s.", selection["candidate_id"].tolist() if not selection.empty else [])
+
+        winners = decisions.loc[decisions["selected"]]
+
+        if winners.empty:
+            raise ValueError("No candidate selected. See candidate_selection_decisions.csv.")
+
+        winner = winners.iloc[0]
+        meter_key = str(winner["meter_key"])
+
+        canonical_manifest = pd.DataFrame(
+            [
+                {
+                    "candidate_id": winner["candidate_id"],
+                    "house": int(winner["house"]),
+                    "meter_key": meter_key,
+                    "window_start": winner["window_start"],
+                    "window_end": winner["window_end"],
+                }
+            ]
         )
+
+        window_start = pd.to_datetime(winner["window_start"], utc=True)
+        window_end = pd.to_datetime(winner["window_end"], utc=True)
+
+        quality_columns = [
+            f"{meter_key}_valid_observation_count",
+            f"{meter_key}_coverage_share",
+            f"{meter_key}_coverage_mask",
+        ]
+
+        canonical_data_15min = data_15min.loc[window_start:window_end, [meter_key]].copy()
+        canonical_data_hourly = data_hourly.loc[window_start:window_end, [meter_key]].copy()
+        canonical_quality_15min = quality_15min.loc[window_start:window_end, quality_columns].copy()
+        canonical_quality_hourly = quality_hourly.loc[window_start:window_end, quality_columns].copy()
 
         df_to_csv(
             canonical_manifest,
             self.project_config.canonical_output_dir,
             "canonical_manifest",
         )
-
         df_to_csv(
-            canonical_data.reset_index(),
+            canonical_data_15min.reset_index(),
             self.project_config.canonical_output_dir,
-            "canonical_data",
+            "canonical_data_15min",
         )
-        
-
-
-        logger.info(
-            "Data preparation completed successfully. "
-            "Canonical role: %s",
-            selected_role,
+        df_to_csv(
+            canonical_data_hourly.reset_index(),
+            self.project_config.canonical_output_dir,
+            "canonical_data_hourly",
         )
+        df_to_csv(
+            canonical_quality_15min.reset_index(),
+            self.project_config.canonical_output_dir,
+            "canonical_quality_15min",
+        )
+        df_to_csv(
+            canonical_quality_hourly.reset_index(),
+            self.project_config.canonical_output_dir,
+            "canonical_quality_hourly",
+        )
+
+        logger.info("Data preparation completed successfully. Canonical candidate: %s.", winner["candidate_id"])
 
 
 def main() -> None:

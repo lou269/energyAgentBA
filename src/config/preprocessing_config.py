@@ -6,8 +6,6 @@ ProductionGapMethod = Literal["ffill", "none"]
 
 @dataclass(frozen=True)
 class PreprocessingConfig:
-    min_aggregation_coverage_share: float = 0.80
-
     train_share: float = 0.70
     validation_share: float = 0.15
 
