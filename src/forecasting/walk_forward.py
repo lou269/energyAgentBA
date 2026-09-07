@@ -6,11 +6,7 @@ import numpy as np
 import pandas as pd
 from prophet import Prophet
 
-from src.forecasting.baselines import (
-    build_daily_naive_forecast,
-    build_last_value_forecast,
-    build_weekly_naive_forecast,
-)
+from src.forecasting.baselines import build_daily_naive_forecast, build_last_value_forecast,build_weekly_naive_forecast
 from src.forecasting.prophet_model import build_prophet_forecast, fit_prophet_model
 from src.forecasting.forecast_schema import FORECAST_OUTPUT_COLUMNS, validate_forecast_output
 
@@ -63,9 +59,7 @@ def build_walk_forward_forecasts(
             raise ValueError("initial_history_hours must be at least 1.")
         fixed_history = fixed_history.iloc[:initial_history_hours]
         if len(fixed_history) != initial_history_hours:
-            raise ValueError(
-                f"Initial history must contain exactly {initial_history_hours} hours, got {len(fixed_history)}."
-            )
+            raise ValueError(f"Initial history must contain exactly {initial_history_hours} hours, got {len(fixed_history)}.")
 
     _validate_walk_forward_data(fixed_history, evaluation_targets, evaluation_imputation_mask)
 
@@ -82,9 +76,7 @@ def build_walk_forward_forecasts(
         raise ValueError("horizon_hours must be at least 1.")
 
     if forecast_origin_step_hours < horizon_hours:
-        raise ValueError(
-            "forecast_origin_step_hours must be at least horizon_hours to prevent overlapping horizons."
-        )
+        raise ValueError("forecast_origin_step_hours must be at least horizon_hours to prevent overlapping horizons.")
 
     if growth != "linear":
         raise ValueError("The current Prophet implementation only supports linear growth.")
@@ -115,31 +107,21 @@ def build_walk_forward_forecasts(
 
         if history_mode == "fixed_train":
             if rolling_window_hours is not None or retraining_interval_hours is not None:
-                raise ValueError(
-                    f"{variant['model_id']}: fixed_train must not define a rolling window or retraining interval."
-                )
+                raise ValueError(f"{variant['model_id']}: fixed_train must not define a rolling window or retraining interval.")
 
         elif history_mode == "expanding":
             if rolling_window_hours is not None:
-                raise ValueError(
-                    f"{variant['model_id']}: expanding must not define a rolling window."
-                )
+                raise ValueError(f"{variant['model_id']}: expanding must not define a rolling window.")
 
             if retraining_interval_hours is None or retraining_interval_hours < 1:
-                raise ValueError(
-                    f"{variant['model_id']}: retraining_interval_hours must be at least 1."
-                )
+                raise ValueError(f"{variant['model_id']}: retraining_interval_hours must be at least 1.")
 
         elif history_mode == "rolling":
             if rolling_window_hours is None or rolling_window_hours < 1:
-                raise ValueError(
-                    f"{variant['model_id']}: rolling_window_hours must be at least 1."
-                )
+                raise ValueError(f"{variant['model_id']}: rolling_window_hours must be at least 1.")
 
             if retraining_interval_hours is None or retraining_interval_hours < 1:
-                raise ValueError(
-                    f"{variant['model_id']}: retraining_interval_hours must be at least 1."
-                )
+                raise ValueError(f"{variant['model_id']}: retraining_interval_hours must be at least 1.")
 
         else:
             raise ValueError(f"Unsupported history mode: {history_mode}.")
@@ -171,9 +153,7 @@ def build_walk_forward_forecasts(
         target_exclusion_reason.loc[target_values.isna()] = "missing_target"
 
         for model_id in baseline_model_ids:
-            raw_predictions = _BASELINE_BUILDERS[model_id](
-                available_history, target_index
-            )
+            raw_predictions = _BASELINE_BUILDERS[model_id](available_history, target_index)
 
             predictions = (
                 raw_predictions.clip(lower=0.0)
@@ -435,17 +415,13 @@ def _validate_walk_forward_data(
     expected_evaluation_start = fixed_history.index[-1] + pd.Timedelta(hours=1)
 
     if evaluation_targets.index[0] != expected_evaluation_start:
-        raise ValueError(
-            "evaluation_targets must start exactly one hour after fixed_history ends."
-        )
+        raise ValueError("evaluation_targets must start exactly one hour after fixed_history ends.")
 
     if not isinstance(evaluation_imputation_mask, pd.Series):
         raise TypeError("evaluation_imputation_mask must be a pandas Series.")
 
     if not evaluation_imputation_mask.index.equals(evaluation_targets.index):
-        raise ValueError(
-            "evaluation_imputation_mask must use exactly the evaluation target index."
-        )
+        raise ValueError("evaluation_imputation_mask must use exactly the evaluation target index.")
 
     if evaluation_imputation_mask.isna().any():
         raise ValueError("evaluation_imputation_mask contains missing values.")

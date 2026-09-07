@@ -1,8 +1,14 @@
 from __future__ import annotations
 
+import logging
+
 import numpy as np
 import pandas as pd
 from prophet import Prophet
+
+# cmdstanpy loggt jeden Fit-Chain-Start/Stop auf INFO, das übertönt sonst jede
+# eigene Log-Ausgabe während Walk-Forward-Läufen mit vielen Retrainings.
+logging.getLogger("cmdstanpy").setLevel(logging.WARNING)
 
 
 def fit_prophet_model(
@@ -45,9 +51,7 @@ def build_prophet_forecast(
     history_end = pd.Timestamp(model.history["ds"].max()).tz_localize("UTC")
 
     if history_end >= target_index[0]:
-        raise ValueError(
-            "The fitted model contains history at or after the forecast origin."
-        )
+        raise ValueError("The fitted model contains history at or after the forecast origin.")
 
     # Prophet verarbeitet keine timezone-aware Zeitstempel.
     future = pd.DataFrame({"ds": (target_index.tz_convert("UTC").tz_localize(None))})
@@ -65,6 +69,8 @@ def build_prophet_forecast(
 
     if clip_negative_forecasts:
         result["y_pred"] = result["y_pred_raw"].clip(lower=0.0)
+        result["y_lower"] = result["y_lower"].clip(lower=0.0)
+        result["y_upper"] = result["y_upper"].clip(lower=0.0)
     else:
         result["y_pred"] = result["y_pred_raw"]
 

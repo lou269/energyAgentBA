@@ -40,7 +40,6 @@ class ForecastingConfig:
 
     # Walk-Forward-Evaluation
     forecast_origin_step_hours: int = 24
-    complete_horizons_only: bool = True
 
     # Naive Baselines
     baseline_model_ids: tuple[str, ...] = ("B1", "B2", "B3")
@@ -55,3 +54,6 @@ class ForecastingConfig:
 
     primary_naive_reference: str | None = None
     negative_forecast_handling: NegativeForecastHandling = "raw"
+
+    # unter diesem Wert bläht MAPE durch Division nahe 0 unkontrolliert auf
+    mape_min_eligible_watts: float = 10.0

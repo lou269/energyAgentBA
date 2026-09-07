@@ -73,16 +73,11 @@ class ColdStartRunner:
         
         canonical_manifest = pd.read_csv(canonical_manifest_path)
 
-        mains_targets = canonical_manifest.loc[
-            canonical_manifest["channel_role"].eq("mains"),
-            ["candidate_id", "meter_key"],
-        ].drop_duplicates()
-
-        if len(mains_targets) != 1:
+        if len(canonical_manifest) != 1:
             raise ValueError("Canonical manifest must contain exactly one mains target.")
 
-        candidate_id = str(mains_targets.iloc[0]["candidate_id"])
-        target_column = str(mains_targets.iloc[0]["meter_key"])
+        candidate_id = str(canonical_manifest.iloc[0]["candidate_id"])
+        target_column = str(canonical_manifest.iloc[0]["meter_key"])
 
         hourly_splits = split_manifest.loc[
             split_manifest["frequency"].eq("hourly")

@@ -116,9 +116,7 @@ def validate_forecast_output(forecasts: pd.DataFrame, *, horizon_hours: int) -> 
     if forecasts.duplicated(FORECAST_KEY_COLUMNS).any():
         raise ValueError("Forecast output contains duplicate forecast records.")
 
-    expected_target_timestamps = forecasts["forecast_origin"] + pd.to_timedelta(
-        forecasts["horizon_step"] - 1, unit="h"
-    )
+    expected_target_timestamps = forecasts["forecast_origin"] + pd.to_timedelta(forecasts["horizon_step"] - 1, unit="h")
 
     invalid_time_relation = forecasts["target_timestamp"] != expected_target_timestamps
 
@@ -154,9 +152,7 @@ def validate_forecast_output(forecasts: pd.DataFrame, *, horizon_hours: int) -> 
 
     interval_mismatch = forecasts["y_lower"].isna() != forecasts["y_upper"].isna()
 
-    invalid_intervals = forecasts["y_lower"].notna() & (
-        forecasts["y_lower"] > forecasts["y_upper"]
-    )
+    invalid_intervals = forecasts["y_lower"].notna() & (forecasts["y_lower"] > forecasts["y_upper"])
 
     if interval_mismatch.any() or invalid_intervals.any():
         raise ValueError("Prediction intervals are incomplete or invalid.")
@@ -218,10 +214,7 @@ def validate_run_metadata(metadata: Mapping[str, object]) -> None:
     missing_fields = set(RUN_METADATA_FIELDS).difference(metadata)
 
     if missing_fields:
-        raise ValueError(
-            "Run metadata is missing required fields: "
-            + ", ".join(sorted(missing_fields))
-        )
+        raise ValueError("Run metadata is missing required fields: "+ ", ".join(sorted(missing_fields)))
 
     for field in ("run_id", "experiment_id", "split", "config_version"):
         value = metadata[field]

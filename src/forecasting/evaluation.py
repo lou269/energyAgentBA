@@ -18,6 +18,7 @@ def evaluate_forecasts(
     comparison_model_ids: tuple[str, ...],
     reference_model_ids: tuple[str, ...],
     nominal_interval_level: float,
+    mape_min_eligible_watts: float = 0.0,
 ) -> dict[str, pd.DataFrame]:
 
 
@@ -32,13 +33,10 @@ def evaluate_forecasts(
         nominal_interval_level=nominal_interval_level,
     )
 
-    overall_metrics = _calculate_grouped_metrics(forecasts, BASE_GROUP_COLUMNS)
+    overall_metrics = _calculate_grouped_metrics(forecasts, BASE_GROUP_COLUMNS, mape_min_eligible_watts)
     overall_metrics = _add_operational_metrics(overall_metrics, forecasts)
-    origin_metrics = _calculate_grouped_metrics(forecasts, ORIGIN_GROUP_COLUMNS)
-    horizon_metrics = _calculate_grouped_metrics(
-        forecasts,
-        [*BASE_GROUP_COLUMNS, "horizon_step"],
-    )
+    origin_metrics = _calculate_grouped_metrics(forecasts, ORIGIN_GROUP_COLUMNS, mape_min_eligible_watts)
+    horizon_metrics = _calculate_grouped_metrics(forecasts, [*BASE_GROUP_COLUMNS, "horizon_step"], mape_min_eligible_watts)
 
     return {
         "overall_metrics": overall_metrics,
@@ -55,10 +53,7 @@ def evaluate_forecasts(
             comparison_model_ids=comparison_model_ids,
             reference_model_ids=reference_model_ids,
         ),
-        "interval_metrics": _calculate_interval_metrics(
-            forecasts,
-            nominal_interval_level=nominal_interval_level,
-        ),
+        "interval_metrics": _calculate_interval_metrics(forecasts, nominal_interval_level=nominal_interval_level),
         "target_exclusions": _calculate_target_exclusions(forecasts, overall_metrics),
     }
 
@@ -74,10 +69,7 @@ def select_primary_naive_reference(
     missing_columns = required_columns.difference(overall_metrics.columns)
 
     if missing_columns:
-        raise ValueError(
-            "overall_metrics is missing required columns: "
-            + ", ".join(sorted(missing_columns))
-        )
+        raise ValueError("overall_metrics is missing required columns: " + ", ".join(sorted(missing_columns)))
 
     if not baseline_model_ids:
         raise ValueError("baseline_model_ids must not be empty.")
@@ -91,25 +83,17 @@ def select_primary_naive_reference(
         raise ValueError(f"No naive baseline metrics found for split {split!r}.")
 
     if candidates["run_id"].nunique() != 1:
-        raise ValueError(
-            "Primary naive reference must be selected from exactly one run."
-        )
+        raise ValueError("Primary naive reference must be selected from exactly one run.")
 
     missing_models = set(baseline_model_ids).difference(candidates["model_id"])
 
     if missing_models:
-        raise ValueError(
-            "Naive baseline metrics are missing for: " + ", ".join(sorted(missing_models))
-        )
+        raise ValueError("Naive baseline metrics are missing for: " + ", ".join(sorted(missing_models)))
 
-    candidates = candidates.sort_values(
-        ["mae_w", "rmse_w", "model_id"], na_position="last"
-    )
+    candidates = candidates.sort_values(["mae_w", "rmse_w", "model_id"], na_position="last")
 
     if pd.isna(candidates.iloc[0]["mae_w"]):
-        raise ValueError(
-            "Primary naive reference cannot be selected without evaluable targets."
-        )
+        raise ValueError("Primary naive reference cannot be selected without evaluable targets.")
 
     return str(candidates.iloc[0]["model_id"])
 
@@ -141,9 +125,7 @@ def _validate_evaluation_input(
         missing_model_ids = required_model_ids.difference(available_model_ids)
 
         if missing_model_ids:
-            raise ValueError(
-                f"Run {run_id!r}, split {split!r} is missing models: " + ", ".join(sorted(missing_model_ids))
-            )
+            raise ValueError(f"Run {run_id!r}, split {split!r} is missing models: " + ", ".join(sorted(missing_model_ids)))
 
     model_counts = (
         forecasts.groupby(["run_id", "split"])["model_id"]
@@ -152,9 +134,7 @@ def _validate_evaluation_input(
         .reset_index()
     )
     target_model_counts = (
-        forecasts.groupby(["run_id", "split", "forecast_origin", "target_timestamp"])[
-            "model_id"
-        ]
+        forecasts.groupby(["run_id", "split", "forecast_origin", "target_timestamp"])["model_id"]
         .nunique()
         .rename("actual_model_count")
         .reset_index()
@@ -205,6 +185,7 @@ def _validate_evaluation_input(
 def _calculate_grouped_metrics(
     forecasts: pd.DataFrame,
     group_columns: list[str],
+    mape_min_eligible_watts: float,
 ) -> pd.DataFrame:
 
     rows: list[dict[str, object]] = []
@@ -218,7 +199,7 @@ def _calculate_grouped_metrics(
         for column, key in zip(group_columns, keys, strict=True):
             row[column] = key
 
-        row.update(_calculate_error_metrics(group))
+        row.update(_calculate_error_metrics(group, mape_min_eligible_watts))
         rows.append(row)
 
     return pd.DataFrame(rows)
@@ -226,6 +207,7 @@ def _calculate_grouped_metrics(
 
 def _calculate_error_metrics(
     forecasts: pd.DataFrame,
+    mape_min_eligible_watts: float,
 ) -> dict[str, int | float]:
 
     possible_count = len(forecasts)
@@ -239,14 +221,11 @@ def _calculate_error_metrics(
         mae = np.nan
         rmse = np.nan
     else:
-        errors = (
-            evaluated["y_pred"].to_numpy(dtype="float64")
-            - evaluated["y_true"].to_numpy(dtype="float64")
-        )
+        errors = evaluated["y_pred"].to_numpy(dtype="float64") - evaluated["y_true"].to_numpy(dtype="float64")
         mae = float(np.mean(np.abs(errors)))
         rmse = float(np.sqrt(np.mean(np.square(errors))))
 
-    mape_eligible = eligible & forecasts["y_true"].gt(0)
+    mape_eligible = eligible & forecasts["y_true"].gt(mape_min_eligible_watts)
     mape_data = forecasts.loc[mape_eligible]
     mape_count = len(mape_data)
 
@@ -254,15 +233,15 @@ def _calculate_error_metrics(
         mape = np.nan
     else:
         absolute_percentage_errors = np.abs(
-            (
-                mape_data["y_pred"].to_numpy(dtype="float64")
-                - mape_data["y_true"].to_numpy(dtype="float64")
-            )
+            (mape_data["y_pred"].to_numpy(dtype="float64") - mape_data["y_true"].to_numpy(dtype="float64"))
             / mape_data["y_true"].to_numpy(dtype="float64")
         )
         mape = float(np.mean(absolute_percentage_errors) * 100)
 
     negative_count = int(forecasts["y_pred_raw"].lt(0).sum())
+
+    interval_available_count = int(forecasts["y_lower"].notna().sum())
+    negative_interval_lower_count = int(forecasts["y_lower"].lt(0).sum())
 
     return {
         "possible_target_count": possible_count,
@@ -275,8 +254,15 @@ def _calculate_error_metrics(
         "mape_target_count": mape_count,
         "mape_excluded_target_count": possible_count - mape_count,
         "mape_non_positive_target_count": int((eligible & forecasts["y_true"].le(0)).sum()),
+        "mape_below_floor_target_count": int((eligible & forecasts["y_true"].gt(0) & forecasts["y_true"].le(mape_min_eligible_watts)).sum()),
         "negative_forecast_count": negative_count,
         "negative_forecast_share": negative_count / possible_count,
+        "negative_interval_lower_count": negative_interval_lower_count,
+        "negative_interval_lower_share": (
+            negative_interval_lower_count / interval_available_count
+            if interval_available_count > 0
+            else np.nan
+        ),
     }
 
 
@@ -475,7 +461,6 @@ def _calculate_interval_metrics(
         "mean_interval_width_w",
     ]
     rows: list[dict[str, object]] = []
-
     grouping_variants = [
         ("overall", BASE_GROUP_COLUMNS),
         ("horizon_step", [*BASE_GROUP_COLUMNS, "horizon_step"]),
@@ -563,9 +548,7 @@ def _calculate_target_exclusions(
         how="left",
         validate="many_to_one",
     )
-    exclusions["excluded_target_share"] = (
-        exclusions["excluded_target_count"] / exclusions["possible_target_count"]
-    )
+    exclusions["excluded_target_share"] = exclusions["excluded_target_count"] / exclusions["possible_target_count"]
 
     return (
         exclusions[columns]

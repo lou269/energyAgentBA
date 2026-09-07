@@ -31,18 +31,13 @@ def build_daily_naive_forecast(
     history: pd.Series,
     target_index: pd.DatetimeIndex,
 ) -> pd.Series:
-    """Verwendet den Wert genau 24 Stunden vor jedem Zielzeitpunkt."""
-
     _validate_inputs(history, target_index)
 
     reference_index = target_index - pd.Timedelta(hours=24)
     forecast = history.reindex(reference_index)
 
     if forecast.isna().any():
-        raise ValueError(
-            "Daily naive forecast requires an observed or causally "
-            "imputed value 24 hours before every target timestamp."
-        )
+        raise ValueError("Daily naive forecast requires an observed or causally imputed value 24 hours before every target timestamp.")
 
     forecast.index = target_index.copy()
     forecast.index.name = "target_timestamp"
@@ -62,10 +57,7 @@ def build_weekly_naive_forecast(
     forecast = history.reindex(reference_index)
 
     if forecast.isna().any():
-        raise ValueError(
-            "Weekly naive forecast requires an observed or causally "
-            "imputed value 168 hours before every target timestamp."
-        )
+        raise ValueError("Weekly naive forecast requires an observed or causally imputed value 168 hours before every target timestamp.")
 
     forecast.index = target_index.copy()
     forecast.index.name = "target_timestamp"
@@ -77,8 +69,6 @@ def _validate_inputs(
     history: pd.Series,
     target_index: pd.DatetimeIndex,
 ) -> None:
-    """Prüft die gemeinsame kausale Schnittstelle der Baselines."""
-
     if not isinstance(history, pd.Series):
         raise TypeError("history must be a pandas Series.")
 
@@ -113,12 +103,7 @@ def _validate_inputs(
     )
 
     if not target_index.equals(expected_target_index):
-        raise ValueError(
-            "target_index must contain consecutive hourly timestamps."
-        )
+        raise ValueError("target_index must contain consecutive hourly timestamps.")
 
     if history.index[-1] >= target_index[0]:
-        raise ValueError(
-            "history may only contain timestamps before the first "
-            "forecast target."
-        )
+        raise ValueError("history may only contain timestamps before the first forecast target.")
