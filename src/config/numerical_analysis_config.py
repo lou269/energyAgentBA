@@ -16,7 +16,9 @@ class NumericalAnalysisConfig:
     min_weekly_reference_samples: int = 4
 
     trend_threshold: float = 0.10
+    min_reference_power_w: float = 10.0
 
     min_reference_samples: int = 100
+    min_residual_std_w: float = 1.0
     unusual_threshold: float = 2.0
     strong_anomaly_threshold: float = 3.0

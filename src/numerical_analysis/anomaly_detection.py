@@ -3,14 +3,13 @@ import pandas as pd
 
 
 def build_anomaly_detection(
-    analysis_results,
+    analysis_results: pd.DataFrame,
     *,
-    min_reference_samples,
-    unusual_threshold,
-    strong_anomaly_threshold,
-):
-    """Berechnet standardisierte Anomaly Scores für alle Zeitskalen."""
-
+    min_reference_samples: int,
+    min_residual_std_w: float,
+    unusual_threshold: float,
+    strong_anomaly_threshold: float,
+) -> pd.DataFrame:
     result = analysis_results.copy()
 
     reference_columns = {
@@ -40,13 +39,11 @@ def build_anomaly_detection(
         residual_mean = train_residuals.mean()
         residual_std = train_residuals.std()
 
-        if residual_std == 0 or pd.isna(residual_std):
+        if pd.isna(residual_std) or residual_std < min_residual_std_w:
             result[score_column] = np.nan
             continue
 
-        result[score_column] = (
-            result[residual_column] - residual_mean
-        ) / residual_std
+        result[score_column] = (result[residual_column] - residual_mean) / residual_std
 
     score_columns = [
         "short_term_score",
@@ -66,6 +63,7 @@ def build_anomaly_detection(
     result.loc[valid_scores, "dominant_scale"] = (
         absolute_scores.loc[valid_scores]
         .idxmax(axis=1)
+        .astype(str)
         .str.replace("_score", "", regex=False)
     )
 

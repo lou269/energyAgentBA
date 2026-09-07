@@ -14,6 +14,7 @@ def build_multi_scale_analysis(
     min_daily_reference_samples: int,
     min_weekly_reference_samples: int,
     trend_threshold: float,
+    min_reference_power_w: float,
 ) -> pd.DataFrame:
 
     train_data = train_data.sort_index()
@@ -36,9 +37,7 @@ def build_multi_scale_analysis(
         train_data.index.max() < validation_data.index.min()
         and validation_data.index.max() < test_data.index.min()
     ):
-        raise ValueError(
-            "Splits must be non-overlapping and ordered: train < validation < test."
-        )
+        raise ValueError("Splits must be non-overlapping and ordered: train < validation < test.")
 
     data = pd.concat([train_data, validation_data, test_data])
 
@@ -71,9 +70,7 @@ def build_multi_scale_analysis(
     result["trend_slope_w_per_hour"] = previous_power.rolling(
         window=short_term_window, min_periods=short_term_window
     ).apply(
-        lambda values: (
-            np.dot(values, centered_trend_time) / trend_denominator
-        ),
+        lambda values: np.dot(values, centered_trend_time) / trend_denominator,
         raw=True,
     )
 
@@ -96,9 +93,7 @@ def build_multi_scale_analysis(
         "mean",
     ] = np.nan
 
-    daily_keys = pd.MultiIndex.from_arrays(
-        [data_index.hour, data_index.minute], names=["hour", "minute"]
-    )
+    daily_keys = pd.MultiIndex.from_arrays([data_index.hour, data_index.minute], names=["hour", "minute"])
 
     result["daily_expected"] = daily_profile["mean"].reindex(daily_keys).to_numpy()
 
@@ -138,21 +133,14 @@ def build_multi_scale_analysis(
     result.loc[train_data.index, "weekly_expected"] = train_weekly_expected
 
     daily_reference = result["daily_expected"].where(
-        result["daily_expected"].ne(0)
+        result["daily_expected"].abs() >= min_reference_power_w
     )
     weekly_reference = result["weekly_expected"].where(
-        result["weekly_expected"].ne(0)
+        result["weekly_expected"].abs() >= min_reference_power_w
     )
     short_term_reference = result["short_term_mean"].where(
-        result["short_term_mean"].ne(0)
+        result["short_term_mean"].abs() >= min_reference_power_w
     )
-    long_term_reference = result["long_term_mean"].where(
-        result["long_term_mean"].ne(0)
-    )
-
-    result["short_term_deviation"] = (
-        result["current_power"] - short_term_reference
-    ) / short_term_reference
 
     result["daily_deviation"] = (
         result["current_power"] - daily_reference
@@ -161,14 +149,6 @@ def build_multi_scale_analysis(
     result["weekly_deviation"] = (
         result["current_power"] - weekly_reference
     ) / weekly_reference
-
-    result["long_term_deviation"] = (
-        result["current_power"] - long_term_reference
-    ) / long_term_reference
-
-    result["level_change"] = (
-        result["short_term_mean"] - long_term_reference
-    ) / long_term_reference
 
     trend_window_hours = short_term_window * sample_period_hours
 

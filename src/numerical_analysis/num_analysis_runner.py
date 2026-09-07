@@ -15,11 +15,15 @@ logger = logging.getLogger(__name__)
 
 
 class NumericalAnalysisRunner:
-    def __init__(self, project_config=None, analysis_config=None):
+    def __init__(
+        self,
+        project_config: ProjectConfig | None = None,
+        analysis_config: NumericalAnalysisConfig | None = None,
+    ) -> None:
         self.project_config = project_config or ProjectConfig()
         self.analysis_config = analysis_config or NumericalAnalysisConfig()
 
-    def run(self):
+    def run(self) -> None:
         ensure_project_directories(self.project_config)
 
         logger.info("Starting numerical analysis...")
@@ -41,13 +45,9 @@ class NumericalAnalysisRunner:
             parse_dates=["start", "end"],
         )
 
-        canonical_manifest = pd.read_csv(
-            self.project_config.canonical_output_dir / "canonical_manifest.csv"
-        )
+        canonical_manifest = pd.read_csv(self.project_config.canonical_output_dir / "canonical_manifest.csv")
 
-        target_column = canonical_manifest.loc[
-            canonical_manifest["channel_role"] == "mains", "meter_key"
-        ].iloc[0]
+        target_column = str(canonical_manifest["meter_key"].iloc[0])
 
         split_15min = split_manifest[
             split_manifest["frequency"] == "15min"
@@ -96,11 +96,13 @@ class NumericalAnalysisRunner:
             min_daily_reference_samples=self.analysis_config.min_daily_reference_samples,
             min_weekly_reference_samples=self.analysis_config.min_weekly_reference_samples,
             trend_threshold=self.analysis_config.trend_threshold,
+            min_reference_power_w=self.analysis_config.min_reference_power_w,
         )
         
         anomaly_15min = build_anomaly_detection(
             analysis_results=analysis_15min,
             min_reference_samples=self.analysis_config.min_reference_samples,
+            min_residual_std_w=self.analysis_config.min_residual_std_w,
             unusual_threshold=self.analysis_config.unusual_threshold,
             strong_anomaly_threshold=self.analysis_config.strong_anomaly_threshold,
         )
@@ -118,11 +120,13 @@ class NumericalAnalysisRunner:
             min_daily_reference_samples=self.analysis_config.min_daily_reference_samples,
             min_weekly_reference_samples=self.analysis_config.min_weekly_reference_samples,
             trend_threshold=self.analysis_config.trend_threshold,
+            min_reference_power_w=self.analysis_config.min_reference_power_w,
         )
 
         anomaly_hourly = build_anomaly_detection(
             analysis_results=analysis_hourly,
             min_reference_samples=self.analysis_config.min_reference_samples,
+            min_residual_std_w=self.analysis_config.min_residual_std_w,
             unusual_threshold=self.analysis_config.unusual_threshold,
             strong_anomaly_threshold=self.analysis_config.strong_anomaly_threshold,
         )
@@ -142,7 +146,7 @@ class NumericalAnalysisRunner:
         logger.info("Numerical analysis completed.")
 
 
-def main():
+def main() -> None:
     logging.basicConfig(level=logging.INFO)
     NumericalAnalysisRunner().run()
 
