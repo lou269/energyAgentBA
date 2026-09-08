@@ -1,0 +1,82 @@
+@startuml Datenpipeline
+title Verarbeitung innerhalb der Datenpipeline
+
+!pragma layout smetana
+skinparam shadowing false
+skinparam defaultTextAlignment center
+
+start
+
+partition "Ingestion" {
+  :UK-DALE-Rohdaten;
+  :Daten herunterladen und\nin HDF5 konvertieren;
+
+  note right
+    Output:
+    ukdale.h5
+    Ingestion-Manifest
+  end note
+}
+
+partition "Analyse und Datenauswahl" {
+  :Metadateninventar erstellen;
+  :Datenqualität und\nzusammenhängende Messabschnitte prüfen;
+  :Kandidaten vergleichen;
+  :Primär- und Fallback-Kandidat bestimmen;
+
+  note right
+    Output:
+    Qualitätsdiagnostik
+    Kandidatenprofile
+    Auswahlentscheidung
+  end note
+}
+
+partition "Datenaufbereitung" {
+  :Ausgewählte Kanäle laden\nund zeitlich ausrichten;
+  :Kandidaten validieren;
+
+  if (Primärkandidat geeignet?) then (ja)
+    :Primärkandidat wählen;
+  else (nein)
+    if (Fallback geeignet?) then (ja)
+      :Fallback wählen;
+    else (nein)
+      :Pipeline mit Fehler beenden;
+      stop
+    endif
+  endif
+
+  :Kanonischen Datensatz erzeugen;
+
+  note right
+    Output:
+    canonical_data.csv
+    canonical_manifest.csv
+  end note
+}
+
+partition "Preprocessing" {
+  :Auf 15 Minuten und\n1 Stunde aggregieren;
+  :Chronologisch in Train,\nValidation und Test teilen;
+  :Begrenztes kausales\nForward-Fill anwenden;
+
+  note right
+    Output:
+    treated_15min.csv
+    treated_hourly.csv
+    Imputationsmasken
+    split_manifest.csv
+  end note
+}
+
+stop
+
+legend bottom
+Jeder Abschnitt zeigt:
+- fachliche Aufgabe
+- zentrale Entscheidung
+- Hauptoutput
+endlegend
+
+@enduml

@@ -41,6 +41,9 @@ def build_walk_forward_forecasts(
     growth: str,
     daily_seasonality: bool,
     yearly_seasonality: bool,
+    country_holidays: str | None,
+    local_timezone: str,
+    log_transform: bool,
     interval_width: float,
     clip_negative_forecasts: bool,
     uncertainty_samples: int,
@@ -63,24 +66,19 @@ def build_walk_forward_forecasts(
 
     _validate_walk_forward_data(fixed_history, evaluation_targets, evaluation_imputation_mask)
 
-    if not run_id:
-        raise ValueError("run_id must not be empty.")
+    for name, value in {"run_id": run_id, "experiment_id": experiment_id, "split": split}.items():
+        if not value:
+            raise ValueError(f"{name} must not be empty.")
 
-    if not experiment_id:
-        raise ValueError("experiment_id must not be empty.")
-
-    if not split:
-        raise ValueError("split must not be empty.")
-
+    # Horizont-Scheduling: Ursprünge dürfen sich nicht überlappende Horizonte teilen.
     if horizon_hours < 1:
         raise ValueError("horizon_hours must be at least 1.")
-
     if forecast_origin_step_hours < horizon_hours:
         raise ValueError("forecast_origin_step_hours must be at least horizon_hours to prevent overlapping horizons.")
 
+    # Prophet-weite Annahmen dieser Implementierung.
     if growth != "linear":
         raise ValueError("The current Prophet implementation only supports linear growth.")
-
     if not 0.0 < interval_width < 1.0:
         raise ValueError("interval_width must be between 0 and 1.")
 
@@ -96,7 +94,6 @@ def build_walk_forward_forecasts(
 
     if not model_ids:
         raise ValueError("At least one forecast model must be configured.")
-
     if len(model_ids) != len(set(model_ids)):
         raise ValueError("Forecast model IDs must be unique.")
 
@@ -231,6 +228,9 @@ def build_walk_forward_forecasts(
                     daily_seasonality=daily_seasonality,
                     weekly_seasonality=variant["weekly_seasonality"],
                     yearly_seasonality=yearly_seasonality,
+                    country_holidays=country_holidays,
+                    local_timezone=local_timezone,
+                    log_transform=log_transform,
                     interval_width=interval_width,
                     uncertainty_samples=uncertainty_samples,
                 )
@@ -249,12 +249,18 @@ def build_walk_forward_forecasts(
                 model,
                 target_index,
                 clip_negative_forecasts=clip_negative_forecasts,
+                history_end=model_history.index[-1],
+                local_timezone=local_timezone,
+                log_transform=log_transform,
             )
 
             seasonality_config = (
                 f"daily={daily_seasonality};"
                 f"weekly={variant['weekly_seasonality']};"
-                f"yearly={yearly_seasonality}"
+                f"yearly={yearly_seasonality};"
+                f"holidays={country_holidays};"
+                f"tz={local_timezone};"
+                f"log={log_transform}"
             )
 
             forecast_outputs.append(
@@ -371,6 +377,39 @@ def _build_forecast_output(
     return output[FORECAST_OUTPUT_COLUMNS]
 
 
+def _validate_hourly_series(series: pd.Series, name: str) -> None:
+    if not isinstance(series, pd.Series):
+        raise TypeError(f"{name} must be a pandas Series.")
+
+    if series.empty:
+        raise ValueError(f"{name} must not be empty.")
+
+    if not isinstance(series.index, pd.DatetimeIndex):
+        raise TypeError(f"{name} must be a DatetimeIndex.")
+
+    if series.index.has_duplicates:
+        raise ValueError(f"{name} contains duplicate timestamps.")
+
+    if not series.index.is_monotonic_increasing:
+        raise ValueError(f"{name} must be sorted chronologically.")
+
+    if str(series.index.tz) != "UTC":
+        raise ValueError(f"{name} must use UTC.")
+
+    expected_index = pd.date_range(start=series.index[0], periods=len(series), freq="1h")
+
+    if not series.index.equals(expected_index):
+        raise ValueError(f"{name} must contain a continuous hourly index.")
+
+    try:
+        values = pd.to_numeric(series, errors="raise").to_numpy(dtype="float64")
+    except (TypeError, ValueError) as error:
+        raise TypeError(f"{name} must contain numeric values.") from error
+
+    if np.isinf(values).any():
+        raise ValueError(f"{name} contains infinite values.")
+
+
 def _validate_walk_forward_data(
     fixed_history: pd.Series,
     evaluation_targets: pd.Series,
@@ -381,36 +420,7 @@ def _validate_walk_forward_data(
         "fixed_history": fixed_history,
         "evaluation_targets": evaluation_targets,
     }.items():
-        if not isinstance(series, pd.Series):
-            raise TypeError(f"{name} must be a pandas Series.")
-
-        if series.empty:
-            raise ValueError(f"{name} must not be empty.")
-
-        if not isinstance(series.index, pd.DatetimeIndex):
-            raise TypeError(f"{name} must use a DatetimeIndex.")
-
-        if series.index.has_duplicates:
-            raise ValueError(f"{name} contains duplicate timestamps.")
-
-        if not series.index.is_monotonic_increasing:
-            raise ValueError(f"{name} must be sorted chronologically.")
-
-        if str(series.index.tz) != "UTC":
-            raise ValueError(f"{name} must use UTC.")
-
-        expected_index = pd.date_range(start=series.index[0], periods=len(series), freq="1h")
-
-        if not series.index.equals(expected_index):
-            raise ValueError(f"{name} must contain a continuous hourly index.")
-
-        try:
-            values = pd.to_numeric(series, errors="raise").to_numpy(dtype="float64")
-        except (TypeError, ValueError) as error:
-            raise TypeError(f"{name} must contain numeric values.") from error
-
-        if np.isinf(values).any():
-            raise ValueError(f"{name} contains infinite values.")
+        _validate_hourly_series(series, name)
 
     expected_evaluation_start = fixed_history.index[-1] + pd.Timedelta(hours=1)
 

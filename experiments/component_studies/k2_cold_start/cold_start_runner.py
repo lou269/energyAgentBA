@@ -3,10 +3,8 @@
 
 from __future__ import annotations
 
-import json
 import logging
 from dataclasses import asdict
-from datetime import UTC, datetime
 from time import perf_counter
 from typing import cast
 
@@ -18,7 +16,8 @@ from src.config.project_config import ProjectConfig, ensure_project_directories
 from src.forecasting.evaluation import evaluate_forecasts, select_primary_naive_reference
 from src.forecasting.forecast_run_manifest import build_forecast_run_manifest
 from src.forecasting.walk_forward import ProphetVariantParameters, build_walk_forward_forecasts
-from src.pipeline.io import df_to_csv
+from src.pipeline.io import df_to_csv, next_sequential_number, save_json
+from docs.plots.plot_cold_start_vergleich import build_cold_start_plot
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +76,7 @@ class ColdStartRunner:
             raise ValueError("Canonical manifest must contain exactly one mains target.")
 
         candidate_id = str(canonical_manifest.iloc[0]["candidate_id"])
-        target_column = str(canonical_manifest.iloc[0]["meter_key"])
+        target_column = str(canonical_manifest.iloc[0]["column_name"])
 
         hourly_splits = split_manifest.loc[
             split_manifest["frequency"].eq("hourly")
@@ -136,11 +135,16 @@ class ColdStartRunner:
             for variant in self.experiment_config.prophet_variants
         )
 
-        run_id = (
-            f"{self.experiment_config.experiment_id}_"
-            f"{split}_"
-            f"{datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ')}"
-        )
+        split_abbreviation = "val" if split == "validation" else split
+        study_output_dir = self.project_config.forecasting_output_dir / self.experiment_config.output_subdir
+        run_number = next_sequential_number(study_output_dir, prefix=f"cs_{split_abbreviation}")
+        run_id = f"{split}_{run_number:03d}"
+        run_dir = study_output_dir / f"cs_{split_abbreviation}_{run_number:03d}"
+
+        if run_dir.exists():
+            raise FileExistsError(f"Cold-start run directory already exists: {run_dir}")
+
+        run_dir.mkdir(parents=True, exist_ok=False)
 
         forecasts = build_walk_forward_forecasts(
             fixed_history=fixed_history,
@@ -156,6 +160,9 @@ class ColdStartRunner:
             growth=self.experiment_config.growth,
             daily_seasonality=self.experiment_config.daily_seasonality,
             yearly_seasonality=self.experiment_config.yearly_seasonality,
+            country_holidays=self.experiment_config.country_holidays,
+            local_timezone=self.experiment_config.timezone,
+            log_transform=self.experiment_config.log_transform,
             interval_width=self.experiment_config.interval_width,
             uncertainty_samples=self.experiment_config.uncertainty_samples,
             clip_negative_forecasts=(self.experiment_config.negative_forecast_handling == "clip_zero"),
@@ -183,10 +190,6 @@ class ColdStartRunner:
             )
         else:
             primary_naive_reference = self.experiment_config.primary_naive_reference
-
-        run_dir = self.project_config.forecasting_output_dir / self.experiment_config.output_subdir / run_id
-        
-        run_dir.mkdir(parents=True, exist_ok=False)
 
         df_to_csv(
             forecasts,
@@ -251,6 +254,9 @@ class ColdStartRunner:
                 "growth": self.experiment_config.growth,
                 "daily_seasonality": self.experiment_config.daily_seasonality,
                 "yearly_seasonality": self.experiment_config.yearly_seasonality,
+                "country_holidays": self.experiment_config.country_holidays,
+                "local_timezone": self.experiment_config.timezone,
+                "log_transform": self.experiment_config.log_transform,
                 "interval_width": self.experiment_config.interval_width,
                 "variants": [
                     asdict(variant)
@@ -263,6 +269,9 @@ class ColdStartRunner:
                     "daily": self.experiment_config.daily_seasonality,
                     "weekly": variant.weekly_seasonality,
                     "yearly": self.experiment_config.yearly_seasonality,
+                    "holidays": self.experiment_config.country_holidays,
+                    "local_timezone": self.experiment_config.timezone,
+                    "log_transform": self.experiment_config.log_transform,
                 }
                 for variant
                 in self.experiment_config.prophet_variants
@@ -299,17 +308,16 @@ class ColdStartRunner:
             runtime_seconds=runtime_seconds,
         )
 
-        with (run_dir / "run_manifest.json").open(
-            "w",
-            encoding="utf-8",
-        ) as file:
-            json.dump(
-                manifest,
-                file,
-                indent=2,
-                ensure_ascii=False,
-                default=str,
-            )
+        save_json(manifest, run_dir / "run_manifest.json")
+
+        build_cold_start_plot(
+            run_dir,
+            run_dir,
+            split=split,
+            baseline_model_ids=self.experiment_config.baseline_model_ids,
+            variant_model_ids=prophet_model_ids,
+            reference_baseline=cast(str, primary_naive_reference),
+        )
 
         logger.info(
             "Cold-start experiment completed: run=%s, origins=%d, primary naive reference=%s",

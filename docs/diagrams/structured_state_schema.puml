@@ -1,0 +1,153 @@
+@startuml StructuredStateSchema
+title Structured State: Schema und LLM-Evidenz-Whitelist
+
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide circle
+hide empty members
+
+class StructuredState <<TypedDict>> {
+  schema_version: str
+  decision_time: str
+}
+
+class ObservationState <<TypedDict>> {
+  observation_start: str
+  observation_end: str
+  <color:#2E7D32>current_power_w</color>: float | None
+}
+
+class AnalysisState <<TypedDict>> {
+  <color:#2E7D32>short_term_mean_w</color>: float | None
+  <color:#2E7D32>daily_expected_w</color>: float | None
+  weekly_expected_w: float | None
+  long_term_mean_w: float | None
+  <color:#2E7D32>trend_slope_w_per_hour</color>: float | None
+  <color:#2E7D32>trend_change</color>: float | None
+  <color:#2E7D32>trend</color>: Trend | None
+}
+
+class AnomalyState <<TypedDict>> {
+  <color:#2E7D32>score</color>: float | None  (>= 0)
+  <color:#2E7D32>level</color>: AnomalyLevel | None
+  <color:#2E7D32>direction</color>: AnomalyDirection | None
+  <color:#2E7D32>dominant_scale</color>: ScaleName | None
+  scale_scores: ScaleScores
+  available_scales: list[ScaleName]
+}
+
+class ScaleScores <<TypedDict>> {
+  <color:#2E7D32>short_term</color>: float | None
+  <color:#2E7D32>daily</color>: float | None
+  weekly: float | None
+  long_term: float | None
+}
+
+class ForecastState <<TypedDict>> {
+  run_id: str
+  model_id: str
+  config_version: str
+  origin: str
+  horizon_hours: int  (= 24)
+  points: list[ForecastPoint]  (genau 24)
+  summary: ForecastSummary
+}
+
+class ForecastPoint <<TypedDict>> {
+  timestamp: str
+  predicted_power_w: float
+  lower_w: float | None
+  upper_w: float | None
+}
+
+class ForecastSummary <<TypedDict>> {
+  <color:#2E7D32>mean_w</color>: float
+  <color:#2E7D32>peak_w</color>: float
+  <color:#2E7D32>peak_timestamp</color>: str
+  <color:#2E7D32>mean_interval_width_w</color>: float | None
+}
+
+class ContextState <<TypedDict>> {
+  <color:#2E7D32>source_available</color>: bool
+  source: str
+  retrieved_at: str
+  window_start: str
+  window_end: str
+  events: list[CalendarEvent]
+}
+
+class CalendarEvent <<TypedDict>> {
+  event_id: str
+  <color:#2E7D32>event_type</color>: str
+  <color:#2E7D32>start</color>: str
+  <color:#2E7D32>end</color>: str
+  known_at: str
+}
+
+enum Trend {
+  stable
+  increasing
+  decreasing
+}
+
+enum AnomalyLevel {
+  normal
+  unusual
+  strong_anomaly
+}
+
+enum AnomalyDirection {
+  high
+  low
+}
+
+enum ScaleName {
+  short_term
+  daily
+  weekly
+  long_term
+}
+
+StructuredState *-- ObservationState : observation
+StructuredState *-- AnalysisState : analysis
+StructuredState *-- AnomalyState : anomaly
+StructuredState *-- ForecastState : forecast
+StructuredState *-- ContextState : context
+AnomalyState *-- ScaleScores : scale_scores
+ForecastState *-- "24" ForecastPoint : points
+ForecastState *-- ForecastSummary : summary
+ContextState *-- "0..*" CalendarEvent : events
+
+AnalysisState ..> Trend
+AnomalyState ..> AnomalyLevel
+AnomalyState ..> AnomalyDirection
+AnomalyState ..> ScaleName
+
+note right of StructuredState
+  decision_time ist der Ankerzeitpunkt:
+  observation_start = decision_time - 1h
+  observation_end = forecast.origin = decision_time
+end note
+
+note right of AnomalyState
+  score = max(|scale_scores|) über verfügbare Skalen
+  dominant_scale referenziert dieses Maximum,
+  direction folgt dessen Vorzeichen
+end note
+
+note right of ForecastState
+  horizon_hours ist fix 24 Stunden;
+  summary wird deterministisch aus points
+  neu berechnet (mean, peak, peak_timestamp)
+end note
+
+legend right
+  |= Farbe |= Bedeutung |
+  |<color:#2E7D32>■</color> Grün | als LLM-Evidenzpfad referenzierbar |
+  Feste Whitelist (src/llm/validation.py), zusätzlich
+  context.events.<index>.{event_type, start, end}.
+  Alle übrigen Felder sind im State vorhanden,
+  aber vom LLM nicht als Beleg referenzierbar.
+endlegend
+
+@enduml

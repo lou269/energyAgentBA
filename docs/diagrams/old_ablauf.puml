@@ -1,0 +1,104 @@
+@startuml
+title Adaptive Forecasting Agent – Gesamtprozess
+
+start
+
+partition "ROHDATEN" {
+  :1. Download + immutable raw archive;
+  :2. Convert/register HDF5;
+  :3. Metadata inventory;
+}
+
+partition "DATENQUALITÄT & AUSWAHL" {
+  :4. Raw diagnostics;
+  :5. Candidate quality profiling;
+  :6. Provisional selection;
+  :7. Auxiliary appliance selection;
+  :8. Selected data preparation;
+  :9. Selected candidate validation;
+  :10. Freeze canonical dataset;
+}
+
+partition "PREPROCESSING / DATENPIPELINE" {
+  :11. Forecast aggregation;
+  :12. Chronological train / validation / test split;
+  :13. Train-only gap treatment;
+  :14. Causal feature engineering;
+  :15. Train-only feature transformations;
+}
+
+repeat
+
+fork
+
+  partition "ANALYSE & ANOMALIEERKENNUNG" {
+    :16. Multi-scale numerical analysis;
+    :17. Numerical anomaly detection;
+    :Analysis results / anomaly scores;
+  }
+
+fork again
+
+  partition "FORECAST" {
+    :18. Forecast baselines;
+    :19. Adaptive forecasting model;
+    :20. Walk-forward simulation;
+    :Forecast + uncertainty;
+  }
+
+end fork
+
+partition "KONTEXT" {
+  :21. Context integration;
+  :Calendar / user context;
+}
+
+partition "STRUCTURED STATE" {
+  :22. Structured numerical state;
+  note right
+    Analysis results
+    Anomaly scores
+    Forecast
+    Uncertainty
+    Context information
+  end note
+}
+
+partition "LLM" {
+  :23. Constrained LLM inference;
+  :Explanation / interpretation;
+  :Classification;
+}
+
+fork
+  partition "NUTZER" {
+    :Explanation / interpretation anzeigen;
+  }
+fork again
+  partition "ADAPTATION" {
+    :24. Adaptation decision logic;
+
+    if (Adaptation required?) then (yes)
+      :Threshold / window adjustment;
+      :Model retraining / adaptation;
+    else (no)
+      :Keep current configuration;
+    endif
+  }
+end fork
+
+repeat while (Next walk-forward cycle?) is (yes)
+->no;
+
+partition "EVALUATION" {
+  :25. Controlled scenario generation;
+  :26. Forecast evaluation;
+  :27. Adaptation evaluation;
+  :28. LLM grounding evaluation;
+  :29. Ablation study;
+  :30. End-to-end evaluation;
+}
+
+stop
+
+@enduml

@@ -69,41 +69,8 @@ def _validate_inputs(
     history: pd.Series,
     target_index: pd.DatetimeIndex,
 ) -> None:
-    if not isinstance(history, pd.Series):
-        raise TypeError("history must be a pandas Series.")
-
-    if history.empty:
-        raise ValueError("history must not be empty.")
-
-    if not isinstance(history.index, pd.DatetimeIndex):
-        raise TypeError("history must use a DatetimeIndex.")
-
-    if not isinstance(target_index, pd.DatetimeIndex):
-        raise TypeError("target_index must be a DatetimeIndex.")
-
-    if target_index.empty:
-        raise ValueError("target_index must not be empty.")
-
-    if history.index.has_duplicates:
-        raise ValueError("history contains duplicate timestamps.")
-
-    if target_index.has_duplicates:
-        raise ValueError("target_index contains duplicate timestamps.")
-
-    if not history.index.is_monotonic_increasing:
-        raise ValueError("history must be sorted chronologically.")
-
-    if str(history.index.tz) != "UTC" or str(target_index.tz) != "UTC":
-        raise ValueError("history and target_index must use UTC.")
-
-    expected_target_index = pd.date_range(
-        start=target_index[0],
-        periods=len(target_index),
-        freq="1h",
-    )
-
-    if not target_index.equals(expected_target_index):
-        raise ValueError("target_index must contain consecutive hourly timestamps.")
-
+    # Struktur (Series/DatetimeIndex/UTC/lückenlos) ist durch walk_forward.py
+    # garantiert, das diese Baselines ausschließlich intern aufruft. Was hier
+    # tatsächlich schiefgehen kann, ist eine verletzte Kausalität.
     if history.index[-1] >= target_index[0]:
         raise ValueError("history may only contain timestamps before the first forecast target.")

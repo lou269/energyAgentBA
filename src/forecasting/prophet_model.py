@@ -18,11 +18,14 @@ def fit_prophet_model(
     daily_seasonality: bool,
     weekly_seasonality: bool,
     yearly_seasonality: bool,
+    country_holidays: str | None,
+    local_timezone: str,
+    log_transform: bool,
     interval_width: float,
     uncertainty_samples: int,
 ) -> Prophet:
 
-    prophet_data = _prepare_prophet_data(history)
+    prophet_data = _prepare_prophet_data(history, local_timezone, log_transform)
 
     model = Prophet(
         growth=growth,
@@ -32,6 +35,10 @@ def fit_prophet_model(
         interval_width=interval_width,
         uncertainty_samples=uncertainty_samples,
     )
+
+    if country_holidays is not None:
+        model.add_country_holidays(country_name=country_holidays)
+
     model.fit(prophet_data)
 
     return model
@@ -42,27 +49,37 @@ def build_prophet_forecast(
     target_index: pd.DatetimeIndex,
     *,
     clip_negative_forecasts: bool,
+    history_end: pd.Timestamp,
+    local_timezone: str,
+    log_transform: bool,
 ) -> pd.DataFrame:
-    _validate_utc_index(target_index, name="target_index")
-
-    if model.history is None or model.history.empty:
-        raise ValueError("model must be fitted before forecasting.")
-
-    history_end = pd.Timestamp(model.history["ds"].max()).tz_localize("UTC")
-
+    # target_index/history_end sind durch walk_forward.py strukturell garantiert
+    # (UTC, stündlich, gefittetes model) - die einzige real mögliche Verletzung
+    # ist ein Blick in die Zukunft.
     if history_end >= target_index[0]:
         raise ValueError("The fitted model contains history at or after the forecast origin.")
 
-    # Prophet verarbeitet keine timezone-aware Zeitstempel.
-    future = pd.DataFrame({"ds": (target_index.tz_convert("UTC").tz_localize(None))})
+    # Lokale statt UTC-Zeit, sonst verschmiert eine Zeitumstellung im Trainingsfenster
+    # die gelernte Tageskurve künstlich um eine Stunde (siehe Kap. 06/08 im Handbuch).
+    future = pd.DataFrame({"ds": target_index.tz_convert(local_timezone).tz_localize(None)})
 
     forecast = model.predict(future)
 
+    if log_transform:
+        # Rücktransformation aus dem Log-Raum, in dem trainiert/predicted wurde.
+        yhat = np.exp(forecast["yhat"].to_numpy(dtype="float64"))
+        yhat_lower = np.exp(forecast["yhat_lower"].to_numpy(dtype="float64"))
+        yhat_upper = np.exp(forecast["yhat_upper"].to_numpy(dtype="float64"))
+    else:
+        yhat = forecast["yhat"].to_numpy(dtype="float64")
+        yhat_lower = forecast["yhat_lower"].to_numpy(dtype="float64")
+        yhat_upper = forecast["yhat_upper"].to_numpy(dtype="float64")
+
     result = pd.DataFrame(
         {
-            "y_pred_raw": forecast["yhat"].to_numpy(dtype="float64"),
-            "y_lower": forecast["yhat_lower"].to_numpy(dtype="float64"),
-            "y_upper": forecast["yhat_upper"].to_numpy(dtype="float64"),
+            "y_pred_raw": yhat,
+            "y_lower": yhat_lower,
+            "y_upper": yhat_upper,
         },
         index=target_index.copy(),
     )
@@ -79,51 +96,25 @@ def build_prophet_forecast(
     return result[["y_pred", "y_pred_raw", "y_lower", "y_upper"]]
 
 
-def _prepare_prophet_data(history: pd.Series) -> pd.DataFrame:
-
-    if not isinstance(history, pd.Series):
-        raise TypeError("history must be a pandas Series.")
-
-    _validate_utc_index(history.index, name="history.index")
+def _prepare_prophet_data(history: pd.Series, local_timezone: str, log_transform: bool) -> pd.DataFrame:
 
     valid_history = history.dropna()
 
     if len(valid_history) < 2:
         raise ValueError("history must contain at least two valid observations.")
 
-    try:
-        values = valid_history.to_numpy(dtype="float64")
-    except (TypeError, ValueError) as error:
-        raise TypeError("history must contain numeric values.") from error
+    values = valid_history.to_numpy(dtype="float64")
 
-    if not np.isfinite(values).all():
-        raise ValueError("history contains infinite values.")
+    if log_transform:
+        if (values <= 0).any():
+            raise ValueError("history must be strictly positive for log_transform.")
+        values = np.log(values)
 
     # Die explizite Konvertierung grenzt den Indextyp für Pylance ein.
     timestamps = pd.DatetimeIndex(valid_history.index)
 
+    # Lokale statt UTC-Zeit: sonst lernt Prophet je nach Zeitumstellung im
+    # Trainingsfenster zwei verschiedene reale Uhrzeiten als "dieselbe" Stunde.
     return pd.DataFrame(
-        {"ds": timestamps.tz_convert("UTC").tz_localize(None), "y": values}
+        {"ds": timestamps.tz_convert(local_timezone).tz_localize(None), "y": values}
     )
-
-
-def _validate_utc_index(
-    index: pd.Index,
-    *,
-    name: str,
-) -> None:
-
-    if not isinstance(index, pd.DatetimeIndex):
-        raise TypeError(f"{name} must be a DatetimeIndex.")
-
-    if index.empty:
-        raise ValueError(f"{name} must not be empty.")
-
-    if index.has_duplicates:
-        raise ValueError(f"{name} contains duplicate timestamps.")
-
-    if not index.is_monotonic_increasing:
-        raise ValueError(f"{name} must be sorted chronologically.")
-
-    if str(index.tz) != "UTC":
-        raise ValueError(f"{name} must use UTC.")

@@ -35,7 +35,8 @@ class ForecastingConfig:
 
     # Forecast-Ziel
     frequency: str = "1h"
-    timezone: str = "UTC"
+    # nur für Prophets ds (Tagessaisonalität); Speicherung/restliche Pipeline bleibt UTC
+    timezone: str = "Europe/London"
     horizon_hours: int = 24
 
     # Walk-Forward-Evaluation
@@ -48,6 +49,9 @@ class ForecastingConfig:
     growth: str = "linear"
     daily_seasonality: bool = True
     yearly_seasonality: bool = False
+    country_holidays: str | None = "UK"
+    # Prophet fitted auf log(y) statt y, Rücktransformation via exp() nach dem Predict
+    log_transform: bool = True
     interval_width: float = 0.80
     uncertainty_samples: int = 1000
     seed: int = 42

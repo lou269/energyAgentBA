@@ -1,0 +1,58 @@
+@startuml SystemDatenfluss
+title Implementierter Datenfluss bis zur LLM-Schnittstelle
+left to right direction
+
+skinparam shadowing false
+skinparam defaultTextAlignment center
+
+database "UK-DALE" as raw
+
+rectangle "Ingestion" as ingestion #D5E8D4
+artifact "ukdale.h5" as hdf5
+
+rectangle "Analyse und\nDatenauswahl" as analysis #D5E8D4
+artifact "Qualitäts- und\nAuswahldaten" as selection
+
+rectangle "Datenaufbereitung" as preparation #D5E8D4
+artifact "canonical_data.csv" as canonical
+
+rectangle "Preprocessing" as preprocessing #D5E8D4
+artifact "treated_hourly.csv\nsplit_manifest.csv" as treated
+
+rectangle "Multi-Scale-Analyse\nund Anomalieerkennung" as numerical #D5E8D4
+artifact "Anomaly Scores" as anomalies
+
+rectangle "Forecasting" as forecasting #D5E8D4
+artifact "Forecasts und Metriken" as forecasts
+
+rectangle "Kalenderkontext" as context #FFF2CC
+rectangle "Structured State" as state #FFF2CC
+
+raw --> ingestion
+ingestion --> hdf5
+hdf5 --> analysis
+analysis --> selection
+selection --> preparation
+preparation --> canonical
+canonical --> preprocessing
+preprocessing --> treated
+
+treated --> numerical
+treated --> forecasting
+
+numerical --> anomalies
+forecasting --> forecasts
+
+anomalies ..> state
+forecasts ..> state
+context ..> state
+
+legend bottom
+|= Farbe |= Status |
+|<#D5E8D4> Grün | zentrale Pipeline |
+|<#FFF2CC> Gelb | separat vorhanden |
+Durchgezogen: integrierter Datenfluss
+Gestrichelt: separate Übergabe
+endlegend
+
+@enduml

@@ -1,0 +1,70 @@
+@startuml LLMPipelineSequenz
+title LLM-Inferenz: Evidenzgebundene Klassifikation mit Selbstkorrektur
+
+hide footbox
+autonumber
+skinparam shadowing false
+
+participant "LLM-Runner" as runner
+database "Structured State" as state
+participant "LLM-Client\n(Ollama)" as client
+participant "Validierung" as validation
+database "Run-Artefakte" as artifacts
+
+runner -> state: structured_state.json laden
+runner -> runner: Promptvorlage laden\n(prompt_v2.txt)
+
+runner -> state: erlaubte Evidence-Pfade ermitteln
+
+note right
+  Nur skalare Pfade aus einer festen
+  Whitelist sind zulässig, z.B.
+  anomaly.level, forecast.summary.mean_w
+end note
+
+runner -> runner: JSON-Schema aus\nerlaubten Pfaden bauen
+
+note right
+  temperature = 0.0, seed = 42
+  -> deterministische, reproduzierbare Läufe
+end note
+
+loop Versuch 1 .. max_attempts (Standard: 2)
+
+  runner -> client: generate_json(model, messages,\nschema, temperature, seed)
+  client -> client: Ollama Chat, constrained decoding\n(format = Schema, think = false)
+  client --> runner: JSON-Antwort (roh)
+
+  runner -> validation: Struktur- und Evidenzprüfung
+  validation -> state: referenzierte Pfade auflösen
+  state --> validation: Werte und JSON-Typen
+  validation --> runner: Ergebnis
+
+  alt Antwort gültig -> Schleife wird verlassen
+    note right of runner
+      Pfad existiert, Typ und Wert stimmen
+      exakt mit dem State überein
+    end note
+  else Antwort ungültig
+    runner -> runner: Korrekturnachricht anhängen\n(Assistant-Antwort + Fehlerhinweis)
+  end
+
+end
+
+alt mindestens ein gültiger Versuch
+  runner -> artifacts: save_successful_llm_run\n(llm_output.json, attempts.json,\nrun_manifest.json)
+else kein gültiger Versuch nach max_attempts
+  runner -> artifacts: save_failed_llm_run\n(attempts.json mit allen Fehlversuchen)
+else Client-Ausnahme (z. B. Timeout)
+  runner -> artifacts: save_request_failed_llm_run
+end
+
+legend bottom
+|= Feld |= Bedeutung |
+| classification | normal, absence, peak, unknown |
+| evidence_references | Liste aus {path, value}, muss auf reale Structured-State-Werte zeigen |
+Jede Evidenzreferenz wird gegen den Structured State geprüft:
+Pfad muss existieren, Wert und JSON-Typ müssen exakt übereinstimmen.
+endlegend
+
+@enduml

@@ -1,0 +1,39 @@
+@startuml ExperimentEvidenzlandkarte
+title Experiment- und Evidenzlandkarte vor der LLM-Komponente
+
+!pragma layout smetana
+top to bottom direction
+skinparam shadowing false
+skinparam defaultTextAlignment center
+
+rectangle "Erkenntnisziel\nBelastbarkeit der numerischen\nDaten- und Forecast-Pipeline" as goal
+
+package "Datenbasis" {
+  rectangle "Datenauswahl-Sensitivität\n\nVergleich:\nSegmentdauer und Geräteabdeckung\n\nBewertung:\nverfügbare Kandidaten und Kanäle\n\nStatus: Code vorhanden,\nkeine Laufartefakte gefunden" as selection #FFF2CC
+
+  rectangle "Datenaufbereitungs-Sensitivität\n\nVergleich:\nCoverage- und Mindestdauer-Thresholds\n\nBewertung:\nValidierung und Kandidatenwahl\n\nStatus: Code vorhanden,\nkeine Laufartefakte gefunden" as preparation #FFF2CC
+}
+
+package "Forecasting" {
+  rectangle "Cold Start und Retraining\n\nVergleich:\nBaselines, statisch, expanding,\n7-Tage-Rolling-Window\n\nBewertung:\nMAE, RMSE, MAPE und Skill\n\nStatus: Validation-Lauf vorhanden,\nErgebnisse vorläufig" as coldStart #D9EAF7
+
+  rectangle "Saisonalität\n\nVergleich:\nProphet ohne/mit\nwöchentlicher Saisonalität\n\nBewertung:\nForecastmetriken\n\nStatus: Code vorhanden,\nkeine Laufartefakte gefunden" as seasonality #FFF2CC
+}
+
+package "Numerische Evidenz" {
+  rectangle "Anomalieerkennung\n\nVorhanden:\nMulti-Scale-Scores und Anomalielevel\n\nAusstehend:\nGround Truth, Recall und Precision\n\nStatus: Outputs vorhanden,\nkeine Detection-Evaluation" as anomaly #D9EAF7
+}
+
+goal --> selection
+goal --> coldStart
+goal --> anomaly
+
+legend bottom
+|= Farbe |= Evidenzstatus |
+|<#D9EAF7> Blau | Laufartefakte vorhanden, Ergebnis vorläufig |
+|<#FFF2CC> Gelb | Code vorhanden, Laufbeleg fehlt |
+|<#E7E6E6> Grau | geplant oder außerhalb der aktuellen Grenze |
+Keine Variante ist damit bereits wissenschaftlich bestätigt.
+endlegend
+
+@enduml

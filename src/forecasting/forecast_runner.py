@@ -17,6 +17,7 @@ from src.config.forecasting_config import ForecastingConfig
 from src.config.project_config import ProjectConfig, ensure_project_directories
 from src.forecasting.evaluation import evaluate_forecasts, select_primary_naive_reference
 from src.forecasting.forecast_run_manifest import build_forecast_run_manifest
+from docs.plots.plot_forecast_ergebnis import build_forecast_plot
 
 from src.forecasting.walk_forward import ProphetVariantParameters, build_walk_forward_forecasts
 
@@ -119,6 +120,9 @@ class ForecastingRunner:
             growth=self.forecasting_config.growth,
             daily_seasonality=self.forecasting_config.daily_seasonality,
             yearly_seasonality=self.forecasting_config.yearly_seasonality,
+            country_holidays=self.forecasting_config.country_holidays,
+            local_timezone=self.forecasting_config.timezone,
+            log_transform=self.forecasting_config.log_transform,
             interval_width=self.forecasting_config.interval_width,
             uncertainty_samples=self.forecasting_config.uncertainty_samples,
             clip_negative_forecasts=self.forecasting_config.negative_forecast_handling == "clip_zero",
@@ -198,6 +202,9 @@ class ForecastingRunner:
                 "growth": self.forecasting_config.growth,
                 "daily_seasonality": self.forecasting_config.daily_seasonality,
                 "yearly_seasonality": self.forecasting_config.yearly_seasonality,
+                "country_holidays": self.forecasting_config.country_holidays,
+                "local_timezone": self.forecasting_config.timezone,
+                "log_transform": self.forecasting_config.log_transform,
                 "interval_width": self.forecasting_config.interval_width,
                 "variant": asdict(self.forecasting_config.selected_prophet_variant),
             },
@@ -206,6 +213,9 @@ class ForecastingRunner:
                     "daily": self.forecasting_config.daily_seasonality,
                     "weekly": self.forecasting_config.selected_prophet_variant.weekly_seasonality,
                     "yearly": self.forecasting_config.yearly_seasonality,
+                    "holidays": self.forecasting_config.country_holidays,
+                    "local_timezone": self.forecasting_config.timezone,
+                    "log_transform": self.forecasting_config.log_transform,
                 }
             },
             history_rules={
@@ -233,6 +243,15 @@ class ForecastingRunner:
         save_json(
             manifest,
             run_directory / f"run_manifest_{split}.json",
+        )
+
+        build_forecast_plot(
+            run_directory,
+            run_directory,
+            split=split,
+            active_model_id=self.forecasting_config.selected_prophet_variant.model_id,
+            baseline_model_ids=self.forecasting_config.baseline_model_ids,
+            reference_baseline=cast(str, primary_naive_reference),
         )
 
         logger.info(

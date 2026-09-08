@@ -1,0 +1,49 @@
+@startuml KausalerZeitablauf
+title Kausaler Walk-Forward-Ablauf
+
+hide footbox
+autonumber
+
+actor "Zeitsteuerung" as clock
+database "Messdaten" as data
+participant "Numerische Analyse" as analysis
+database "Gespeicherte Analyse" as analysisStore
+participant "Forecasting" as forecasting
+database "Gespeicherter Forecast" as forecastStore
+participant "Evaluation" as evaluation
+
+note over data,evaluation
+  Chronologische Aufteilung:
+  Train → Validation → Test
+  Kein zufälliges Mischen
+end note
+
+loop Für jeden Forecast-Ursprung t
+
+  == Entscheidungszeit t ==
+
+  clock -> preprocessing: Verarbeitung für t starten
+  data --> preprocessing: Nur Messwerte mit Zeitstempel < t
+
+  preprocessing -> analysis: Behandelte Vergangenheit bis t−1
+  analysis --> analysisStore: Trends und Anomaly Scores
+  preprocessing -> forecasting: Zulässige Historie < t
+  forecasting -> forecasting: Modell ausschließlich\nauf Vergangenheit fitten
+  forecasting -> forecastStore: 24 Vorhersagen für t … t+23
+
+  note over forecastStore
+    Die zukünftigen Ist-Werte sind
+    zum Zeitpunkt t nicht verfügbar.
+  end note
+
+  == Nach Ablauf des Horizonts ==
+
+  data --> evaluation: Ist-Werte für t … t+23
+  forecastStore --> evaluation: Zuvor gespeicherte Vorhersagen
+  evaluation -> evaluation: MAE, RMSE und MAPE berechnen
+
+  clock -> clock: Nächster Ursprung\nt := t + 24 Stunden
+
+end
+
+@enduml

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
-
 import pandas as pd
 
 
@@ -43,39 +41,7 @@ FORECAST_KEY_COLUMNS = [
     "target_timestamp",
 ]
 
-RUN_METADATA_FIELDS = [
-    "run_id",
-    "experiment_id",
-    "scenario_id",
-    "split",
-    "config_version",
-    "config_hash",
-    "data_version",
-    "code_version",
-    "input_hashes",
-    "output_hashes",
-    "candidate_id",
-    "split_boundaries",
-    "forecast_origins",
-    "python_version",
-    "prophet_version",
-    "seed",
-    "uncertainty_samples",
-    "model_parameters",
-    "seasonalities",
-    "history_rules",
-    "imputation_rule",
-    "eligibility_rule",
-    "metric_definitions",
-    "primary_naive_reference",
-    "event_definition",
-    "runtime_seconds",
-]
-
-
 def validate_forecast_output(forecasts: pd.DataFrame, *, horizon_hours: int) -> None:
-    "Validiert die zentralen Garantien des Forecast-Artefakts."
-
     if horizon_hours < 1:
         raise ValueError("horizon_hours must be at least 1.")
 
@@ -207,26 +173,4 @@ def validate_forecast_output(forecasts: pd.DataFrame, *, horizon_hours: int) -> 
 
     if model_metadata_consistency.any().any():
         raise ValueError("Forecast output contains inconsistent model metadata.")
-
-
-def validate_run_metadata(metadata: Mapping[str, object]) -> None:
-
-    missing_fields = set(RUN_METADATA_FIELDS).difference(metadata)
-
-    if missing_fields:
-        raise ValueError("Run metadata is missing required fields: "+ ", ".join(sorted(missing_fields)))
-
-    for field in ("run_id", "experiment_id", "split", "config_version"):
-        value = metadata[field]
-
-        if not isinstance(value, str) or not value:
-            raise ValueError(f"{field} must be a non-empty string.")
-
-    runtime_seconds = metadata["runtime_seconds"]
-
-    if not isinstance(runtime_seconds, (int, float)):
-        raise TypeError("runtime_seconds must be numeric.")
-
-    if runtime_seconds < 0:
-        raise ValueError("runtime_seconds must not be negative.")
 

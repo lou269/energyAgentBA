@@ -1,0 +1,229 @@
+{
+  "candidate_id": "H1-M54-S6",
+  "code_version": {
+    "git_commit": "505cb41d3429af8a20d06a354c9bad043533828c",
+    "git_dirty": true
+  },
+  "config": {
+    "sha256": "fa4bf41710cb04133fc44db06f1219ceedd688854dd9e086aeac8da8df3b8c48",
+    "values": {
+      "baseline_model_ids": [
+        "B1",
+        "B2",
+        "B3"
+      ],
+      "config_version": "0.5",
+      "country_holidays": "UK",
+      "daily_seasonality": true,
+      "experiment_id": "forecasting",
+      "forecast_origin_step_hours": 24,
+      "frequency": "1h",
+      "growth": "linear",
+      "horizon_hours": 24,
+      "interval_width": 0.8,
+      "mape_min_eligible_watts": 10.0,
+      "negative_forecast_handling": "raw",
+      "primary_naive_reference": null,
+      "seed": 42,
+      "selected_prophet_variant": {
+        "history_mode": "expanding",
+        "model_id": "C2",
+        "retraining_interval_hours": 24,
+        "rolling_window_hours": null,
+        "weekly_seasonality": true
+      },
+      "timezone": "UTC",
+      "uncertainty_samples": 1000,
+      "yearly_seasonality": false
+    }
+  },
+  "created_at_utc": "2026-09-08T16:12:59.646567+00:00",
+  "environment": {
+    "file": "environment-forecasting.yml",
+    "sha256": "e07be1814925f5d4b5a9157a0407fea4db7bf9e316768c928978359c9f60dd9d"
+  },
+  "evaluation": {
+    "exclusion_rules": {
+      "complete_horizons_only": true,
+      "exclude_imputed_targets": true
+    },
+    "forecast_origins": [
+      "2015-12-14 11:00:00+00:00",
+      "2015-12-15 11:00:00+00:00",
+      "2015-12-16 11:00:00+00:00",
+      "2015-12-17 11:00:00+00:00",
+      "2015-12-18 11:00:00+00:00",
+      "2015-12-19 11:00:00+00:00",
+      "2015-12-20 11:00:00+00:00",
+      "2015-12-21 11:00:00+00:00",
+      "2015-12-22 11:00:00+00:00",
+      "2015-12-23 11:00:00+00:00",
+      "2015-12-24 11:00:00+00:00",
+      "2015-12-25 11:00:00+00:00",
+      "2015-12-26 11:00:00+00:00",
+      "2015-12-27 11:00:00+00:00",
+      "2015-12-28 11:00:00+00:00",
+      "2015-12-29 11:00:00+00:00",
+      "2015-12-30 11:00:00+00:00",
+      "2015-12-31 11:00:00+00:00",
+      "2016-01-01 11:00:00+00:00",
+      "2016-01-02 11:00:00+00:00",
+      "2016-01-03 11:00:00+00:00",
+      "2016-01-04 11:00:00+00:00",
+      "2016-01-05 11:00:00+00:00",
+      "2016-01-06 11:00:00+00:00",
+      "2016-01-07 11:00:00+00:00",
+      "2016-01-08 11:00:00+00:00",
+      "2016-01-09 11:00:00+00:00",
+      "2016-01-10 11:00:00+00:00",
+      "2016-01-11 11:00:00+00:00",
+      "2016-01-12 11:00:00+00:00",
+      "2016-01-13 11:00:00+00:00",
+      "2016-01-14 11:00:00+00:00",
+      "2016-01-15 11:00:00+00:00",
+      "2016-01-16 11:00:00+00:00",
+      "2016-01-17 11:00:00+00:00",
+      "2016-01-18 11:00:00+00:00",
+      "2016-01-19 11:00:00+00:00",
+      "2016-01-20 11:00:00+00:00",
+      "2016-01-21 11:00:00+00:00",
+      "2016-01-22 11:00:00+00:00",
+      "2016-01-23 11:00:00+00:00",
+      "2016-01-24 11:00:00+00:00",
+      "2016-01-25 11:00:00+00:00",
+      "2016-01-26 11:00:00+00:00",
+      "2016-01-27 11:00:00+00:00",
+      "2016-01-28 11:00:00+00:00",
+      "2016-01-29 11:00:00+00:00",
+      "2016-01-30 11:00:00+00:00"
+    ],
+    "metric_definitions": {
+      "mape_positive_targets_only": true,
+      "metrics": [
+        "mae",
+        "rmse",
+        "mape"
+      ],
+      "primary_metric": "mae"
+    },
+    "primary_naive_reference": "B2",
+    "split_boundaries": {
+      "first_forecast_origin": "2015-12-14 11:00:00+00:00",
+      "fixed_history_end": "2015-12-14 10:00:00+00:00",
+      "fixed_history_start": "2015-05-01 20:00:00+00:00",
+      "split_end": "2016-01-31 23:00:00+00:00",
+      "split_start": "2015-12-14 11:00:00+00:00"
+    }
+  },
+  "experiment_id": "forecasting",
+  "inputs": {
+    "canonical_manifest": {
+      "path": "output/canonical/canonical_manifest.csv",
+      "sha256": "8cd7c2af0b775f827a1ce431e60a2364feb3bb29d6600f97d0482fdd115e9e0e",
+      "size_bytes": 151
+    },
+    "imputation_mask_hourly": {
+      "path": "output/preprocessing/imputation_mask_hourly.csv",
+      "sha256": "8539e2eb4a56f7fc3a82a1698c1578ba049401ae8803a6b3d88eef162831c0f1",
+      "size_bytes": 248696
+    },
+    "split_manifest": {
+      "path": "output/preprocessing/split_manifest.csv",
+      "sha256": "2e9b9178ec1b6b1a740f393734faa6e79a9b3d6f6022b7ccbd8d98212ef77583",
+      "size_bytes": 462
+    },
+    "treated_hourly": {
+      "path": "output/preprocessing/treated_hourly.csv",
+      "sha256": "ff3a44bc15e88419565f95f82c2a576943f935c81d1bdba5fd7ba2cd5502f29d",
+      "size_bytes": 277735
+    }
+  },
+  "models": {
+    "history_rules": {
+      "C2": {
+        "history_mode": "expanding",
+        "retraining_interval_hours": 24,
+        "rolling_window_hours": null
+      }
+    },
+    "parameters": {
+      "country_holidays": "UK",
+      "daily_seasonality": true,
+      "growth": "linear",
+      "interval_width": 0.8,
+      "variant": {
+        "history_mode": "expanding",
+        "model_id": "C2",
+        "retraining_interval_hours": 24,
+        "rolling_window_hours": null,
+        "weekly_seasonality": true
+      },
+      "yearly_seasonality": false
+    },
+    "seasonalities": {
+      "C2": {
+        "daily": true,
+        "holidays": "UK",
+        "weekly": true,
+        "yearly": false
+      }
+    },
+    "seed": 42,
+    "uncertainty_samples": 1000
+  },
+  "outputs": {
+    "forecasts": {
+      "path": "output/forecasting/fc_val_009/forecasts_validation.csv",
+      "sha256": "8200fde1355b5b560fb8b4979d76fa17716295a68543c3f80125f7345b32899c",
+      "size_bytes": 1221396
+    },
+    "horizon_metrics": {
+      "path": "output/forecasting/fc_val_009/horizon_metrics_validation.csv",
+      "sha256": "afc24393b68bee19e83863beffe963bb9f5080422be2524059bb4fd8d45ea50d",
+      "size_bytes": 11628
+    },
+    "interval_metrics": {
+      "path": "output/forecasting/fc_val_009/interval_metrics_validation.csv",
+      "sha256": "ce3d7fd3f91edbdbc151f11901f3249dd7bfefaf7af0176117ce7e3d88471335",
+      "size_bytes": 2249
+    },
+    "mae_skill": {
+      "path": "output/forecasting/fc_val_009/mae_skill_validation.csv",
+      "sha256": "71d8fc3343db6f92cd8b796ad5ee84dfb9e29c10390bcc8f43c0ac3d7fd24d44",
+      "size_bytes": 341
+    },
+    "origin_metric_distribution": {
+      "path": "output/forecasting/fc_val_009/origin_metric_distribution_validation.csv",
+      "sha256": "74726b0c163ac85cf9b04f0bcac86e5d739ba2f48ad63f96b4403df074ef5a74",
+      "size_bytes": 1451
+    },
+    "origin_metrics": {
+      "path": "output/forecasting/fc_val_009/origin_metrics_validation.csv",
+      "sha256": "cd769ec6616805d672316f894abd60756bc04432ee2fdda92e1d15437d825aaf",
+      "size_bytes": 27655
+    },
+    "overall_metrics": {
+      "path": "output/forecasting/fc_val_009/overall_metrics_validation.csv",
+      "sha256": "3161c53e3df9659a638c394e24fddbd29927569eb3e3e8f4407b1a0a8bccb2e3",
+      "size_bytes": 960
+    },
+    "paired_origin_differences": {
+      "path": "output/forecasting/fc_val_009/paired_origin_differences_validation.csv",
+      "sha256": "fa73ce315b39f70837cbdfcd43f19b8de18b11f141a8b70031778e7443ca3571",
+      "size_bytes": 16707
+    },
+    "primary_naive_reference": {
+      "path": "output/forecasting/fc_val_009/primary_naive_reference_validation.csv",
+      "sha256": "f79d21f920a2d604bc0510a3e851f7cef984b8e83a8cb9aab8e5562be297a2af",
+      "size_bytes": 12
+    },
+    "target_exclusions": {
+      "path": "output/forecasting/fc_val_009/target_exclusions_validation.csv",
+      "sha256": "6ad8e6729236498f5aa7ddeeddf9f42e7458c33b2ea3f29ce7e582852553517f",
+      "size_bytes": 90
+    }
+  },
+  "run_id": "validation_009",
+  "runtime_seconds": 20.675740541992127,
+  "split": "validation"
+}

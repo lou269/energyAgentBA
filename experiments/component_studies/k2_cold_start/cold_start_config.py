@@ -42,8 +42,12 @@ class ColdStartExperimentConfig(ForecastingConfig):
     data_start: str | None = None
     data_end: str | None = None
 
-    # erster Forecast nach sieben vollständigen Tagen -> Proposal 
+    # erster Forecast nach sieben vollständigen Tagen -> Proposal
     initial_history_hours: int = 7 * 24
+
+    # K2 vergleicht Kaltstart-/Retraining-Varianten, nicht Kalendereffekte -> unabhängig davon halten
+    country_holidays: str | None = None
+    log_transform: bool = False
 
     prophet_variants: tuple[ProphetVariantConfig, ...] = (COLD_START_PROPHET_VARIANTS)
 
