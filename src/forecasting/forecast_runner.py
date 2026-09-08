@@ -6,14 +6,13 @@ from __future__ import annotations
 import argparse
 from dataclasses import asdict
 import logging
-from datetime import UTC, datetime
 from time import perf_counter
 from typing import Literal, cast
 
 import numpy as np
 import pandas as pd
 
-from src.pipeline.io import df_to_csv, save_json
+from src.pipeline.io import df_to_csv, next_sequential_number, save_json
 from src.config.forecasting_config import ForecastingConfig
 from src.config.project_config import ProjectConfig, ensure_project_directories
 from src.forecasting.evaluation import evaluate_forecasts, select_primary_naive_reference
@@ -92,7 +91,16 @@ class ForecastingRunner:
 
         evaluation_imputation_mask = imputation_mask_hourly.loc[split_start:split_end, target_column]
 
-        run_id = f"{split}_{datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ')}"
+        split_abbreviation = "val" if split == "validation" else split
+        run_number = next_sequential_number(self.project_config.forecasting_output_dir, prefix=f"fc_{split_abbreviation}")
+        run_id = f"{split}_{run_number:03d}"
+
+        run_directory = self.project_config.forecasting_output_dir / f"fc_{split_abbreviation}_{run_number:03d}"
+
+        if run_directory.exists():
+            raise FileExistsError(f"Forecasting run directory already exists: {run_directory}")
+
+        run_directory.mkdir(parents=True, exist_ok=False)
 
         prophet_variant = cast(ProphetVariantParameters, asdict(self.forecasting_config.selected_prophet_variant))
 
@@ -134,7 +142,7 @@ class ForecastingRunner:
 
             df_to_csv(
                 pd.DataFrame({"model_id": [primary_naive_reference]}),
-                self.project_config.forecasting_output_dir,
+                run_directory,
                 "primary_naive_reference_validation",
             )
         else:
@@ -142,27 +150,27 @@ class ForecastingRunner:
 
         df_to_csv(
             forecasts,
-            self.project_config.forecasting_output_dir,
+            run_directory,
             f"forecasts_{split}"
         )
 
         for name, result in evaluation_results.items():
             df_to_csv(
                 result,
-                self.project_config.forecasting_output_dir,
+                run_directory,
                 f"{name}_{split}"
             )
 
         output_paths = {
-            "forecasts": self.project_config.forecasting_output_dir / f"forecasts_{split}.csv",
+            "forecasts": run_directory / f"forecasts_{split}.csv",
             **{
-                name: self.project_config.forecasting_output_dir / f"{name}_{split}.csv"
+                name: run_directory / f"{name}_{split}.csv"
                 for name in evaluation_results
             },
         }
 
         if split == "validation":
-            output_paths["primary_naive_reference"] = self.project_config.forecasting_output_dir / "primary_naive_reference_validation.csv"
+            output_paths["primary_naive_reference"] = run_directory / "primary_naive_reference_validation.csv"
 
         manifest = build_forecast_run_manifest(
             project_root=self.project_config.project_root,
@@ -224,7 +232,7 @@ class ForecastingRunner:
 
         save_json(
             manifest,
-            self.project_config.forecasting_output_dir / f"run_manifest_{split}.json",
+            run_directory / f"run_manifest_{split}.json",
         )
 
         logger.info(

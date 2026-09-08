@@ -9,6 +9,7 @@ def build_anomaly_detection(
     min_residual_std_w: float,
     unusual_threshold: float,
     strong_anomaly_threshold: float,
+    sample_period_hours: float,
 ) -> pd.DataFrame:
     result = analysis_results.copy()
 
@@ -24,6 +25,7 @@ def build_anomaly_detection(
     for scale, reference_column in reference_columns.items():
         residual_column = f"{scale}_residual"
         score_column = f"{scale}_score"
+        streak_column = f"{scale}_streak_hours"
 
         result[residual_column] = result["current_power"] - result[reference_column]
 
@@ -34,6 +36,7 @@ def build_anomaly_detection(
 
         if len(train_residuals) < min_reference_samples:
             result[score_column] = np.nan
+            result[streak_column] = np.nan
             continue
 
         residual_mean = train_residuals.mean()
@@ -41,9 +44,18 @@ def build_anomaly_detection(
 
         if pd.isna(residual_std) or residual_std < min_residual_std_w:
             result[score_column] = np.nan
+            result[streak_column] = np.nan
             continue
 
         result[score_column] = (result[residual_column] - residual_mean) / residual_std
+
+        elevated = result[score_column].abs() >= unusual_threshold
+        elevated = elevated & result[score_column].notna()
+
+        streak_periods = elevated.groupby((~elevated).cumsum()).cumsum()
+
+        result[streak_column] = (streak_periods * sample_period_hours).where(result[score_column].notna())
+        
 
     score_columns = [
         "short_term_score",

@@ -1,0 +1,19 @@
+{
+  "attempts": [
+    {
+      "attempt_number": 1,
+      "generation_seconds": 20.14295312500326,
+      "raw_content": "{\n  \"schema_version\": \"1.0\",\n  \"classification\": \"peak\",\n  \"explanation\": \"Die aktuelle Leistung von 1319,88 W ist stark erhöht im Vergleich zum langfristigen Mittelwert von 405,73 W und dem täglichen Erwartungswert von 344,34 W. Die Anomalieanalyse bestätigt dies mit einem starken Anomaliescore (3,77) auf allen Skalen. Es liegen keine Beweise für eine Persistenz über mehrere Stunden vor (scale_streak_hours ist 1,0), was die Klassifizierung als 'peak' und nicht als 'new_pattern' stützt.\",\n  \"evidence_references\": [\n    {\n      \"path\": \"observation.current_power_w\",\n      \"value\": 1319.8837\n    },\n    {\n      \"path\": \"analysis.long_term_mean_w\",\n      \"value\": 405.7294889722222\n    },\n    {\n      \"path\": \"analysis.daily_expected_w\",",
+      "valid": false,
+      "validation_error": "JSONDecodeError: Expecting property name enclosed in double quotes: line 15 column 43 (char 741)"
+    },
+    {
+      "attempt_number": 2,
+      "generation_seconds": 16.8361579170014,
+      "raw_content": "{\n  \"schema_version\": \"1.0\",\n  \"classification\": \"peak\",\n  \"explanation\": \"Die aktuelle Leistung von 1319,88 W ist stark erhöht im Vergleich zum langfristigen Mittelwert von 405,73 W und dem täglichen Erwartungswert von 344,34 W. Die Anomalieanalyse bestätigt dies mit einem starken Anomaliescore (3,77) auf allen Skalen. Es liegen keine Beweise für eine Persistenz über mehrere Stunden vor (scale_streak_hours ist 1,0), was die Klassifizierung als 'peak' und nicht als 'new_pattern' stützt.\",\n  \"evidence_references\": [\n    {\n      \"path\": \"observation.current_power_w\",\n      \"value\": 1319.8837\n    },\n    {\n      \"path\": \"analysis.long_term_mean_w\",\n      \"value\": 405.7294889722222\n    },\n    {\n      \"path\": \"analysis.daily_expected_w\",\n      \"value\": 344.3416666666667\n    },\n    {\n      \"path\": \"anomaly.score\",\n      \"value\": 3.7705829999999997\n    },\n    {\n      \"path\": \"anomaly.scale_streak_hours.daily\",\n      \"value\": 1.0\n    }\n  ],\n  \"user_recommendation\": \"Keine spezifische Aktion empfohlen.\",\n  \"uncertainty\": \"Niedrig.\"\n}",
+      "valid": false,
+      "validation_error": "ValueError: evidence_references[2].value does not match the Structured State for 'analysis.daily_expected_w': expected 344.33525171806167, got 344.3416666666667."
+    }
+  ],
+  "run_id": "llm_006"
+}

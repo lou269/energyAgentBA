@@ -1,3 +1,4 @@
+# conda activate forecasting-env
 name: forecasting-env
 channels:
   - conda-forge

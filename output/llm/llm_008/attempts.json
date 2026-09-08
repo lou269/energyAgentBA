@@ -1,0 +1,12 @@
+{
+  "attempts": [
+    {
+      "attempt_number": 1,
+      "generation_seconds": 23.25338795800053,
+      "raw_content": "{\n  \"schema_version\": \"1.0\",\n  \"classification\": \"absence\",\n  \"explanation\": \"Der Stromverbrauch ist reduziert, was durch den Kalenderevent 'vacation-2015-12' (Urlaub) gestützt wird.\",\n  \"evidence_references\": [\n    {\n      \"path\": \"anomaly.direction\",\n      \"value\": \"low\"\n    },\n    {\n      \"path\": \"context.events.0.event_type\",\n      \"value\": \"absence\"\n    }\n  ],\n  \"user_recommendation\": \"Keine spezifische Aktion erforderlich.\",\n  \"uncertainty\": \"Niedrig.\"\n}",
+      "valid": true,
+      "validation_error": null
+    }
+  ],
+  "run_id": "llm_008"
+}

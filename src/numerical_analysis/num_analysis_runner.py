@@ -105,6 +105,7 @@ class NumericalAnalysisRunner:
             min_residual_std_w=self.analysis_config.min_residual_std_w,
             unusual_threshold=self.analysis_config.unusual_threshold,
             strong_anomaly_threshold=self.analysis_config.strong_anomaly_threshold,
+            sample_period_hours=self.analysis_config.sample_period_hours_15min,
         )
 
         logger.info("Building hourly analysis...")
@@ -129,6 +130,7 @@ class NumericalAnalysisRunner:
             min_residual_std_w=self.analysis_config.min_residual_std_w,
             unusual_threshold=self.analysis_config.unusual_threshold,
             strong_anomaly_threshold=self.analysis_config.strong_anomaly_threshold,
+            sample_period_hours=self.analysis_config.sample_period_hours_hourly,
         )
 
         df_to_csv(

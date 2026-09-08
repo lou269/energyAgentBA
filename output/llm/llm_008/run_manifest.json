@@ -1,0 +1,83 @@
+{
+  "code_version": {
+    "git_commit": "21163c58eaad86af0af8ce71c51516a5846d8fb3",
+    "git_dirty": true
+  },
+  "config": {
+    "sha256": "763556d5dc008bbc078553d9e17a881d7c2e01244332c9632e7b3c5b4d3d0e4f",
+    "values": {
+      "max_attempts": 2,
+      "model": "qwen3.5:9b",
+      "prompt_version": "v3",
+      "request_timeout_seconds": 120.0,
+      "seed": 42,
+      "temperature": 0.0
+    }
+  },
+  "created_at_utc": "2026-09-08T11:02:50.296019+00:00",
+  "decision_time": "2015-12-19T11:00:00+00:00",
+  "environment": {
+    "file": "environment-forecasting.yml",
+    "sha256": "e07be1814925f5d4b5a9157a0407fea4db7bf9e316768c928978359c9f60dd9d"
+  },
+  "error": null,
+  "forecast": {
+    "run_id": "validation_003"
+  },
+  "inference": {
+    "attempt_count": 1,
+    "attempts": [
+      {
+        "attempt_number": 1,
+        "generation_seconds": 23.25338795800053,
+        "raw_content_sha256": "0cc19f55f1d2e375928a4ce48c41f8ccc8bd19ebcf2a86fa2d4b3a2e77b44650",
+        "valid": true,
+        "validation_error": null
+      }
+    ],
+    "first_attempt_valid": true,
+    "retry_used": false,
+    "runtime_seconds": 23.301474209001753,
+    "valid_attempt": 1
+  },
+  "inputs": {
+    "prompt": {
+      "path": "src/llm/prompts/prompt_v3.txt",
+      "sha256": "00054864bfe15c7a98dcc3bca256d62547025693d033af49771b62c1a5fd7bba",
+      "size_bytes": 3443
+    },
+    "structured_state": {
+      "path": "output/structured_state/structured_state.json",
+      "sha256": "03a9f7c36be64675d07375ba40cc13a5ae9a095b245cd2fd05030004fea4416d",
+      "size_bytes": 6532
+    }
+  },
+  "model": {
+    "digest": "6488c96fa5faab64bb65cbd30d4289e20e6130ef535a93ef9a49f42eda893ea7",
+    "name": "qwen3.5:9b"
+  },
+  "outputs": {
+    "attempts": {
+      "path": "output/llm/llm_008/attempts.json",
+      "sha256": "5ccd3ffff7c53342f067e10b6da4c51294ec398d394035dd315e216f73f4a690",
+      "size_bytes": 728
+    },
+    "llm_output": {
+      "path": "output/llm/llm_008/llm_output.json",
+      "sha256": "9b6e850e94a06dff7cb4bb06ed3cf4869afae35e2acd44086f5b205a6a06f0bf",
+      "size_bytes": 465
+    },
+    "prompt": {
+      "path": "output/llm/llm_008/prompt.txt",
+      "sha256": "00054864bfe15c7a98dcc3bca256d62547025693d033af49771b62c1a5fd7bba",
+      "size_bytes": 3443
+    },
+    "structured_state": {
+      "path": "output/llm/llm_008/structured_state.json",
+      "sha256": "03a9f7c36be64675d07375ba40cc13a5ae9a095b245cd2fd05030004fea4416d",
+      "size_bytes": 6532
+    }
+  },
+  "run_id": "llm_008",
+  "status": "valid"
+}

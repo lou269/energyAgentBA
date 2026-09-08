@@ -1,0 +1,88 @@
+{
+  "code_version": {
+    "git_commit": "21163c58eaad86af0af8ce71c51516a5846d8fb3",
+    "git_dirty": true
+  },
+  "config": {
+    "sha256": "763556d5dc008bbc078553d9e17a881d7c2e01244332c9632e7b3c5b4d3d0e4f",
+    "values": {
+      "max_attempts": 2,
+      "model": "qwen3.5:9b",
+      "prompt_version": "v3",
+      "request_timeout_seconds": 120.0,
+      "seed": 42,
+      "temperature": 0.0
+    }
+  },
+  "created_at_utc": "2026-09-08T10:44:17.774914+00:00",
+  "decision_time": "2015-12-15T11:00:00+00:00",
+  "environment": {
+    "file": "environment-forecasting.yml",
+    "sha256": "e07be1814925f5d4b5a9157a0407fea4db7bf9e316768c928978359c9f60dd9d"
+  },
+  "error": {
+    "message": "LLM returned no valid output after 2 attempt(s).",
+    "type": "LLMInferenceError"
+  },
+  "forecast": {
+    "run_id": "validation_002"
+  },
+  "inference": {
+    "attempt_count": 2,
+    "attempts": [
+      {
+        "attempt_number": 1,
+        "generation_seconds": 20.14295312500326,
+        "raw_content_sha256": "b0d60b0d875021164eaf91cd35285a61b354f32b8c3af464355a06db9914c1de",
+        "valid": false,
+        "validation_error": "JSONDecodeError: Expecting property name enclosed in double quotes: line 15 column 43 (char 741)"
+      },
+      {
+        "attempt_number": 2,
+        "generation_seconds": 16.8361579170014,
+        "raw_content_sha256": "fbe437179dcbd2f5bd67b3448bb999d0d09c21c8e2f95a234bc299e657d1adbb",
+        "valid": false,
+        "validation_error": "ValueError: evidence_references[2].value does not match the Structured State for 'analysis.daily_expected_w': expected 344.33525171806167, got 344.3416666666667."
+      }
+    ],
+    "first_attempt_valid": false,
+    "retry_used": true,
+    "runtime_seconds": 37.0568857909966,
+    "valid_attempt": null
+  },
+  "inputs": {
+    "prompt": {
+      "path": "src/llm/prompts/prompt_v3.txt",
+      "sha256": "e19182528878637d1ba02d6816c7e70ff090a0b502a421c58c982fd6ce73a819",
+      "size_bytes": 3876
+    },
+    "structured_state": {
+      "path": "output/structured_state/structured_state.json",
+      "sha256": "6d7b80c4fbb3ba390dbd56c88ea9f11a277de0a4ac7e2f5b67cd98e5ecea5d72",
+      "size_bytes": 6524
+    }
+  },
+  "model": {
+    "digest": "6488c96fa5faab64bb65cbd30d4289e20e6130ef535a93ef9a49f42eda893ea7",
+    "name": "qwen3.5:9b"
+  },
+  "outputs": {
+    "attempts": {
+      "path": "output/llm/llm_006/attempts.json",
+      "sha256": "3746aa5e9d411d2e2679dab391461e582e6f1632731ee767b6eb79acbb78ba53",
+      "size_bytes": 2543
+    },
+    "prompt": {
+      "path": "output/llm/llm_006/prompt.txt",
+      "sha256": "e19182528878637d1ba02d6816c7e70ff090a0b502a421c58c982fd6ce73a819",
+      "size_bytes": 3876
+    },
+    "structured_state": {
+      "path": "output/llm/llm_006/structured_state.json",
+      "sha256": "6d7b80c4fbb3ba390dbd56c88ea9f11a277de0a4ac7e2f5b67cd98e5ecea5d72",
+      "size_bytes": 6524
+    }
+  },
+  "run_id": "llm_006",
+  "status": "invalid_output"
+}

@@ -8,7 +8,11 @@ import pytest
 from src.numerical_analysis.anomaly_detection import build_anomaly_detection
 
 
-def _analysis_frame(current_power: list[float], reference: float, split: list[str]) -> pd.DataFrame:
+def _analysis_frame(
+    current_power: list[float], 
+    reference: float, 
+    split: list[str]
+) -> pd.DataFrame:
     return pd.DataFrame(
         {
             "split": split,
@@ -31,6 +35,7 @@ def test_z_score_uses_only_train_residuals_for_calibration() -> None:
         _analysis_frame(current_power, reference, split),
         min_reference_samples=50, min_residual_std_w=0.1,
         unusual_threshold=2.0, strong_anomaly_threshold=3.0,
+        sample_period_hours=1.0,
     )
 
     expected_std = pd.Series(train_residuals).std()
@@ -48,6 +53,7 @@ def test_insufficient_reference_samples_yields_no_score() -> None:
         _analysis_frame(current_power, reference, ["train"] * len(train_residuals)),
         min_reference_samples=50, min_residual_std_w=0.1,
         unusual_threshold=2.0, strong_anomaly_threshold=3.0,
+        sample_period_hours=1.0,
     )
 
     assert result["short_term_score"].isna().all()
@@ -62,6 +68,7 @@ def test_residual_std_below_floor_yields_no_score() -> None:
         _analysis_frame(current_power, reference, ["train"] * len(noise)),
         min_reference_samples=50, min_residual_std_w=1.0,
         unusual_threshold=2.0, strong_anomaly_threshold=3.0,
+        sample_period_hours=1.0,
     )
 
     # winzige, aber von Null verschiedene Streuung - darf keinen (potenziell riesigen) Z-Score liefern
@@ -86,6 +93,7 @@ def test_dominant_scale_picks_largest_absolute_score() -> None:
         ),
         min_reference_samples=50, min_residual_std_w=0.1,
         unusual_threshold=2.0, strong_anomaly_threshold=3.0,
+        sample_period_hours=1.0,
     )
 
     row = result.iloc[-1]

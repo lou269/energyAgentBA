@@ -1,3 +1,4 @@
+# conda activate nilmtk-env
 name: nilmtk-env
 channels:
   - nilmtk

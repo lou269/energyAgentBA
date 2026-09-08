@@ -1,0 +1,19 @@
+{
+  "attempts": [
+    {
+      "attempt_number": 1,
+      "generation_seconds": 27.83356754099077,
+      "raw_content": "{\n  \"schema_version\": \"1.0\",\n  \"classification\": \"peak\",\n  \"explanation\": \"Die aktuelle Leistung von 1319,88 W ist stark erh\u00f6ht im Vergleich zu den Erwartungswerten (z.B. daily_expected_w: 344,34 W). Die Anomalie-Scores sind auf allen Skalen hoch (daily: 3,77; short_term: 3,33), was auf einen kurzfristigen Spitzenverbrauch hinweist. Es gibt keine relevanten Ereignisse im Kontext, die eine Abwesenheit erkl\u00e4ren k\u00f6nnten.\",\n  \"evidence_references\": [\n    {\n      \"path\": \"observation.current_power_w\",\n      \"value\": 1319.8837\n    },\n    {\n      \"path\": \"analysis.daily_expected_w\",\n      \"value\": 344.33525171806167\n    },\n    {\n      \"path\": \"anomaly.score\",\n      \"value\": 3.7674342117758495\n    },\n    {\n      \"path\": \"anomaly.scale_scores.daily",
+      "valid": false,
+      "validation_error": "JSONDecodeError: Unterminated string starting at: line 19 column 15 (char 722)"
+    },
+    {
+      "attempt_number": 2,
+      "generation_seconds": 17.23740091700165,
+      "raw_content": "{\n  \"schema_version\": \"1.0\",\n  \"classification\": \"peak\",\n  \"explanation\": \"Die aktuelle Leistung von 1319,88 W ist stark erh\u00f6ht im Vergleich zu den Erwartungswerten (z.B. daily_expected_w: 344,34 W). Die Anomalie-Scores sind auf allen Skalen hoch (daily: 3,77; short_term: 3,33), was auf einen kurzfristigen Spitzenverbrauch hinweist.\",\n  \"evidence_references\": [\n    {\n      \"path\": \"observation.current_power_w\",\n      \"value\": 1319.8837\n    },\n    {\n      \"path\": \"analysis.daily_expected_w\",\n      \"value\": 344.33525171806167\n    },\n    {\n      \"path\": \"anomaly.score\",\n      \"value\": 3.7674342117758495\n    },\n    {\n      \"path\": \"anomaly.scale_scores.daily\",\n      \"value\": 3.7674342117758495\n    },\n    {\n      \"path\": \"anomaly.scale_scores.short_term\",\n      \"value\": 3.3300000000000003\n    }\n  ],\n  \"user_recommendation\": \"Keine spezifische Aktion empfohlen.\",\n  \"uncertainty\": \"Niedrig\"\n}",
+      "valid": false,
+      "validation_error": "ValueError: evidence_references[4].value does not match the Structured State for 'anomaly.scale_scores.short_term': expected 3.3281636839228255, got 3.3300000000000005."
+    }
+  ],
+  "run_id": "llm_003"
+}

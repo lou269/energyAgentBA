@@ -7,12 +7,17 @@ import pandas as pd
 from src.forecasting.walk_forward import ProphetVariantParameters, build_walk_forward_forecasts
 
 
-def _hourly(start, values: list[float]) -> pd.Series:
+def _hourly(
+    start,
+    values: list[float]
+) -> pd.Series:
     index = pd.date_range(start, periods=len(values), freq="1h", tz="UTC")
     return pd.Series(values, index=index)
 
 
-def _no_imputation(index: pd.Index) -> pd.Series:
+def _no_imputation(
+    index: pd.Index
+) -> pd.Series:
     return pd.Series(False, index=index)
 
 

@@ -13,6 +13,7 @@ from src.config.llm_config import LLMConfig
 from src.config.project_config import ProjectConfig, ensure_project_directories
 from src.llm.inference import LLMInferenceError, LLMInferenceResult, infer_llm_output
 from src.llm.client import LLMClient, ModelMetadata, OllamaClient
+from src.pipeline.io import find_run_directory
 
 from src.llm.llm_run_artifacts import (
     create_llm_run_id,
@@ -36,9 +37,11 @@ class LLMRunner:
         llm_config: LLMConfig,
         project_config: ProjectConfig | None = None,
         client: LLMClient | None = None,
+        structured_state_run_number: int | None = None,
     ) -> None:
         self.llm_config = llm_config
         self.project_config = project_config or ProjectConfig()
+        self.structured_state_run_number = structured_state_run_number
         self.client = (
             client
             if client is not None
@@ -48,10 +51,23 @@ class LLMRunner:
     def run(self) -> LLMInferenceResult:
         ensure_project_directories(self.project_config)
 
-        run_id = create_llm_run_id()
+        found = find_run_directory(
+            self.project_config.structured_state_output_dir,
+            prefix="ss",
+            number=self.structured_state_run_number,
+        )
+
+        if found is None:
+            raise FileNotFoundError(
+                f"No Structured State run found in {self.project_config.structured_state_output_dir} (requested number: {self.structured_state_run_number})."
+            )
+
+        structured_state_run_number, structured_state_run_directory = found
+
+        run_id = create_llm_run_id(self.project_config.llm_output_dir, structured_state_run_number)
         run_directory = self.project_config.llm_output_dir / run_id
-        state_file = self.project_config.structured_state_output_dir / "structured_state.json"
-    
+        state_file = structured_state_run_directory / "structured_state.json"
+
         prompt_file = PROMPT_DIRECTORY / f"prompt_{self.llm_config.prompt_version}.txt"
 
         state = load_structured_state(state_file)
@@ -143,21 +159,26 @@ def main() -> None:
         description="Run evidence-grounded LLM inference for the current Structured State.",
         argument_default=argparse.SUPPRESS,
     )
-    parser.add_argument(
-        "--model", required=True, help="Ollama model, for example qwen3:4b."
-    )
+    parser.add_argument("--model", required=True, help="Ollama model, for example qwen3:4b.")
     parser.add_argument("--prompt-version")
     parser.add_argument("--temperature", type=float)
     parser.add_argument("--seed", type=int)
     parser.add_argument("--max-attempts", type=int)
     parser.add_argument("--request-timeout-seconds", type=float)
+    parser.add_argument(
+        "--structured-state-run",
+        type=int,
+        help="Which ss_<number>_... Structured-State run to use. Defaults to the latest one.",
+    )
 
     arguments = parser.parse_args()
+
+    structured_state_run_number = vars(arguments).pop("structured_state_run", None)
 
     logging.basicConfig(level=logging.INFO)
 
     llm_config = LLMConfig(**vars(arguments))
-    LLMRunner(llm_config=llm_config).run()
+    LLMRunner(llm_config=llm_config, structured_state_run_number=structured_state_run_number).run()
 
 
 if __name__ == "__main__":

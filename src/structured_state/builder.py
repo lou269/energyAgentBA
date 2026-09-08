@@ -7,6 +7,7 @@ from typing import TypeVar, cast
 import pandas as pd
 
 from src.context.calendar_schema import CalendarContext
+from src.pipeline.schema_validation import is_real_number
 from src.structured_state.structured_state_schema import (
     ANOMALY_DIRECTIONS,
     ANOMALY_LEVELS,
@@ -19,6 +20,7 @@ from src.structured_state.structured_state_schema import (
     ForecastState,
     ScaleName,
     ScaleScores,
+    ScaleStreaks,
     StructuredState,
 )
 
@@ -39,6 +41,10 @@ ANALYSIS_FIELDS = frozenset(
         "daily_score",
         "weekly_score",
         "long_term_score",
+        "short_term_streak_hours",
+        "daily_streak_hours",
+        "weekly_streak_hours",
+        "long_term_streak_hours",
         "anomaly_score",
         "dominant_scale",
         "anomaly_direction",
@@ -97,6 +103,13 @@ def build_structured_state(
         "long_term": _nullable_float(analysis_row["long_term_score"], "analysis.long_term_score"),
     }
 
+    scale_streak_hours: ScaleStreaks = {
+        "short_term": _nullable_float(analysis_row["short_term_streak_hours"], "analysis.short_term_streak_hours"),
+        "daily": _nullable_float(analysis_row["daily_streak_hours"], "analysis.daily_streak_hours"),
+        "weekly": _nullable_float(analysis_row["weekly_streak_hours"], "analysis.weekly_streak_hours"),
+        "long_term": _nullable_float(analysis_row["long_term_streak_hours"], "analysis.long_term_streak_hours"),
+    }
+
     available_scales: list[ScaleName] = [scale for scale in SCALE_NAMES if scale_scores[scale] is not None]
 
     forecast_state = _build_forecast_state(
@@ -137,6 +150,7 @@ def build_structured_state(
             "direction": _nullable_text(analysis_row["anomaly_direction"],"anomaly.direction", ANOMALY_DIRECTIONS),
             "dominant_scale": _nullable_text(analysis_row["dominant_scale"], "anomaly.dominant_scale", SCALE_NAMES),
             "scale_scores": scale_scores,
+            "scale_streak_hours": scale_streak_hours,
             "available_scales": available_scales,
         },
         "forecast": forecast_state,
@@ -256,7 +270,7 @@ def _nullable_float(
     if _is_missing(value):
         return None
 
-    if isinstance(value, bool) or not isinstance(value, Real):
+    if not is_real_number(value):
         raise TypeError(f"{field_name} must be numeric or null.")
 
     number = float(value)

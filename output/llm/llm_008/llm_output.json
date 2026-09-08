@@ -1,0 +1,17 @@
+{
+  "classification": "absence",
+  "evidence_references": [
+    {
+      "path": "anomaly.direction",
+      "value": "low"
+    },
+    {
+      "path": "context.events.0.event_type",
+      "value": "absence"
+    }
+  ],
+  "explanation": "Der Stromverbrauch ist reduziert, was durch den Kalenderevent 'vacation-2015-12' (Urlaub) gestützt wird.",
+  "schema_version": "1.0",
+  "uncertainty": "Niedrig.",
+  "user_recommendation": "Keine spezifische Aktion erforderlich."
+}

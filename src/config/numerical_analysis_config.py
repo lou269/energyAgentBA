@@ -15,7 +15,7 @@ class NumericalAnalysisConfig:
     min_daily_reference_samples: int = 7
     min_weekly_reference_samples: int = 4
 
-    trend_threshold: float = 0.10
+    trend_threshold: float = 0.30
     min_reference_power_w: float = 10.0
 
     min_reference_samples: int = 100

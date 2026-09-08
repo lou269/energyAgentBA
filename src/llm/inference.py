@@ -8,10 +8,8 @@ from typing import cast
 
 from src.llm.client import LLMClient
 from src.llm.llm_schema import LLMOutput, build_llm_output_json_schema
-from src.llm.validation import (
-    collect_scalar_evidence_paths,
-    validate_llm_output_against_state,
-)
+from src.llm.validation import collect_scalar_evidence_paths, validate_llm_output_against_state
+from src.pipeline.schema_validation import is_real_number
 from src.structured_state.structured_state_schema import StructuredState
 
 
@@ -31,7 +29,12 @@ class LLMInferenceResult:
 
 
 class LLMInferenceError(ValueError):
-    def __init__(self, message: str, *, attempts: tuple[LLMAttemptRecord, ...]) -> None:
+    def __init__(
+        self, 
+        message: str, 
+        *, 
+        attempts: tuple[LLMAttemptRecord, ...]
+    ) -> None:
         super().__init__(message)
         self.attempts = attempts
 
@@ -57,9 +60,7 @@ def infer_llm_output(
     allowed_evidence_paths = collect_scalar_evidence_paths(state)
     output_schema = build_llm_output_json_schema(allowed_evidence_paths)
 
-    state_json = json.dumps(
-        state, ensure_ascii=False, allow_nan=False, separators=(",", ":")
-    )
+    state_json = json.dumps(state, ensure_ascii=False, allow_nan=False, separators=(",", ":"))
 
     messages: list[dict[str, str]] = [
         {"role": "system", "content": prompt.strip()},
@@ -81,9 +82,7 @@ def infer_llm_output(
                 seed=seed,
             )
         except Exception as error:
-            raise RuntimeError(
-                f"LLM client request failed during attempt {attempt_number}."
-            ) from error
+            raise RuntimeError(f"LLM client request failed during attempt {attempt_number}.") from error
 
         generation_seconds = perf_counter() - generation_started
 
@@ -97,7 +96,7 @@ def infer_llm_output(
             parsed_output = json.loads(content)
             output = cast(LLMOutput, parsed_output)
 
-            validate_llm_output_against_state(output, state)
+            validate_llm_output_against_state(output, state, allowed_paths=allowed_evidence_paths)
 
         except (TypeError, ValueError) as error:
             last_error = error
@@ -133,15 +132,7 @@ def infer_llm_output(
 
         return LLMInferenceResult(output=output, attempts=tuple(attempts))
 
-    inference_error = LLMInferenceError(
-        f"LLM returned no valid output after {max_attempts} attempt(s).",
-        attempts=tuple(attempts),
-    )
-
-    if last_error is not None:
-        raise inference_error from last_error
-
-    raise inference_error
+    raise LLMInferenceError(f"LLM returned no valid output after {max_attempts} attempt(s).", attempts=tuple(attempts)) from last_error
 
 
 
@@ -173,7 +164,12 @@ def _append_correction_messages(
 
 
 def _validate_inference_parameters(
-    *, prompt: str, model: str, temperature: float, seed: int | None, max_attempts: int
+    *, 
+    prompt: str, 
+    model: str, 
+    temperature: float, 
+    seed: int | None, 
+    max_attempts: int
 ) -> None:
     if not isinstance(prompt, str) or not prompt.strip():
         raise ValueError("prompt must be a non-empty string.")
@@ -186,8 +182,7 @@ def _validate_inference_parameters(
 
 
     if (
-        isinstance(temperature, bool)
-        or not isinstance(temperature, (int, float))
+        not is_real_number(temperature)
         or not math.isfinite(float(temperature))
         or temperature < 0
     ):

@@ -7,6 +7,7 @@ from typing import Literal, TypedDict
 import pandas as pd
 
 from src.context.calendar_schema import CALENDAR_CONTEXT_FIELDS, CalendarEvent, validate_calendar_context
+from src.pipeline.schema_validation import is_real_number, validate_fields
 
 
 SCHEMA_VERSION = "1.0"
@@ -51,6 +52,7 @@ ANOMALY_FIELDS = frozenset(
         "direction",
         "dominant_scale",
         "scale_scores",
+        "scale_streak_hours",
         "available_scales",
     }
 )
@@ -113,12 +115,20 @@ class ScaleScores(TypedDict):
     long_term: float | None
 
 
+class ScaleStreaks(TypedDict):
+    short_term: float | None
+    daily: float | None
+    weekly: float | None
+    long_term: float | None
+
+
 class AnomalyState(TypedDict):
     score: float | None
     level: AnomalyLevel | None
     direction: AnomalyDirection | None
     dominant_scale: ScaleName | None
     scale_scores: ScaleScores
+    scale_streak_hours: ScaleStreaks
     available_scales: list[ScaleName]
 
 
@@ -168,7 +178,7 @@ class StructuredState(TypedDict):
 def validate_structured_state(
     state: Mapping[str, object]
 )-> None:
-    _validate_fields(state, STRUCTURED_STATE_FIELDS, "Structured State")
+    validate_fields(state, STRUCTURED_STATE_FIELDS, "Structured State")
 
     if state["schema_version"] != SCHEMA_VERSION:
         raise ValueError(f"schema_version must be {SCHEMA_VERSION!r}.")
@@ -176,7 +186,7 @@ def validate_structured_state(
     decision_time = _timestamp(state["decision_time"], "decision_time")
 
     observation = _mapping(state["observation"], "observation")
-    _validate_fields(observation, OBSERVATION_FIELDS, "observation")
+    validate_fields(observation, OBSERVATION_FIELDS, "observation")
 
     observation_start = _timestamp(observation["observation_start"], "observation.observation_start")
     observation_end = _timestamp(observation["observation_end"], "observation.observation_end")
@@ -190,7 +200,7 @@ def validate_structured_state(
     _number(observation["current_power_w"], "observation.current_power_w", nullable=True)
 
     analysis = _mapping(state["analysis"], "analysis")
-    _validate_fields(analysis, ANALYSIS_FIELDS, "analysis")
+    validate_fields(analysis, ANALYSIS_FIELDS, "analysis")
 
     for field in (
         "short_term_mean_w",
@@ -206,7 +216,7 @@ def validate_structured_state(
         raise ValueError("analysis.trend contains an unsupported value.")
 
     anomaly = _mapping(state["anomaly"], "anomaly")
-    _validate_fields(anomaly, ANOMALY_FIELDS, "anomaly")
+    validate_fields(anomaly, ANOMALY_FIELDS, "anomaly")
 
     score = _number(anomaly["score"], "anomaly.score", nullable=True)
 
@@ -229,7 +239,7 @@ def validate_structured_state(
         raise ValueError("anomaly.dominant_scale contains an unsupported value.")
 
     scale_scores = _mapping(anomaly["scale_scores"], "anomaly.scale_scores")
-    _validate_fields(scale_scores, frozenset(SCALE_NAMES), "anomaly.scale_scores")
+    validate_fields(scale_scores, frozenset(SCALE_NAMES), "anomaly.scale_scores")
 
     validated_scale_scores: dict[ScaleName, float] = {}
 
@@ -237,6 +247,17 @@ def validate_structured_state(
         scale_score = _number(scale_scores[scale], f"anomaly.scale_scores.{scale}", nullable=True)
         if scale_score is not None:
             validated_scale_scores[scale] = float(scale_score)
+
+    scale_streak_hours = _mapping(anomaly["scale_streak_hours"], "anomaly.scale_streak_hours")
+    validate_fields(scale_streak_hours, frozenset(SCALE_NAMES), "anomaly.scale_streak_hours")
+
+    for scale in SCALE_NAMES:
+        streak_hours = _number(scale_streak_hours[scale], f"anomaly.scale_streak_hours.{scale}", nullable=True)
+        if (streak_hours is not None) != (scale in validated_scale_scores):
+            raise ValueError(f"anomaly.scale_streak_hours.{scale} must be null exactly when anomaly.scale_scores.{scale} is null.")
+
+        if streak_hours is not None and streak_hours < 0:
+            raise ValueError(f"anomaly.scale_streak_hours.{scale} must not be negative.")
 
     available_scales = anomaly["available_scales"]
 
@@ -291,7 +312,7 @@ def validate_structured_state(
             raise ValueError("anomaly.direction must be null when the dominant scale score is zero.")
 
     forecast = _mapping(state["forecast"], "forecast")
-    _validate_fields(forecast, FORECAST_FIELDS, "forecast")
+    validate_fields(forecast, FORECAST_FIELDS, "forecast")
 
     for field in ("run_id", "model_id", "config_version"):
         _non_empty_string(forecast[field], f"forecast.{field}")
@@ -323,7 +344,7 @@ def validate_structured_state(
 
     for index, point_value in enumerate(points):
         point = _mapping(point_value, f"forecast.points[{index}]")
-        _validate_fields(point, FORECAST_POINT_FIELDS, f"forecast.points[{index}]")
+        validate_fields(point, FORECAST_POINT_FIELDS, f"forecast.points[{index}]")
 
         timestamp = _timestamp(point["timestamp"], f"forecast.points[{index}].timestamp")
 
@@ -356,7 +377,7 @@ def validate_structured_state(
         raise ValueError("Prediction intervals must be available for all forecast points or for none.")
 
     summary = _mapping(forecast["summary"], "forecast.summary")
-    _validate_fields(summary, FORECAST_SUMMARY_FIELDS, "forecast.summary")
+    validate_fields(summary, FORECAST_SUMMARY_FIELDS, "forecast.summary")
 
     mean_w = _number(summary["mean_w"], "forecast.summary.mean_w")
     peak_w = _number(summary["peak_w"], "forecast.summary.peak_w")
@@ -395,26 +416,11 @@ def validate_structured_state(
             raise ValueError("forecast.summary.mean_interval_width_w must match forecast points.")
 
     context = _mapping(state["context"], "context")
-    _validate_fields(context, CONTEXT_FIELDS, "context")
+    validate_fields(context, CONTEXT_FIELDS, "context")
 
     calendar_context = dict(context)
     calendar_context["decision_time"] = state["decision_time"]
     validate_calendar_context(calendar_context)
-
-
-def _validate_fields(
-    value: Mapping[str, object], 
-    expected: frozenset[str], 
-    name: str
-) -> None:
-    missing = expected.difference(value)
-    unexpected = set(value).difference(expected)
-
-    if missing:
-        raise ValueError(f"{name} is missing required fields: " + ", ".join(sorted(missing)))
-
-    if unexpected:
-        raise ValueError(f"{name} contains unexpected fields: " + ", ".join(sorted(str(field) for field in unexpected)))
 
 
 def _mapping(
@@ -462,13 +468,13 @@ def _number(
 
         raise ValueError(f"{field_name} must not be null.")
 
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
+    if not is_real_number(value):
         raise TypeError(f"{field_name} must be numeric.")
 
     if not math.isfinite(value):
         raise ValueError(f"{field_name} must be finite.")
 
-    return value
+    return float(value)
 
 
 def _timestamp(

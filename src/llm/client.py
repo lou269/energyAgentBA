@@ -5,6 +5,8 @@ from typing import Protocol, TypedDict
 
 from ollama import Client
 
+from src.pipeline.schema_validation import is_real_number
+
 
 class ModelMetadata(TypedDict):
     name: str
@@ -30,8 +32,7 @@ class LLMClient(Protocol):
 class OllamaClient:
     def __init__(self, *, timeout_seconds: float) -> None:
         if (
-            isinstance(timeout_seconds, bool)
-            or not isinstance(timeout_seconds, (int, float))
+            not is_real_number(timeout_seconds)
             or not math.isfinite(float(timeout_seconds))
             or timeout_seconds <= 0
         ):

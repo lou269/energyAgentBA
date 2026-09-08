@@ -1,0 +1,12 @@
+{
+  "attempts": [
+    {
+      "attempt_number": 1,
+      "generation_seconds": 29.51656820900098,
+      "raw_content": "{\n  \"schema_version\": \"1.0\",\n  \"classification\": \"peak\",\n  \"explanation\": \"Der aktuelle Stromverbrauch von 1319,88 W ist stark erhöht im Vergleich zu den historischen Mittelwerten (z.B. täglicher Erwartungswert von 344,34 W). Die Anomalieanalyse bestätigt dies mit einem starken Ausreißer-Score auf allen Skalen.\",\n  \"evidence_references\": [\n    {\n      \"path\": \"observation.current_power_w\",\n      \"value\": 1319.8837\n    },\n    {\n      \"path\": \"analysis.daily_expected_w\",\n      \"value\": 344.33525171806167\n    },\n    {\n      \"path\": \"analysis.long_term_mean_w\",\n      \"value\": 405.7294889722222\n    },\n    {\n      \"path\": \"anomaly.level\",\n      \"value\": \"strong_anomaly\"\n    }\n  ],\n  \"user_recommendation\": \"Keine spezifische Aktion empfohlen.\",\n  \"uncertainty\": \"Die hohe Abweichung deutet auf einen kurzfristigen Verbrauchsschub hin.\"\n}",
+      "valid": true,
+      "validation_error": null
+    }
+  ],
+  "run_id": "llm_009_ss_001"
+}

@@ -5,6 +5,8 @@ from typing import TypedDict
 
 import pandas as pd
 
+from src.pipeline.schema_validation import validate_fields
+
 
 REQUIRED_EVENT_FIELDS = frozenset(
     {
@@ -122,22 +124,6 @@ def _validate_calendar_event(
 
     if start >= window_end or end <= window_start:
         raise ValueError(f"Calendar event {event_id} must overlap the context window.")
-
-
-def validate_fields(
-    value: Mapping[str, object],
-    expected: frozenset[str],
-    name: str,
-) -> None:
-    missing = expected.difference(value)
-    unexpected = set(value).difference(expected)
-
-    if missing:
-        raise ValueError(f"{name} is missing required fields: " + ", ".join(sorted(missing)))
-
-    if unexpected:
-        raise ValueError(
-            f"{name} contains unexpected fields: "+ ", ".join(sorted(str(field) for field in unexpected)))
 
 
 def _normalized_non_empty_string(value: object, field_name: str) -> str:

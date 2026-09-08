@@ -9,12 +9,17 @@ from src.forecasting.evaluation import evaluate_forecasts, select_primary_naive_
 from src.forecasting.walk_forward import build_walk_forward_forecasts
 
 
-def _hourly(start, values: list[float]) -> pd.Series:
+def _hourly(
+    start, 
+    values: list[float]
+) -> pd.Series:
     index = pd.date_range(start, periods=len(values), freq="1h", tz="UTC")
     return pd.Series(values, index=index)
 
 
-def _b1_forecasts(y_true: list[float]) -> pd.DataFrame:
+def _b1_forecasts(
+    y_true: list[float]
+) -> pd.DataFrame:
     fixed_history = _hourly("2020-01-01", [100.0, 100.0])
     evaluation_targets = _hourly(fixed_history.index[-1] + pd.Timedelta(hours=1), y_true)
     mask = pd.Series(False, index=evaluation_targets.index)

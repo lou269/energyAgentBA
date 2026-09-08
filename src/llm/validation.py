@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Collection, Mapping
 
 from src.llm.llm_schema import LLMOutput, validate_llm_output
 from src.structured_state.structured_state_schema import StructuredState, validate_structured_state
@@ -14,6 +14,8 @@ ALLOWED_EVIDENCE_PATHS = frozenset(
         "observation.current_power_w",
         "analysis.short_term_mean_w",
         "analysis.daily_expected_w",
+        "analysis.weekly_expected_w",
+        "analysis.long_term_mean_w",
         "analysis.trend_slope_w_per_hour",
         "analysis.trend_change",
         "analysis.trend",
@@ -23,6 +25,12 @@ ALLOWED_EVIDENCE_PATHS = frozenset(
         "anomaly.dominant_scale",
         "anomaly.scale_scores.short_term",
         "anomaly.scale_scores.daily",
+        "anomaly.scale_scores.weekly",
+        "anomaly.scale_scores.long_term",
+        "anomaly.scale_streak_hours.short_term",
+        "anomaly.scale_streak_hours.daily",
+        "anomaly.scale_streak_hours.weekly",
+        "anomaly.scale_streak_hours.long_term",
         "forecast.summary.mean_w",
         "forecast.summary.peak_w",
         "forecast.summary.peak_timestamp",
@@ -34,7 +42,9 @@ ALLOWED_EVIDENCE_PATHS = frozenset(
 ALLOWED_EVENT_FIELDS = frozenset({"event_type", "start", "end"})
 
 
-def _is_allowed_evidence_path(path: str) -> bool:
+def _is_allowed_evidence_path(
+    path: str
+) -> bool:
     if path in ALLOWED_EVIDENCE_PATHS:
         return True
 
@@ -49,7 +59,9 @@ def _is_allowed_evidence_path(path: str) -> bool:
     )
 
 
-def collect_scalar_evidence_paths(state: StructuredState) -> tuple[str, ...]:
+def collect_scalar_evidence_paths(
+    state: StructuredState
+) -> tuple[str, ...]:
     validate_structured_state(state)
 
     paths: set[str] = set()
@@ -58,9 +70,7 @@ def collect_scalar_evidence_paths(state: StructuredState) -> tuple[str, ...]:
     if not paths:
         raise ValueError("Structured State does not contain any scalar evidence paths.")
 
-    allowed_paths = tuple(
-        sorted(path for path in paths if _is_allowed_evidence_path(path))
-    )
+    allowed_paths = tuple(sorted(path for path in paths if _is_allowed_evidence_path(path)))
 
     if not allowed_paths:
         raise ValueError("Structured State does not contain usable LLM evidence.")
@@ -69,9 +79,12 @@ def collect_scalar_evidence_paths(state: StructuredState) -> tuple[str, ...]:
 
 
 def validate_llm_output_against_state(
-    output: LLMOutput, state: StructuredState
+    output: LLMOutput,
+    state: StructuredState,
+    *,
+    allowed_paths: Collection[str] | None = None,
 ) -> None:
-    allowed_paths = frozenset(collect_scalar_evidence_paths(state))
+    allowed_paths = frozenset(allowed_paths if allowed_paths is not None else collect_scalar_evidence_paths(state))
     validate_llm_output(output)
 
     referenced_paths: set[str] = set()
@@ -108,7 +121,12 @@ def validate_llm_output_against_state(
             )
 
 
-def _collect_scalar_paths(*, value: object, prefix: str, paths: set[str]) -> None:
+def _collect_scalar_paths(
+    *, 
+    value: object, 
+    prefix: str, 
+    paths: set[str]
+) -> None:
     if isinstance(value, Mapping):
         for key, nested_value in value.items():
             if not isinstance(key, str):
@@ -138,7 +156,10 @@ def _collect_scalar_paths(*, value: object, prefix: str, paths: set[str]) -> Non
 
 
 
-def _resolve_path(state: StructuredState, path: str) -> object:
+def _resolve_path(
+    state: StructuredState, 
+    path: str
+) -> object:
     parts = path.split(".")
 
     if any(not part for part in parts):
@@ -173,6 +194,8 @@ def _resolve_path(state: StructuredState, path: str) -> object:
 
 
 
-def _is_json_scalar(value: object) -> bool:
+def _is_json_scalar(
+    value: object
+) -> bool:
     return value is None or isinstance(value, (str, int, float, bool))
 

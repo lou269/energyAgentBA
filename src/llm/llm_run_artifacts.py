@@ -2,22 +2,22 @@ from __future__ import annotations
 
 import json
 from dataclasses import asdict
-from datetime import UTC, datetime
 from pathlib import Path
 from typing import cast
 
 from src.config.llm_config import LLMConfig
 from src.llm.inference import LLMAttemptRecord, LLMInferenceError, LLMInferenceResult
 from src.llm.llm_run_manifest import LLMRunStatus, build_llm_run_manifest
-from src.pipeline.io import save_json
+from src.pipeline.io import find_run_directory, save_json
 from src.structured_state.structured_state_schema import StructuredState
 
 from src.llm.client import ModelMetadata
 
 
-def create_llm_run_id() -> str:
-    timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%S%fZ")
-    return f"llm_{timestamp}"
+def create_llm_run_id(llm_output_dir: Path, structured_state_run_number: int) -> str:
+    latest_run = find_run_directory(llm_output_dir, prefix="llm")
+    number = (latest_run[0] if latest_run is not None else 0) + 1
+    return f"llm_{number:03d}_ss_{structured_state_run_number:03d}"
 
 
 def load_structured_state(state_file: Path) -> StructuredState:

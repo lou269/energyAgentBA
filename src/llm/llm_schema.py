@@ -4,11 +4,13 @@ import math
 from collections.abc import Collection, Mapping
 from typing import Literal, TypedDict, get_args
 
+from src.pipeline.schema_validation import validate_fields
+
 
 SCHEMA_VERSION = "1.0"
 
 
-Classification = Literal["normal", "absence", "peak", "unknown"]
+Classification = Literal["normal", "absence", "peak", "new_pattern", "unknown"]
 
 CLASSIFICATIONS: frozenset[str] = frozenset(get_args(Classification))
 
@@ -50,7 +52,10 @@ def build_llm_output_json_schema(
     return _build_output_schema(path_schema={"type": "string", "enum": paths})
 
 
-def _build_output_schema(*, path_schema: dict[str, object]) -> dict[str, object]:
+def _build_output_schema(
+    *, 
+    path_schema: dict[str, object]
+) -> dict[str, object]:
     return {
         "type": "object",
         "properties": {
@@ -110,11 +115,13 @@ def _normalize_allowed_evidence_paths(
     return sorted(normalized_paths)
 
 
-def validate_llm_output(output: object) -> None:
+def validate_llm_output(
+    output: object
+) -> None:
     if not isinstance(output, Mapping):
         raise TypeError("LLM output must be an object.")
 
-    _validate_fields(output, OUTPUT_FIELDS, "LLM output")
+    validate_fields(output, OUTPUT_FIELDS, "LLM output")
 
     schema_version = output["schema_version"]
     if not isinstance(schema_version, str):
@@ -145,14 +152,17 @@ def validate_llm_output(output: object) -> None:
         if not isinstance(reference, Mapping):
             raise TypeError(f"{name} must be an object.")
 
-        _validate_fields(reference, EVIDENCE_REFERENCE_FIELDS, name)
+        validate_fields(reference, EVIDENCE_REFERENCE_FIELDS, name)
 
         _validate_evidence_path(reference["path"], f"{name}.path")
 
         _validate_evidence_value(reference["value"], f"{name}.value")
 
 
-def _validate_evidence_path(value: object, field_name: str) -> str:
+def _validate_evidence_path(
+    value: object, 
+    field_name: str
+)-> str:
     if not isinstance(value, str):
         raise TypeError(f"{field_name} must be a string.")
 
@@ -168,7 +178,10 @@ def _validate_evidence_path(value: object, field_name: str) -> str:
     return value
 
 
-def _validate_evidence_value(value: object, field_name: str) -> None:
+def _validate_evidence_value(
+    value: object, 
+    field_name: str
+) -> None:
     if value is not None and not isinstance(value, (str, int, float, bool)):
         raise TypeError(f"{field_name} must be a JSON scalar or null.")
 
@@ -176,22 +189,10 @@ def _validate_evidence_value(value: object, field_name: str) -> None:
         raise ValueError(f"{field_name} must be finite.")
 
 
-def _validate_fields(
-    value: Mapping[object, object], expected: frozenset[str], name: str
-) -> None:
-    missing = expected.difference(value)
-    unexpected = set(value).difference(expected)
-
-    if missing:
-        fields = ", ".join(sorted(missing))
-        raise ValueError(f"{name} is missing required fields: {fields}")
-
-    if unexpected:
-        fields = ", ".join(sorted(str(field) for field in unexpected))
-        raise ValueError(f"{name} contains unexpected fields: {fields}")
-
-
-def _validate_non_empty_string(value: object, field_name: str) -> str:
+def _validate_non_empty_string(
+    value: object, 
+    field_name: str
+) -> str:
     if not isinstance(value, str):
         raise TypeError(f"{field_name} must be a string.")
 

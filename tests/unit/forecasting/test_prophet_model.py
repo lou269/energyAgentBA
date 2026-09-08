@@ -9,12 +9,17 @@ import pytest
 from src.forecasting.prophet_model import build_prophet_forecast, fit_prophet_model
 
 
-def _history(values: list[float], start: str = "2020-01-01") -> pd.Series:
+def _history(
+    values: list[float], 
+    start: str = "2020-01-01"
+) -> pd.Series:
     index = pd.date_range(start, periods=len(values), freq="1h", tz="UTC")
     return pd.Series(values, index=index)
 
 
-def _fit(history: pd.Series):
+def _fit(
+    history: pd.Series
+):
     return fit_prophet_model(
         history,
         growth="linear",

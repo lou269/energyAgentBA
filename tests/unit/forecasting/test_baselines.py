@@ -12,7 +12,10 @@ from src.forecasting.baselines import (
 )
 
 
-def _history(values: list[float], start: str = "2020-01-01") -> pd.Series:
+def _history(
+    values: list[float], 
+    start: str = "2020-01-01"
+) -> pd.Series:
     index = pd.date_range(start, periods=len(values), freq="1h", tz="UTC")
     return pd.Series(values, index=index)
 
@@ -62,3 +65,4 @@ def test_baseline_rejects_history_overlapping_the_forecast_target() -> None:
 
     with pytest.raises(ValueError, match="before the first forecast target"):
         build_last_value_forecast(history, target_index)
+
