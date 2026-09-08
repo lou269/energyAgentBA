@@ -104,6 +104,14 @@ def test_evidence_value_may_be_null() -> None:
     validate_llm_output(output)
 
 
+def test_measurement_error_classification_is_accepted() -> None:
+    output = valid_llm_output()
+    output["classification"] = "measurement_error"
+    output["evidence_references"] = [{"path": "observation.value_implausible", "value": True}]
+
+    validate_llm_output(output)
+
+
 def test_build_output_json_schema_sorts_and_deduplicates_paths() -> None:
     schema = cast(dict[str, Any], build_llm_output_json_schema(["b.path", "a.path", "a.path"]))
 

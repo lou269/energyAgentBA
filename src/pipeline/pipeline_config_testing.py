@@ -13,6 +13,11 @@ class PipelineStage:
 
 PIPELINE_STAGES = [
     PipelineStage(
+            name="preprocessing",
+            module="src.preprocessing.preprocessing_runner",
+            environment="forecasting-env",
+    ),
+    PipelineStage(
         name="numerical_analysis",
         module="src.numerical_analysis.num_analysis_runner",
         environment="forecasting-env",
@@ -30,7 +35,7 @@ PIPELINE_STAGES = [
             "--decision-time", "2015-12-15T11:00:00+00:00",
             "--model-id", "C2",
             "--split", "validation",
-            "--calendar-events", "data/calendar_events.json",
+            "--calendar-events", "experiments/scenarios/calendar_events.json",
             "--calendar-source", "simulated_calendar",
             "--calendar-retrieved-at", "2015-12-15T11:00:00+00:00",
             "--calendar-window-start", "2015-12-14T11:00:00+00:00",

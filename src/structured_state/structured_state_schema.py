@@ -10,7 +10,7 @@ from src.context.calendar_schema import CALENDAR_CONTEXT_FIELDS, CalendarEvent, 
 from src.pipeline.schema_validation import is_real_number, validate_fields
 
 
-SCHEMA_VERSION = "1.0"
+SCHEMA_VERSION = "1.1"
 FORECAST_HORIZON_HOURS = 24
 
 FLOAT_COMPARISON_REL_TOL = 1e-9
@@ -30,7 +30,7 @@ ANOMALY_DIRECTIONS: tuple[AnomalyDirection, ...] = ("high", "low")
 SCALE_NAMES: tuple[ScaleName, ...] = ("short_term", "daily", "weekly", "long_term")
 
 OBSERVATION_FIELDS = frozenset(
-    {"observation_start", "observation_end", "current_power_w"}
+    {"observation_start", "observation_end", "current_power_w", "value_implausible"}
 )
 
 ANALYSIS_FIELDS = frozenset(
@@ -96,6 +96,7 @@ class ObservationState(TypedDict):
     observation_start: str
     observation_end: str
     current_power_w: float | None
+    value_implausible: bool
 
 
 class AnalysisState(TypedDict):
@@ -198,6 +199,9 @@ def validate_structured_state(
         raise ValueError("observation_end must equal decision_time.")
 
     _number(observation["current_power_w"], "observation.current_power_w", nullable=True)
+
+    if not isinstance(observation["value_implausible"], bool):
+        raise TypeError("observation.value_implausible must be a boolean.")
 
     analysis = _mapping(state["analysis"], "analysis")
     validate_fields(analysis, ANALYSIS_FIELDS, "analysis")

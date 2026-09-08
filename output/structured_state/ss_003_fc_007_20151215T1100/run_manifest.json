@@ -1,0 +1,56 @@
+{
+  "code_version": {
+    "git_commit": "b9c12cd65b3e0b682a3b204ce3d0d5c55e5dde99",
+    "git_dirty": true
+  },
+  "config": {
+    "sha256": "0bb7106addd6713bf39ac19ab5dc3b5c454bbe21b1fd698712183495c3a150f9",
+    "values": {
+      "calendar_retrieved_at": "2015-12-15T11:00:00+00:00",
+      "calendar_source": "simulated_calendar",
+      "calendar_source_available": true,
+      "calendar_window_end": "2015-12-16T11:00:00+00:00",
+      "calendar_window_start": "2015-12-14T11:00:00+00:00",
+      "decision_time": "2015-12-15T11:00:00+00:00",
+      "forecast_run_number": 7,
+      "model_id": "C2",
+      "split": "validation"
+    }
+  },
+  "created_at_utc": "2026-09-08T15:05:55.372445+00:00",
+  "decision_time": "2015-12-15T11:00:00+00:00",
+  "environment": {
+    "file": "environment-forecasting.yml",
+    "sha256": "e07be1814925f5d4b5a9157a0407fea4db7bf9e316768c928978359c9f60dd9d"
+  },
+  "forecast": {
+    "directory": "fc_val_007",
+    "run_number": 7
+  },
+  "inputs": {
+    "calendar_events": {
+      "path": "experiments/scenarios/calendar_events.json",
+      "sha256": "373faa0f5bb2f12fbeb8d6769bea2a3fa8a95a4d68a937f437e31083dac20ec2",
+      "size_bytes": 402
+    },
+    "forecasts": {
+      "path": "output/forecasting/fc_val_007/forecasts_validation.csv",
+      "sha256": "466d5e10a5bffd258a19506e8ff93c853a56612e6b10f677cfc87f0b30757581",
+      "size_bytes": 1208828
+    },
+    "numerical_analysis": {
+      "path": "output/numerical_analysis/anomaly_scores_hourly.csv",
+      "sha256": "66b1947f278179a92edd15cf0d72f08d236b274e5c30e24892ab1cf19c41721f",
+      "size_bytes": 3135887
+    }
+  },
+  "outputs": {
+    "structured_state": {
+      "path": "output/structured_state/ss_003_fc_007_20151215T1100/structured_state.json",
+      "sha256": "e6deca3a0c400deef192cb4b150b04e40069bed3e9b4b3fe5dd83d706e8826f1",
+      "size_bytes": 6556
+    }
+  },
+  "run_id": "ss_003_fc_007_20151215T1100",
+  "runtime_seconds": 0.05763254199700896
+}

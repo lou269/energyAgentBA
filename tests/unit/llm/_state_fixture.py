@@ -224,9 +224,10 @@ _BASE_STATE_JSON = """
   "observation": {
     "current_power_w": 1319.8837,
     "observation_end": "2015-12-15T11:00:00+00:00",
-    "observation_start": "2015-12-15T10:00:00+00:00"
+    "observation_start": "2015-12-15T10:00:00+00:00",
+    "value_implausible": false
   },
-  "schema_version": "1.0"
+  "schema_version": "1.1"
 }
 """
 
@@ -239,7 +240,7 @@ def valid_structured_state() -> StructuredState:
 
 # Passend zu valid_structured_state() gegrundet: alle evidence_references-Werte stimmen exakt (Typ und Wert) mit dem Fixture-Zustand überein.
 _BASE_OUTPUT = {
-    "schema_version": "1.0",
+    "schema_version": "1.1",
     "classification": "peak",
     "explanation": "Der aktuelle Verbrauch liegt deutlich über dem taeglichen Erwartungswert.",
     "evidence_references": [

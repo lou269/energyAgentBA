@@ -13,6 +13,8 @@ class PreprocessingConfig:
     max_imputation_gap_15min: int = 4
     max_imputation_gap_hourly: int = 2
 
+    stuck_value_min_hours: float = 6.0
+
     lags_15min: tuple[int, ...] = (1, 4, 96, 672)
     lags_hourly: tuple[int, ...] = (1, 24, 168)
 

@@ -86,6 +86,24 @@ def test_event_type_is_an_allowed_evidence_path() -> None:
     validate_llm_output_against_state(cast(LLMOutput, output), state)
 
 
+def test_value_implausible_is_an_allowed_evidence_path() -> None:
+    assert "observation.value_implausible" in ALLOWED_EVIDENCE_PATHS
+
+    paths = collect_scalar_evidence_paths(valid_structured_state())
+    assert "observation.value_implausible" in paths
+
+
+def test_measurement_error_grounded_by_value_implausible() -> None:
+    state = valid_structured_state()
+    state["observation"]["value_implausible"] = True
+
+    output = valid_llm_output()
+    output["classification"] = "measurement_error"
+    output["evidence_references"] = [{"path": "observation.value_implausible", "value": True}]
+
+    validate_llm_output_against_state(cast(LLMOutput, output), state)
+
+
 def test_collect_scalar_evidence_paths_matches_static_allowlist() -> None:
     paths = set(collect_scalar_evidence_paths(valid_structured_state()))
 

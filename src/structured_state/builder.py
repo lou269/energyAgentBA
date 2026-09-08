@@ -4,6 +4,7 @@ import math
 from numbers import Real
 from typing import TypeVar, cast
 
+import numpy as np
 import pandas as pd
 
 from src.context.calendar_schema import CalendarContext
@@ -49,6 +50,7 @@ ANALYSIS_FIELDS = frozenset(
         "dominant_scale",
         "anomaly_direction",
         "anomaly_level",
+        "value_implausible",
     }
 )
 
@@ -134,6 +136,7 @@ def build_structured_state(
             "observation_start": analysis_timestamp.isoformat(),
             "observation_end": decision_time.isoformat(),
             "current_power_w": _nullable_float(analysis_row["current_power"], "analysis.current_power"),
+            "value_implausible": _bool(analysis_row["value_implausible"], "analysis.value_implausible"),
         },
         "analysis": {
             "short_term_mean_w": _nullable_float(analysis_row["short_term_mean"], "analysis.short_term_mean"),
@@ -296,6 +299,16 @@ def _nullable_text(
         raise ValueError(f"{field_name} contains an unsupported value.")
 
     return cast(TextType, value)
+
+
+def _bool(
+    value: object,
+    field_name: str,
+) -> bool:
+    if isinstance(value, (bool, np.bool_)):
+        return bool(value)
+
+    raise TypeError(f"{field_name} must be a boolean.")
 
 
 def _is_missing(value: object) -> bool:

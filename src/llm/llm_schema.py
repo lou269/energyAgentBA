@@ -7,10 +7,10 @@ from typing import Literal, TypedDict, get_args
 from src.pipeline.schema_validation import validate_fields
 
 
-SCHEMA_VERSION = "1.0"
+SCHEMA_VERSION = "1.1"
 
 
-Classification = Literal["normal", "absence", "peak", "new_pattern", "unknown"]
+Classification = Literal["normal", "absence", "peak", "new_pattern", "measurement_error", "unknown"]
 
 CLASSIFICATIONS: frozenset[str] = frozenset(get_args(Classification))
 

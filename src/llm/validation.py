@@ -12,6 +12,7 @@ EvidenceScalar = str | int | float | bool | None
 ALLOWED_EVIDENCE_PATHS = frozenset(
     {
         "observation.current_power_w",
+        "observation.value_implausible",
         "analysis.short_term_mean_w",
         "analysis.daily_expected_w",
         "analysis.weekly_expected_w",

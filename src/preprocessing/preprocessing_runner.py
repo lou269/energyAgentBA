@@ -10,6 +10,7 @@ from src.pipeline.io import df_to_csv
 from src.config.preprocessing_config import PreprocessingConfig
 from src.config.project_config import ProjectConfig, ensure_project_directories
 from src.preprocessing.gap_treatment import build_gap_treated_data
+from src.preprocessing.plausibility_check import build_plausibility_flags
 from src.preprocessing.split import build_chronological_split
 
 
@@ -41,6 +42,22 @@ class PreprocessingRunner:
         quality_15min = self._read_canonical("canonical_quality_15min")
         data_hourly = self._read_canonical("canonical_data_hourly")
         quality_hourly = self._read_canonical("canonical_quality_hourly")
+
+        logger.info("Checking value plausibility...")
+
+        plausibility_15min = build_plausibility_flags(
+            data_15min,
+            quality_15min,
+            stuck_value_min_hours=self.preprocessing_config.stuck_value_min_hours,
+            sample_period_hours=0.25,
+        )
+
+        plausibility_hourly = build_plausibility_flags(
+            data_hourly,
+            quality_hourly,
+            stuck_value_min_hours=self.preprocessing_config.stuck_value_min_hours,
+            sample_period_hours=1.0,
+        )
 
         logger.info("Building chronological splits...")
 
@@ -203,21 +220,23 @@ class PreprocessingRunner:
             ]
         )
 
-        gap_outputs = {
+        preprocessing_outputs = {
             "treated_15min": treated_15min,
             "imputation_mask_15min": imputation_mask_15min,
             "treated_hourly": treated_hourly,
             "imputation_mask_hourly": imputation_mask_hourly,
+            "plausibility_15min": plausibility_15min,
+            "plausibility_hourly": plausibility_hourly,
         }
 
-        for name, frame in gap_outputs.items():
+        for name, frame in preprocessing_outputs.items():
             df_to_csv(
                 frame.reset_index(),
                 self.project_config.preprocessing_output_dir,
                 name,
             )
 
-        logger.info("Preprocessing completed successfully: %d output artifacts.", len(gap_outputs) + 1)
+        logger.info("Preprocessing completed successfully: %d output artifacts.", len(preprocessing_outputs) + 1)
 
 
 def main() -> None:

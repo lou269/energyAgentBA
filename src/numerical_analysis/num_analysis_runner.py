@@ -40,6 +40,18 @@ class NumericalAnalysisRunner:
             index_col="timestamp",
         )
 
+        plausibility_15min = pd.read_csv(
+            self.project_config.preprocessing_output_dir / "plausibility_15min.csv",
+            parse_dates=["timestamp"],
+            index_col="timestamp",
+        )
+
+        plausibility_hourly = pd.read_csv(
+            self.project_config.preprocessing_output_dir / "plausibility_hourly.csv",
+            parse_dates=["timestamp"],
+            index_col="timestamp",
+        )
+
         split_manifest = pd.read_csv(
             self.project_config.preprocessing_output_dir / "split_manifest.csv",
             parse_dates=["start", "end"],
@@ -108,6 +120,8 @@ class NumericalAnalysisRunner:
             sample_period_hours=self.analysis_config.sample_period_hours_15min,
         )
 
+        anomaly_15min["value_implausible"] = plausibility_15min[target_column].reindex(anomaly_15min.index)
+
         logger.info("Building hourly analysis...")
 
         analysis_hourly = build_multi_scale_analysis(
@@ -132,6 +146,8 @@ class NumericalAnalysisRunner:
             strong_anomaly_threshold=self.analysis_config.strong_anomaly_threshold,
             sample_period_hours=self.analysis_config.sample_period_hours_hourly,
         )
+
+        anomaly_hourly["value_implausible"] = plausibility_hourly[target_column].reindex(anomaly_hourly.index)
 
         df_to_csv(
             anomaly_15min.reset_index(),

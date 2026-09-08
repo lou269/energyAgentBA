@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -23,6 +24,7 @@ def _analysis_row() -> pd.Series:
             "timestamp": DECISION_TIME - pd.Timedelta(hours=1),
             "split": "validation",
             "current_power": 120.0,
+            "value_implausible": False,
             "short_term_mean": 110.0,
             "daily_expected": 100.0,
             "weekly_expected": 105.0,
@@ -160,10 +162,7 @@ def test_forecast_summary_must_match_points() -> None:
         validate_structured_state(state)
 
 
-@pytest.mark.parametrize(
-    ("field", "value"),
-    [("score", 1.0), ("dominant_scale", "short_term"), ("direction", "low")],
-)
+@pytest.mark.parametrize(("field", "value"), [("score", 1.0), ("dominant_scale", "short_term"), ("direction", "low")])
 def test_aggregate_anomaly_fields_must_match_scale_scores(
     field: str, 
     value: object
@@ -227,6 +226,42 @@ def test_nan_becomes_null_and_infinity_is_rejected() -> None:
     analysis_row["current_power"] = float("inf")
 
     with pytest.raises(ValueError, match="must be finite"):
+        _build_state(analysis_row=analysis_row)
+
+
+def test_value_implausible_round_trips() -> None:
+    analysis_row = _analysis_row()
+    analysis_row["value_implausible"] = True
+
+    state = _build_state(analysis_row=analysis_row)
+    validate_structured_state(state)
+
+    assert state["observation"]["value_implausible"] is True
+
+
+def test_value_implausible_accepts_numpy_bool() -> None:
+    analysis_row = _analysis_row()
+    analysis_row["value_implausible"] = np.bool_(True)
+
+    state = _build_state(analysis_row=analysis_row)
+
+    assert state["observation"]["value_implausible"] is True
+    assert isinstance(state["observation"]["value_implausible"], bool)
+
+
+def test_value_implausible_rejects_non_boolean() -> None:
+    state = _build_state()
+    state["observation"]["value_implausible"] = "true"  # type: ignore[typeddict-item]
+
+    with pytest.raises(TypeError, match="must be a boolean"):
+        validate_structured_state(state)
+
+
+def test_value_implausible_must_not_be_missing_from_analysis_row() -> None:
+    analysis_row = _analysis_row()
+    del analysis_row["value_implausible"]
+
+    with pytest.raises(ValueError, match="missing required fields"):
         _build_state(analysis_row=analysis_row)
 
 
