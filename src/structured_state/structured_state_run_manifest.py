@@ -22,6 +22,8 @@ def build_structured_state_run_manifest(
     split: str,
     forecast_run_directory: str,
     forecast_run_number: int,
+    analysis_run_directory: str,
+    analysis_run_number: int,
     calendar_source: str,
     calendar_source_available: bool,
     calendar_retrieved_at: str,
@@ -45,6 +47,7 @@ def build_structured_state_run_manifest(
         "model_id": model_id,
         "split": split,
         "forecast_run_number": forecast_run_number,
+        "analysis_run_number": analysis_run_number,
         "calendar_source": calendar_source,
         "calendar_source_available": calendar_source_available,
         "calendar_retrieved_at": calendar_retrieved_at,
@@ -59,6 +62,10 @@ def build_structured_state_run_manifest(
         "forecast": {
             "directory": forecast_run_directory,
             "run_number": forecast_run_number,
+        },
+        "numerical_analysis": {
+            "directory": analysis_run_directory,
+            "run_number": analysis_run_number,
         },
         "config": {
             "values": config_values,

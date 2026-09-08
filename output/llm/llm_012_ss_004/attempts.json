@@ -1,0 +1,19 @@
+{
+  "attempts": [
+    {
+      "attempt_number": 1,
+      "generation_seconds": 24.969452584002283,
+      "raw_content": "{\n  \"schema_version\": \"1.1\",\n  \"classification\": \"peak\",\n  \"explanation\": \"Der aktuelle Stromverbrauch ist stark erhöht (Anomalie-Stufe: 'strong_anomaly'). Dies wird durch die Anomalie-Scores an mehreren Zeitskalen gestützt, aber es liegen keine Beweise für eine mehrstündige Persistenz vor (scale_streak_hours = 1.0), was eine Klassifizierung als 'new_pattern' ausschließt.\",\n  \"evidence_references\": [\n    {\n      \"path\": \"anomaly.level\",\n      \"value\": \"strong_anomaly\"\n    },\n    {\n      \"path\": \"anomaly.scale_streak_hours.daily\",\n      \"value\": 1.0\n    },\n    {\n      \"path\": \"anomaly.scale_streak_hours.short_term\",\n      \"value\": 1.0\n    }\n  ],\n  \"user",
+      "valid": false,
+      "validation_error": "JSONDecodeError: Unterminated string starting at: line 19 column 3 (char 655)"
+    },
+    {
+      "attempt_number": 2,
+      "generation_seconds": 12.525839665991953,
+      "raw_content": "{\n  \"schema_version\": \"1.1\",\n  \"classification\": \"unknown\",\n  \"explanation\": \"Die Anomalie ist stark, aber die Persistenz (scale_streak_hours) ist gering (1.0). Zudem fehlen Kontextereignisse für 'absence' und es gibt keine Beweise für einen neuen Musterwechsel über mehrere Skalen hinweg.\",\n  \"evidence_references\": [\n    {\n      \"path\": \"anomaly.level\",\n      \"value\": \"strong_anomaly\"\n    },\n    {\n      \"path\": \"anomaly.scale_streak_hours.daily\",\n      \"value\": 1.0\n    },\n    {\n      \"path\": \"anomaly.scale_streak_hours.short_term\",\n      \"value\": 1.0\n    }\n  ],\n  \"user_recommendation\": \"Keine spezifische Aktion empfohlen.\",\n  \"uncertainty\": \"Die Evidenz ist unzureichend, um eine definitive Klassifizierung vorzunehmen.\"\n}",
+      "valid": true,
+      "validation_error": null
+    }
+  ],
+  "run_id": "llm_012_ss_004"
+}

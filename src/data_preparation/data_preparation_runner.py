@@ -102,6 +102,7 @@ class DataPreparationRunner:
 
         winner = winners.iloc[0]
         meter_key = str(winner["meter_key"])
+        column_name = f"{meter_key}_power_w"
 
         canonical_manifest = pd.DataFrame(
             [
@@ -109,6 +110,7 @@ class DataPreparationRunner:
                     "candidate_id": winner["candidate_id"],
                     "house": int(winner["house"]),
                     "meter_key": meter_key,
+                    "column_name": column_name,
                     "window_start": winner["window_start"],
                     "window_end": winner["window_end"],
                 }
@@ -123,11 +125,12 @@ class DataPreparationRunner:
             f"{meter_key}_coverage_share",
             f"{meter_key}_coverage_mask",
         ]
+        quality_rename = {column: column.replace(meter_key, column_name, 1) for column in quality_columns}
 
-        canonical_data_15min = data_15min.loc[window_start:window_end, [meter_key]].copy()
-        canonical_data_hourly = data_hourly.loc[window_start:window_end, [meter_key]].copy()
-        canonical_quality_15min = quality_15min.loc[window_start:window_end, quality_columns].copy()
-        canonical_quality_hourly = quality_hourly.loc[window_start:window_end, quality_columns].copy()
+        canonical_data_15min = data_15min.loc[window_start:window_end, [meter_key]].rename(columns={meter_key: column_name})
+        canonical_data_hourly = data_hourly.loc[window_start:window_end, [meter_key]].rename(columns={meter_key: column_name})
+        canonical_quality_15min = quality_15min.loc[window_start:window_end, quality_columns].rename(columns=quality_rename)
+        canonical_quality_hourly = quality_hourly.loc[window_start:window_end, quality_columns].rename(columns=quality_rename)
 
         df_to_csv(
             canonical_manifest,

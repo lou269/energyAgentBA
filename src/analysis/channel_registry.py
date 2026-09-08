@@ -54,7 +54,7 @@ def build_channel_registry(
                 {
                     "house": house_id,
                     "meter_instance": meter_instance,
-                    "meter_key": str(meter.key),
+                    "meter_key": f"H{house_id}_M{meter_instance}",
                     "meter_type": "mains" if site_meter else "submeter",
                     "appliances": _get_appliance_names(meter),
                     "ac_types": ", ".join(ac_types),

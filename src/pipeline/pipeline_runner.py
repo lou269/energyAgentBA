@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import subprocess
 
-#from src.config.pipeline_config import PIPELINE_STAGES
-from src.pipeline.pipeline_config_testing import PIPELINE_STAGES
+from src.config.pipeline_config import PIPELINE_STAGES
+#from src.pipeline.pipeline_config_testing import PIPELINE_STAGES
 
 def run_stage(module: str, environment: str, args: tuple[str, ...] = ()) -> None:
     subprocess.run(

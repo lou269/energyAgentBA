@@ -76,7 +76,7 @@ class ForecastingRunner:
             raise ValueError("Canonical manifest must contain exactly one mains target.")
 
         candidate_id = str(canonical_manifest.iloc[0]["candidate_id"])
-        target_column = str(canonical_manifest.iloc[0]["meter_key"])
+        target_column = str(canonical_manifest.iloc[0]["column_name"])
 
         hourly_splits = split_manifest.loc[
             split_manifest["frequency"].eq("hourly")

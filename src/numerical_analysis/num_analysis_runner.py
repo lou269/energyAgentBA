@@ -1,14 +1,18 @@
 # python -m src.numerical_analysis.num_analysis_runner
+# jeder Lauf landet in einem eigenen Ordner output/numerical_analysis/an_<nummer>/
 
+from dataclasses import asdict
 import logging
+from time import perf_counter
 
 import pandas as pd
 
-from src.pipeline.io import df_to_csv
+from src.pipeline.io import df_to_csv, next_sequential_number, save_json
 from src.config.numerical_analysis_config import NumericalAnalysisConfig
 from src.config.project_config import ProjectConfig, ensure_project_directories
 from src.numerical_analysis.anomaly_detection import build_anomaly_detection
 from src.numerical_analysis.multi_scale_analysis import build_multi_scale_analysis
+from src.numerical_analysis.numerical_analysis_run_manifest import build_numerical_analysis_run_manifest
 
 
 logger = logging.getLogger(__name__)
@@ -25,41 +29,50 @@ class NumericalAnalysisRunner:
 
     def run(self) -> None:
         ensure_project_directories(self.project_config)
+        run_started = perf_counter()
 
         logger.info("Starting numerical analysis...")
 
+        treated_15min_path = self.project_config.preprocessing_output_dir / "treated_15min.csv"
+        treated_hourly_path = self.project_config.preprocessing_output_dir / "treated_hourly.csv"
+        plausibility_15min_path = self.project_config.preprocessing_output_dir / "plausibility_15min.csv"
+        plausibility_hourly_path = self.project_config.preprocessing_output_dir / "plausibility_hourly.csv"
+        split_manifest_path = self.project_config.preprocessing_output_dir / "split_manifest.csv"
+
         treated_15min = pd.read_csv(
-            self.project_config.preprocessing_output_dir / "treated_15min.csv",
+            treated_15min_path,
             parse_dates=["timestamp"],
             index_col="timestamp",
         )
 
         treated_hourly = pd.read_csv(
-            self.project_config.preprocessing_output_dir / "treated_hourly.csv",
+            treated_hourly_path,
             parse_dates=["timestamp"],
             index_col="timestamp",
         )
 
         plausibility_15min = pd.read_csv(
-            self.project_config.preprocessing_output_dir / "plausibility_15min.csv",
+            plausibility_15min_path,
             parse_dates=["timestamp"],
             index_col="timestamp",
         )
 
         plausibility_hourly = pd.read_csv(
-            self.project_config.preprocessing_output_dir / "plausibility_hourly.csv",
+            plausibility_hourly_path,
             parse_dates=["timestamp"],
             index_col="timestamp",
         )
 
         split_manifest = pd.read_csv(
-            self.project_config.preprocessing_output_dir / "split_manifest.csv",
+            split_manifest_path,
             parse_dates=["start", "end"],
         )
 
-        canonical_manifest = pd.read_csv(self.project_config.canonical_output_dir / "canonical_manifest.csv")
+        canonical_manifest_path = self.project_config.canonical_output_dir / "canonical_manifest.csv"
+        canonical_manifest = pd.read_csv(canonical_manifest_path)
 
-        target_column = str(canonical_manifest["meter_key"].iloc[0])
+        candidate_id = str(canonical_manifest["candidate_id"].iloc[0])
+        target_column = str(canonical_manifest["column_name"].iloc[0])
 
         split_15min = split_manifest[
             split_manifest["frequency"] == "15min"
@@ -149,19 +162,50 @@ class NumericalAnalysisRunner:
 
         anomaly_hourly["value_implausible"] = plausibility_hourly[target_column].reindex(anomaly_hourly.index)
 
+        run_number = next_sequential_number(self.project_config.numerical_analysis_output_dir, prefix="an")
+        run_id = f"an_{run_number:03d}"
+        run_directory = self.project_config.numerical_analysis_output_dir / run_id
+
+        if run_directory.exists():
+            raise FileExistsError(f"Numerical analysis run directory already exists: {run_directory}")
+
+        run_directory.mkdir(parents=True, exist_ok=False)
+
         df_to_csv(
             anomaly_15min.reset_index(),
-            self.project_config.numerical_analysis_output_dir,
+            run_directory,
             "anomaly_scores_15min",
         )
 
         df_to_csv(
             anomaly_hourly.reset_index(),
-            self.project_config.numerical_analysis_output_dir,
+            run_directory,
             "anomaly_scores_hourly",
         )
 
-        logger.info("Numerical analysis completed.")
+        manifest = build_numerical_analysis_run_manifest(
+            project_root=self.project_config.project_root,
+            run_id=run_id,
+            candidate_id=candidate_id,
+            config_values=asdict(self.analysis_config),
+            input_paths={
+                "treated_15min": treated_15min_path,
+                "treated_hourly": treated_hourly_path,
+                "plausibility_15min": plausibility_15min_path,
+                "plausibility_hourly": plausibility_hourly_path,
+                "split_manifest": split_manifest_path,
+                "canonical_manifest": canonical_manifest_path,
+            },
+            output_paths={
+                "anomaly_scores_15min": run_directory / "anomaly_scores_15min.csv",
+                "anomaly_scores_hourly": run_directory / "anomaly_scores_hourly.csv",
+            },
+            runtime_seconds=perf_counter() - run_started,
+        )
+
+        save_json(manifest, run_directory / "run_manifest.json")
+
+        logger.info("Numerical analysis completed: run_id=%s.", run_id)
 
 
 def main() -> None:

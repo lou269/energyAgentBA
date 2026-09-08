@@ -1,0 +1,21 @@
+{
+  "classification": "unknown",
+  "evidence_references": [
+    {
+      "path": "anomaly.level",
+      "value": "strong_anomaly"
+    },
+    {
+      "path": "anomaly.scale_streak_hours.daily",
+      "value": 1.0
+    },
+    {
+      "path": "anomaly.scale_streak_hours.short_term",
+      "value": 1.0
+    }
+  ],
+  "explanation": "Die Anomalie ist stark, aber die Persistenz (scale_streak_hours) ist gering (1.0). Zudem fehlen Kontextereignisse für 'absence' und es gibt keine Beweise für einen neuen Musterwechsel über mehrere Skalen hinweg.",
+  "schema_version": "1.1",
+  "uncertainty": "Die Evidenz ist unzureichend, um eine definitive Klassifizierung vorzunehmen.",
+  "user_recommendation": "Keine spezifische Aktion empfohlen."
+}

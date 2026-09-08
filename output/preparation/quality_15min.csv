@@ -1,4 +1,4 @@
-timestamp,/building1/elec/meter54_valid_observation_count,/building1/elec/meter54_coverage_share,/building1/elec/meter54_coverage_mask
+timestamp,H1_M54_valid_observation_count,H1_M54_coverage_share,H1_M54_coverage_mask
 2013-03-17 19:00:00+00:00,137,0.15222222222222223,False
 2013-03-17 19:15:00+00:00,897,0.9966666666666667,True
 2013-03-17 19:30:00+00:00,898,0.9977777777777778,True

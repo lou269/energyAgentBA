@@ -1,8 +1,9 @@
 # python -m src.structured_state.structured_state_runner --decision-time 2015-12-15T11:00:00+00:00 --model-id C2 --split validation --calendar-events path/to/calendar_events.json --calendar-source simulated_calendar --calendar-retrieved-at 2015-12-15T11:00:00+00:00 --calendar-window-start 2015-12-14T11:00:00+00:00 --calendar-window-end 2015-12-16T11:00:00+00:00
-# --decision-time muss ein forecast_origin im gelesenen Forecasting-Run sein und genau 1h nach einem timestamp in output/numerical_analysis/anomaly_scores_hourly.csv (gleicher split) liegen
+# --decision-time muss ein forecast_origin im gelesenen Forecasting-Run sein und genau 1h nach einem timestamp im gelesenen output/numerical_analysis/an_<nummer>/anomaly_scores_hourly.csv (gleicher split) liegen
 # liest standardmäßig den neuesten output/forecasting/fc_<val|test>_<nummer>/ Ordner; --forecast-run-number erzwingt einen bestimmten
+# liest standardmäßig den neuesten output/numerical_analysis/an_<nummer>/ Ordner; --analysis-run-number erzwingt einen bestimmten
 # --calendar-events weglassen = kein Kalenderzugriff (CTX0, source_available=false); die anderen --calendar-* Felder sind auch dann Pflicht
-# jeder Lauf landet in einem eigenen Ordner output/structured_state/ss_<nummer>_fc_<forecast-nummer>_<decision_time>/
+# jeder Lauf landet in einem eigenen Ordner output/structured_state/ss_<nummer>_fc_<forecast-nummer>_an_<analysis-nummer>_<decision_time>/
 from __future__ import annotations
 
 import argparse
@@ -45,6 +46,7 @@ class StructuredStateRunner:
         calendar_window_start: str | pd.Timestamp,
         calendar_window_end: str | pd.Timestamp,
         forecast_run_number: int | None = None,
+        analysis_run_number: int | None = None,
         calendar_events_file: Path | None = None,
     ) -> StructuredState:
         ensure_project_directories(self.project_config)
@@ -59,17 +61,26 @@ class StructuredStateRunner:
 
         forecast_run_directory = self.project_config.forecasting_output_dir / f"fc_{split_abbreviation}_{forecast_run_number:03d}"
 
+        if analysis_run_number is None:
+            analysis_run_number = latest_sequential_number(self.project_config.numerical_analysis_output_dir, prefix="an")
+            if analysis_run_number is None:
+                raise FileNotFoundError(f"No numerical-analysis run found in {self.project_config.numerical_analysis_output_dir}.")
+
+        analysis_run_directory = self.project_config.numerical_analysis_output_dir / f"an_{analysis_run_number:03d}"
+
         logger.info(
-            "Starting Structured State: decision_time=%s, model_id=%s, split=%s, forecast_run=%s.",
+            "Starting Structured State: decision_time=%s, model_id=%s, split=%s, forecast_run=%s, analysis_run=%s.",
             decision_time,
             model_id,
             split,
             forecast_run_directory.name,
+            analysis_run_directory.name,
         )
 
         decision_timestamp = utc_timestamp(decision_time, "decision_time")
 
-        analysis = pd.read_csv(self.project_config.numerical_analysis_output_dir/ "anomaly_scores_hourly.csv",parse_dates=["timestamp"])
+        analysis_path = analysis_run_directory / "anomaly_scores_hourly.csv"
+        analysis = pd.read_csv(analysis_path, parse_dates=["timestamp"])
 
         analysis_timestamp = decision_timestamp - pd.Timedelta(hours=1)
 
@@ -112,7 +123,7 @@ class StructuredStateRunner:
 
         latest_ss_run = find_run_directory(self.project_config.structured_state_output_dir, prefix="ss")
         ss_number = (latest_ss_run[0] if latest_ss_run is not None else 0) + 1
-        run_id = f"ss_{ss_number:03d}_fc_{forecast_run_number:03d}_{decision_timestamp.strftime('%Y%m%dT%H%M')}"
+        run_id = f"ss_{ss_number:03d}_fc_{forecast_run_number:03d}_an_{analysis_run_number:03d}_{decision_timestamp.strftime('%Y%m%dT%H%M')}"
         run_directory = self.project_config.structured_state_output_dir / run_id
 
         if run_directory.exists():
@@ -124,7 +135,7 @@ class StructuredStateRunner:
         save_json(dict(state), output_file)
 
         input_paths = {
-            "numerical_analysis": self.project_config.numerical_analysis_output_dir / "anomaly_scores_hourly.csv",
+            "numerical_analysis": analysis_path,
             "forecasts": forecast_run_directory / f"forecasts_{split}.csv",
         }
 
@@ -139,6 +150,8 @@ class StructuredStateRunner:
             split=split,
             forecast_run_directory=forecast_run_directory.name,
             forecast_run_number=forecast_run_number,
+            analysis_run_directory=analysis_run_directory.name,
+            analysis_run_number=analysis_run_number,
             calendar_source=calendar_source,
             calendar_source_available=calendar_source_available,
             calendar_retrieved_at=calendar_context["retrieved_at"],
@@ -181,6 +194,12 @@ def main() -> None:
         default=None,
         help="Which fc_<val|test>_<number> run to read. Defaults to the latest one for the given split.",
     )
+    parser.add_argument(
+        "--analysis-run-number",
+        type=int,
+        default=None,
+        help="Which numerical_analysis an_<number> run to read. Defaults to the latest one.",
+    )
 
     args = parser.parse_args()
 
@@ -210,6 +229,7 @@ def main() -> None:
         calendar_window_start=args.calendar_window_start,
         calendar_window_end=args.calendar_window_end,
         forecast_run_number=args.forecast_run_number,
+        analysis_run_number=args.analysis_run_number,
         calendar_events_file=args.calendar_events,
     )
 
