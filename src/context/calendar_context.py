@@ -9,6 +9,7 @@ from src.context.calendar_schema import (
     CalendarContext,
     CalendarEvent,
     validate_calendar_context,
+    validate_fields,
 )
 
 
@@ -77,17 +78,7 @@ def build_calendar_context(
         if not isinstance(event, Mapping):
             raise TypeError("Each event must be a mapping.")
 
-        missing_fields = REQUIRED_EVENT_FIELDS.difference(event)
-        if missing_fields:
-            raise ValueError(
-                "Calendar event is missing required fields: , ".join(sorted(missing_fields))
-            )
-
-        unexpected_fields = set(event).difference(REQUIRED_EVENT_FIELDS)
-        if unexpected_fields:
-            raise ValueError(
-                "Calendar event contains unexpected fields:, ".join(sorted(str(field) for field in unexpected_fields))
-            )
+        validate_fields(event, REQUIRED_EVENT_FIELDS, "Calendar event")
 
         event_id = event["event_id"]
         event_type = event["event_type"]

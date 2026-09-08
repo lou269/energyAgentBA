@@ -48,7 +48,7 @@ class CalendarContext(TypedDict):
 
 
 def validate_calendar_context(context: Mapping[str, object]) -> None:
-    _validate_fields(context, CALENDAR_CONTEXT_FIELDS, "Calendar context")
+    validate_fields(context, CALENDAR_CONTEXT_FIELDS, "Calendar context")
 
     if not isinstance(context["source_available"], bool):
         raise TypeError("source_available must be a boolean.")
@@ -105,7 +105,7 @@ def _validate_calendar_event(
     window_end: pd.Timestamp,
     field_name: str = "Calendar event",
 ) -> None:
-    _validate_fields(event, REQUIRED_EVENT_FIELDS, field_name)
+    validate_fields(event, REQUIRED_EVENT_FIELDS, field_name)
 
     event_id = _normalized_non_empty_string(event["event_id"], f"{field_name}.event_id")
     _normalized_non_empty_string(event["event_type"], f"{field_name}.event_type")
@@ -124,7 +124,7 @@ def _validate_calendar_event(
         raise ValueError(f"Calendar event {event_id} must overlap the context window.")
 
 
-def _validate_fields(
+def validate_fields(
     value: Mapping[str, object],
     expected: frozenset[str],
     name: str,
@@ -133,15 +133,11 @@ def _validate_fields(
     unexpected = set(value).difference(expected)
 
     if missing:
-        raise ValueError(
-            f"{name} is missing required fields: " + ", ".join(sorted(missing))
-        )
+        raise ValueError(f"{name} is missing required fields: " + ", ".join(sorted(missing)))
 
     if unexpected:
         raise ValueError(
-            f"{name} contains unexpected fields: "
-            + ", ".join(sorted(str(field) for field in unexpected))
-        )
+            f"{name} contains unexpected fields: "+ ", ".join(sorted(str(field) for field in unexpected)))
 
 
 def _normalized_non_empty_string(value: object, field_name: str) -> str:
@@ -171,7 +167,9 @@ def _utc_timestamp(value: object, field_name: str) -> pd.Timestamp:
 
     timestamp = timestamp.tz_convert("UTC")
 
-    if value != timestamp.isoformat():
+    normalized_value = value[:-1] + "+00:00" if value.endswith("Z") else value
+    if normalized_value != timestamp.isoformat():
         raise ValueError(f"{field_name} must be an ISO-8601 UTC timestamp.")
+
 
     return timestamp

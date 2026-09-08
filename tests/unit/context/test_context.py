@@ -1,4 +1,4 @@
-# python -m pytest tests/unit/test_context.py -v
+# python -m pytest tests/unit/context/test_context.py -v
 
 from __future__ import annotations
 
@@ -138,3 +138,39 @@ def test_loaded_calendar_context_is_fully_revalidated() -> None:
 
     with pytest.raises(ValueError, match="not known at retrieval time"):
         validate_calendar_context(loaded_context)
+
+
+def test_calendar_context_reports_missing_and_unexpected_fields_by_name() -> None:
+    incomplete_event = {key: value for key, value in EVENT.items() if key != "known_at"}
+    with pytest.raises(ValueError, match="missing required fields: known_at"):
+        _build_context([incomplete_event])
+
+    event_with_extra_field = {**EVENT, "location": "home"}
+    with pytest.raises(ValueError, match="unexpected fields: location"):
+        _build_context([event_with_extra_field])
+
+
+def test_validate_calendar_context_accepts_zulu_suffixed_timestamps() -> None:
+    # Regresses a bug where validate_calendar_context rejected valid
+    # RFC3339/Zulu timestamps (e.g. from a real calendar API) because it
+    # compared the raw string against timestamp.isoformat() verbatim,
+    # which always renders the UTC offset as "+00:00", never "Z".
+    zulu_context: CalendarContext = {
+        "source_available": True,
+        "source": "external_calendar_api",
+        "retrieved_at": "2013-09-02T00:00:00Z",
+        "decision_time": "2013-09-02T00:00:00Z",
+        "window_start": "2013-09-01T00:00:00Z",
+        "window_end": "2013-09-03T00:00:00Z",
+        "events": [
+            {
+                "event_id": "absence",
+                "event_type": "absence",
+                "start": "2013-09-01T08:00:00Z",
+                "end": "2013-09-01T20:00:00Z",
+                "known_at": "2013-08-30T00:00:00Z",
+            }
+        ],
+    }
+
+    validate_calendar_context(zulu_context)

@@ -1,0 +1,211 @@
+{
+  "analysis": {
+    "daily_expected_w": 344.33525171806167,
+    "long_term_mean_w": 360.2420227472222,
+    "short_term_mean_w": 459.2818695833333,
+    "trend": "decreasing",
+    "trend_change": -2.0692496118503545,
+    "trend_slope_w_per_hour": -39.59870126521739,
+    "weekly_expected_w": 375.0016646666666
+  },
+  "anomaly": {
+    "available_scales": [
+      "short_term",
+      "daily",
+      "weekly",
+      "long_term"
+    ],
+    "direction": "low",
+    "dominant_scale": "short_term",
+    "level": "normal",
+    "scale_scores": {
+      "daily": -0.0142436226504244,
+      "long_term": -0.0419242399299468,
+      "short_term": -0.3679890488741069,
+      "weekly": -0.1508778405588939
+    },
+    "score": 0.3679890488741069
+  },
+  "context": {
+    "events": [
+      {
+        "end": "2016-01-22T00:00:00+00:00",
+        "event_id": "vacation-2016-01",
+        "event_type": "absence",
+        "known_at": "2015-12-10T00:00:00+00:00",
+        "start": "2016-01-15T00:00:00+00:00"
+      }
+    ],
+    "retrieved_at": "2016-01-18T11:00:00+00:00",
+    "source": "manual_json",
+    "source_available": true,
+    "window_end": "2016-01-19T11:00:00+00:00",
+    "window_start": "2016-01-17T11:00:00+00:00"
+  },
+  "decision_time": "2016-01-18T11:00:00+00:00",
+  "forecast": {
+    "config_version": "0.5",
+    "horizon_hours": 24,
+    "model_id": "B1",
+    "origin": "2016-01-18T11:00:00+00:00",
+    "points": [
+      {
+        "lower_w": null,
+        "predicted_power_w": 358.9266,
+        "timestamp": "2016-01-18T11:00:00+00:00",
+        "upper_w": null
+      },
+      {
+        "lower_w": null,
+        "predicted_power_w": 358.9266,
+        "timestamp": "2016-01-18T12:00:00+00:00",
+        "upper_w": null
+      },
+      {
+        "lower_w": null,
+        "predicted_power_w": 358.9266,
+        "timestamp": "2016-01-18T13:00:00+00:00",
+        "upper_w": null
+      },
+      {
+        "lower_w": null,
+        "predicted_power_w": 358.9266,
+        "timestamp": "2016-01-18T14:00:00+00:00",
+        "upper_w": null
+      },
+      {
+        "lower_w": null,
+        "predicted_power_w": 358.9266,
+        "timestamp": "2016-01-18T15:00:00+00:00",
+        "upper_w": null
+      },
+      {
+        "lower_w": null,
+        "predicted_power_w": 358.9266,
+        "timestamp": "2016-01-18T16:00:00+00:00",
+        "upper_w": null
+      },
+      {
+        "lower_w": null,
+        "predicted_power_w": 358.9266,
+        "timestamp": "2016-01-18T17:00:00+00:00",
+        "upper_w": null
+      },
+      {
+        "lower_w": null,
+        "predicted_power_w": 358.9266,
+        "timestamp": "2016-01-18T18:00:00+00:00",
+        "upper_w": null
+      },
+      {
+        "lower_w": null,
+        "predicted_power_w": 358.9266,
+        "timestamp": "2016-01-18T19:00:00+00:00",
+        "upper_w": null
+      },
+      {
+        "lower_w": null,
+        "predicted_power_w": 358.9266,
+        "timestamp": "2016-01-18T20:00:00+00:00",
+        "upper_w": null
+      },
+      {
+        "lower_w": null,
+        "predicted_power_w": 358.9266,
+        "timestamp": "2016-01-18T21:00:00+00:00",
+        "upper_w": null
+      },
+      {
+        "lower_w": null,
+        "predicted_power_w": 358.9266,
+        "timestamp": "2016-01-18T22:00:00+00:00",
+        "upper_w": null
+      },
+      {
+        "lower_w": null,
+        "predicted_power_w": 358.9266,
+        "timestamp": "2016-01-18T23:00:00+00:00",
+        "upper_w": null
+      },
+      {
+        "lower_w": null,
+        "predicted_power_w": 358.9266,
+        "timestamp": "2016-01-19T00:00:00+00:00",
+        "upper_w": null
+      },
+      {
+        "lower_w": null,
+        "predicted_power_w": 358.9266,
+        "timestamp": "2016-01-19T01:00:00+00:00",
+        "upper_w": null
+      },
+      {
+        "lower_w": null,
+        "predicted_power_w": 358.9266,
+        "timestamp": "2016-01-19T02:00:00+00:00",
+        "upper_w": null
+      },
+      {
+        "lower_w": null,
+        "predicted_power_w": 358.9266,
+        "timestamp": "2016-01-19T03:00:00+00:00",
+        "upper_w": null
+      },
+      {
+        "lower_w": null,
+        "predicted_power_w": 358.9266,
+        "timestamp": "2016-01-19T04:00:00+00:00",
+        "upper_w": null
+      },
+      {
+        "lower_w": null,
+        "predicted_power_w": 358.9266,
+        "timestamp": "2016-01-19T05:00:00+00:00",
+        "upper_w": null
+      },
+      {
+        "lower_w": null,
+        "predicted_power_w": 358.9266,
+        "timestamp": "2016-01-19T06:00:00+00:00",
+        "upper_w": null
+      },
+      {
+        "lower_w": null,
+        "predicted_power_w": 358.9266,
+        "timestamp": "2016-01-19T07:00:00+00:00",
+        "upper_w": null
+      },
+      {
+        "lower_w": null,
+        "predicted_power_w": 358.9266,
+        "timestamp": "2016-01-19T08:00:00+00:00",
+        "upper_w": null
+      },
+      {
+        "lower_w": null,
+        "predicted_power_w": 358.9266,
+        "timestamp": "2016-01-19T09:00:00+00:00",
+        "upper_w": null
+      },
+      {
+        "lower_w": null,
+        "predicted_power_w": 358.9266,
+        "timestamp": "2016-01-19T10:00:00+00:00",
+        "upper_w": null
+      }
+    ],
+    "run_id": "validation_20260907T174525Z",
+    "summary": {
+      "mean_interval_width_w": null,
+      "mean_w": 358.9266,
+      "peak_timestamp": "2016-01-18T11:00:00+00:00",
+      "peak_w": 358.9266
+    }
+  },
+  "observation": {
+    "current_power_w": 358.9266,
+    "observation_end": "2016-01-18T11:00:00+00:00",
+    "observation_start": "2016-01-18T10:00:00+00:00"
+  },
+  "schema_version": "1.0"
+}

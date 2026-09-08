@@ -176,17 +176,11 @@ def validate_structured_state(state: Mapping[str, object]) -> None:
     observation = _mapping(state["observation"], "observation")
     _validate_fields(observation, OBSERVATION_FIELDS, "observation")
 
-    observation_start = _timestamp(
-        observation["observation_start"], "observation.observation_start"
-    )
-    observation_end = _timestamp(
-        observation["observation_end"], "observation.observation_end"
-    )
+    observation_start = _timestamp(observation["observation_start"], "observation.observation_start")
+    observation_end = _timestamp(observation["observation_end"], "observation.observation_end")
 
     if observation_start != decision_time - pd.Timedelta(hours=1):
-        raise ValueError(
-            "observation_start must be exactly one hour before decision_time."
-        )
+        raise ValueError("observation_start must be exactly one hour before decision_time.")
 
     if observation_end != decision_time:
         raise ValueError("observation_end must equal decision_time.")
@@ -240,9 +234,7 @@ def validate_structured_state(state: Mapping[str, object]) -> None:
     validated_scale_scores: dict[ScaleName, float] = {}
 
     for scale in SCALE_NAMES:
-        scale_score = _number(
-            scale_scores[scale], f"anomaly.scale_scores.{scale}", nullable=True
-        )
+        scale_score = _number(scale_scores[scale], f"anomaly.scale_scores.{scale}", nullable=True)
         if scale_score is not None:
             validated_scale_scores[scale] = float(scale_score)
 
@@ -269,9 +261,7 @@ def validate_structured_state(state: Mapping[str, object]) -> None:
         if anomaly["dominant_scale"] not in available_scales:
             raise ValueError("anomaly.dominant_scale must be an available scale.")
 
-        expected_score = max(
-            abs(scale_score) for scale_score in validated_scale_scores.values()
-        )
+        expected_score = max(abs(scale_score) for scale_score in validated_scale_scores.values())
 
         if score is None or not _float_matches(float(score), expected_score):
             raise ValueError("anomaly.score must match the largest absolute available scale score.")
@@ -292,9 +282,7 @@ def validate_structured_state(state: Mapping[str, object]) -> None:
         )
 
         if dominant_score > 0 and anomaly["direction"] != "high":
-            raise ValueError(
-                "anomaly.direction must be 'high' for a positive dominant scale score."
-            )
+            raise ValueError("anomaly.direction must be 'high' for a positive dominant scale score.")
 
         if dominant_score < 0 and anomaly["direction"] != "low":
             raise ValueError("anomaly.direction must be 'low' for a negative dominant scale score.")
@@ -484,7 +472,8 @@ def _timestamp(value: object, field_name: str) -> pd.Timestamp:
 
     timestamp = timestamp.tz_convert("UTC")
 
-    if value != timestamp.isoformat():
+    normalized_value = value[:-1] + "+00:00" if value.endswith("Z") else value
+    if normalized_value != timestamp.isoformat():
         raise ValueError(f"{field_name} must be an ISO-8601 UTC timestamp.")
 
     return timestamp
