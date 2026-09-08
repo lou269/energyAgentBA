@@ -165,7 +165,9 @@ class StructuredState(TypedDict):
     context: ContextState
 
 
-def validate_structured_state(state: Mapping[str, object]) -> None:
+def validate_structured_state(
+    state: Mapping[str, object]
+)-> None:
     _validate_fields(state, STRUCTURED_STATE_FIELDS, "Structured State")
 
     if state["schema_version"] != SCHEMA_VERSION:
@@ -185,9 +187,7 @@ def validate_structured_state(state: Mapping[str, object]) -> None:
     if observation_end != decision_time:
         raise ValueError("observation_end must equal decision_time.")
 
-    _number(
-        observation["current_power_w"], "observation.current_power_w", nullable=True
-    )
+    _number(observation["current_power_w"], "observation.current_power_w", nullable=True)
 
     analysis = _mapping(state["analysis"], "analysis")
     _validate_fields(analysis, ANALYSIS_FIELDS, "analysis")
@@ -383,11 +383,7 @@ def validate_structured_state(state: Mapping[str, object]) -> None:
     if peak_timestamp not in expected_peak_timestamps:
         raise ValueError("forecast.summary.peak_timestamp must reference a peak forecast point.")
 
-    mean_interval_width = _number(
-        summary["mean_interval_width_w"],
-        "forecast.summary.mean_interval_width_w",
-        nullable=True,
-    )
+    mean_interval_width = _number(summary["mean_interval_width_w"], "forecast.summary.mean_interval_width_w", nullable=True)
 
     if interval_states[0] != (mean_interval_width is not None):
         raise ValueError("mean_interval_width_w must be present exactly when prediction intervals are available.")
@@ -407,7 +403,9 @@ def validate_structured_state(state: Mapping[str, object]) -> None:
 
 
 def _validate_fields(
-    value: Mapping[str, object], expected: frozenset[str], name: str
+    value: Mapping[str, object], 
+    expected: frozenset[str], 
+    name: str
 ) -> None:
     missing = expected.difference(value)
     unexpected = set(value).difference(expected)
@@ -419,21 +417,30 @@ def _validate_fields(
         raise ValueError(f"{name} contains unexpected fields: " + ", ".join(sorted(str(field) for field in unexpected)))
 
 
-def _mapping(value: object, field_name: str) -> Mapping[str, object]:
+def _mapping(
+    value: object, 
+    field_name: str
+ ) -> Mapping[str, object]:
     if not isinstance(value, Mapping):
         raise TypeError(f"{field_name} must be a mapping.")
 
     return value
 
 
-def _non_empty_string(value: object, field_name: str) -> str:
+def _non_empty_string(
+    value: object, 
+    field_name: str
+) -> str:
     if not isinstance(value, str) or not value.strip():
         raise ValueError(f"{field_name} must be a non-empty string.")
 
     return value
 
 
-def _float_matches(actual: float, expected: float) -> bool:
+def _float_matches(
+    actual: float, 
+    expected: float
+) -> bool:
     return math.isclose(
         actual,
         expected,
@@ -442,7 +449,13 @@ def _float_matches(actual: float, expected: float) -> bool:
     )
 
 
-def _number(value: object, field_name: str, *, nullable: bool = False) -> float | None:
+def _number(
+    value: object, 
+    field_name: str, 
+    *, 
+    nullable: bool = False
+) -> float | None:
+    
     if value is None:
         if nullable:
             return None
@@ -458,7 +471,10 @@ def _number(value: object, field_name: str, *, nullable: bool = False) -> float 
     return value
 
 
-def _timestamp(value: object, field_name: str) -> pd.Timestamp:
+def _timestamp(
+    value: object, 
+    field_name: str
+) -> pd.Timestamp:
     if not isinstance(value, str):
         raise TypeError(f"{field_name} must be a string timestamp.")
 

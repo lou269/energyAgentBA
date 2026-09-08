@@ -9,7 +9,15 @@ import pandas as pd
 from src.data_preparation.aggregation.channel_loading import build_loaded_channels
 
 
-def _quality_row(house: int, meter_instance: int, meter_key: str, is_mains: bool, start, end) -> dict:
+def _quality_row(
+    house: int, 
+    meter_instance: int, 
+    meter_key: str, 
+    is_mains: bool, 
+    start, 
+    end
+) -> dict:
+    
     return {
         "house": house,
         "meter_instance": meter_instance,
@@ -20,7 +28,9 @@ def _quality_row(house: int, meter_instance: int, meter_key: str, is_mains: bool
     }
 
 
-def _dataset(meters: dict[tuple[int, int], Mock]) -> Mock:
+def _dataset(
+    meters: dict[tuple[int, int], Mock]
+) -> Mock:
     buildings: dict[int, Mock] = {}
 
     for (house, instance), meter in meters.items():

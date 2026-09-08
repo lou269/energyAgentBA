@@ -13,11 +13,8 @@ import pandas as pd
 from src.config.project_config import ProjectConfig, ensure_project_directories
 from src.context.calendar_context import build_calendar_context
 from src.pipeline.io import save_json
-from src.structured_state.builder import build_structured_state
-from src.structured_state.structured_state_schema import (
-    StructuredState,
-    validate_structured_state,
-)
+from src.structured_state.builder import build_structured_state, utc_timestamp
+from src.structured_state.structured_state_schema import StructuredState, validate_structured_state
 
 
 logger = logging.getLogger(__name__)
@@ -51,24 +48,13 @@ class StructuredStateRunner:
             split,
         )
 
-        decision_timestamp = pd.Timestamp(decision_time)
+        decision_timestamp = utc_timestamp(decision_time, "decision_time")
 
-        if decision_timestamp.tzinfo is None:
-            raise ValueError("decision_time must contain timezone information.")
-
-        decision_timestamp = decision_timestamp.tz_convert("UTC")
-
-        analysis = pd.read_csv(
-            self.project_config.numerical_analysis_output_dir
-            / "anomaly_scores_hourly.csv",
-            parse_dates=["timestamp"],
-        )
+        analysis = pd.read_csv(self.project_config.numerical_analysis_output_dir/ "anomaly_scores_hourly.csv",parse_dates=["timestamp"])
 
         analysis_timestamp = decision_timestamp - pd.Timedelta(hours=1)
 
-        analysis_rows = analysis.loc[
-            analysis["timestamp"].eq(analysis_timestamp) & analysis["split"].eq(split)
-        ]
+        analysis_rows = analysis.loc[analysis["timestamp"].eq(analysis_timestamp) & analysis["split"].eq(split)]
 
         if len(analysis_rows) != 1:
             raise ValueError(
@@ -105,9 +91,8 @@ class StructuredStateRunner:
 
         validate_structured_state(state)
 
-        output_file = (
-            self.project_config.structured_state_output_dir / "structured_state.json"
-        )
+        output_file = self.project_config.structured_state_output_dir / "structured_state.json"
+    
 
         save_json(dict(state), output_file)
 
@@ -126,10 +111,12 @@ def main() -> None:
         "--calendar-events",
         type=Path,
         default=None,
-        help="Optional JSON file containing a list of calendar events.",
+        help=(
+            "JSON file containing a list of calendar events. Omitted entirely means no calendar access (CTX0); pass a file with an empty list "
+            "for an available-but-empty calendar."
+        ),
     )
     parser.add_argument("--calendar-source", required=True)
-    parser.add_argument("--calendar-source-unavailable", action="store_true")
     parser.add_argument("--calendar-retrieved-at", required=True)
     parser.add_argument("--calendar-window-start", required=True)
     parser.add_argument("--calendar-window-end", required=True)
@@ -156,7 +143,7 @@ def main() -> None:
         model_id=args.model_id,
         split=split,
         calendar_events=calendar_events,
-        calendar_source_available=not args.calendar_source_unavailable,
+        calendar_source_available=args.calendar_events is not None,
         calendar_source=args.calendar_source,
         calendar_retrieved_at=args.calendar_retrieved_at,
         calendar_window_start=args.calendar_window_start,
@@ -166,3 +153,5 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+

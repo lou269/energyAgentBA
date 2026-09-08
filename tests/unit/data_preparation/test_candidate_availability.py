@@ -8,7 +8,9 @@ import pytest
 from src.data_preparation.selection.candidate_availability import build_candidate_availability
 
 
-def _hourly_frame(covered: list[bool]) -> tuple[pd.DataFrame, pd.DataFrame]:
+def _hourly_frame(
+    covered: list[bool]
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     index = pd.date_range("2020-01-01", periods=len(covered), freq="1h")
     data = pd.DataFrame({"meter": [1.0 if c else None for c in covered]}, index=index)
     quality = pd.DataFrame({"meter_coverage_mask": covered}, index=index)

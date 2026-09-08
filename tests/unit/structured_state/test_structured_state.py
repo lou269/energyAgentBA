@@ -1,8 +1,7 @@
-# python -m pytest tests/unit/test_structured_state.py -v
+# python -m pytest tests/unit/structured_state/test_structured_state.py -v
 from __future__ import annotations
 
 import json
-from copy import deepcopy
 from pathlib import Path
 
 import pandas as pd
@@ -12,10 +11,7 @@ from src.context.calendar_context import build_calendar_context
 from src.context.calendar_schema import CalendarContext
 from src.pipeline.io import save_json
 from src.structured_state.builder import build_structured_state
-from src.structured_state.structured_state_schema import (
-    StructuredState,
-    validate_structured_state,
-)
+from src.structured_state.structured_state_schema import StructuredState, validate_structured_state
 
 
 DECISION_TIME = pd.Timestamp("2013-09-02T00:00:00+00:00")
@@ -85,13 +81,12 @@ def _build_state(
     forecast_rows: pd.DataFrame | None = None,
     calendar_context: CalendarContext | None = None,
 ) -> StructuredState:
+    
     return build_structured_state(
         decision_time=DECISION_TIME,
         analysis_row=analysis_row if analysis_row is not None else _analysis_row(),
         forecast_rows=forecast_rows if forecast_rows is not None else _forecast_rows(),
-        calendar_context=(
-            calendar_context if calendar_context is not None else _calendar_context()
-        ),
+        calendar_context=calendar_context if calendar_context is not None else _calendar_context()
     )
 
 
@@ -100,16 +95,22 @@ def test_complete_structured_state_is_valid() -> None:
 
     validate_structured_state(state)
 
-    assert (
-        state["observation"]["observation_start"]
-        == (DECISION_TIME - pd.Timedelta(hours=1)).isoformat()
-    )
+    assert state["observation"]["observation_start"]== (DECISION_TIME - pd.Timedelta(hours=1)).isoformat()
     assert len(state["forecast"]["points"]) == 24
     assert state["anomaly"]["available_scales"] == ["short_term", "daily", "long_term"]
 
     serialized = json.dumps(state)
     assert "y_true" not in serialized
     assert "scenario_id" not in serialized
+
+
+def test_timestamp_accepts_zulu_suffix() -> None:
+    state = _build_state()
+    state["decision_time"] = state["decision_time"].replace("+00:00", "Z")
+    state["forecast"]["points"][0]["timestamp"] = state["forecast"]["points"][0]["timestamp"].replace("+00:00", "Z")
+
+    validate_structured_state(state)
+
 
 
 def test_analysis_timestamp_must_precede_decision_time_by_one_hour() -> None:
@@ -133,9 +134,7 @@ def test_forecast_requires_exactly_24_consecutive_points() -> None:
         _build_state(forecast_rows=_forecast_rows().iloc[:-1])
 
     state = _build_state()
-    state["forecast"]["points"][1]["timestamp"] = (
-        DECISION_TIME + pd.Timedelta(hours=2)
-    ).isoformat()
+    state["forecast"]["points"][1]["timestamp"] = (DECISION_TIME + pd.Timedelta(hours=2)).isoformat()
 
     with pytest.raises(ValueError, match="consecutive hourly timestamps"):
         validate_structured_state(state)
@@ -162,7 +161,8 @@ def test_forecast_summary_must_match_points() -> None:
     [("score", 1.0), ("dominant_scale", "short_term"), ("direction", "low")],
 )
 def test_aggregate_anomaly_fields_must_match_scale_scores(
-    field: str, value: object
+    field: str, 
+    value: object
 ) -> None:
     state = _build_state()
     state["anomaly"][field] = value  # type: ignore[literal-required]
@@ -223,15 +223,19 @@ def test_nan_becomes_null_and_infinity_is_rejected() -> None:
 
 
 @pytest.mark.parametrize("field", ["y_true", "scenario_id", "additional"])
-def test_structured_state_rejects_additional_fields(field: str) -> None:
-    state = deepcopy(_build_state())
+def test_structured_state_rejects_additional_fields(
+    field: str
+) -> None:
+    state = _build_state()
     state[field] = "forbidden"  # type: ignore[literal-required]
 
     with pytest.raises(ValueError, match="unexpected fields"):
         validate_structured_state(state)
 
 
-def test_structured_state_survives_json_roundtrip(tmp_path: Path) -> None:
+def test_structured_state_survives_json_roundtrip(
+    tmp_path: Path
+) -> None:
     state = _build_state()
     output_file = tmp_path / "structured_state.json"
 

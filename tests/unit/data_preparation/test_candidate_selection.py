@@ -8,7 +8,10 @@ import pytest
 from src.data_preparation.selection.candidate_selection import build_candidate_selection
 
 
-def _registry(rows: list[tuple[int, int, str, str]]) -> pd.DataFrame:
+def _registry(
+    rows: list[tuple[int, int, str, str]]
+) -> pd.DataFrame:
+    
     return pd.DataFrame(rows, columns=["house", "meter_instance", "meter_key", "meter_type"])
 
 
