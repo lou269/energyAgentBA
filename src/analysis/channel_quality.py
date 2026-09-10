@@ -46,7 +46,6 @@ def build_channel_quality(
     canonical_ac_type: str,
     chunksize: int | None,
 ) -> pd.DataFrame:
-    
     require_columns(channel_registry, REQUIRED_REGISTRY_COLUMNS, "Channel registry")
 
     canonical = channel_registry.loc[
@@ -127,7 +126,6 @@ def _profile_meter(
     sample_period: float | None,
     chunksize: int | None,
 ) ->dict:
-
     load_kwargs = {
         "physical_quantity": "power",
         "ac_type": canonical_ac_type,

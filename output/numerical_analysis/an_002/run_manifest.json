@@ -1,0 +1,77 @@
+{
+  "candidate_id": "H1-M54-S2",
+  "code_version": {
+    "git_commit": "2fc48585a9bfdec08cfacfec084e299f645714f5",
+    "git_dirty": true
+  },
+  "config": {
+    "sha256": "517a101a55e57c7481ff3c3d8642eb391293e5442a0054e9e17315fbc16efd66",
+    "values": {
+      "long_term_window_15min": 2880,
+      "long_term_window_hourly": 720,
+      "min_daily_reference_samples": 7,
+      "min_reference_power_w": 10.0,
+      "min_reference_samples": 100,
+      "min_residual_std_w": 1.0,
+      "min_weekly_reference_samples": 4,
+      "sample_period_hours_15min": 0.25,
+      "sample_period_hours_hourly": 1.0,
+      "short_term_window_15min": 96,
+      "short_term_window_hourly": 24,
+      "strong_anomaly_threshold": 3.0,
+      "trend_threshold": 0.3,
+      "unusual_threshold": 2.0
+    }
+  },
+  "created_at_utc": "2026-09-09T08:00:05.290745+00:00",
+  "environment": {
+    "file": "environment-forecasting.yml",
+    "sha256": "e07be1814925f5d4b5a9157a0407fea4db7bf9e316768c928978359c9f60dd9d"
+  },
+  "inputs": {
+    "canonical_manifest": {
+      "path": "output/canonical/canonical_manifest.csv",
+      "sha256": "69cacd0dba432772633a8bb66b02ee960468565b208c98915716e00d8aff1991",
+      "size_bytes": 151
+    },
+    "plausibility_15min": {
+      "path": "output/preprocessing/plausibility_15min.csv",
+      "sha256": "8b5016280104ae64fda0ebfa687a991f7a26e928aff87ef9ffae2d0eec4e59c2",
+      "size_bytes": 3329081
+    },
+    "plausibility_hourly": {
+      "path": "output/preprocessing/plausibility_hourly.csv",
+      "sha256": "d1be45b5ee88114af23d9168c1e109d72e9c1cae8e521f55d4bce79ebdd17bf9",
+      "size_bytes": 832313
+    },
+    "split_manifest": {
+      "path": "output/preprocessing/split_manifest.csv",
+      "sha256": "8189afd7b8e3aae049c76530225155c883cd735bc97afa1deadee6ec0b5c6986",
+      "size_bytes": 465
+    },
+    "treated_15min": {
+      "path": "output/preprocessing/treated_15min.csv",
+      "sha256": "e395e5b8a06620138dcc50cb1e05fe6e79951b4a935c1364153abb4d94086530",
+      "size_bytes": 3715102
+    },
+    "treated_hourly": {
+      "path": "output/preprocessing/treated_hourly.csv",
+      "sha256": "c2cedf42a98dba78b56a259d01f05c23e8540a6c29b2338db169003d3398d4d2",
+      "size_bytes": 929343
+    }
+  },
+  "outputs": {
+    "anomaly_scores_15min": {
+      "path": "output/numerical_analysis/an_002/anomaly_scores_15min.csv",
+      "sha256": "3a19010135ba9a9837a21355dedd8d12fa411f5ce937109602d5023cc2374e4d",
+      "size_bytes": 42683377
+    },
+    "anomaly_scores_hourly": {
+      "path": "output/numerical_analysis/an_002/anomaly_scores_hourly.csv",
+      "sha256": "bac9149303b0ad22ba97b7d817f73d09ad2f8b16ba83d60d88db516ac55ce24d",
+      "size_bytes": 10625245
+    }
+  },
+  "run_id": "an_002",
+  "runtime_seconds": 4.0326565830037
+}

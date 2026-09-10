@@ -1,0 +1,2 @@
+run_id,split,model_id,reference_model_id,mae_w,reference_mae_w,mae_skill
+k1_V2_10h_seasonal,validation,C2,B1,162.87936525306947,313.39898633246526,0.4802811356885469

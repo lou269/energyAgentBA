@@ -59,14 +59,16 @@ def apply_gap_treatment(
     _validate_inputs(data, quality, max_gap_intervals=max_gap_intervals, method=method)
 
     treated = data.copy()
+    mask_suffix = "_power_w"  # Werte-Spalten tragen diesen Suffix, Masken nicht
     imputation_mask = pd.DataFrame(
         False,
         index=data.index,
-        columns=data.columns,
+        columns=[c.removesuffix(mask_suffix) for c in data.columns],
         dtype=bool,
     )
 
     for column in data.columns:
+        mask_column = column.removesuffix(mask_suffix)
         coverage_column = f"{column}_coverage_mask"
         coverage_mask = (
             quality[coverage_column]
@@ -93,7 +95,7 @@ def apply_gap_treatment(
         filled = series.where(~short_gap, candidate)
 
         treated.loc[:, column] = filled
-        imputation_mask.loc[:, column] = missing & filled.notna()
+        imputation_mask.loc[:, mask_column] = missing & filled.notna()
 
     return treated, imputation_mask
 

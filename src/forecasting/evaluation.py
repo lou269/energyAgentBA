@@ -20,8 +20,6 @@ def evaluate_forecasts(
     nominal_interval_level: float,
     mape_min_eligible_watts: float = 0.0,
 ) -> dict[str, pd.DataFrame]:
-
-
     validate_forecast_output(
         forecasts,
         horizon_hours=horizon_hours,
@@ -64,7 +62,6 @@ def select_primary_naive_reference(
     *,
     split: str = "validation",
 ) -> str:
-
     required_columns = {"run_id", "split", "model_id", "mae_w", "rmse_w"}
     missing_columns = required_columns.difference(overall_metrics.columns)
 
@@ -105,7 +102,6 @@ def _validate_evaluation_input(
     reference_model_ids: tuple[str, ...],
     nominal_interval_level: float,
 ) -> None:
-
     if not reference_model_ids:
         raise ValueError("reference_model_ids must not be empty.")
 
@@ -187,7 +183,6 @@ def _calculate_grouped_metrics(
     group_columns: list[str],
     mape_min_eligible_watts: float,
 ) -> pd.DataFrame:
-
     rows: list[dict[str, object]] = []
 
     for keys, group in forecasts.groupby(group_columns, sort=True, dropna=False):
@@ -209,7 +204,6 @@ def _calculate_error_metrics(
     forecasts: pd.DataFrame,
     mape_min_eligible_watts: float,
 ) -> dict[str, int | float]:
-
     possible_count = len(forecasts)
     eligible = forecasts["target_eligible"]
     evaluated = forecasts.loc[eligible]
@@ -270,7 +264,6 @@ def _add_operational_metrics(
     overall_metrics: pd.DataFrame,
     forecasts: pd.DataFrame,
 ) -> pd.DataFrame:
-
     per_origin = forecasts.groupby(ORIGIN_GROUP_COLUMNS, as_index=False).agg(
         retrained=("retrained", "first"),
         refit_runtime_seconds=("refit_runtime_seconds", "first"),
@@ -295,7 +288,6 @@ def _add_operational_metrics(
 def _calculate_origin_metric_distribution(
     origin_metrics: pd.DataFrame,
 ) -> pd.DataFrame:
-
     rows: list[dict[str, object]] = []
 
     for keys, group in origin_metrics.groupby(BASE_GROUP_COLUMNS, sort=True):
@@ -327,7 +319,6 @@ def _calculate_paired_origin_differences(
     comparison_model_ids: tuple[str, ...],
     reference_model_ids: tuple[str, ...],
 ) -> pd.DataFrame:
-
     key_columns = ["run_id", "split", "forecast_origin"]
     difference_columns = [f"{metric}_difference" for metric in ERROR_METRIC_COLUMNS]
     
@@ -394,7 +385,6 @@ def _calculate_mae_skill(
     comparison_model_ids: tuple[str, ...],
     reference_model_ids: tuple[str, ...],
 ) -> pd.DataFrame:
-
     key_columns = ["run_id", "split"]
     output_columns = [
         *key_columns,
@@ -449,7 +439,6 @@ def _calculate_interval_metrics(
     *,
     nominal_interval_level: float,
 ) -> pd.DataFrame:
-
     columns = [
         *BASE_GROUP_COLUMNS,
         "scope",
@@ -521,7 +510,6 @@ def _calculate_target_exclusions(
     forecasts: pd.DataFrame,
     overall_metrics: pd.DataFrame,
 ) -> pd.DataFrame:
-
     columns = [
         *BASE_GROUP_COLUMNS,
         "target_exclusion_reason",

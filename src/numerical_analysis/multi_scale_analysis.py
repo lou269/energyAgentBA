@@ -16,7 +16,6 @@ def build_multi_scale_analysis(
     trend_threshold: float,
     min_reference_power_w: float,
 ) -> pd.DataFrame:
-
     train_data = train_data.sort_index()
     validation_data = validation_data.sort_index()
     test_data = test_data.sort_index()

@@ -1,0 +1,181 @@
+{
+  "candidate_id": "H1-M54-fixedwindow",
+  "code_version": {
+    "git_commit": "2fc48585a9bfdec08cfacfec084e299f645714f5",
+    "git_dirty": true
+  },
+  "config": {
+    "sha256": "fdfb3c4aa86a357ac92225d6098d874bb890cacf6dcff9cd2c1eeebf5f78e67d",
+    "values": {
+      "fixed_validation_end": "2016-01-31 23:00:00+00:00",
+      "fixed_validation_start": "2015-12-14 11:00:00+00:00",
+      "max_availability_gap_hours": 24,
+      "max_imputation_gap_hourly": 2,
+      "variant_id": "V3_24h"
+    }
+  },
+  "created_at_utc": "2026-09-09T13:12:26.995190+00:00",
+  "environment": {
+    "file": "environment-forecasting.yml",
+    "sha256": "e07be1814925f5d4b5a9157a0407fea4db7bf9e316768c928978359c9f60dd9d"
+  },
+  "evaluation": {
+    "exclusion_rules": {
+      "complete_horizons_only": true,
+      "exclude_imputed_targets": true
+    },
+    "forecast_origins": [
+      "2015-12-14 11:00:00+00:00",
+      "2015-12-15 11:00:00+00:00",
+      "2015-12-16 11:00:00+00:00",
+      "2015-12-17 11:00:00+00:00",
+      "2015-12-18 11:00:00+00:00",
+      "2015-12-19 11:00:00+00:00",
+      "2015-12-20 11:00:00+00:00",
+      "2015-12-21 11:00:00+00:00",
+      "2015-12-22 11:00:00+00:00",
+      "2015-12-23 11:00:00+00:00",
+      "2015-12-24 11:00:00+00:00",
+      "2015-12-25 11:00:00+00:00",
+      "2015-12-26 11:00:00+00:00",
+      "2015-12-27 11:00:00+00:00",
+      "2015-12-28 11:00:00+00:00",
+      "2015-12-29 11:00:00+00:00",
+      "2015-12-30 11:00:00+00:00",
+      "2015-12-31 11:00:00+00:00",
+      "2016-01-01 11:00:00+00:00",
+      "2016-01-02 11:00:00+00:00",
+      "2016-01-03 11:00:00+00:00",
+      "2016-01-04 11:00:00+00:00",
+      "2016-01-05 11:00:00+00:00",
+      "2016-01-06 11:00:00+00:00",
+      "2016-01-07 11:00:00+00:00",
+      "2016-01-08 11:00:00+00:00",
+      "2016-01-09 11:00:00+00:00",
+      "2016-01-10 11:00:00+00:00",
+      "2016-01-11 11:00:00+00:00",
+      "2016-01-12 11:00:00+00:00",
+      "2016-01-13 11:00:00+00:00",
+      "2016-01-14 11:00:00+00:00",
+      "2016-01-15 11:00:00+00:00",
+      "2016-01-16 11:00:00+00:00",
+      "2016-01-17 11:00:00+00:00",
+      "2016-01-18 11:00:00+00:00",
+      "2016-01-19 11:00:00+00:00",
+      "2016-01-20 11:00:00+00:00",
+      "2016-01-21 11:00:00+00:00",
+      "2016-01-22 11:00:00+00:00",
+      "2016-01-23 11:00:00+00:00",
+      "2016-01-24 11:00:00+00:00",
+      "2016-01-25 11:00:00+00:00",
+      "2016-01-26 11:00:00+00:00",
+      "2016-01-27 11:00:00+00:00",
+      "2016-01-28 11:00:00+00:00",
+      "2016-01-29 11:00:00+00:00",
+      "2016-01-30 11:00:00+00:00"
+    ],
+    "metric_definitions": {
+      "mape_positive_targets_only": true,
+      "metrics": [
+        "mae",
+        "rmse",
+        "mape"
+      ],
+      "primary_metric": "mae"
+    },
+    "primary_naive_reference": "B1",
+    "split_boundaries": {
+      "first_forecast_origin": "2015-12-14 11:00:00+00:00",
+      "fixed_history_end": "2015-12-14 10:00:00+00:00",
+      "fixed_history_start": "2013-04-01 22:00:00+00:00"
+    }
+  },
+  "experiment_id": "K1_preprocessing",
+  "inputs": {
+    "canonical_data_hourly": {
+      "path": "experiments/component_studies/k1_preprocessing/output/V3_24h/canonical/canonical_data_hourly.csv",
+      "sha256": "4b70f1ad12e3282529dc880b1f59a236e33d5070c0dc13e2a330631e554dfe55",
+      "size_bytes": 887743
+    },
+    "canonical_manifest": {
+      "path": "experiments/component_studies/k1_preprocessing/output/V3_24h/canonical/canonical_manifest.csv",
+      "sha256": "09bdc3968677c6043f52713488a7391ca74bf7e1fc72139f47eed33259607d75",
+      "size_bytes": 257
+    },
+    "canonical_quality_hourly": {
+      "path": "experiments/component_studies/k1_preprocessing/output/V3_24h/canonical/canonical_quality_hourly.csv",
+      "sha256": "13565df581bb21a49d8e0ecaf9f27c650f32e51188dcf647d2eb436ef80e0e89",
+      "size_bytes": 1365635
+    }
+  },
+  "models": {
+    "history_rules": {
+      "history_mode": "expanding",
+      "retraining_interval_hours": 24
+    },
+    "parameters": {
+      "history_mode": "expanding",
+      "prophet_model_id": "C2",
+      "variant_id": "V3_24h"
+    },
+    "seasonalities": {
+      "C2": {
+        "daily": true,
+        "weekly": false,
+        "yearly": false
+      }
+    },
+    "seed": 42,
+    "uncertainty_samples": 1000
+  },
+  "outputs": {
+    "forecasts": {
+      "path": "experiments/component_studies/k1_preprocessing/output/V3_24h/forecasting/forecasts.csv",
+      "sha256": "cd75cbff49ce367049be0043051924127a53d6569a508489933fc77361d6d16e",
+      "size_bytes": 705483
+    },
+    "horizon_metrics": {
+      "path": "experiments/component_studies/k1_preprocessing/output/V3_24h/forecasting/horizon_metrics.csv",
+      "sha256": "eda7283aa41384a673c6fad883565abb9fd3d84ac11ff1e0cece376ef3513383",
+      "size_bytes": 5750
+    },
+    "interval_metrics": {
+      "path": "experiments/component_studies/k1_preprocessing/output/V3_24h/forecasting/interval_metrics.csv",
+      "sha256": "2ba77259abc7d2078d99d824299d3a4c7d38d2bb9c1cf8621271008e76482a21",
+      "size_bytes": 2156
+    },
+    "mae_skill": {
+      "path": "experiments/component_studies/k1_preprocessing/output/V3_24h/forecasting/mae_skill.csv",
+      "sha256": "94c3ee7e8bca28e44368a53b76197f3032cd443d499f5160695b6f150b474c33",
+      "size_bytes": 156
+    },
+    "origin_metric_distribution": {
+      "path": "experiments/component_studies/k1_preprocessing/output/V3_24h/forecasting/origin_metric_distribution.csv",
+      "sha256": "e539384ec9125742d3dd13465d2f58ff27df2055604cbdadc45ee2185515638f",
+      "size_bytes": 750
+    },
+    "origin_metrics": {
+      "path": "experiments/component_studies/k1_preprocessing/output/V3_24h/forecasting/origin_metrics.csv",
+      "sha256": "98af81abb74a46bb37fe9f7adf39da497d4ab0cb85680168b320f415c043069d",
+      "size_bytes": 13435
+    },
+    "overall_metrics": {
+      "path": "experiments/component_studies/k1_preprocessing/output/V3_24h/forecasting/overall_metrics.csv",
+      "sha256": "a79f1a6e506dc36d5c3e327bdc31808c7019e678975b4c3d2805acd5f1944f21",
+      "size_bytes": 674
+    },
+    "paired_origin_differences": {
+      "path": "experiments/component_studies/k1_preprocessing/output/V3_24h/forecasting/paired_origin_differences.csv",
+      "sha256": "fbf5eeb37539d7d982fbe42abe738320445702f22e2a1dee7b679ab0a8336997",
+      "size_bytes": 5426
+    },
+    "target_exclusions": {
+      "path": "experiments/component_studies/k1_preprocessing/output/V3_24h/forecasting/target_exclusions.csv",
+      "sha256": "6ad8e6729236498f5aa7ddeeddf9f42e7458c33b2ea3f29ce7e582852553517f",
+      "size_bytes": 90
+    }
+  },
+  "run_id": "k1_V3_24h",
+  "runtime_seconds": 173.51509349999833,
+  "split": "validation"
+}

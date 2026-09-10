@@ -24,7 +24,6 @@ def fit_prophet_model(
     interval_width: float,
     uncertainty_samples: int,
 ) -> Prophet:
-
     prophet_data = _prepare_prophet_data(history, local_timezone, log_transform)
 
     model = Prophet(

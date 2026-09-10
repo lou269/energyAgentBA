@@ -8,17 +8,19 @@ def build_plausibility_flags(
     stuck_value_min_hours: float,
     sample_period_hours: float,
 ) -> pd.DataFrame:
+    mask_suffix = "_power_w"  
     flags = pd.DataFrame(
         False,
         index=data.index,
-        columns=data.columns,
+        columns=[c.removesuffix(mask_suffix) for c in data.columns],
         dtype=bool,
     )
 
     for column in data.columns:
+        mask_column = column.removesuffix(mask_suffix)
         coverage_column = f"{column}_coverage_mask"
         coverage_mask = quality[coverage_column].fillna(False).astype(bool)
-     
+
 
         series = data[column].where(coverage_mask)
 
@@ -27,6 +29,6 @@ def build_plausibility_flags(
         stuck_periods = unchanged.groupby((~unchanged).cumsum()).cumsum()
         stuck_streak_hours = stuck_periods * sample_period_hours
 
-        flags.loc[:, column] = (series < 0) | (stuck_streak_hours >= stuck_value_min_hours)
+        flags.loc[:, mask_column] = (series < 0) | (stuck_streak_hours >= stuck_value_min_hours)
 
     return flags

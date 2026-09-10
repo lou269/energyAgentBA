@@ -169,7 +169,6 @@ def _build_forecast_state(
     decision_time: pd.Timestamp, 
     analysis_split: object
 ) -> ForecastState:
-
     if forecast_rows.empty:
         raise ValueError("Forecast rows must not be empty.")
 
@@ -325,7 +324,6 @@ def utc_timestamp(
     value: object, 
     field_name: str
 ) -> pd.Timestamp:
-    
     if isinstance(value, pd.Timestamp):
         timestamp = value
     elif isinstance(value, str):

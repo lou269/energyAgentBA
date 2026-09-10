@@ -465,7 +465,6 @@ def _number(
     *, 
     nullable: bool = False
 ) -> float | None:
-    
     if value is None:
         if nullable:
             return None

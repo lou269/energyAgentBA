@@ -53,23 +53,9 @@ class ColdStartRunner:
         split_manifest_path = self.project_config.preprocessing_output_dir / "split_manifest.csv"
         canonical_manifest_path = self.project_config.canonical_output_dir / "canonical_manifest.csv"
 
-        treated_hourly = pd.read_csv(
-            treated_path,
-            parse_dates=["timestamp"],
-            index_col="timestamp",
-        )
-        
-        imputation_mask = pd.read_csv(
-            mask_path,
-            parse_dates=["timestamp"],
-            index_col="timestamp",
-        )
-        
-        split_manifest = pd.read_csv(
-            split_manifest_path,
-            parse_dates=["start", "end"],
-        )
-        
+        treated_hourly = pd.read_csv(treated_path, parse_dates=["timestamp"], index_col="timestamp")
+        imputation_mask = pd.read_csv(mask_path, parse_dates=["timestamp"], index_col="timestamp")
+        split_manifest = pd.read_csv(split_manifest_path, parse_dates=["start", "end"])
         canonical_manifest = pd.read_csv(canonical_manifest_path)
 
         if len(canonical_manifest) != 1:
@@ -77,6 +63,7 @@ class ColdStartRunner:
 
         candidate_id = str(canonical_manifest.iloc[0]["candidate_id"])
         target_column = str(canonical_manifest.iloc[0]["column_name"])
+        meter_key = str(canonical_manifest.iloc[0]["meter_key"])
 
         hourly_splits = split_manifest.loc[
             split_manifest["frequency"].eq("hourly")
@@ -85,10 +72,7 @@ class ColdStartRunner:
         split_start = hourly_splits.at[split, "start"]
         split_end = hourly_splits.at[split, "end"]
 
-        if not isinstance(split_start, pd.Timestamp) or not isinstance(
-            split_end,
-            pd.Timestamp,
-        ):
+        if not isinstance(split_start, pd.Timestamp) or not isinstance(split_end, pd.Timestamp):
             raise TypeError("Split boundaries must be timestamps.")
 
         # Standardfall: sieben Tage direkt vor dem Evaluation-Split.
@@ -120,15 +104,8 @@ class ColdStartRunner:
         if not fixed_history.index.equals(expected_initial_index):
             raise ValueError("Initial history does not use the expected hourly index.")
 
-        evaluation_targets = treated_hourly.loc[
-            first_origin:evaluation_end,
-            target_column,
-        ]
-
-        evaluation_imputation_mask = imputation_mask.loc[
-            first_origin:evaluation_end,
-            target_column,
-        ]
+        evaluation_targets = treated_hourly.loc[first_origin:evaluation_end, target_column]
+        evaluation_imputation_mask = imputation_mask.loc[first_origin:evaluation_end, meter_key]
 
         prophet_variants = tuple(
             cast(ProphetVariantParameters, asdict(variant))
@@ -170,10 +147,7 @@ class ColdStartRunner:
             initial_history_hours=self.experiment_config.initial_history_hours,
         )
 
-        prophet_model_ids = tuple(
-            variant["model_id"]
-            for variant in prophet_variants
-        )
+        prophet_model_ids = tuple(variant["model_id"] for variant in prophet_variants)
 
         evaluation_results = evaluate_forecasts(
             forecasts,
@@ -191,34 +165,17 @@ class ColdStartRunner:
         else:
             primary_naive_reference = self.experiment_config.primary_naive_reference
 
-        df_to_csv(
-            forecasts,
-            run_dir,
-            "forecasts",
-        )
+        df_to_csv(forecasts, run_dir, "forecasts")
 
         for name, result in evaluation_results.items():
-            df_to_csv(
-                result,
-                run_dir,
-                name,
-            )
+            df_to_csv(result, run_dir, name)
 
-        df_to_csv(
-            pd.DataFrame(
-                {"model_id": [primary_naive_reference]}
-            ),
-            run_dir,
-            "primary_naive_reference",
-        )
+        df_to_csv(pd.DataFrame({"model_id": [primary_naive_reference]}), run_dir, "primary_naive_reference")
 
         output_paths = {
             "forecasts": run_dir / "forecasts.csv",
             "primary_naive_reference": run_dir / "primary_naive_reference.csv",
-            **{
-                name: run_dir / f"{name}.csv"
-                for name in evaluation_results
-            },
+            **{name: run_dir / f"{name}.csv" for name in evaluation_results},
         }
 
         runtime_seconds = perf_counter() - run_started
@@ -245,11 +202,7 @@ class ColdStartRunner:
                 "first_forecast_origin": forecasts["forecast_origin"].min(),
                 "evaluation_end": evaluation_end,
             },
-            forecast_origins=tuple(
-                forecasts["forecast_origin"]
-                .drop_duplicates()
-                .sort_values()
-            ),
+            forecast_origins=tuple(forecasts["forecast_origin"].drop_duplicates().sort_values()),
             model_parameters={
                 "growth": self.experiment_config.growth,
                 "daily_seasonality": self.experiment_config.daily_seasonality,
@@ -258,11 +211,7 @@ class ColdStartRunner:
                 "local_timezone": self.experiment_config.timezone,
                 "log_transform": self.experiment_config.log_transform,
                 "interval_width": self.experiment_config.interval_width,
-                "variants": [
-                    asdict(variant)
-                    for variant
-                    in self.experiment_config.prophet_variants
-                ],
+                "variants": [asdict(variant) for variant in self.experiment_config.prophet_variants],
             },
             seasonalities={
                 variant.model_id: {
@@ -273,8 +222,7 @@ class ColdStartRunner:
                     "local_timezone": self.experiment_config.timezone,
                     "log_transform": self.experiment_config.log_transform,
                 }
-                for variant
-                in self.experiment_config.prophet_variants
+                for variant in self.experiment_config.prophet_variants
             },
             history_rules={
                 "initial_history_hours": self.experiment_config.initial_history_hours,
@@ -285,16 +233,11 @@ class ColdStartRunner:
                         "rolling_window_hours": variant.rolling_window_hours,
                         "retraining_interval_hours": variant.retraining_interval_hours,
                     }
-                    for variant
-                    in self.experiment_config.prophet_variants
+                    for variant in self.experiment_config.prophet_variants
                 },
             },
             metric_definitions={
-                "metrics": [
-                    "mae",
-                    "rmse",
-                    "mape",
-                ],
+                "metrics": ["mae", "rmse", "mape"],
                 "primary_metric": "mae",
                 "mape_positive_targets_only": True,
             },

@@ -309,7 +309,6 @@ def _select_prophet_history(
     history_mode: Literal["fixed_train", "expanding", "rolling"],
     rolling_window_hours: int | None,
 ) -> pd.Series:
-
     if history_mode == "fixed_train":
         return fixed_history
 
@@ -343,7 +342,6 @@ def _build_forecast_output(
     refit_runtime_seconds: float,
     config_version: str,
 ) -> pd.DataFrame:
-
     output = model_forecast.copy()
     output.index.name = "target_timestamp"
     output = output.reset_index()
@@ -415,7 +413,6 @@ def _validate_walk_forward_data(
     evaluation_targets: pd.Series,
     evaluation_imputation_mask: pd.Series,
 ) -> None:
-
     for name, series in {
         "fixed_history": fixed_history,
         "evaluation_targets": evaluation_targets,
