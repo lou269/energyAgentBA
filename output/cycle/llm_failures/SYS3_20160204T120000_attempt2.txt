@@ -1,0 +1,37 @@
+{
+  "schema_version": "1.1",
+  "classification": "peak",
+  "explanation": "The current power consumption of 1154 W is significantly higher than the short-term mean (396 W), daily expected value (394 W), and weekly expected value (437 W). The anomaly analysis confirms this with a score of 2.92, an 'unusual' level, and a 'high' direction. This represents a short-term spike in consumption.",
+  "evidence_references": [
+    {
+      "path": "observation.current_power_w",
+      "value": 1154.0015
+    },
+    {
+      "path": "analysis.short_term_mean_w",
+      "value": 396.0
+    },
+    {
+      "path": "analysis.daily_expected_w",
+      "value": 394.0
+    },
+    {
+      "path": "analysis.weekly_expected_w",
+      "value": 437.0
+    },
+    {
+      "path": "anomaly.score",
+      "value": 2.92
+    },
+    {
+      "path": "anomaly.level",
+      "value": "unusual"
+    },
+    {
+      "path": "anomaly.direction",
+      "value": "high"
+    }
+  ],
+  "user_recommendation": "No specific action is recommended.",
+  "uncertainty": "Low."
+}

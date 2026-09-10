@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import argparse
-from dataclasses import asdict
+from dataclasses import asdict, dataclass
 import logging
 from time import perf_counter
 from typing import Literal, cast
@@ -26,6 +26,100 @@ logger = logging.getLogger(__name__)
 EvaluationSplit = Literal["validation", "test"]
 
 
+@dataclass(frozen=True)
+class ForecastingResult:
+    forecasts: pd.DataFrame
+    evaluation_results: dict[str, pd.DataFrame]
+    primary_naive_reference: str
+    split_start: pd.Timestamp
+    split_end: pd.Timestamp
+    fixed_history_start: pd.Timestamp
+    fixed_history_end: pd.Timestamp
+
+
+def run_forecasting(
+    treated_hourly: pd.DataFrame,
+    imputation_mask_hourly: pd.DataFrame,
+    split_manifest: pd.DataFrame,
+    target_column: str,
+    meter_key: str,
+    split: EvaluationSplit,
+    run_id: str,
+    config: ForecastingConfig,
+) -> ForecastingResult:
+    if (
+        split == "test"
+        and config.primary_naive_reference not in config.baseline_model_ids
+    ):
+        raise ValueError("primary_naive_reference must be one of the configured naive baselines before running the test split.")
+
+    hourly_splits = split_manifest.loc[
+        split_manifest["frequency"].eq("hourly")
+    ].set_index("split")
+
+    split_start = hourly_splits.loc[split, "start"]
+    split_end = hourly_splits.loc[split, "end"]
+
+    fixed_history = treated_hourly.loc[treated_hourly.index < split_start, target_column]
+
+    evaluation_targets = treated_hourly.loc[split_start:split_end, target_column]
+
+    evaluation_imputation_mask = imputation_mask_hourly.loc[split_start:split_end, meter_key]
+
+    prophet_variant = cast(ProphetVariantParameters, asdict(config.selected_prophet_variant))
+
+    prophet_variants = (prophet_variant,)
+    forecasts = build_walk_forward_forecasts(
+        fixed_history=fixed_history,
+        evaluation_targets=evaluation_targets,
+        evaluation_imputation_mask=evaluation_imputation_mask,
+        run_id=run_id,
+        experiment_id=config.experiment_id,
+        split=split,
+        horizon_hours=config.horizon_hours,
+        forecast_origin_step_hours=config.forecast_origin_step_hours,
+        baseline_model_ids=config.baseline_model_ids,
+        prophet_variants=prophet_variants,
+        growth=config.growth,
+        daily_seasonality=config.daily_seasonality,
+        yearly_seasonality=config.yearly_seasonality,
+        country_holidays=config.country_holidays,
+        local_timezone=config.timezone,
+        log_transform=config.log_transform,
+        interval_width=config.interval_width,
+        uncertainty_samples=config.uncertainty_samples,
+        clip_negative_forecasts=config.negative_forecast_handling == "clip_zero",
+        config_version=config.config_version,
+    )
+
+    evaluation_results = evaluate_forecasts(
+        forecasts,
+        horizon_hours=config.horizon_hours,
+        comparison_model_ids=(config.selected_prophet_variant.model_id,),
+        reference_model_ids=config.baseline_model_ids,
+        nominal_interval_level=config.interval_width,
+        mape_min_eligible_watts=config.mape_min_eligible_watts,
+    )
+
+    if split == "validation":
+        primary_naive_reference = select_primary_naive_reference(
+            evaluation_results["overall_metrics"],
+            config.baseline_model_ids,
+        )
+    else:
+        primary_naive_reference = config.primary_naive_reference
+
+    return ForecastingResult(
+        forecasts=forecasts,
+        evaluation_results=evaluation_results,
+        primary_naive_reference=cast(str, primary_naive_reference),
+        split_start=cast(pd.Timestamp, split_start),
+        split_end=cast(pd.Timestamp, split_end),
+        fixed_history_start=fixed_history.index[0],
+        fixed_history_end=fixed_history.index[-1],
+    )
+
+
 class ForecastingRunner:
     def __init__(
         self,
@@ -39,13 +133,6 @@ class ForecastingRunner:
         ensure_project_directories(self.project_config)
         np.random.seed(self.forecasting_config.seed)
         run_started = perf_counter()
-
-        if (
-            split == "test"
-            and self.forecasting_config.primary_naive_reference
-            not in self.forecasting_config.baseline_model_ids
-        ):
-            raise ValueError("primary_naive_reference must be one of the configured naive baselines before running the test split.")
 
         logger.info("Starting forecasting for split %s...", split)
 
@@ -80,19 +167,6 @@ class ForecastingRunner:
         target_column = str(canonical_manifest.iloc[0]["column_name"])
         meter_key = str(canonical_manifest.iloc[0]["meter_key"])
 
-        hourly_splits = split_manifest.loc[
-            split_manifest["frequency"].eq("hourly")
-        ].set_index("split")
-
-        split_start = hourly_splits.loc[split, "start"]
-        split_end = hourly_splits.loc[split, "end"]
-
-        fixed_history = treated_hourly.loc[treated_hourly.index < split_start, target_column]
-
-        evaluation_targets = treated_hourly.loc[split_start:split_end, target_column]
-
-        evaluation_imputation_mask = imputation_mask_hourly.loc[split_start:split_end, meter_key]
-
         split_abbreviation = "val" if split == "validation" else split
         run_number = next_sequential_number(self.project_config.forecasting_output_dir, prefix=f"fc_{split_abbreviation}")
         run_id = f"{split}_{run_number:03d}"
@@ -104,54 +178,29 @@ class ForecastingRunner:
 
         run_directory.mkdir(parents=True, exist_ok=False)
 
-        prophet_variant = cast(ProphetVariantParameters, asdict(self.forecasting_config.selected_prophet_variant))
-
-        prophet_variants = (prophet_variant,)
-        forecasts = build_walk_forward_forecasts(
-            fixed_history=fixed_history,
-            evaluation_targets=evaluation_targets,
-            evaluation_imputation_mask=evaluation_imputation_mask,
-            run_id=run_id,
-            experiment_id=self.forecasting_config.experiment_id,
+        result = run_forecasting(
+            treated_hourly=treated_hourly,
+            imputation_mask_hourly=imputation_mask_hourly,
+            split_manifest=split_manifest,
+            target_column=target_column,
+            meter_key=meter_key,
             split=split,
-            horizon_hours=self.forecasting_config.horizon_hours,
-            forecast_origin_step_hours=self.forecasting_config.forecast_origin_step_hours,
-            baseline_model_ids=self.forecasting_config.baseline_model_ids,
-            prophet_variants=prophet_variants,
-            growth=self.forecasting_config.growth,
-            daily_seasonality=self.forecasting_config.daily_seasonality,
-            yearly_seasonality=self.forecasting_config.yearly_seasonality,
-            country_holidays=self.forecasting_config.country_holidays,
-            local_timezone=self.forecasting_config.timezone,
-            log_transform=self.forecasting_config.log_transform,
-            interval_width=self.forecasting_config.interval_width,
-            uncertainty_samples=self.forecasting_config.uncertainty_samples,
-            clip_negative_forecasts=self.forecasting_config.negative_forecast_handling == "clip_zero",
-            config_version=self.forecasting_config.config_version,
+            run_id=run_id,
+            config=self.forecasting_config,
         )
 
-        evaluation_results = evaluate_forecasts(
-            forecasts,
-            horizon_hours=self.forecasting_config.horizon_hours,
-            comparison_model_ids=(self.forecasting_config.selected_prophet_variant.model_id,),
-            reference_model_ids=self.forecasting_config.baseline_model_ids,
-            nominal_interval_level=self.forecasting_config.interval_width,
-            mape_min_eligible_watts=self.forecasting_config.mape_min_eligible_watts,
-        )
+        forecasts = result.forecasts
+        evaluation_results = result.evaluation_results
+        primary_naive_reference = result.primary_naive_reference
+        split_start = result.split_start
+        split_end = result.split_end
 
         if split == "validation":
-            primary_naive_reference = select_primary_naive_reference(
-                evaluation_results["overall_metrics"],
-                self.forecasting_config.baseline_model_ids,
-            )
-
             df_to_csv(
                 pd.DataFrame({"model_id": [primary_naive_reference]}),
                 run_directory,
                 "primary_naive_reference_validation",
             )
-        else:
-            primary_naive_reference = self.forecasting_config.primary_naive_reference
 
         df_to_csv(
             forecasts,
@@ -159,9 +208,9 @@ class ForecastingRunner:
             f"forecasts_{split}"
         )
 
-        for name, result in evaluation_results.items():
+        for name, evaluation_result in evaluation_results.items():
             df_to_csv(
-                result,
+                evaluation_result,
                 run_directory,
                 f"{name}_{split}"
             )
@@ -194,8 +243,8 @@ class ForecastingRunner:
             split_boundaries={
                 "split_start": split_start,
                 "split_end": split_end,
-                "fixed_history_start": fixed_history.index[0],
-                "fixed_history_end": fixed_history.index[-1],
+                "fixed_history_start": result.fixed_history_start,
+                "fixed_history_end": result.fixed_history_end,
                 "first_forecast_origin": forecasts["forecast_origin"].min(),
             },
             forecast_origins=tuple(forecasts["forecast_origin"].drop_duplicates().sort_values()),

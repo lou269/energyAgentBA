@@ -1,7 +1,6 @@
 # python tests/run_tests.py
 #
 # Führt jede Test-Gruppe in der conda-Env aus, unter der ihre src/-Module auch laufen
-# In einer einzelnen Env schlägt die pytest-Collection sonst schon am Import fehl (z. B. "nilmtk" fehlt in forecasting-env, "ollama" fehlt in nilmtk-env).
 
 from __future__ import annotations
 

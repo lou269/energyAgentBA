@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import logging
 import math
 from typing import Protocol, TypedDict
 
 from ollama import Client
 
 from src.pipeline.schema_validation import is_real_number
+
+logger = logging.getLogger(__name__)
 
 
 class ModelMetadata(TypedDict):
@@ -49,7 +52,9 @@ class OllamaClient:
         temperature: float,
         seed: int | None,
     ) -> str:
-        options: dict[str, float | int] = {"temperature": temperature}
+        # ohne explizites num_predict -> Ollama eigenes Default ( 128 Tokens) - reicht für explanation + mehrere evidence_references
+        # nicht aus und die Antwort wird mitten im JSON abgeschnitten
+        options: dict[str, float | int] = {"temperature": temperature, "num_predict": 1024}
 
         if seed is not None:
             options["seed"] = seed
@@ -62,6 +67,9 @@ class OllamaClient:
             think=False,
             stream=False,
         )
+
+        if response.done_reason == "length":
+            logger.warning("Ollama response for model %s was cut off at the num_predict limit.", model)
 
         return response.message.content or ""
 

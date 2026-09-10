@@ -212,7 +212,7 @@ def build_walk_forward_forecasts(
             refit_runtime_seconds = 0.0
 
             if fit_required:
-                model_history = _select_prophet_history(
+                model_history = select_prophet_history(
                     fixed_history,
                     available_history,
                     forecast_origin=forecast_origin,
@@ -301,7 +301,7 @@ def build_walk_forward_forecasts(
     return forecasts
 
 
-def _select_prophet_history(
+def select_prophet_history(
     fixed_history: pd.Series,
     available_history: pd.Series,
     *,

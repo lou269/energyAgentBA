@@ -1,7 +1,7 @@
 # python -m src.numerical_analysis.num_analysis_runner
 # jeder Lauf landet in einem eigenen Ordner output/numerical_analysis/an_<nummer>/
 
-from dataclasses import asdict
+from dataclasses import asdict, dataclass
 import logging
 from time import perf_counter
 
@@ -16,6 +16,108 @@ from src.numerical_analysis.numerical_analysis_run_manifest import build_numeric
 
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class NumericalAnalysisResult:
+    anomaly_15min: pd.DataFrame
+    anomaly_hourly: pd.DataFrame
+
+
+def run_numerical_analysis(
+    treated_15min: pd.DataFrame,
+    treated_hourly: pd.DataFrame,
+    plausibility_15min: pd.DataFrame,
+    plausibility_hourly: pd.DataFrame,
+    split_manifest: pd.DataFrame,
+    target_column: str,
+    config: NumericalAnalysisConfig,
+) -> NumericalAnalysisResult:
+    split_15min = split_manifest[
+        split_manifest["frequency"] == "15min"
+    ].set_index("split")
+
+    train_15min = treated_15min.loc[
+        split_15min.loc["train", "start"]:split_15min.loc["train", "end"]
+    ]
+
+    validation_15min = treated_15min.loc[
+        split_15min.loc["validation", "start"]:
+        split_15min.loc["validation", "end"]
+    ]
+
+    test_15min = treated_15min.loc[
+        split_15min.loc["test", "start"]:split_15min.loc["test", "end"]
+    ]
+
+    split_hourly = split_manifest[
+        split_manifest["frequency"] == "hourly"
+    ].set_index("split")
+
+    train_hourly = treated_hourly.loc[
+        split_hourly.loc["train", "start"]:split_hourly.loc["train", "end"]
+    ]
+
+    validation_hourly = treated_hourly.loc[
+        split_hourly.loc["validation", "start"]:
+        split_hourly.loc["validation", "end"]
+    ]
+
+    test_hourly = treated_hourly.loc[
+        split_hourly.loc["test", "start"]:split_hourly.loc["test", "end"]
+    ]
+
+    analysis_15min = build_multi_scale_analysis(
+        train_data=train_15min,
+        validation_data=validation_15min,
+        test_data=test_15min,
+        target_column=target_column,
+        short_term_window=config.short_term_window_15min,
+        sample_period_hours=config.sample_period_hours_15min,
+        long_term_window=config.long_term_window_15min,
+        min_daily_reference_samples=config.min_daily_reference_samples,
+        min_weekly_reference_samples=config.min_weekly_reference_samples,
+        trend_threshold=config.trend_threshold,
+        min_reference_power_w=config.min_reference_power_w,
+    )
+
+    anomaly_15min = build_anomaly_detection(
+        analysis_results=analysis_15min,
+        min_reference_samples=config.min_reference_samples,
+        min_residual_std_w=config.min_residual_std_w,
+        unusual_threshold=config.unusual_threshold,
+        strong_anomaly_threshold=config.strong_anomaly_threshold,
+        sample_period_hours=config.sample_period_hours_15min,
+    )
+
+    anomaly_15min["value_implausible"] = plausibility_15min[target_column].reindex(anomaly_15min.index)
+
+    analysis_hourly = build_multi_scale_analysis(
+        train_data=train_hourly,
+        validation_data=validation_hourly,
+        test_data=test_hourly,
+        target_column=target_column,
+        short_term_window=config.short_term_window_hourly,
+        sample_period_hours=config.sample_period_hours_hourly,
+        long_term_window=config.long_term_window_hourly,
+        min_daily_reference_samples=config.min_daily_reference_samples,
+        min_weekly_reference_samples=config.min_weekly_reference_samples,
+        trend_threshold=config.trend_threshold,
+        min_reference_power_w=config.min_reference_power_w,
+    )
+
+    anomaly_hourly = build_anomaly_detection(
+        analysis_results=analysis_hourly,
+        min_reference_samples=config.min_reference_samples,
+        min_residual_std_w=config.min_residual_std_w,
+        unusual_threshold=config.unusual_threshold,
+        strong_anomaly_threshold=config.strong_anomaly_threshold,
+        sample_period_hours=config.sample_period_hours_hourly,
+    )
+
+    anomaly_hourly["value_implausible"] = plausibility_hourly[target_column].reindex(anomaly_hourly.index)
+
+    return NumericalAnalysisResult(anomaly_15min=anomaly_15min, anomaly_hourly=anomaly_hourly)
 
 
 class NumericalAnalysisRunner:
@@ -74,93 +176,17 @@ class NumericalAnalysisRunner:
         candidate_id = str(canonical_manifest["candidate_id"].iloc[0])
         target_column = str(canonical_manifest["column_name"].iloc[0])
 
-        split_15min = split_manifest[
-            split_manifest["frequency"] == "15min"
-        ].set_index("split")
+        logger.info("Building 15-minute and hourly analysis...")
 
-        train_15min = treated_15min.loc[
-            split_15min.loc["train", "start"]:split_15min.loc["train", "end"]
-        ]
-
-        validation_15min = treated_15min.loc[
-            split_15min.loc["validation", "start"]:
-            split_15min.loc["validation", "end"]
-        ]
-
-        test_15min = treated_15min.loc[
-            split_15min.loc["test", "start"]:split_15min.loc["test", "end"]
-        ]
-
-        split_hourly = split_manifest[
-            split_manifest["frequency"] == "hourly"
-        ].set_index("split")
-
-        train_hourly = treated_hourly.loc[
-            split_hourly.loc["train", "start"]:split_hourly.loc["train", "end"]
-        ]
-
-        validation_hourly = treated_hourly.loc[
-            split_hourly.loc["validation", "start"]:
-            split_hourly.loc["validation", "end"]
-        ]
-
-        test_hourly = treated_hourly.loc[
-            split_hourly.loc["test", "start"]:split_hourly.loc["test", "end"]
-        ]
-
-        logger.info("Building 15-minute analysis...")
-
-        analysis_15min = build_multi_scale_analysis(
-            train_data=train_15min,
-            validation_data=validation_15min,
-            test_data=test_15min,
+        result = run_numerical_analysis(
+            treated_15min=treated_15min,
+            treated_hourly=treated_hourly,
+            plausibility_15min=plausibility_15min,
+            plausibility_hourly=plausibility_hourly,
+            split_manifest=split_manifest,
             target_column=target_column,
-            short_term_window=self.analysis_config.short_term_window_15min,
-            sample_period_hours=self.analysis_config.sample_period_hours_15min,
-            long_term_window=self.analysis_config.long_term_window_15min,
-            min_daily_reference_samples=self.analysis_config.min_daily_reference_samples,
-            min_weekly_reference_samples=self.analysis_config.min_weekly_reference_samples,
-            trend_threshold=self.analysis_config.trend_threshold,
-            min_reference_power_w=self.analysis_config.min_reference_power_w,
+            config=self.analysis_config,
         )
-        
-        anomaly_15min = build_anomaly_detection(
-            analysis_results=analysis_15min,
-            min_reference_samples=self.analysis_config.min_reference_samples,
-            min_residual_std_w=self.analysis_config.min_residual_std_w,
-            unusual_threshold=self.analysis_config.unusual_threshold,
-            strong_anomaly_threshold=self.analysis_config.strong_anomaly_threshold,
-            sample_period_hours=self.analysis_config.sample_period_hours_15min,
-        )
-
-        anomaly_15min["value_implausible"] = plausibility_15min[target_column].reindex(anomaly_15min.index)
-
-        logger.info("Building hourly analysis...")
-
-        analysis_hourly = build_multi_scale_analysis(
-            train_data=train_hourly,
-            validation_data=validation_hourly,
-            test_data=test_hourly,
-            target_column=target_column,
-            short_term_window=self.analysis_config.short_term_window_hourly,
-            sample_period_hours=self.analysis_config.sample_period_hours_hourly,
-            long_term_window=self.analysis_config.long_term_window_hourly,
-            min_daily_reference_samples=self.analysis_config.min_daily_reference_samples,
-            min_weekly_reference_samples=self.analysis_config.min_weekly_reference_samples,
-            trend_threshold=self.analysis_config.trend_threshold,
-            min_reference_power_w=self.analysis_config.min_reference_power_w,
-        )
-
-        anomaly_hourly = build_anomaly_detection(
-            analysis_results=analysis_hourly,
-            min_reference_samples=self.analysis_config.min_reference_samples,
-            min_residual_std_w=self.analysis_config.min_residual_std_w,
-            unusual_threshold=self.analysis_config.unusual_threshold,
-            strong_anomaly_threshold=self.analysis_config.strong_anomaly_threshold,
-            sample_period_hours=self.analysis_config.sample_period_hours_hourly,
-        )
-
-        anomaly_hourly["value_implausible"] = plausibility_hourly[target_column].reindex(anomaly_hourly.index)
 
         run_number = next_sequential_number(self.project_config.numerical_analysis_output_dir, prefix="an")
         run_id = f"an_{run_number:03d}"
@@ -172,13 +198,13 @@ class NumericalAnalysisRunner:
         run_directory.mkdir(parents=True, exist_ok=False)
 
         df_to_csv(
-            anomaly_15min.reset_index(),
+            result.anomaly_15min.reset_index(),
             run_directory,
             "anomaly_scores_15min",
         )
 
         df_to_csv(
-            anomaly_hourly.reset_index(),
+            result.anomaly_hourly.reset_index(),
             run_directory,
             "anomaly_scores_hourly",
         )

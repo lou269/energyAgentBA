@@ -6,7 +6,7 @@ from dataclasses import dataclass
 @dataclass(frozen=True)
 class LLMConfig:
     model: str
-    prompt_version: str = "v4"
+    prompt_version: str = "v5"
     temperature: float = 0.0
     seed: int | None = 42
     max_attempts: int = 2

@@ -28,6 +28,7 @@ class ProjectConfig:
     forecasting_output_dir: Path = output_dir / "forecasting"
     structured_state_output_dir: Path = output_dir / "structured_state"
     llm_output_dir: Path = output_dir / "llm"
+    cycle_output_dir: Path = output_dir / "cycle"
 
     # Dataset
     dataset_release: str = "UK-DALE April 2017"
@@ -62,6 +63,7 @@ def ensure_project_directories(config: ProjectConfig) -> None:
         config.forecasting_output_dir,
         config.structured_state_output_dir,
         config.llm_output_dir,
+        config.cycle_output_dir,
     ]
 
     for directory in directories:
