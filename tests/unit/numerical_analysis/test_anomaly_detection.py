@@ -9,8 +9,8 @@ from src.numerical_analysis.anomaly_detection import build_anomaly_detection
 
 
 def _analysis_frame(
-    current_power: list[float], 
-    reference: float, 
+    current_power: list[float],
+    reference: float,
     split: list[str]
 ) -> pd.DataFrame:
     return pd.DataFrame(
@@ -21,7 +21,8 @@ def _analysis_frame(
             "daily_expected": reference,
             "weekly_expected": reference,
             "long_term_mean": reference,
-        }
+        },
+        index=pd.date_range("2013-01-01", periods=len(split), freq="h", tz="UTC"),
     )
 
 
@@ -89,7 +90,8 @@ def test_dominant_scale_picks_largest_absolute_score() -> None:
                 "daily_expected": [100.0] * n + [106.0],
                 "weekly_expected": [100.0] * n + [100.0],
                 "long_term_mean": [100.0] * n + [106.0],
-            }
+            },
+            index=pd.date_range("2013-01-01", periods=n + 1, freq="h", tz="UTC"),
         ),
         min_reference_samples=50, min_residual_std_w=0.1,
         unusual_threshold=2.0, strong_anomaly_threshold=3.0,

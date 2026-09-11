@@ -8,7 +8,7 @@ import logging
 import pandas as pd
 
 from src.pipeline.io import df_to_csv
-from src.config.preprocessing_config import PreprocessingConfig
+from src.config.config_forecasting import PreprocessingConfig
 from src.config.project_config import ProjectConfig, ensure_project_directories
 from src.preprocessing.gap_treatment import build_gap_treated_data
 from src.preprocessing.plausibility_check import build_plausibility_flags

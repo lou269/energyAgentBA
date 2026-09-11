@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 
 from src.pipeline.io import df_to_csv, next_sequential_number, save_json
-from src.config.forecasting_config import ForecastingConfig
+from src.config.config_forecasting import ForecastingConfig
 from src.config.project_config import ProjectConfig, ensure_project_directories
 from src.forecasting.evaluation import evaluate_forecasts, select_primary_naive_reference
 from src.forecasting.forecast_run_manifest import build_forecast_run_manifest

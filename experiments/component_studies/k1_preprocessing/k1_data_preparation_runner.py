@@ -8,7 +8,7 @@ import logging
 import pandas as pd
 from nilmtk import DataSet
 
-from src.config.data_preparation_config import DataPreparationConfig
+from src.config.config_nilmtk import DataPreparationConfig
 from src.config.project_config import ProjectConfig
 from src.data_preparation.aggregation.aggregation import build_aggregated_data
 from src.data_preparation.aggregation.channel_loading import build_loaded_channels
@@ -75,10 +75,8 @@ def run() -> None:
         candidates["start"] = pd.to_datetime(candidates["start"], utc=True)
         candidates["end"] = pd.to_datetime(candidates["end"], utc=True)
 
-        # Nicht mehr "global laengster Abschnitt" (build_candidate_selection), sondern der
-        # Abschnitt, der das feste Validation-Fenster tatsaechlich enthaelt -- damit alle
-        # Varianten auf demselben Kalenderzeitraum auswerten und nur die Trainingslaenge
-        # davor variiert. Siehe BA_HANDBUCH Kap. 13 (K1).
+        # nicht laengster Abschnitt, sondern der der das fixe Validation-Fenster enthaelt --
+        # sonst vergleichen die Varianten auf verschiedenen Kalenderzeitraeumen
         containing = candidates.loc[
             candidates["start"].le(FIXED_VALIDATION_START)
             & candidates["end"].ge(FIXED_VALIDATION_END)

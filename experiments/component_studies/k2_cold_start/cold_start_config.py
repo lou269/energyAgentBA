@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal
 
-from src.config.forecasting_config import ForecastingConfig, ProphetVariantConfig
+from src.config.config_forecasting import ForecastingConfig, ProphetVariantConfig
 
 
 ExperimentSplit = Literal["validation", "test"]

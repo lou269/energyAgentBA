@@ -7,9 +7,7 @@ import pandas as pd
 from prophet import Prophet
 
 from src.adaption.adaption_policy import AdaptionAction, adaption_policy
-from src.config.forecasting_config import ForecastingConfig, ProphetVariantConfig
-from src.config.llm_config import LLMConfig
-from src.config.numerical_analysis_config import NumericalAnalysisConfig
+from src.config.config_forecasting import ForecastingConfig,LLMConfig, NumericalAnalysisConfig, ProphetVariantConfig
 from src.context.calendar_schema import CalendarContext
 from src.forecasting.prophet_model import build_prophet_forecast, fit_prophet_model
 from src.forecasting.walk_forward import select_prophet_history

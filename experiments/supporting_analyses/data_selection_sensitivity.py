@@ -10,7 +10,7 @@ import pandas as pd
 
 from data_preparation.selection.auxiliary_appliance_selection import build_auxiliary_appliance_selection
 from old.old_src_vor_umbau.provisional_selection import build_candidate_selection_outputs
-from src.config.analysis_config import AnalysisConfig
+from src.config.config_nilmtk import AnalysisConfig
 from src.config.project_config import ProjectConfig
 from src.pipeline.io import save_json
 from src.pipeline.provenance import file_sha256, git_output

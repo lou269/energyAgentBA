@@ -10,7 +10,7 @@ from src.context.calendar_schema import CALENDAR_CONTEXT_FIELDS, CalendarEvent, 
 from src.pipeline.schema_validation import is_real_number, validate_fields
 
 
-SCHEMA_VERSION = "1.1"
+SCHEMA_VERSION = "1.2"
 FORECAST_HORIZON_HOURS = 24
 
 FLOAT_COMPARISON_REL_TOL = 1e-9
@@ -52,7 +52,7 @@ ANOMALY_FIELDS = frozenset(
         "direction",
         "dominant_scale",
         "scale_scores",
-        "scale_streak_hours",
+        "scale_elevated_hours",
         "available_scales",
     }
 )
@@ -116,7 +116,7 @@ class ScaleScores(TypedDict):
     long_term: float | None
 
 
-class ScaleStreaks(TypedDict):
+class ScaleElevatedHours(TypedDict):
     short_term: float | None
     daily: float | None
     weekly: float | None
@@ -129,7 +129,7 @@ class AnomalyState(TypedDict):
     direction: AnomalyDirection | None
     dominant_scale: ScaleName | None
     scale_scores: ScaleScores
-    scale_streak_hours: ScaleStreaks
+    scale_elevated_hours: ScaleElevatedHours
     available_scales: list[ScaleName]
 
 
@@ -252,16 +252,16 @@ def validate_structured_state(
         if scale_score is not None:
             validated_scale_scores[scale] = float(scale_score)
 
-    scale_streak_hours = _mapping(anomaly["scale_streak_hours"], "anomaly.scale_streak_hours")
-    validate_fields(scale_streak_hours, frozenset(SCALE_NAMES), "anomaly.scale_streak_hours")
+    scale_elevated_hours = _mapping(anomaly["scale_elevated_hours"], "anomaly.scale_elevated_hours")
+    validate_fields(scale_elevated_hours, frozenset(SCALE_NAMES), "anomaly.scale_elevated_hours")
 
     for scale in SCALE_NAMES:
-        streak_hours = _number(scale_streak_hours[scale], f"anomaly.scale_streak_hours.{scale}", nullable=True)
-        if (streak_hours is not None) != (scale in validated_scale_scores):
-            raise ValueError(f"anomaly.scale_streak_hours.{scale} must be null exactly when anomaly.scale_scores.{scale} is null.")
+        elevated_hours = _number(scale_elevated_hours[scale], f"anomaly.scale_elevated_hours.{scale}", nullable=True)
+        if (elevated_hours is not None) != (scale in validated_scale_scores):
+            raise ValueError(f"anomaly.scale_elevated_hours.{scale} must be null exactly when anomaly.scale_scores.{scale} is null.")
 
-        if streak_hours is not None and streak_hours < 0:
-            raise ValueError(f"anomaly.scale_streak_hours.{scale} must not be negative.")
+        if elevated_hours is not None and elevated_hours < 0:
+            raise ValueError(f"anomaly.scale_elevated_hours.{scale} must not be negative.")
 
     available_scales = anomaly["available_scales"]
 

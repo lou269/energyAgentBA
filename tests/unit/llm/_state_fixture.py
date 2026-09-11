@@ -37,7 +37,7 @@ _BASE_STATE_JSON = """
       "short_term": 3.3281636839228255,
       "weekly": 3.734920041231248
     },
-    "scale_streak_hours": {
+    "scale_elevated_hours": {
       "daily": 1.0,
       "long_term": 1.0,
       "short_term": 1.0,
@@ -227,7 +227,7 @@ _BASE_STATE_JSON = """
     "observation_start": "2015-12-15T10:00:00+00:00",
     "value_implausible": false
   },
-  "schema_version": "1.1"
+  "schema_version": "1.2"
 }
 """
 

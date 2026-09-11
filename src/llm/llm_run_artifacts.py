@@ -5,7 +5,7 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import cast
 
-from src.config.llm_config import LLMConfig
+from src.config.config_forecasting import LLMConfig
 from src.llm.inference import LLMAttemptRecord, LLMInferenceError, LLMInferenceResult
 from src.llm.llm_run_manifest import LLMRunStatus, build_llm_run_manifest
 from src.pipeline.io import find_run_directory, save_json

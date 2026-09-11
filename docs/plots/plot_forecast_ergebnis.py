@@ -240,7 +240,7 @@ def build_forecast_plot(
 
 
 def main() -> None:
-    from src.config.forecasting_config import ForecastingConfig
+    from src.config.config_forecasting import ForecastingConfig
     from src.pipeline.io import latest_sequential_number
 
     split = "validation"

@@ -1,3 +1,5 @@
+from typing import cast
+
 import numpy as np
 import pandas as pd
 
@@ -21,11 +23,12 @@ def build_anomaly_detection(
     }
 
     train_mask = result["split"] == "train"
+    day_key = cast(pd.DatetimeIndex, result.index).normalize()
 
     for scale, reference_column in reference_columns.items():
         residual_column = f"{scale}_residual"
         score_column = f"{scale}_score"
-        streak_column = f"{scale}_streak_hours"
+        elevated_hours_column = f"{scale}_elevated_hours"
 
         result[residual_column] = result["current_power"] - result[reference_column]
 
@@ -36,7 +39,7 @@ def build_anomaly_detection(
 
         if len(train_residuals) < min_reference_samples:
             result[score_column] = np.nan
-            result[streak_column] = np.nan
+            result[elevated_hours_column] = np.nan
             continue
 
         residual_mean = train_residuals.mean()
@@ -44,7 +47,7 @@ def build_anomaly_detection(
 
         if pd.isna(residual_std) or residual_std < min_residual_std_w:
             result[score_column] = np.nan
-            result[streak_column] = np.nan
+            result[elevated_hours_column] = np.nan
             continue
 
         result[score_column] = (result[residual_column] - residual_mean) / residual_std
@@ -52,9 +55,8 @@ def build_anomaly_detection(
         elevated = result[score_column].abs() >= unusual_threshold
         elevated = elevated & result[score_column].notna()
 
-        streak_periods = elevated.groupby((~elevated).cumsum()).cumsum()
-
-        result[streak_column] = (streak_periods * sample_period_hours).where(result[score_column].notna())
+        # Anzahl auffälliger Stunden seit Mitternacht bis zur jeweiligen Zeile 
+        result[elevated_hours_column] = (elevated.groupby(day_key).cumsum() * sample_period_hours).where(result[score_column].notna())
         
 
     score_columns = [

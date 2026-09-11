@@ -105,8 +105,9 @@ def test_classification_is_normal_without_calling_the_rule_classifier() -> None:
 
 
 def test_sustained_absence_triggers_immediate_retrain_and_range_exclusion() -> None:
-    # Werte gewählt, dass short_term_streak_hours am zweiten decision_time genau die SUSTAINED_STREAK_HOURS-Schwelle (24h) erreicht 
-    # -> rule_based_classifier.py
+    # Werte gewählt, dass der Drop beim ersten decision_time erst 2h alt ist (unter SUSTAINED_DAILY_ELEVATED_HOURS,
+    # noch "peak") und beim zweiten seit Mitternacht durchgehend 24h auffällig war (klar über der 18h-Schwelle,
+    # -> "absence") -> rule_based_classifier.py
     hours = 24 * 12
     index = pd.date_range("2024-01-01", periods=hours, freq="1h", tz="UTC")
     baseline = 200.0 + 2.0 * np.sin(2 * np.pi * index.hour.to_numpy() / 24)

@@ -36,31 +36,31 @@ def adaption_policy(
 
     if classification == "absence":
         decision_time = _timestamp(context["decision_time"])
-        streak_hours = _dominant_streak_hours(context)
-        range_start = decision_time - pd.Timedelta(hours=streak_hours)
+        elevated_hours = _dominant_elevated_hours(context)
+        day_start = (decision_time - pd.Timedelta(hours=1)).normalize()
 
         return AdaptionAction(
             kind="exclude_range",
-            range_start=range_start,
+            range_start=day_start,
             range_end=decision_time - pd.Timedelta(hours=1),
-            reason=f"absence since {range_start.isoformat()} ({streak_hours:.0f}h)",
+            reason=f"absence on {day_start.date()} ({elevated_hours:.0f}h elevated today)",
         )
 
     if classification == "new_pattern":
         decision_time = _timestamp(context["decision_time"])
-        streak_hours = _dominant_streak_hours(context)
-        new_history_start = decision_time - pd.Timedelta(hours=streak_hours)
+        elevated_hours = _dominant_elevated_hours(context)
+        new_history_start = (decision_time - pd.Timedelta(hours=1)).normalize()
 
         return AdaptionAction(
             kind="advance_history_start",
             new_history_start=new_history_start,
-            reason=f"new_pattern since {new_history_start.isoformat()} ({streak_hours:.0f}h)",
+            reason=f"new_pattern since {new_history_start.date()} ({elevated_hours:.0f}h elevated that day)",
         )
 
     return AdaptionAction(kind="none", reason=f"{classification}: no action")
 
 
-def _dominant_streak_hours(
+def _dominant_elevated_hours(
     context: StructuredState
 ) -> float:
     dominant_scale = context["anomaly"]["dominant_scale"]
@@ -68,12 +68,12 @@ def _dominant_streak_hours(
     if dominant_scale is None:
         raise ValueError("anomaly.dominant_scale is missing for this classification.")
 
-    streak_hours = context["anomaly"]["scale_streak_hours"][dominant_scale]
+    elevated_hours = context["anomaly"]["scale_elevated_hours"][dominant_scale]
 
-    if streak_hours is None:
-        raise ValueError("anomaly.scale_streak_hours for the dominant scale is missing.")
+    if elevated_hours is None:
+        raise ValueError("anomaly.scale_elevated_hours for the dominant scale is missing.")
 
-    return streak_hours
+    return elevated_hours
 
 
 def _timestamp(value: str) -> pd.Timestamp:

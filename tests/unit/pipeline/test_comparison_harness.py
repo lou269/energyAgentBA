@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from src.config.llm_config import LLMConfig
+from src.config.config_forecasting import LLMConfig
 from src.llm.client import ModelMetadata
 from src.pipeline.comparison_harness import ScenarioData, build_scenario_from_split_manifest, run_comparison
 from src.pipeline.cycle_variants import SYS_VARIANTS
@@ -222,3 +222,33 @@ def test_run_comparison_survives_llm_inference_failures(tmp_path: Path) -> None:
     assert (result["error"] != "").all()
     assert result["classification"].isna().all()
     assert result["mae_w"].isna().all()
+
+
+def test_run_comparison_records_rule_based_explanation(tmp_path: Path) -> None:
+    # gleiches cos()-Muster wie oben, garantiert eine echte Anomalie pro Zyklus -> rule_based_classify
+    # wird aufgerufen und liefert eine reasoning, die hier als "explanation" landen muss
+    hours, coldstart_hours = 240, 72
+    index = pd.date_range("2024-01-01", periods=hours, freq="1h", tz="UTC")
+    values = 200.0 + 50.0 * np.cos(2 * np.pi * index.hour.to_numpy() / 24) + 10.0
+    scenario = ScenarioData(
+        target_series=pd.Series(values, index=index, name="target"),
+        coldstart_hours=coldstart_hours,
+        decision_times=tuple(
+            pd.date_range(start=index[coldstart_hours] + pd.Timedelta(hours=1), periods=2, freq="24h")
+        ),
+        calendar_events=(),
+        calendar_source_available=False,
+        calendar_source="none",
+    )
+
+    base_config = SYS_VARIANTS["SYS2"]
+    config = replace(
+        base_config,
+        numerical_analysis_config=replace(base_config.numerical_analysis_config, min_reference_samples=5, unusual_threshold=1.0),
+    )
+
+    result = run_comparison(scenario, {"SYS2": config}, tmp_path)
+
+    classified = result.loc[result["classification"].notna()]
+    assert not classified.empty
+    assert (classified["explanation"] != "").all()

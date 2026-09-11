@@ -12,8 +12,7 @@ from typing import cast
 
 import pandas as pd
 
-from src.config.forecasting_config import ForecastingConfig
-from src.config.preprocessing_config import PreprocessingConfig
+from src.config.config_forecasting import ForecastingConfig, PreprocessingConfig
 from src.config.project_config import ProjectConfig
 from src.forecasting.evaluation import evaluate_forecasts, select_primary_naive_reference
 from src.forecasting.forecast_run_manifest import build_forecast_run_manifest

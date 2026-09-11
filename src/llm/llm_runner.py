@@ -9,7 +9,7 @@ from pathlib import Path
 from time import perf_counter
 
 
-from src.config.llm_config import LLMConfig
+from src.config.config_forecasting import LLMConfig
 from src.config.project_config import ProjectConfig, ensure_project_directories
 from src.llm.inference import LLMInferenceError, LLMInferenceResult, infer_llm_output
 from src.llm.client import LLMClient, ModelMetadata, OllamaClient

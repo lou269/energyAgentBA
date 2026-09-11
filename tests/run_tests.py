@@ -41,6 +41,7 @@ TEST_GROUPS = [
             "tests/unit/evaluation",
             "tests/unit/user_profile",
             "tests/unit/config",
+            "tests/unit/proposal_experiments",
         ),
     ),
 ]

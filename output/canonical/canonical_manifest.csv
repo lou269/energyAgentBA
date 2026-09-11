@@ -1,2 +1,2 @@
 candidate_id,house,meter_key,column_name,window_start,window_end
-H1-M54-S6,1,H1_M54,H1_M54_power_w,2015-05-01 20:00:00+00:00,2016-03-20 14:00:00+00:00
+H1-M54-S2,1,H1_M54,H1_M54_power_w,2013-04-01 22:00:00+00:00,2014-07-21 06:00:00+00:00

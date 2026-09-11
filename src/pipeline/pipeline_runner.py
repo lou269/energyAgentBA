@@ -14,7 +14,7 @@ import subprocess
 
 import pandas as pd
 
-from src.config.preprocessing_config import PreprocessingConfig
+from src.config.config_forecasting import PreprocessingConfig
 from src.config.project_config import ProjectConfig, ensure_project_directories
 from src.llm.llm_run_artifacts import load_prompt
 from src.llm.llm_runner import PROMPT_DIRECTORY

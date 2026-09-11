@@ -13,8 +13,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from src.config.numerical_analysis_config import NumericalAnalysisConfig
-from src.config.preprocessing_config import PreprocessingConfig
+from src.config.config_forecasting import NumericalAnalysisConfig, PreprocessingConfig
 from src.config.project_config import ProjectConfig
 from src.numerical_analysis.anomaly_detection import build_anomaly_detection
 from src.numerical_analysis.multi_scale_analysis import build_multi_scale_analysis

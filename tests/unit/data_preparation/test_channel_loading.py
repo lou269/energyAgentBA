@@ -5,6 +5,7 @@ from __future__ import annotations
 from unittest.mock import Mock
 
 import pandas as pd
+import pytest
 
 from src.data_preparation.aggregation.channel_loading import build_loaded_channels
 
@@ -107,3 +108,70 @@ def test_missing_power_series_becomes_empty_utc_series() -> None:
     assert series.dtype == "float64"
     assert isinstance(series.index, pd.DatetimeIndex)
     assert str(series.index.tz) == "UTC"
+
+
+def test_include_meter_keys_restricts_to_given_channels() -> None:
+    channel_quality = pd.DataFrame(
+        [
+            _quality_row(1, 1, "H1-M1", is_mains=False, start="2020-01-01", end="2020-01-02"),
+            _quality_row(1, 2, "H1-M2", is_mains=False, start="2020-01-01", end="2020-01-02"),
+        ]
+    )
+    meter = Mock()
+    meter.power_series_all_data.return_value = pd.Series(
+        [1.0], index=pd.to_datetime(["2020-01-01T00:00:00Z"])
+    )
+    dataset = _dataset({(1, 1): meter, (1, 2): meter})
+
+    result = build_loaded_channels(
+        dataset=dataset,
+        channel_quality=channel_quality,
+        canonical_ac_type="active",
+        mains_only=False,
+        include_meter_keys={"H1-M2"},
+    )
+
+    assert list(result.keys()) == ["H1-M2"]
+
+
+def test_window_override_replaces_each_channels_own_start_and_end() -> None:
+    channel_quality = pd.DataFrame(
+        [_quality_row(1, 1, "H1-M1", is_mains=False, start="2020-01-01", end="2020-06-01")]
+    )
+    meter = Mock()
+    meter.power_series_all_data.return_value = pd.Series(
+        [1.0], index=pd.to_datetime(["2020-02-01T00:00:00Z"])
+    )
+    dataset = _dataset({(1, 1): meter})
+
+    window_start = pd.Timestamp("2020-02-01", tz="UTC")
+    window_end = pd.Timestamp("2020-02-08", tz="UTC")
+
+    build_loaded_channels(
+        dataset=dataset,
+        channel_quality=channel_quality,
+        canonical_ac_type="active",
+        mains_only=False,
+        window_start=window_start,
+        window_end=window_end,
+    )
+
+    called_sections = meter.power_series_all_data.call_args.kwargs["sections"]
+    assert called_sections[0].start == window_start
+    assert called_sections[0].end == window_end
+
+
+def test_window_start_and_end_must_be_given_together() -> None:
+    channel_quality = pd.DataFrame(
+        [_quality_row(1, 1, "H1-M1", is_mains=False, start="2020-01-01", end="2020-01-02")]
+    )
+    dataset = _dataset({})
+
+    with pytest.raises(ValueError, match="window_start and window_end"):
+        build_loaded_channels(
+            dataset=dataset,
+            channel_quality=channel_quality,
+            canonical_ac_type="active",
+            mains_only=False,
+            window_start=pd.Timestamp("2020-01-01", tz="UTC"),
+        )

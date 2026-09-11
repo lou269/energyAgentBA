@@ -8,7 +8,7 @@ from nilmtk import DataSet
 
 from src.analysis.channel_quality import build_channel_quality
 from src.analysis.channel_registry import build_channel_registry
-from src.config.analysis_config import AnalysisConfig
+from src.config.config_nilmtk import AnalysisConfig
 from src.config.project_config import ProjectConfig, ensure_project_directories
 from src.pipeline.io import df_to_csv
 

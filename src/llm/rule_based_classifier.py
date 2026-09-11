@@ -4,8 +4,8 @@ from src.llm.llm_schema import Classification
 from src.structured_state.structured_state_schema import StructuredState
 
 
-# noch nicht kalibriert, erstmal plausibel geschätzt
-SUSTAINED_STREAK_HOURS = 24.0
+# noch nicht kalibriert -> grob geschätzt als 75% eines Tages (18 von 24h)
+SUSTAINED_DAILY_ELEVATED_HOURS = 18.0
 MULTI_SCALE_MINIMUM = 2
 
 
@@ -30,12 +30,12 @@ def rule_based_classify(
             reasoning="observation.value_implausible is set.",
         )
 
-    scale_streak_hours = anomaly["scale_streak_hours"]
+    scale_elevated_hours = anomaly["scale_elevated_hours"]
 
     sustained_scales = [
         scale
         for scale in anomaly["available_scales"]
-        if (streak := scale_streak_hours[scale]) is not None and streak >= SUSTAINED_STREAK_HOURS
+        if (elevated_hours := scale_elevated_hours[scale]) is not None and elevated_hours >= SUSTAINED_DAILY_ELEVATED_HOURS
     ]
 
     dominant_scale = anomaly["dominant_scale"]
@@ -48,7 +48,7 @@ def rule_based_classify(
         return RuleClassificationResult(
             classification="absence",
             reasoning=(
-                f"strong, sustained downward deviation on scale '{dominant_scale}' ({scale_streak_hours[dominant_scale]:.0f}h >= {SUSTAINED_STREAK_HOURS:.0f}h)."
+                f"strong, sustained downward deviation on scale '{dominant_scale}' ({scale_elevated_hours[dominant_scale]:.0f}h elevated today >= {SUSTAINED_DAILY_ELEVATED_HOURS:.0f}h)."
             ),
         )
 

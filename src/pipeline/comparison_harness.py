@@ -12,7 +12,7 @@ from src.context.calendar_context import build_calendar_context
 from src.context.calendar_schema import CalendarContext
 from src.llm.client import LLMClient, OllamaClient
 from src.llm.inference import LLMInferenceError
-from src.pipeline.daily_cycle import CycleConfig, CycleState, run_cycle
+from src.pipeline.daily_cycle import CycleConfig, CycleResult, CycleState, run_cycle
 from src.pipeline.io import df_to_csv
 
 logger = logging.getLogger(__name__)
@@ -135,6 +135,7 @@ def run_comparison(
                             "decision_time": decision_time,
                             "config": config_label,
                             "classification": None,
+                            "explanation": "",
                             "adaption_action": "none",
                             "adaption_reason": "",
                             "retrained": False,
@@ -172,6 +173,7 @@ def run_comparison(
                         "decision_time": decision_time,
                         "config": config_label,
                         "classification": result.classification,
+                        "explanation": _explanation(result),
                         "adaption_action": result.adaption_action.kind if result.adaption_action else "none",
                         "adaption_reason": result.adaption_action.reason if result.adaption_action else "",
                         "retrained": result.retrained,
@@ -187,6 +189,16 @@ def run_comparison(
     comparison = pd.DataFrame(rows)
     df_to_csv(comparison, output_dir, "comparison_summary")
     return comparison
+
+
+def _explanation(result: CycleResult) -> str:
+    if result.llm_output is not None:
+        return result.llm_output["explanation"]
+
+    if result.rule_output is not None:
+        return result.rule_output.reasoning
+
+    return ""
 
 
 def _dump_failed_attempt(

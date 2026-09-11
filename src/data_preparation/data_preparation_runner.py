@@ -8,7 +8,7 @@ import pandas as pd
 from nilmtk import DataSet
 
 from src.pipeline.io import df_to_csv
-from src.config.data_preparation_config import DataPreparationConfig
+from src.config.config_nilmtk import DataPreparationConfig
 from src.config.project_config import ProjectConfig, ensure_project_directories
 from src.data_preparation.aggregation.channel_loading import build_loaded_channels
 from src.data_preparation.aggregation.aggregation import build_aggregated_data

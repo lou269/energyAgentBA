@@ -1,6 +1,4 @@
-from src.config.forecasting_config import ForecastingConfig, ProphetVariantConfig
-from src.config.llm_config import LLMConfig
-from src.config.numerical_analysis_config import NumericalAnalysisConfig
+from src.config.config_forecasting import ForecastingConfig, LLMConfig, NumericalAnalysisConfig,ProphetVariantConfig
 from src.pipeline.daily_cycle import CycleConfig
 
 

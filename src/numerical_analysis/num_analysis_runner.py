@@ -8,7 +8,7 @@ from time import perf_counter
 import pandas as pd
 
 from src.pipeline.io import df_to_csv, next_sequential_number, save_json
-from src.config.numerical_analysis_config import NumericalAnalysisConfig
+from src.config.config_forecasting import NumericalAnalysisConfig
 from src.config.project_config import ProjectConfig, ensure_project_directories
 from src.numerical_analysis.anomaly_detection import build_anomaly_detection
 from src.numerical_analysis.multi_scale_analysis import build_multi_scale_analysis
