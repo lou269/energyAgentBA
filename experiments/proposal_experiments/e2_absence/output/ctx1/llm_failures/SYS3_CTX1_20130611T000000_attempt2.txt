@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.1",
+  "classification": "unknown",
+  "explanation": "The provided Structured State is empty, so there is insufficient evidence to determine the consumption pattern.",
+  "evidence_references": [
+    {
+      "path": "observation.value_implausible",
+      "value": null
+    },
+    {
+      "path": "anomaly.score",
+      "value": null
+    }
+  ],
+  "user_recommendation": "No specific action is recommended due to lack of data.",
+  "uncertainty": "High uncertainty because no observations or context are available."
+}

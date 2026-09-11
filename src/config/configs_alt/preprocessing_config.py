@@ -6,12 +6,12 @@ ProductionGapMethod = Literal["ffill", "none"]
 
 @dataclass(frozen=True)
 class PreprocessingConfig:
-    train_share: float = 0.70
-    validation_share: float = 0.15
+    train_share: float = 0.8
+    validation_share: float = 0.1
 
     gap_treatment_method: ProductionGapMethod = "ffill"
     max_imputation_gap_15min: int = 4
-    max_imputation_gap_hourly: int = 2 # bleibt 2h -> nicht das gleiche wie max_availibility_gap_hours
+    max_imputation_gap_hourly: int = 6 # bleibt 2h -> nicht das gleiche wie max_availibility_gap_hours
 
     stuck_value_min_hours: float = 6.0
 
