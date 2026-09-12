@@ -33,7 +33,7 @@ def _context(
 def test_measurement_error_excludes_exactly_the_observation_hour() -> None:
     context = _context(decision_time="2024-01-07T10:00:00+00:00", dominant_scale=None, elevated_hours=None)
 
-    action = adaption_policy("measurement_error", context)
+    action = adaption_policy("measurement_error", context, anomaly_window_hours=24)
 
     assert action.kind == "exclude_range"
     assert action.range_start == action.range_end
@@ -44,11 +44,11 @@ def test_measurement_error_excludes_exactly_the_observation_hour() -> None:
 def test_absence_excludes_the_analyzed_24h_window() -> None:
     context = _context(decision_time="2024-01-07T10:00:00+00:00", dominant_scale="daily", elevated_hours=20.0)
 
-    action = adaption_policy("absence", context)
+    action = adaption_policy("absence", context, anomaly_window_hours=24)
 
     assert action.kind == "exclude_range"
     assert action.range_start is not None and action.range_end is not None
-    # ANOMALY_WINDOW_HOURS=24, endet bei decision_time - 1h -> Fensterstart ist 23h davor
+    # anomaly_window_hours=24, endet bei decision_time - 1h -> Fensterstart ist 23h davor
     assert action.range_start.isoformat() == "2024-01-06T10:00:00+00:00"
     assert action.range_end.isoformat() == "2024-01-07T09:00:00+00:00"
 
@@ -56,7 +56,7 @@ def test_absence_excludes_the_analyzed_24h_window() -> None:
 def test_new_pattern_advances_the_history_start_to_the_analyzed_24h_window() -> None:
     context = _context(decision_time="2024-01-07T10:00:00+00:00", dominant_scale="short_term", elevated_hours=18.0)
 
-    action = adaption_policy("new_pattern", context)
+    action = adaption_policy("new_pattern", context, anomaly_window_hours=24)
 
     assert action.kind == "advance_history_start"
     assert action.new_history_start is not None
@@ -67,7 +67,7 @@ def test_new_pattern_advances_the_history_start_to_the_analyzed_24h_window() -> 
 def test_classifications_without_a_defined_reaction_trigger_no_action(classification: Classification) -> None:
     context = _context(decision_time="2024-01-07T10:00:00+00:00", dominant_scale=None, elevated_hours=None)
 
-    action = adaption_policy(classification, context)
+    action = adaption_policy(classification, context, anomaly_window_hours=24)
 
     assert action.kind == "none"
 

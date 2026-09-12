@@ -16,7 +16,7 @@ from src.llm.rule_based_classifier import RuleClassificationResult, rule_based_c
 from src.numerical_analysis.anomaly_detection import aggregate_daily_anomaly, build_anomaly_detection
 from src.numerical_analysis.multi_scale_analysis import build_multi_scale_analysis
 from src.structured_state.builder import build_structured_state
-from src.structured_state.structured_state_schema import ANOMALY_WINDOW_HOURS, StructuredState, validate_structured_state
+from src.structured_state.structured_state_schema import StructuredState, validate_structured_state
 
 
 LLMMode = Literal["off", "rule", "real"]
@@ -156,6 +156,7 @@ def run_cycle(
         reference_window_end=reference_window_end,
         target_timestamp=decision_time - pd.Timedelta(hours=1),
         config=config.numerical_analysis_config,
+        local_timezone=config.forecasting_config.timezone,
     )
 
     structured_state: StructuredState | None = None
@@ -208,12 +209,20 @@ def run_cycle(
             classification = llm_output["classification"]
 
         elif config.llm_mode == "rule":
-            rule_output = rule_based_classify(structured_state)
+            rule_output = rule_based_classify(
+                structured_state,
+                sustained_daily_elevated_hours=config.numerical_analysis_config.sustained_daily_elevated_hours,
+                multi_scale_minimum=config.numerical_analysis_config.multi_scale_minimum,
+            )
             classification = rule_output.classification
 
         if config.event_adaptation:
             assert classification is not None
-            adaption_action = adaption_policy(classification, structured_state)
+            adaption_action = adaption_policy(
+                classification,
+                structured_state,
+                anomaly_window_hours=config.numerical_analysis_config.anomaly_window_hours,
+            )
 
     if adaption_action is not None and adaption_action.kind != "none":
         history = _apply_adaption(history, adaption_action)
@@ -302,6 +311,7 @@ def _compute_analysis_row(
     reference_window_end: pd.Timestamp,
     target_timestamp: pd.Timestamp,
     config: NumericalAnalysisConfig,
+    local_timezone: str,
 ) -> pd.Series:
     target_column = str(history.name)
     train_data, validation_data, test_data = _split_for_numerical_analysis(
@@ -320,6 +330,7 @@ def _compute_analysis_row(
         min_weekly_reference_samples=config.min_weekly_reference_samples,
         trend_threshold=config.trend_threshold,
         min_reference_power_w=config.min_reference_power_w,
+        local_timezone=local_timezone,
     )
 
     anomaly = build_anomaly_detection(
@@ -329,6 +340,7 @@ def _compute_analysis_row(
         unusual_threshold=config.unusual_threshold,
         strong_anomaly_threshold=config.strong_anomaly_threshold,
         sample_period_hours=config.sample_period_hours_hourly,
+        local_timezone=local_timezone,
     )
 
     row = cast(pd.Series, anomaly.loc[target_timestamp]).copy()
@@ -340,7 +352,7 @@ def _compute_analysis_row(
     daily_summary = aggregate_daily_anomaly(
         anomaly,
         target_timestamp=target_timestamp,
-        window_hours=ANOMALY_WINDOW_HOURS,
+        window_hours=config.anomaly_window_hours,
         sample_period_hours=config.sample_period_hours_hourly,
         unusual_threshold=config.unusual_threshold,
         strong_anomaly_threshold=config.strong_anomaly_threshold,

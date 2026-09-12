@@ -1,12 +1,11 @@
-from __future__ import annotations
-
 from dataclasses import dataclass
 from typing import Literal
 
 import pandas as pd
 
+from src.common.timestamps import parse_utc_timestamp
 from src.llm.llm_schema import Classification
-from src.structured_state.structured_state_schema import ANOMALY_WINDOW_HOURS, StructuredState
+from src.structured_state.structured_state_schema import StructuredState
 
 
 AdaptionActionKind = Literal["none", "advance_history_start", "exclude_range"]
@@ -22,11 +21,13 @@ class AdaptionAction:
 
 
 def adaption_policy(
-    classification: Classification, 
-    context: StructuredState
+    classification: Classification,
+    context: StructuredState,
+    *,
+    anomaly_window_hours: int,
 ) -> AdaptionAction:
     if classification == "measurement_error":
-        timestamp = _timestamp(context["observation"]["observation_start"])
+        timestamp = parse_utc_timestamp(context["observation"]["observation_start"], "observation.observation_start")
         return AdaptionAction(
             kind="exclude_range",
             range_start=timestamp,
@@ -35,28 +36,28 @@ def adaption_policy(
         )
 
     if classification == "absence":
-        decision_time = _timestamp(context["decision_time"])
+        decision_time = parse_utc_timestamp(context["decision_time"], "decision_time")
         elevated_hours = _dominant_elevated_hours(context)
         range_end = decision_time - pd.Timedelta(hours=1)
-        window_start = range_end - pd.Timedelta(hours=ANOMALY_WINDOW_HOURS - 1)
+        window_start = range_end - pd.Timedelta(hours=anomaly_window_hours - 1)
 
         return AdaptionAction(
             kind="exclude_range",
             range_start=window_start,
             range_end=range_end,
-            reason=f"absence in the {ANOMALY_WINDOW_HOURS}h up to {range_end.isoformat()} ({elevated_hours:.0f}h elevated in that window)",
+            reason=f"absence in the {anomaly_window_hours}h up to {range_end.isoformat()} ({elevated_hours:.0f}h elevated in that window)",
         )
 
     if classification == "new_pattern":
-        decision_time = _timestamp(context["decision_time"])
+        decision_time = parse_utc_timestamp(context["decision_time"], "decision_time")
         elevated_hours = _dominant_elevated_hours(context)
         range_end = decision_time - pd.Timedelta(hours=1)
-        new_history_start = range_end - pd.Timedelta(hours=ANOMALY_WINDOW_HOURS - 1)
+        new_history_start = range_end - pd.Timedelta(hours=anomaly_window_hours - 1)
 
         return AdaptionAction(
             kind="advance_history_start",
             new_history_start=new_history_start,
-            reason=f"new_pattern since {new_history_start.isoformat()} ({elevated_hours:.0f}h elevated in the {ANOMALY_WINDOW_HOURS}h window)",
+            reason=f"new_pattern since {new_history_start.isoformat()} ({elevated_hours:.0f}h elevated in the {anomaly_window_hours}h window)",
         )
 
     return AdaptionAction(kind="none", reason=f"{classification}: no action")
@@ -76,7 +77,3 @@ def _dominant_elevated_hours(
         raise ValueError("anomaly.scale_elevated_hours for the dominant scale is missing.")
 
     return elevated_hours
-
-
-def _timestamp(value: str) -> pd.Timestamp:
-    return pd.Timestamp(value).tz_convert("UTC")

@@ -6,13 +6,16 @@ from typing import Literal, TypedDict
 
 import pandas as pd
 
+from src.common.timestamps import parse_utc_timestamp_field
+from src.config.config_forecasting import NumericalAnalysisConfig
 from src.context.calendar_schema import CALENDAR_CONTEXT_FIELDS, CalendarEvent, validate_calendar_context
 from src.pipeline.schema_validation import is_real_number, validate_fields
 
 
 SCHEMA_VERSION = "1.3"
 FORECAST_HORIZON_HOURS = 24
-ANOMALY_WINDOW_HOURS = 24
+
+ANOMALY_WINDOW_HOURS = NumericalAnalysisConfig().anomaly_window_hours
 
 FLOAT_COMPARISON_REL_TOL = 1e-9
 FLOAT_COMPARISON_ABS_TOL = 1e-9
@@ -187,13 +190,13 @@ def validate_structured_state(
     if state["schema_version"] != SCHEMA_VERSION:
         raise ValueError(f"schema_version must be {SCHEMA_VERSION!r}.")
 
-    decision_time = _timestamp(state["decision_time"], "decision_time")
+    decision_time = parse_utc_timestamp_field(state["decision_time"], "decision_time")
 
     observation = _mapping(state["observation"], "observation")
     validate_fields(observation, OBSERVATION_FIELDS, "observation")
 
-    observation_start = _timestamp(observation["observation_start"], "observation.observation_start")
-    observation_end = _timestamp(observation["observation_end"], "observation.observation_end")
+    observation_start = parse_utc_timestamp_field(observation["observation_start"], "observation.observation_start")
+    observation_end = parse_utc_timestamp_field(observation["observation_end"], "observation.observation_end")
 
     if observation_start != decision_time - pd.Timedelta(hours=1):
         raise ValueError("observation_start must be exactly one hour before decision_time.")
@@ -289,7 +292,7 @@ def validate_structured_state(
         if anomaly["peak_timestamp"] is None:
             raise ValueError("anomaly.peak_timestamp is required when scale scores are available.")
 
-        peak_timestamp = _timestamp(anomaly["peak_timestamp"], "anomaly.peak_timestamp")
+        peak_timestamp = parse_utc_timestamp_field(anomaly["peak_timestamp"], "anomaly.peak_timestamp")
 
         if peak_timestamp > decision_time - pd.Timedelta(hours=1):
             raise ValueError("anomaly.peak_timestamp must not be after the analyzed hour.")
@@ -335,7 +338,7 @@ def validate_structured_state(
     for field in ("run_id", "model_id", "config_version"):
         _non_empty_string(forecast[field], f"forecast.{field}")
 
-    forecast_origin = _timestamp(forecast["origin"], "forecast.origin")
+    forecast_origin = parse_utc_timestamp_field(forecast["origin"], "forecast.origin")
 
     if forecast_origin != decision_time:
         raise ValueError("forecast.origin must equal decision_time.")
@@ -364,7 +367,7 @@ def validate_structured_state(
         point = _mapping(point_value, f"forecast.points[{index}]")
         validate_fields(point, FORECAST_POINT_FIELDS, f"forecast.points[{index}]")
 
-        timestamp = _timestamp(point["timestamp"], f"forecast.points[{index}].timestamp")
+        timestamp = parse_utc_timestamp_field(point["timestamp"], f"forecast.points[{index}].timestamp")
 
         if timestamp != forecast_origin + pd.Timedelta(hours=index):
             raise ValueError("Forecast point timestamps must be consecutive hourly timestamps starting at forecast.origin.")
@@ -411,7 +414,7 @@ def validate_structured_state(
     if not _float_matches(float(peak_w), expected_peak_w):
         raise ValueError("forecast.summary.peak_w must match forecast points.")
 
-    peak_timestamp = _timestamp(summary["peak_timestamp"], "forecast.summary.peak_timestamp")
+    peak_timestamp = parse_utc_timestamp_field(summary["peak_timestamp"], "forecast.summary.peak_timestamp")
 
     expected_peak_timestamps = {
         timestamp
@@ -492,27 +495,3 @@ def _number(
         raise ValueError(f"{field_name} must be finite.")
 
     return float(value)
-
-
-def _timestamp(
-    value: object, 
-    field_name: str
-) -> pd.Timestamp:
-    if not isinstance(value, str):
-        raise TypeError(f"{field_name} must be a string timestamp.")
-
-    try:
-        timestamp = pd.Timestamp(value)
-    except (TypeError, ValueError, OverflowError) as error:
-        raise ValueError(f"{field_name} must be a valid timestamp.") from error
-
-    if timestamp.tzinfo is None:
-        raise ValueError(f"{field_name} must contain timezone information.")
-
-    timestamp = timestamp.tz_convert("UTC")
-
-    normalized_value = value[:-1] + "+00:00" if value.endswith("Z") else value
-    if normalized_value != timestamp.isoformat():
-        raise ValueError(f"{field_name} must be an ISO-8601 UTC timestamp.")
-
-    return timestamp

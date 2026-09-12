@@ -16,10 +16,11 @@ from typing import Literal
 
 import pandas as pd
 
+from src.common.timestamps import parse_utc_timestamp
 from src.config.project_config import ProjectConfig, ensure_project_directories
 from src.context.calendar_context import build_calendar_context
 from src.pipeline.io import find_run_directory, latest_sequential_number, save_json
-from src.structured_state.builder import build_structured_state, utc_timestamp
+from src.structured_state.builder import build_structured_state
 from src.structured_state.structured_state_run_manifest import build_structured_state_run_manifest
 from src.structured_state.structured_state_schema import StructuredState, validate_structured_state
 
@@ -77,7 +78,7 @@ class StructuredStateRunner:
             analysis_run_directory.name,
         )
 
-        decision_timestamp = utc_timestamp(decision_time, "decision_time")
+        decision_timestamp = parse_utc_timestamp(decision_time, "decision_time")
 
         analysis_path = analysis_run_directory / "anomaly_scores_hourly.csv"
         analysis = pd.read_csv(analysis_path, parse_dates=["timestamp"])

@@ -7,6 +7,7 @@ from typing import TypeVar, cast
 import numpy as np
 import pandas as pd
 
+from src.common.timestamps import parse_utc_timestamp
 from src.context.calendar_schema import CalendarContext
 from src.pipeline.schema_validation import is_real_number
 from src.structured_state.structured_state_schema import (
@@ -79,7 +80,7 @@ def build_structured_state(
     forecast_rows: pd.DataFrame,
     calendar_context: CalendarContext,
 ) -> StructuredState:
-    decision_time = utc_timestamp(decision_time, "decision_time")
+    decision_time = parse_utc_timestamp(decision_time, "decision_time")
 
     missing = ANALYSIS_FIELDS.difference(analysis_row.index)
     if missing:
@@ -89,12 +90,12 @@ def build_structured_state(
     if missing:
         raise ValueError("Forecast rows are missing required columns: " + ", ".join(sorted(missing)))
 
-    analysis_timestamp = utc_timestamp(analysis_row["timestamp"], "analysis.timestamp")
+    analysis_timestamp = parse_utc_timestamp(analysis_row["timestamp"], "analysis.timestamp")
 
     if analysis_timestamp != decision_time - pd.Timedelta(hours=1):
         raise ValueError("Analysis timestamp must be exactly one hour before decision_time.")
 
-    context_decision_time = utc_timestamp(calendar_context["decision_time"], "calendar_context.decision_time")
+    context_decision_time = parse_utc_timestamp(calendar_context["decision_time"], "calendar_context.decision_time")
 
     if context_decision_time != decision_time:
         raise ValueError("Calendar context decision_time must match decision_time.")
@@ -187,7 +188,7 @@ def _build_forecast_state(
     if _is_missing(analysis_split) or str(analysis_split) != forecast_split:
         raise ValueError("Analysis and forecast must belong to the same split.")
 
-    forecast_origin = utc_timestamp(_single_value(forecast, "forecast_origin"), "forecast.forecast_origin")
+    forecast_origin = parse_utc_timestamp(_single_value(forecast, "forecast_origin"), "forecast.forecast_origin")
 
     if forecast_origin != decision_time:
         raise ValueError("Forecast origin must equal decision_time.")
@@ -197,7 +198,7 @@ def _build_forecast_state(
     interval_widths: list[float] = []
 
     for index, row in forecast.iterrows():
-        timestamp = utc_timestamp(row["target_timestamp"], f"forecast row {index} target_timestamp")
+        timestamp = parse_utc_timestamp(row["target_timestamp"], f"forecast row {index} target_timestamp")
         prediction = _nullable_float(row["y_pred"], f"forecast row {index} y_pred")
 
         if prediction is None:
@@ -309,7 +310,7 @@ def _nullable_timestamp(
     if _is_missing(value):
         return None
 
-    return utc_timestamp(value, field_name).isoformat()
+    return parse_utc_timestamp(value, field_name).isoformat()
 
 
 def _bool(
@@ -330,26 +331,3 @@ def _is_missing(value: object) -> bool:
         return math.isnan(float(value))
 
     return False
-
-
-def utc_timestamp(
-    value: object, 
-    field_name: str
-) -> pd.Timestamp:
-    if isinstance(value, pd.Timestamp):
-        timestamp = value
-    elif isinstance(value, str):
-        try:
-            timestamp = pd.Timestamp(value)
-        except (ValueError, OverflowError) as error:
-            raise ValueError(f"{field_name} must be a valid timestamp.") from error
-    else:
-        raise TypeError(f"{field_name} must be a string or pandas Timestamp.")
-
-    if pd.isna(timestamp):
-        raise ValueError(f"{field_name} must not be missing.")
-
-    if timestamp.tzinfo is None:
-        raise ValueError(f"{field_name} must contain timezone information.")
-
-    return timestamp.tz_convert("UTC")

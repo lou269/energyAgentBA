@@ -15,6 +15,7 @@ def build_multi_scale_analysis(
     min_weekly_reference_samples: int,
     trend_threshold: float,
     min_reference_power_w: float,
+    local_timezone: str,
 ) -> pd.DataFrame:
     train_data = train_data.sort_index()
     validation_data = validation_data.sort_index()
@@ -40,8 +41,8 @@ def build_multi_scale_analysis(
 
     data = pd.concat([train_data, validation_data, test_data])
 
-    train_index = pd.DatetimeIndex(train_data.index)
-    data_index = pd.DatetimeIndex(data.index)
+    train_index = pd.DatetimeIndex(train_data.index).tz_convert(local_timezone)
+    data_index = pd.DatetimeIndex(data.index).tz_convert(local_timezone)
 
     result = pd.DataFrame(index=data.index)
 
@@ -141,19 +142,13 @@ def build_multi_scale_analysis(
         result["short_term_mean"].abs() >= min_reference_power_w
     )
 
-    result["daily_deviation"] = (
-        result["current_power"] - daily_reference
-    ) / daily_reference
+    result["daily_deviation"] = (result["current_power"] - daily_reference) / daily_reference
 
-    result["weekly_deviation"] = (
-        result["current_power"] - weekly_reference
-    ) / weekly_reference
+    result["weekly_deviation"] = (result["current_power"] - weekly_reference) / weekly_reference
 
     trend_window_hours = short_term_window * sample_period_hours
 
-    result["trend_change"] = (
-        result["trend_slope_w_per_hour"] * trend_window_hours
-    ) / short_term_reference
+    result["trend_change"] = (result["trend_slope_w_per_hour"] * trend_window_hours) / short_term_reference
 
     result["trend"] = "stable"
 

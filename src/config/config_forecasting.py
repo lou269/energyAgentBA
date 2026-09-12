@@ -57,6 +57,15 @@ class NumericalAnalysisConfig:
     # nahe an dem, was das frühere Einzelstunden-Gate ergab, statt bei jedem Tagesmaximum auszulösen
     min_elevated_hours_for_gate: float = 4.0
 
+    # Fenstergröße für "Anomalie in den letzten X Stunden" -> steuert aggregate_daily_anomaly,
+    # das Adaptionsfenster in adaption_policy.py und die Peak-Timestamp-Grenze im Structured-State-Schema
+    anomaly_window_hours: int = 24
+
+    # noch nicht kalibriert -> grob geschätzt als 75% von anomaly_window_hours (18 von 24h).
+    # Entscheidet absence vs. new_pattern vs. peak in rule_based_classifier.py
+    sustained_daily_elevated_hours: float = 18.0
+    multi_scale_minimum: int = 2
+
 
 ''' PROPHET '''
 @dataclass(frozen=True)
@@ -85,7 +94,7 @@ class ForecastingConfig:
 
     # Forecast-Ziel
     frequency: str = "1h"
-    # nur für Prophets ds (Tagessaisonalität); Speicherung/restliche Pipeline bleibt UTC
+
     timezone: str = "Europe/London"
     horizon_hours: int = 24
 

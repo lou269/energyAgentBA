@@ -12,6 +12,7 @@ def build_anomaly_detection(
     unusual_threshold: float,
     strong_anomaly_threshold: float,
     sample_period_hours: float,
+    local_timezone: str,
 ) -> pd.DataFrame:
     result = analysis_results.copy()
 
@@ -23,7 +24,7 @@ def build_anomaly_detection(
     }
 
     train_mask = result["split"] == "train"
-    day_key = cast(pd.DatetimeIndex, result.index).normalize()
+    day_key = cast(pd.DatetimeIndex, result.index).tz_convert(local_timezone).normalize()
 
     for scale, reference_column in reference_columns.items():
         residual_column = f"{scale}_residual"

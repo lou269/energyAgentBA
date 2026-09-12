@@ -1,7 +1,5 @@
 # python -m pytest tests/unit/numerical_analysis/test_anomaly_detection.py -v
 
-from __future__ import annotations
-
 import pandas as pd
 import pytest
 
@@ -37,6 +35,7 @@ def test_z_score_uses_only_train_residuals_for_calibration() -> None:
         min_reference_samples=50, min_residual_std_w=0.1,
         unusual_threshold=2.0, strong_anomaly_threshold=3.0,
         sample_period_hours=1.0,
+        local_timezone="UTC",
     )
 
     expected_std = pd.Series(train_residuals).std()
@@ -55,6 +54,7 @@ def test_insufficient_reference_samples_yields_no_score() -> None:
         min_reference_samples=50, min_residual_std_w=0.1,
         unusual_threshold=2.0, strong_anomaly_threshold=3.0,
         sample_period_hours=1.0,
+        local_timezone="UTC",
     )
 
     assert result["short_term_score"].isna().all()
@@ -70,6 +70,7 @@ def test_residual_std_below_floor_yields_no_score() -> None:
         min_reference_samples=50, min_residual_std_w=1.0,
         unusual_threshold=2.0, strong_anomaly_threshold=3.0,
         sample_period_hours=1.0,
+        local_timezone="UTC",
     )
 
     # winzige, aber von Null verschiedene Streuung - darf keinen (potenziell riesigen) Z-Score liefern
@@ -96,6 +97,7 @@ def test_dominant_scale_picks_largest_absolute_score() -> None:
         min_reference_samples=50, min_residual_std_w=0.1,
         unusual_threshold=2.0, strong_anomaly_threshold=3.0,
         sample_period_hours=1.0,
+        local_timezone="UTC",
     )
 
     row = result.iloc[-1]
@@ -216,3 +218,49 @@ def test_daily_aggregate_is_null_when_no_scale_has_a_score_in_the_window() -> No
     assert pd.isna(summary["dominant_scale"]) # type: ignore
     assert pd.isna(summary["anomaly_level"]) # type: ignore
     assert pd.isna(summary["anomaly_peak_timestamp"]) # type: ignore
+
+
+def test_elevated_hours_resets_at_local_not_utc_midnight() -> None:
+    
+    calibration_index = pd.date_range("2020-06-01", periods=20, freq="h", tz="UTC")
+    calibration_power = [100.0 + (0.01 if i % 2 == 0 else -0.01) for i in range(20)]
+
+    dst_index = pd.DatetimeIndex(
+        [
+            "2020-06-13 22:00:00+00:00",
+            "2020-06-13 23:00:00+00:00",
+            "2020-06-14 00:00:00+00:00",
+            "2020-06-14 01:00:00+00:00",
+        ],
+        tz="UTC",
+    )
+    dst_power = [150.0, 150.0, 150.0, 150.0]
+
+    index = calibration_index.append(dst_index)
+    current_power = calibration_power + dst_power
+    split = ["train"] * len(index)
+
+    frame = pd.DataFrame(
+        {
+            "split": split,
+            "current_power": current_power,
+            "short_term_mean": 100.0,
+            "daily_expected": 100.0,
+            "weekly_expected": 100.0,
+            "long_term_mean": 100.0,
+        },
+        index=index,
+    )
+
+    result = build_anomaly_detection(
+        frame,
+        min_reference_samples=20, min_residual_std_w=0.001,
+        unusual_threshold=2.0, strong_anomaly_threshold=3.0,
+        sample_period_hours=1.0,
+        local_timezone="Europe/London",
+    )
+
+    elevated = result.loc[dst_index, "short_term_elevated_hours"]
+    # lokaler Tageswechsel liegt zwischen 23:00 und 00:00 UTC (BST = UTC+1) -> Zähler muss dort auf 1 zurückfallen, 
+    # nicht erst eine Stunde später bei 00:00 UTC
+    assert elevated.tolist() == pytest.approx([1.0, 1.0, 2.0, 3.0])

@@ -9,7 +9,7 @@ import pandas as pd
 
 from src.common.column_naming import plausibility_column, treated_column
 from src.pipeline.io import df_to_csv, next_sequential_number, save_json
-from src.config.config_forecasting import NumericalAnalysisConfig
+from src.config.config_forecasting import ForecastingConfig, NumericalAnalysisConfig
 from src.config.project_config import ProjectConfig, ensure_project_directories
 from src.numerical_analysis.anomaly_detection import build_anomaly_detection
 from src.numerical_analysis.multi_scale_analysis import build_multi_scale_analysis
@@ -33,6 +33,7 @@ def run_numerical_analysis(
     split_manifest: pd.DataFrame,
     meter_key: str,
     config: NumericalAnalysisConfig,
+    local_timezone: str,
 ) -> NumericalAnalysisResult:
     target_column = treated_column(meter_key)
     implausible_column = plausibility_column(meter_key)
@@ -83,6 +84,7 @@ def run_numerical_analysis(
         min_weekly_reference_samples=config.min_weekly_reference_samples,
         trend_threshold=config.trend_threshold,
         min_reference_power_w=config.min_reference_power_w,
+        local_timezone=local_timezone,
     )
 
     anomaly_15min = build_anomaly_detection(
@@ -92,6 +94,7 @@ def run_numerical_analysis(
         unusual_threshold=config.unusual_threshold,
         strong_anomaly_threshold=config.strong_anomaly_threshold,
         sample_period_hours=config.sample_period_hours_15min,
+        local_timezone=local_timezone,
     )
 
     anomaly_15min["value_implausible"] = plausibility_15min[implausible_column].reindex(anomaly_15min.index)
@@ -108,6 +111,7 @@ def run_numerical_analysis(
         min_weekly_reference_samples=config.min_weekly_reference_samples,
         trend_threshold=config.trend_threshold,
         min_reference_power_w=config.min_reference_power_w,
+        local_timezone=local_timezone,
     )
 
     anomaly_hourly = build_anomaly_detection(
@@ -117,6 +121,7 @@ def run_numerical_analysis(
         unusual_threshold=config.unusual_threshold,
         strong_anomaly_threshold=config.strong_anomaly_threshold,
         sample_period_hours=config.sample_period_hours_hourly,
+        local_timezone=local_timezone,
     )
 
     anomaly_hourly["value_implausible"] = plausibility_hourly[implausible_column].reindex(anomaly_hourly.index)
@@ -129,9 +134,11 @@ class NumericalAnalysisRunner:
         self,
         project_config: ProjectConfig | None = None,
         analysis_config: NumericalAnalysisConfig | None = None,
+        forecasting_config: ForecastingConfig | None = None,
     ) -> None:
         self.project_config = project_config or ProjectConfig()
         self.analysis_config = analysis_config or NumericalAnalysisConfig()
+        self.forecasting_config = forecasting_config or ForecastingConfig()
 
     def run(self) -> None:
         ensure_project_directories(self.project_config)
@@ -190,6 +197,7 @@ class NumericalAnalysisRunner:
             split_manifest=split_manifest,
             meter_key=meter_key,
             config=self.analysis_config,
+            local_timezone=self.forecasting_config.timezone,
         )
 
         run_number = next_sequential_number(self.project_config.numerical_analysis_output_dir, prefix="an")
@@ -217,7 +225,7 @@ class NumericalAnalysisRunner:
             project_root=self.project_config.project_root,
             run_id=run_id,
             candidate_id=candidate_id,
-            config_values=asdict(self.analysis_config),
+            config_values={**asdict(self.analysis_config), "local_timezone": self.forecasting_config.timezone},
             input_paths={
                 "treated_15min": treated_15min_path,
                 "treated_hourly": treated_hourly_path,

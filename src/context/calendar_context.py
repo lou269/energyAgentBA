@@ -4,6 +4,7 @@ from collections.abc import Mapping
 
 import pandas as pd
 
+from src.common.timestamps import parse_utc_timestamp
 from src.context.calendar_schema import (
     REQUIRED_EVENT_FIELDS,
     CalendarContext,
@@ -40,10 +41,10 @@ def build_calendar_context(
         raise TypeError("events must be a list.")
 
     source = source.strip()
-    retrieved_at = _to_utc_timestamp(retrieved_at, "retrieved_at")
-    decision_time = _to_utc_timestamp(decision_time, "decision_time")
-    window_start = _to_utc_timestamp(window_start, "window_start")
-    window_end = _to_utc_timestamp(window_end, "window_end")
+    retrieved_at = parse_utc_timestamp(retrieved_at, "retrieved_at")
+    decision_time = parse_utc_timestamp(decision_time, "decision_time")
+    window_start = parse_utc_timestamp(window_start, "window_start")
+    window_end = parse_utc_timestamp(window_end, "window_end")
 
     if retrieved_at > decision_time:
         raise ValueError("retrieved_at must not be after decision_time.")
@@ -97,9 +98,9 @@ def build_calendar_context(
 
         event_ids.add(event_id)
 
-        start = _to_utc_timestamp(event["start"], "start")
-        end = _to_utc_timestamp(event["end"], "end")
-        known_at = _to_utc_timestamp(event["known_at"], "known_at")
+        start = parse_utc_timestamp(event["start"], "start")
+        end = parse_utc_timestamp(event["end"], "end")
+        known_at = parse_utc_timestamp(event["known_at"], "known_at")
 
         if start >= end:
             raise ValueError(f"Calendar event {event_id} must end after it starts.")
@@ -132,18 +133,3 @@ def build_calendar_context(
     validate_calendar_context(context)
 
     return context
-
-
-def _to_utc_timestamp(value: object, field_name: str) -> pd.Timestamp:
-    try:
-        timestamp = pd.Timestamp(value)  # type: ignore[arg-type]
-    except (TypeError, ValueError, OverflowError) as error:
-        raise ValueError(f"{field_name} must be a valid timestamp.") from error
-
-    if pd.isna(timestamp):
-        raise ValueError(f"{field_name} must not be missing.")
-
-    if timestamp.tzinfo is None:
-        raise ValueError(f"{field_name} must contain timezone information.")
-
-    return timestamp.tz_convert("UTC")
