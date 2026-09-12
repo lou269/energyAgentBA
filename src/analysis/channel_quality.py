@@ -7,7 +7,7 @@ from nilmtk import DataSet
 
 import warnings
 
-from src.analysis.common import require_columns
+from src.common.validation import require_columns
 
 
 logger = logging.getLogger(__name__)

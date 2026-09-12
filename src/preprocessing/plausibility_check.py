@@ -1,5 +1,7 @@
 import pandas as pd
 
+from src.common.column_naming import meter_key_from_data_column, plausibility_column, quality_column
+
 
 def build_plausibility_flags(
     data: pd.DataFrame,
@@ -7,20 +9,20 @@ def build_plausibility_flags(
     *,
     stuck_value_min_hours: float,
     sample_period_hours: float,
+    resolution: str,
 ) -> pd.DataFrame:
-    mask_suffix = "_power_w"  
+    meter_keys = [meter_key_from_data_column(column, resolution) for column in data.columns]
+
     flags = pd.DataFrame(
         False,
         index=data.index,
-        columns=[c.removesuffix(mask_suffix) for c in data.columns],
+        columns=[plausibility_column(key) for key in meter_keys],
         dtype=bool,
     )
 
-    for column in data.columns:
-        mask_column = column.removesuffix(mask_suffix)
-        coverage_column = f"{column}_coverage_mask"
+    for column, meter_key in zip(data.columns, meter_keys):
+        coverage_column = quality_column(meter_key, "coverage_mask")
         coverage_mask = quality[coverage_column].fillna(False).astype(bool)
-
 
         series = data[column].where(coverage_mask)
 
@@ -29,6 +31,6 @@ def build_plausibility_flags(
         stuck_periods = unchanged.groupby((~unchanged).cumsum()).cumsum()
         stuck_streak_hours = stuck_periods * sample_period_hours
 
-        flags.loc[:, mask_column] = (series < 0) | (stuck_streak_hours >= stuck_value_min_hours)
+        flags.loc[:, plausibility_column(meter_key)] = (series < 0) | (stuck_streak_hours >= stuck_value_min_hours)
 
     return flags

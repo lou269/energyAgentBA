@@ -4,6 +4,9 @@ from typing import Literal
 
 import pandas as pd
 
+from src.common.column_naming import imputation_column, meter_key_from_data_column, quality_column, treated_column
+from src.common.gap_masking import short_gap_mask
+
 GapTreatmentMethod = Literal["ffill", "linear", "none"]
 
 
@@ -15,6 +18,7 @@ def build_gap_treated_data(
     test_data: pd.DataFrame,
     test_quality: pd.DataFrame,
     max_gap_intervals: int,
+    resolution: str,
     method: GapTreatmentMethod = "ffill",
 ) -> tuple[
     pd.DataFrame,
@@ -36,6 +40,7 @@ def build_gap_treated_data(
         combined_data,
         combined_quality,
         max_gap_intervals=max_gap_intervals,
+        resolution=resolution,
         method=method,
     )
 
@@ -54,22 +59,27 @@ def apply_gap_treatment(
     quality: pd.DataFrame,
     *,
     max_gap_intervals: int,
+    resolution: str,
     method: GapTreatmentMethod,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     _validate_inputs(data, quality, max_gap_intervals=max_gap_intervals, method=method)
 
-    treated = data.copy()
-    mask_suffix = "_power_w"  # Werte-Spalten tragen diesen Suffix, Masken nicht
+    meter_keys = [meter_key_from_data_column(column, resolution) for column in data.columns]
+
+    treated = pd.DataFrame(
+        index=data.index,
+        columns=[treated_column(key) for key in meter_keys],
+        dtype=float,
+    )
     imputation_mask = pd.DataFrame(
         False,
         index=data.index,
-        columns=[c.removesuffix(mask_suffix) for c in data.columns],
+        columns=[imputation_column(key) for key in meter_keys],
         dtype=bool,
     )
 
-    for column in data.columns:
-        mask_column = column.removesuffix(mask_suffix)
-        coverage_column = f"{column}_coverage_mask"
+    for column, meter_key in zip(data.columns, meter_keys):
+        coverage_column = quality_column(meter_key, "coverage_mask")
         coverage_mask = (
             quality[coverage_column]
             .fillna(False)
@@ -78,10 +88,7 @@ def apply_gap_treatment(
 
         series = data[column].where(coverage_mask)
         missing = series.isna()
-        short_gap = _build_short_gap_mask(
-            missing,
-            max_gap_intervals=max_gap_intervals,
-        )
+        short_gap = short_gap_mask(missing, max_gap_intervals)
 
         if method == "ffill":
             candidate = series.ffill()
@@ -94,21 +101,10 @@ def apply_gap_treatment(
         # Dadurch wird kein Anfang einer zu langen Lücke aufgefüllt.
         filled = series.where(~short_gap, candidate)
 
-        treated.loc[:, column] = filled
-        imputation_mask.loc[:, mask_column] = missing & filled.notna()
+        treated.loc[:, treated_column(meter_key)] = filled
+        imputation_mask.loc[:, imputation_column(meter_key)] = missing & filled.notna()
 
     return treated, imputation_mask
-
-
-def _build_short_gap_mask(
-    missing: pd.Series,
-    *,
-    max_gap_intervals: int,
-) -> pd.Series:
-    gap_ids = missing.ne(missing.shift(fill_value=False)).cumsum()
-    gap_lengths = missing.groupby(gap_ids).transform("sum")
-
-    return missing & gap_lengths.le(max_gap_intervals)
 
 
 def _validate_inputs(

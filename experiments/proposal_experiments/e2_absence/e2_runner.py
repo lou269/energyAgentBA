@@ -28,6 +28,7 @@ from experiments.proposal_experiments.e2_absence.e2_selection import (
     resolve_absence_window,
     select_channels_for_subtraction,
 )
+from src.common.column_naming import treated_column
 from src.config.config_forecasting import PreprocessingConfig
 from src.config.project_config import ProjectConfig, ensure_project_directories
 from src.llm.llm_run_artifacts import load_prompt
@@ -50,13 +51,13 @@ def _read_canonical(project_config: ProjectConfig, name: str) -> pd.DataFrame:
     )
 
 
-def _read_target_column(project_config: ProjectConfig) -> str:
+def _read_target_meter_key(project_config: ProjectConfig) -> str:
     canonical_manifest = pd.read_csv(project_config.canonical_output_dir / "canonical_manifest.csv")
 
     if len(canonical_manifest) != 1:
         raise ValueError("Canonical manifest must contain exactly one mains target.")
 
-    return str(canonical_manifest.iloc[0]["column_name"])
+    return str(canonical_manifest.iloc[0]["meter_key"])
 
 
 def _read_absence_channel_selection() -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -82,7 +83,7 @@ def main() -> None:
     project_config = ProjectConfig()
     ensure_project_directories(project_config)
 
-    target_column = _read_target_column(project_config)
+    target_column = treated_column(_read_target_meter_key(project_config))
 
     preprocessing_result = run_preprocessing(
         _read_canonical(project_config, "canonical_data_15min"),

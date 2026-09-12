@@ -5,7 +5,8 @@ from dataclasses import dataclass
 import pandas as pd
 from nilmtk import DataSet
 
-from src.analysis.common import MERGE_KEYS, require_columns
+from src.common.channel_tables import MERGE_KEYS
+from src.common.validation import require_columns
 from src.data_preparation.aggregation.aggregation import build_aggregated_data
 from src.data_preparation.aggregation.channel_loading import build_loaded_channels
 

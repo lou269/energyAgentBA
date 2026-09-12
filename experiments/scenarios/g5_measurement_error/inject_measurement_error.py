@@ -13,6 +13,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from src.common.column_naming import channel_data_column, plausibility_column, quality_column, treated_column
 from src.config.config_forecasting import NumericalAnalysisConfig, PreprocessingConfig
 from src.config.project_config import ProjectConfig
 from src.numerical_analysis.anomaly_detection import build_anomaly_detection
@@ -45,7 +46,8 @@ def main() -> None:
     )
 
     canonical_manifest = pd.read_csv(project_config.canonical_output_dir / "canonical_manifest.csv")
-    target_column = str(canonical_manifest["meter_key"].iloc[0])
+    meter_key = str(canonical_manifest["meter_key"].iloc[0])
+    data_column = channel_data_column(meter_key, "hourly")
 
     split_manifest = pd.read_csv(
         project_config.preprocessing_output_dir / "split_manifest.csv",
@@ -60,24 +62,28 @@ def main() -> None:
         raise ValueError(f"{analysis_timestamp} is not a real timestamp in canonical_data_hourly.csv.")
 
     corrupted_data = data.copy()
-    corrupted_data.loc[analysis_timestamp, target_column] = FAULT_VALUE_W
+    corrupted_data.loc[analysis_timestamp, data_column] = FAULT_VALUE_W
 
     corrupted_quality = quality.copy()
-    corrupted_quality.loc[analysis_timestamp, f"{target_column}_coverage_mask"] = True
+    corrupted_quality.loc[analysis_timestamp, quality_column(meter_key, "coverage_mask")] = True
 
     plausibility = build_plausibility_flags(
         corrupted_data,
         corrupted_quality,
         stuck_value_min_hours=STUCK_VALUE_MIN_HOURS,
         sample_period_hours=analysis_config.sample_period_hours_hourly,
+        resolution="hourly",
     )
 
     treated, _imputation_mask = apply_gap_treatment(
         corrupted_data,
         corrupted_quality,
         max_gap_intervals=preprocessing_config.max_imputation_gap_hourly,
+        resolution="hourly",
         method=preprocessing_config.gap_treatment_method,
     )
+
+    target_column = treated_column(meter_key)
 
     train_data = treated.loc[split_hourly.loc["train", "start"]:split_hourly.loc["train", "end"]]
     validation_data = treated.loc[split_hourly.loc["validation", "start"]:split_hourly.loc["validation", "end"]]
@@ -106,7 +112,7 @@ def main() -> None:
         sample_period_hours=analysis_config.sample_period_hours_hourly,
     )
 
-    anomaly["value_implausible"] = plausibility[target_column].reindex(anomaly.index)
+    anomaly["value_implausible"] = plausibility[plausibility_column(meter_key)].reindex(anomaly.index)
 
     analysis_row = anomaly.loc[analysis_timestamp]
 

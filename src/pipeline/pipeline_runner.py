@@ -14,6 +14,7 @@ import subprocess
 
 import pandas as pd
 
+from src.common.column_naming import treated_column
 from src.config.config_forecasting import PreprocessingConfig
 from src.config.project_config import ProjectConfig, ensure_project_directories
 from src.llm.llm_run_artifacts import load_prompt
@@ -56,13 +57,13 @@ def _read_canonical(project_config: ProjectConfig, name: str) -> pd.DataFrame:
     )
 
 
-def _read_target_column(project_config: ProjectConfig) -> str:
+def _read_target_meter_key(project_config: ProjectConfig) -> str:
     canonical_manifest = pd.read_csv(project_config.canonical_output_dir / "canonical_manifest.csv")
 
     if len(canonical_manifest) != 1:
         raise ValueError("Canonical manifest must contain exactly one mains target.")
 
-    return str(canonical_manifest.iloc[0]["column_name"])
+    return str(canonical_manifest.iloc[0]["meter_key"])
 
 
 def _parse_configs(labels: str) -> dict[str, CycleConfig]:
@@ -94,7 +95,7 @@ def main() -> None:
         logger.info("=== data_preparation [%s] ===", DATA_PREPARATION_ENVIRONMENT)
         run_data_preparation()
 
-    target_column = _read_target_column(project_config)
+    target_column = treated_column(_read_target_meter_key(project_config))
 
     logger.info("Running preprocessing for target column %s...", target_column)
 

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import pandas as pd
 
+from src.common.channel_tables import mains_channels
+
 SELECTION_COLUMNS = [
     "candidate_id",
     "window_start",
@@ -34,12 +36,7 @@ def build_candidate_selection(
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     _validate_inputs(availability, channel_registry, min_valid_duration_days, min_coverage_share)
 
-    mains = channel_registry.loc[
-        channel_registry["meter_type"].eq("mains"),
-        ["house", "meter_instance", "meter_key"],
-    ]
-
-    candidates = availability.merge(mains, on="meter_key", how="inner")
+    candidates = availability.merge(mains_channels(channel_registry), on="meter_key", how="inner")
 
     if candidates.empty:
         return (

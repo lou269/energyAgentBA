@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 
 from experiments.component_studies.k2_cold_start.cold_start_config import ColdStartExperimentConfig
+from src.common.column_naming import imputation_column, treated_column
 from src.config.project_config import ProjectConfig, ensure_project_directories
 from src.forecasting.evaluation import evaluate_forecasts, select_primary_naive_reference
 from src.forecasting.forecast_run_manifest import build_forecast_run_manifest
@@ -62,8 +63,9 @@ class ColdStartRunner:
             raise ValueError("Canonical manifest must contain exactly one mains target.")
 
         candidate_id = str(canonical_manifest.iloc[0]["candidate_id"])
-        target_column = str(canonical_manifest.iloc[0]["column_name"])
         meter_key = str(canonical_manifest.iloc[0]["meter_key"])
+        target_column = treated_column(meter_key)
+        mask_column = imputation_column(meter_key)
 
         hourly_splits = split_manifest.loc[
             split_manifest["frequency"].eq("hourly")
@@ -105,7 +107,7 @@ class ColdStartRunner:
             raise ValueError("Initial history does not use the expected hourly index.")
 
         evaluation_targets = treated_hourly.loc[first_origin:evaluation_end, target_column]
-        evaluation_imputation_mask = imputation_mask.loc[first_origin:evaluation_end, meter_key]
+        evaluation_imputation_mask = imputation_mask.loc[first_origin:evaluation_end, mask_column]
 
         prophet_variants = tuple(
             cast(ProphetVariantParameters, asdict(variant))

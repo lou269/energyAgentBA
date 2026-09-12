@@ -11,6 +11,8 @@ from nilmtk import DataSet
 
 from experiments.proposal_experiments.e2_absence.e2_config import ACTIVE_ABSENCE_EVENT_ID, CALENDAR_EVENTS_FILE
 from experiments.proposal_experiments.e2_absence.e2_selection import channels_meeting_thresholds, load_calendar_events, resolve_absence_window
+from src.common.channel_tables import load_channel_tables
+from src.common.column_naming import treated_column
 from src.config.config_nilmtk import DataPreparationConfig
 from src.config.project_config import ProjectConfig
 from src.data_preparation.auxiliary_appliance_selection import build_auxiliary_appliance_selection
@@ -29,11 +31,10 @@ def main() -> None:
     house = data_config.selected_house_ids[0]
 
     dataset = DataSet(project_config.dataset_path)
-    channel_registry = pd.read_csv(project_config.meta_output_dir / "channel_registry.csv")
-    channel_quality = pd.read_csv(project_config.analysis_output_dir / "channel_quality.csv")
+    channel_registry, channel_quality = load_channel_tables(project_config)
 
     canonical_manifest = pd.read_csv(project_config.canonical_output_dir / "canonical_manifest.csv")
-    target_column = str(canonical_manifest.iloc[0]["column_name"])
+    target_column = treated_column(str(canonical_manifest.iloc[0]["meter_key"]))
     treated_hourly = pd.read_csv(
         project_config.preprocessing_output_dir / "treated_hourly.csv", parse_dates=["timestamp"], index_col="timestamp"
     )

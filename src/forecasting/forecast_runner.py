@@ -12,6 +12,7 @@ from typing import Literal, cast
 import numpy as np
 import pandas as pd
 
+from src.common.column_naming import imputation_column, treated_column
 from src.pipeline.io import df_to_csv, next_sequential_number, save_json
 from src.config.config_forecasting import ForecastingConfig
 from src.config.project_config import ProjectConfig, ensure_project_directories
@@ -64,7 +65,7 @@ def run_forecasting(
 
     evaluation_targets = treated_hourly.loc[split_start:split_end, target_column]
 
-    evaluation_imputation_mask = imputation_mask_hourly.loc[split_start:split_end, meter_key]
+    evaluation_imputation_mask = imputation_mask_hourly.loc[split_start:split_end, imputation_column(meter_key)]
 
     prophet_variant = cast(ProphetVariantParameters, asdict(config.selected_prophet_variant))
 
@@ -164,8 +165,8 @@ class ForecastingRunner:
             raise ValueError("Canonical manifest must contain exactly one mains target.")
 
         candidate_id = str(canonical_manifest.iloc[0]["candidate_id"])
-        target_column = str(canonical_manifest.iloc[0]["column_name"])
         meter_key = str(canonical_manifest.iloc[0]["meter_key"])
+        target_column = treated_column(meter_key)
 
         split_abbreviation = "val" if split == "validation" else split
         run_number = next_sequential_number(self.project_config.forecasting_output_dir, prefix=f"fc_{split_abbreviation}")

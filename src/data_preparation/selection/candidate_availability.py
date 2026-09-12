@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import pandas as pd
 
+from src.common.gap_masking import short_gap_mask
+
 CANDIDATE_AVAILABILITY_COLUMNS = [
     "meter_key",
     "start",
@@ -36,7 +38,7 @@ def _span_rows(
     interval_hours: float,
 ) -> list[dict]:
     missing = ~coverage_mask
-    bridgeable_gap = _bridgeable_gap_mask(missing, max_gap_intervals)
+    bridgeable_gap = short_gap_mask(missing, max_gap_intervals)
     usable = coverage_mask | bridgeable_gap
 
     span_ids = usable.ne(usable.shift(fill_value=False)).cumsum()
@@ -56,16 +58,6 @@ def _span_rows(
         )
 
     return rows
-
-
-def _bridgeable_gap_mask(
-    missing: pd.Series,
-    max_gap_intervals: int,
-) -> pd.Series:
-    gap_ids = missing.ne(missing.shift(fill_value=False)).cumsum()
-    gap_lengths = missing.groupby(gap_ids).transform("sum")
-
-    return missing & gap_lengths.le(max_gap_intervals)
 
 
 def _validate_inputs(

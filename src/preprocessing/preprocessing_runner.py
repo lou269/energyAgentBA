@@ -1,7 +1,5 @@
 # python -m src.preprocessing.preprocessing_runner
 
-from __future__ import annotations
-
 from dataclasses import dataclass
 import logging
 
@@ -41,6 +39,7 @@ def run_preprocessing(
         quality_15min,
         stuck_value_min_hours=config.stuck_value_min_hours,
         sample_period_hours=0.25,
+        resolution="15min",
     )
 
     plausibility_hourly = build_plausibility_flags(
@@ -48,6 +47,7 @@ def run_preprocessing(
         quality_hourly,
         stuck_value_min_hours=config.stuck_value_min_hours,
         sample_period_hours=1.0,
+        resolution="hourly",
     )
 
     (
@@ -140,6 +140,8 @@ def run_preprocessing(
         test_15min,
         test_quality_15min,
         max_gap_intervals=config.max_imputation_gap_15min,
+        resolution="15min",
+        method=config.gap_treatment_method,
     )
 
     (
@@ -157,6 +159,8 @@ def run_preprocessing(
         test_hourly,
         test_quality_hourly,
         max_gap_intervals=config.max_imputation_gap_hourly,
+        resolution="hourly",
+        method=config.gap_treatment_method,
     )
 
     treated_15min = pd.concat(

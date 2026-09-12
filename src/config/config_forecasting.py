@@ -16,7 +16,7 @@ class PreprocessingConfig:
 
     gap_treatment_method: ProductionGapMethod = "ffill"
     max_imputation_gap_15min: int = 4
-    max_imputation_gap_hourly: int = 6  # bleibt 2h -> nicht das gleiche wie max_availibility_gap_hours
+    max_imputation_gap_hourly: int = 6  # nicht das gleiche wie DataPreparationConfig.max_availability_gap_hours
 
     stuck_value_min_hours: float = 6.0
 

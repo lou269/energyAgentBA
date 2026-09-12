@@ -1,4 +1,4 @@
-timestamp,H1_M54_power_w_valid_observation_count,H1_M54_power_w_coverage_share,H1_M54_power_w_coverage_mask
+timestamp,H1_M54_valid_observation_count,H1_M54_coverage_share,H1_M54_coverage_mask
 2013-04-01 22:00:00+00:00,897,0.9966666666666667,True
 2013-04-01 22:15:00+00:00,898,0.9977777777777778,True
 2013-04-01 22:30:00+00:00,897,0.9966666666666667,True

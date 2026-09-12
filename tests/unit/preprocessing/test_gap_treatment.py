@@ -5,7 +5,11 @@ from __future__ import annotations
 import pandas as pd
 import pytest
 
+from src.common.column_naming import imputation_column, treated_column
 from src.preprocessing.gap_treatment import apply_gap_treatment, build_gap_treated_data
+
+TREATED = treated_column("m1")
+IMPUTED = imputation_column("m1")
 
 
 def _frame(index: pd.DatetimeIndex, values: list[float | None], column: str = "m1") -> pd.DataFrame:
@@ -23,12 +27,12 @@ def test_short_gap_is_filled_long_gap_stays_empty() -> None:
     quality = _quality(index, [value is not None for value in values])
 
     treated, imputation_mask = apply_gap_treatment(
-        data, quality, max_gap_intervals=2, method="ffill"
+        data, quality, max_gap_intervals=2, resolution="hourly", method="ffill"
     )
 
-    assert treated["m1"].isna().tolist() == [False, False, False, True, True, True, False, False]
-    assert treated["m1"].dropna().tolist() == [10.0, 10.0, 12.0, 16.0, 17.0]
-    assert imputation_mask["m1"].tolist() == [False, True, False, False, False, False, False, False]
+    assert treated[TREATED].isna().tolist() == [False, False, False, True, True, True, False, False]
+    assert treated[TREATED].dropna().tolist() == [10.0, 10.0, 12.0, 16.0, 17.0]
+    assert imputation_mask[IMPUTED].tolist() == [False, True, False, False, False, False, False, False]
 
 
 def test_low_quality_value_is_treated_as_missing_and_filled() -> None:
@@ -37,11 +41,11 @@ def test_low_quality_value_is_treated_as_missing_and_filled() -> None:
     quality = _quality(index, [True, False, True])
 
     treated, imputation_mask = apply_gap_treatment(
-        data, quality, max_gap_intervals=2, method="ffill"
+        data, quality, max_gap_intervals=2, resolution="hourly", method="ffill"
     )
 
-    assert treated["m1"].tolist() == [10.0, 10.0, 12.0]
-    assert imputation_mask["m1"].tolist() == [False, True, False]
+    assert treated[TREATED].tolist() == [10.0, 10.0, 12.0]
+    assert imputation_mask[IMPUTED].tolist() == [False, True, False]
 
 
 def test_method_none_never_fills() -> None:
@@ -51,11 +55,11 @@ def test_method_none_never_fills() -> None:
     quality = _quality(index, [value is not None for value in values])
 
     treated, imputation_mask = apply_gap_treatment(
-        data, quality, max_gap_intervals=2, method="none"
+        data, quality, max_gap_intervals=2, resolution="hourly", method="none"
     )
 
-    assert treated["m1"].isna().tolist() == [False, True, False]
-    assert not imputation_mask["m1"].any()
+    assert treated[TREATED].isna().tolist() == [False, True, False]
+    assert not imputation_mask[IMPUTED].any()
 
 
 def test_build_gap_treated_data_fills_across_split_boundary() -> None:
@@ -86,14 +90,15 @@ def test_build_gap_treated_data_fills_across_split_boundary() -> None:
         test_data,
         test_quality,
         max_gap_intervals=2,
+        resolution="hourly",
         method="ffill",
     )
 
     # Lücke am Anfang von validation wird aus dem letzten Trainwert gefüllt, nur möglich weil build_gap_treated_data über alle Splits hinweg konkateniert.
-    assert validation_treated["m1"].tolist() == [12.0, 14.0]
-    assert validation_mask["m1"].tolist() == [True, False]
+    assert validation_treated[TREATED].tolist() == [12.0, 14.0]
+    assert validation_mask[IMPUTED].tolist() == [True, False]
     assert train_treated.index.equals(train_index)
-    assert test_treated["m1"].tolist() == [20.0, 21.0]
+    assert test_treated[TREATED].tolist() == [20.0, 21.0]
 
 
 def test_build_gap_treated_data_rejects_global_linear_interpolation() -> None:
@@ -105,5 +110,6 @@ def test_build_gap_treated_data_rejects_global_linear_interpolation() -> None:
         build_gap_treated_data(
             data, quality, data, quality, data, quality,
             max_gap_intervals=2,
+            resolution="hourly",
             method="linear",
         )

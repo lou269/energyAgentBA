@@ -12,6 +12,7 @@ from typing import cast
 
 import pandas as pd
 
+from src.common.column_naming import imputation_column, treated_column
 from src.config.config_forecasting import ForecastingConfig, PreprocessingConfig
 from src.config.project_config import ProjectConfig
 from src.forecasting.evaluation import evaluate_forecasts, select_primary_naive_reference
@@ -60,8 +61,9 @@ def run() -> None:
             parse_dates=["window_start", "window_end"],
         )
         candidate_id = str(canonical_manifest.iloc[0]["candidate_id"])
-        target_column = str(canonical_manifest.iloc[0]["column_name"])
         meter_key = str(canonical_manifest.iloc[0]["meter_key"])
+        target_column = treated_column(meter_key)
+        mask_column = imputation_column(meter_key)
         train_length_days = float(canonical_manifest.iloc[0]["train_length_days"])
 
         data_hourly = pd.read_csv(
@@ -83,6 +85,7 @@ def run() -> None:
             quality_hourly,
             # bleibt für alle Varianten bei 2h -> nicht dasselbe wie max_availability_gap_hours
             max_gap_intervals=preprocessing_config.max_imputation_gap_hourly,
+            resolution="hourly",
             method=preprocessing_config.gap_treatment_method,
         )
 
@@ -93,7 +96,7 @@ def run() -> None:
 
         fixed_history = treated_hourly.loc[:FIXED_VALIDATION_START - pd.Timedelta(hours=1), target_column]
         evaluation_targets = treated_hourly.loc[FIXED_VALIDATION_START:FIXED_VALIDATION_END, target_column]
-        evaluation_imputation_mask = imputation_mask_hourly.loc[FIXED_VALIDATION_START:FIXED_VALIDATION_END, meter_key]
+        evaluation_imputation_mask = imputation_mask_hourly.loc[FIXED_VALIDATION_START:FIXED_VALIDATION_END, mask_column]
 
         for scenario in K1_SCENARIOS:
             run_started = perf_counter()

@@ -7,6 +7,7 @@ from time import perf_counter
 
 import pandas as pd
 
+from src.common.column_naming import plausibility_column, treated_column
 from src.pipeline.io import df_to_csv, next_sequential_number, save_json
 from src.config.config_forecasting import NumericalAnalysisConfig
 from src.config.project_config import ProjectConfig, ensure_project_directories
@@ -30,9 +31,12 @@ def run_numerical_analysis(
     plausibility_15min: pd.DataFrame,
     plausibility_hourly: pd.DataFrame,
     split_manifest: pd.DataFrame,
-    target_column: str,
+    meter_key: str,
     config: NumericalAnalysisConfig,
 ) -> NumericalAnalysisResult:
+    target_column = treated_column(meter_key)
+    implausible_column = plausibility_column(meter_key)
+
     split_15min = split_manifest[
         split_manifest["frequency"] == "15min"
     ].set_index("split")
@@ -90,7 +94,7 @@ def run_numerical_analysis(
         sample_period_hours=config.sample_period_hours_15min,
     )
 
-    anomaly_15min["value_implausible"] = plausibility_15min[target_column].reindex(anomaly_15min.index)
+    anomaly_15min["value_implausible"] = plausibility_15min[implausible_column].reindex(anomaly_15min.index)
 
     analysis_hourly = build_multi_scale_analysis(
         train_data=train_hourly,
@@ -115,7 +119,7 @@ def run_numerical_analysis(
         sample_period_hours=config.sample_period_hours_hourly,
     )
 
-    anomaly_hourly["value_implausible"] = plausibility_hourly[target_column].reindex(anomaly_hourly.index)
+    anomaly_hourly["value_implausible"] = plausibility_hourly[implausible_column].reindex(anomaly_hourly.index)
 
     return NumericalAnalysisResult(anomaly_15min=anomaly_15min, anomaly_hourly=anomaly_hourly)
 
@@ -174,7 +178,7 @@ class NumericalAnalysisRunner:
         canonical_manifest = pd.read_csv(canonical_manifest_path)
 
         candidate_id = str(canonical_manifest["candidate_id"].iloc[0])
-        target_column = str(canonical_manifest["column_name"].iloc[0])
+        meter_key = str(canonical_manifest["meter_key"].iloc[0])
 
         logger.info("Building 15-minute and hourly analysis...")
 
@@ -184,7 +188,7 @@ class NumericalAnalysisRunner:
             plausibility_15min=plausibility_15min,
             plausibility_hourly=plausibility_hourly,
             split_manifest=split_manifest,
-            target_column=target_column,
+            meter_key=meter_key,
             config=self.analysis_config,
         )
 

@@ -3,7 +3,8 @@ from __future__ import annotations
 import pandas as pd
 from nilmtk import DataSet, TimeFrame
 
-from src.analysis.common import MERGE_KEYS, require_columns
+from src.common.channel_tables import MERGE_KEYS
+from src.common.validation import require_columns
 
 REQUIRED_QUALITY_COLUMNS = MERGE_KEYS + ["is_mains", "start", "end"]
 
