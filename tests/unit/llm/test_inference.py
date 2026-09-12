@@ -96,10 +96,10 @@ def test_malformed_json_is_retried_and_recovers() -> None:
     assert "invalid" in second_call_messages[-1]["content"].lower()
 
 
-def test_ungrounded_value_is_retried_and_recovers() -> None:
+def test_invalid_path_is_retried_and_recovers() -> None:
     state = valid_structured_state()
     invalid_output = valid_llm_output()
-    invalid_output["evidence_references"][0]["value"] = round(invalid_output["evidence_references"][0]["value"], 1)
+    invalid_output["evidence_references"][0]["path"] = "forecast.run_id"
 
     client = ScriptedClient([json.dumps(invalid_output), json.dumps(valid_llm_output())])
 
@@ -108,7 +108,7 @@ def test_ungrounded_value_is_retried_and_recovers() -> None:
     assert result.attempts[0].valid is False
     first_attempt_error = result.attempts[0].validation_error
     assert first_attempt_error is not None
-    assert "does not match the Structured State" in first_attempt_error
+    assert "not an existing scalar Structured-State path" in first_attempt_error
     assert result.attempts[1].valid is True
 
 

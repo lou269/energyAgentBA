@@ -7,7 +7,7 @@ from time import perf_counter
 from typing import cast
 
 from src.llm.client import LLMClient
-from src.llm.llm_schema import LLMOutput, build_llm_output_json_schema
+from src.llm.llm_schema import LLMOutput, RawLLMOutput, build_llm_output_json_schema
 from src.llm.validation import collect_scalar_evidence_paths, validate_llm_output_against_state
 from src.pipeline.schema_validation import is_real_number
 from src.structured_state.structured_state_schema import StructuredState
@@ -94,9 +94,9 @@ def infer_llm_output(
                 raise ValueError("LLM returned an empty response.")
 
             parsed_output = json.loads(content)
-            output = cast(LLMOutput, parsed_output)
+            raw_output = cast(RawLLMOutput, parsed_output)
 
-            validate_llm_output_against_state(output, state, allowed_paths=allowed_evidence_paths)
+            output = validate_llm_output_against_state(raw_output, state, allowed_paths=allowed_evidence_paths)
 
         except (TypeError, ValueError) as error:
             last_error = error
@@ -155,9 +155,8 @@ def _append_correction_messages(
                 "Use only evidence paths allowed by the provided "
                 "JSON schema. The user JSON is the root object. "
                 "Do not add `data`, `state`, `json`, `input`, or a "
-                "filename before an evidence path. Copy referenced "
-                "values exactly without rounding or changing their "
-                "JSON type."
+                "filename before an evidence path. Each evidence "
+                "reference contains only a `path`, never a `value`."
             ),
         }
     )

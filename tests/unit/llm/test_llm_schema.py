@@ -1,6 +1,5 @@
 # python -m pytest tests/unit/llm/test_llm_schema.py -v
 
-import math
 from typing import Any, cast
 
 import pytest
@@ -62,11 +61,11 @@ def test_evidence_references_must_not_be_empty() -> None:
         validate_llm_output(output)
 
 
-def test_evidence_reference_missing_value_is_rejected() -> None:
+def test_evidence_reference_with_value_is_rejected() -> None:
     output = valid_llm_output()
-    output["evidence_references"] = [{"path": "observation.current_power_w"}]
+    output["evidence_references"] = [{"path": "observation.current_power_w", "value": 1319.8837}]
 
-    with pytest.raises(ValueError, match="missing required fields"):
+    with pytest.raises(ValueError, match="unexpected fields"):
         validate_llm_output(output)
 
 
@@ -75,39 +74,16 @@ def test_evidence_path_syntax_is_rejected(
     path: str
 ) -> None:
     output = valid_llm_output()
-    output["evidence_references"] = [{"path": path, "value": 1.0}]
+    output["evidence_references"] = [{"path": path}]
 
     with pytest.raises(ValueError):
         validate_llm_output(output)
-
-
-def test_evidence_value_must_be_a_json_scalar() -> None:
-    output = valid_llm_output()
-    output["evidence_references"] = [{"path": "anomaly.scale_scores", "value": {"daily": 1.0}}]
-
-    with pytest.raises(TypeError):
-        validate_llm_output(output)
-
-
-def test_evidence_value_must_be_finite() -> None:
-    output = valid_llm_output()
-    output["evidence_references"] = [{"path": "anomaly.score", "value": math.nan}]
-
-    with pytest.raises(ValueError):
-        validate_llm_output(output)
-
-
-def test_evidence_value_may_be_null() -> None:
-    output = valid_llm_output()
-    output["evidence_references"] = [{"path": "analysis.trend", "value": None}]
-
-    validate_llm_output(output)
 
 
 def test_measurement_error_classification_is_accepted() -> None:
     output = valid_llm_output()
     output["classification"] = "measurement_error"
-    output["evidence_references"] = [{"path": "observation.value_implausible", "value": True}]
+    output["evidence_references"] = [{"path": "observation.value_implausible"}]
 
     validate_llm_output(output)
 

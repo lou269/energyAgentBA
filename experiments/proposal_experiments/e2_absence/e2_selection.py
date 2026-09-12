@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from experiments.proposal_experiments.e2_absence.e2_config import MIN_ACTIVITY_SHARE_FOR_SUBTRACTION, MIN_COVERAGE_SHARE_FOR_SUBTRACTION 
+from experiments.proposal_experiments.e2_absence.e2_config import MIN_COVERAGE_SHARE_FOR_SUBTRACTION
 
 def load_calendar_events(path: Path) -> tuple[Mapping[str, object], ...]:
     events = json.loads(path.read_text(encoding="utf-8"))
@@ -48,28 +48,26 @@ def channels_meeting_thresholds(
     ranking: pd.DataFrame,
     *,
     min_coverage_share: float = MIN_COVERAGE_SHARE_FOR_SUBTRACTION,
-    min_activity_share: float = MIN_ACTIVITY_SHARE_FOR_SUBTRACTION,
 ) -> pd.Series:
-    return ranking["coverage_share"].ge(min_coverage_share) & ranking["activity_share"].ge(min_activity_share)
+    # activity_share fließt hier bewusst nicht ein - seltene, aber hochleistungsstarke Präsenzgeräte
+    # (z.B. Spülmaschine) sollen nicht rausfallen, siehe rank_by_coverage
+    return ranking["coverage_share"].ge(min_coverage_share)
 
 
 def select_channels_for_subtraction(
     ranking: pd.DataFrame,
     *,
     min_coverage_share: float = MIN_COVERAGE_SHARE_FOR_SUBTRACTION,
-    min_activity_share: float = MIN_ACTIVITY_SHARE_FOR_SUBTRACTION,
 ) -> list[str]:
     if ranking.empty:
         raise ValueError("ranking is empty - no candidate channels available for the target window.")
 
     selected = ranking.loc[
-        channels_meeting_thresholds(ranking, min_coverage_share=min_coverage_share, min_activity_share=min_activity_share),
+        channels_meeting_thresholds(ranking, min_coverage_share=min_coverage_share),
         "meter_key",
     ].tolist()
 
     if not selected:
-        raise ValueError(
-            f"No candidate channel reaches min_coverage_share={min_coverage_share} and min_activity_share={min_activity_share} in the target window."
-        )
+        raise ValueError(f"No candidate channel reaches min_coverage_share={min_coverage_share} in the target window.")
 
     return selected

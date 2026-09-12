@@ -104,10 +104,30 @@ def test_classification_is_normal_without_calling_the_rule_classifier() -> None:
     assert result.rule_output is None
 
 
+def test_isolated_single_hour_spike_is_filtered_as_noise() -> None:
+    series = _calm_series(24 * 10)
+    coldstart_hours = 24 * 8
+    values = series.to_numpy().copy()
+    spike_index = coldstart_hours
+    values[spike_index] = 600.0
+    series = pd.Series(values, index=series.index, name="target")
+
+    state = _state(series.iloc[:coldstart_hours])
+    decision_time = series.index[coldstart_hours] + pd.Timedelta(hours=1)
+    new_observations = series.loc[state.history.index[-1] + pd.Timedelta(hours=1) : decision_time - pd.Timedelta(hours=1)]
+    config = replace(SYS_VARIANTS["SYS1"], llm_mode="rule")
+
+    result, _ = run_cycle(state, new_observations, decision_time, config, calendar_context=_calendar_context(decision_time))
+
+    assert result.analysis_row["anomaly_level"] in ("unusual", "strong_anomaly")
+    assert result.classification == "normal"
+    assert result.rule_output is None
+
+
 def test_sustained_absence_triggers_immediate_retrain_and_range_exclusion() -> None:
-    # Werte gewählt, dass der Drop beim ersten decision_time erst 2h alt ist (unter SUSTAINED_DAILY_ELEVATED_HOURS,
-    # noch "peak") und beim zweiten seit Mitternacht durchgehend 24h auffällig war (klar über der 18h-Schwelle,
-    # -> "absence") -> rule_based_classifier.py
+    # Werte gewählt, dass der Drop beim ersten decision_time erst 6h alt ist (über min_elevated_hours_for_gate,
+    # das Gate lässt es also durch, aber klar unter SUSTAINED_DAILY_ELEVATED_HOURS -> "peak") und beim zweiten
+    # im 24h-Fenster durchgehend auffällig war (klar über der 18h-Schwelle, -> "absence") -> rule_based_classifier.py
     hours = 24 * 12
     index = pd.date_range("2024-01-01", periods=hours, freq="1h", tz="UTC")
     baseline = 200.0 + 2.0 * np.sin(2 * np.pi * index.hour.to_numpy() / 24)
@@ -117,11 +137,15 @@ def test_sustained_absence_triggers_immediate_retrain_and_range_exclusion() -> N
     values[drop_start : drop_start + drop_len] = 5.0
     series = pd.Series(values, index=index, name="target")
 
-    coldstart_hours = drop_start - 1
+    coldstart_hours = drop_start - 3
     config = SYS_VARIANTS["SYS2"]
     state = _state(series.iloc[:coldstart_hours])
+    
+    warmup_decision_time = series.index[coldstart_hours] + pd.Timedelta(hours=1)
+    new_observations = series.loc[state.history.index[-1] + pd.Timedelta(hours=1) : warmup_decision_time - pd.Timedelta(hours=1)]
+    _, state = run_cycle(state, new_observations, warmup_decision_time, config, calendar_context=_calendar_context(warmup_decision_time))
 
-    first_decision_time = series.index[drop_start + 2]
+    first_decision_time = series.index[drop_start + 6]
     new_observations = series.loc[state.history.index[-1] + pd.Timedelta(hours=1) : first_decision_time - pd.Timedelta(hours=1)]
     first_result, state = run_cycle(state, new_observations, first_decision_time, config, calendar_context=_calendar_context(first_decision_time))
 

@@ -28,9 +28,7 @@ output/canonical/canonical_data.csv
 #output/
 *.log
 
-# src
-src/old/
-src/config/column_naming.py 
+old/
 
 .history/ 
 

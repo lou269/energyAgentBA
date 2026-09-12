@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-import math
 from collections.abc import Collection, Mapping
 from typing import Literal, TypedDict, get_args
 
 from src.pipeline.schema_validation import validate_fields
 
 
-SCHEMA_VERSION = "1.1"
+SCHEMA_VERSION = "1.2"
 
 
 Classification = Literal["normal", "absence", "peak", "new_pattern", "measurement_error", "unknown"]
@@ -25,9 +24,23 @@ OUTPUT_FIELDS = frozenset(
     }
 )
 
-EVIDENCE_REFERENCE_FIELDS = frozenset({"path", "value"})
+# Modell liefert nur path, value kommt aus validation.py
+MODEL_EVIDENCE_REFERENCE_FIELDS = frozenset({"path"})
 
 EvidenceValue = str | int | float | bool | None
+
+
+class ModelEvidenceReference(TypedDict):
+    path: str
+
+
+class RawLLMOutput(TypedDict):
+    schema_version: str
+    classification: Classification
+    explanation: str
+    evidence_references: list[ModelEvidenceReference]
+    user_recommendation: str
+    uncertainty: str
 
 
 class EvidenceReference(TypedDict):
@@ -69,16 +82,8 @@ def _build_output_schema(
                     "type": "object",
                     "properties": {
                         "path": path_schema,
-                        "value": {
-                            "anyOf": [
-                                {"type": "string"},
-                                {"type": "number"},
-                                {"type": "boolean"},
-                                {"type": "null"},
-                            ]
-                        },
                     },
-                    "required": ["path", "value"],
+                    "required": ["path"],
                     "additionalProperties": False,
                 },
             },
@@ -152,11 +157,9 @@ def validate_llm_output(
         if not isinstance(reference, Mapping):
             raise TypeError(f"{name} must be an object.")
 
-        validate_fields(reference, EVIDENCE_REFERENCE_FIELDS, name)
+        validate_fields(reference, MODEL_EVIDENCE_REFERENCE_FIELDS, name)
 
         _validate_evidence_path(reference["path"], f"{name}.path")
-
-        _validate_evidence_value(reference["value"], f"{name}.value")
 
 
 def _validate_evidence_path(
@@ -176,17 +179,6 @@ def _validate_evidence_path(
         raise ValueError(f"{field_name} must be a valid dot-separated path.")
 
     return value
-
-
-def _validate_evidence_value(
-    value: object, 
-    field_name: str
-) -> None:
-    if value is not None and not isinstance(value, (str, int, float, bool)):
-        raise TypeError(f"{field_name} must be a JSON scalar or null.")
-
-    if isinstance(value, float) and not math.isfinite(value):
-        raise ValueError(f"{field_name} must be finite.")
 
 
 def _validate_non_empty_string(

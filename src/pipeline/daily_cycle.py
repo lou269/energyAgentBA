@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from dataclasses import dataclass
 from typing import Literal, cast
 
@@ -15,10 +13,10 @@ from src.llm.client import LLMClient
 from src.llm.inference import infer_llm_output
 from src.llm.llm_schema import Classification, LLMOutput
 from src.llm.rule_based_classifier import RuleClassificationResult, rule_based_classify
-from src.numerical_analysis.anomaly_detection import build_anomaly_detection
+from src.numerical_analysis.anomaly_detection import aggregate_daily_anomaly, build_anomaly_detection
 from src.numerical_analysis.multi_scale_analysis import build_multi_scale_analysis
 from src.structured_state.builder import build_structured_state
-from src.structured_state.structured_state_schema import StructuredState, validate_structured_state
+from src.structured_state.structured_state_schema import ANOMALY_WINDOW_HOURS, StructuredState, validate_structured_state
 
 
 LLMMode = Literal["off", "rule", "real"]
@@ -178,15 +176,21 @@ def run_cycle(
         )
         validate_structured_state(structured_state)
 
-        # Proposal S.8: "Bei Z-Score > Schwelle -> LLM-Klassifikation" - ohne auffälligen Score gibt es nichts zu klassifizieren, 
+        # Proposal S.8: "Bei Z-Score > Schwelle -> LLM-Klassifikation" - ohne auffälligen Score gibt es nichts zu klassifizieren,
         # spart den LLM-/Regel-Aufruf
         anomaly_level = analysis_row["anomaly_level"]
+        dominant_scale = analysis_row["dominant_scale"]
 
-        if anomaly_level == "normal":
-            classification = "normal"
-        elif pd.isna(anomaly_level):
+        if pd.isna(anomaly_level):
             # zu wenig Referenzdaten für einen Score -> "weiß es nciht", nicht "alles normal"
             classification = "unknown"
+        elif anomaly_level == "normal":
+            classification = "normal"
+        elif (
+            pd.notna(dominant_scale)
+            and analysis_row[f"{dominant_scale}_elevated_hours"] < config.numerical_analysis_config.min_elevated_hours_for_gate
+        ):
+            classification = "normal"
         elif config.llm_mode == "real":
             if llm_client is None or llm_prompt is None or config.llm_config is None:
                 raise ValueError("llm_client, llm_prompt and config.llm_config are required when llm_mode is 'real'.")
@@ -331,6 +335,19 @@ def _compute_analysis_row(
     row["timestamp"] = target_timestamp
     # history kommt schon aus preprocessing, Gap-Treatment/Plausibilitätscheck liegen davor -> kein zweiter Check hier
     row["value_implausible"] = False
+
+    
+    daily_summary = aggregate_daily_anomaly(
+        anomaly,
+        target_timestamp=target_timestamp,
+        window_hours=ANOMALY_WINDOW_HOURS,
+        sample_period_hours=config.sample_period_hours_hourly,
+        unusual_threshold=config.unusual_threshold,
+        strong_anomaly_threshold=config.strong_anomaly_threshold,
+    )
+
+    for field, value in daily_summary.items():
+        row[field] = value
 
     return row
 

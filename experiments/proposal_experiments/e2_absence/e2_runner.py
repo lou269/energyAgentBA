@@ -34,6 +34,7 @@ from src.llm.llm_run_artifacts import load_prompt
 from src.llm.llm_runner import PROMPT_DIRECTORY
 from src.pipeline.comparison_harness import run_comparison
 from src.pipeline.cycle_variants import SYS_VARIANTS
+from src.pipeline.io import find_run_directory
 from src.preprocessing.preprocessing_runner import run_preprocessing
 
 logger = logging.getLogger(__name__)
@@ -129,10 +130,13 @@ def main() -> None:
     assert sys3_config.llm_config is not None
     llm_prompt = load_prompt(PROMPT_DIRECTORY / f"prompt_{sys3_config.llm_config.prompt_version}.txt")
 
-    ctx0_dir = OUTPUT_DIR / "ctx0"
-    ctx1_dir = OUTPUT_DIR / "ctx1"
-    ctx0_dir.mkdir(parents=True, exist_ok=True)
-    ctx1_dir.mkdir(parents=True, exist_ok=True)
+    latest_e2_run = find_run_directory(OUTPUT_DIR, prefix="e2")
+    e2_run_number = (latest_e2_run[0] if latest_e2_run is not None else 0) + 1
+    e2_run_directory = OUTPUT_DIR / f"e2_{e2_run_number:03d}"
+    e2_run_directory.mkdir(parents=True, exist_ok=False)
+
+    ctx0_dir = e2_run_directory / "ctx0"
+    ctx1_dir = e2_run_directory / "ctx1"
 
     ctx0_configs = {
         "SYS1": SYS_VARIANTS["SYS1"],
@@ -145,15 +149,22 @@ def main() -> None:
     }
 
     logger.info("Running E2/CTX0 (no calendar context) over %d decision times...", len(decision_times))
-    ctx0_result = run_comparison(ctx0_scenario, ctx0_configs, ctx0_dir, llm_prompt=llm_prompt)
+    ctx0_result = run_comparison(
+        ctx0_scenario, ctx0_configs, ctx0_dir, project_config.project_root,
+        run_id=f"{e2_run_directory.name}_ctx0", llm_prompt=llm_prompt,
+    )
 
     logger.info("Running E2/CTX1 (with calendar context) over %d decision times...", len(decision_times))
-    ctx1_result = run_comparison(ctx1_scenario, ctx1_configs, ctx1_dir, llm_prompt=llm_prompt)
+    ctx1_result = run_comparison(
+        ctx1_scenario, ctx1_configs, ctx1_dir, project_config.project_root,
+        run_id=f"{e2_run_directory.name}_ctx1", llm_prompt=llm_prompt,
+    )
 
     combined = pd.concat([ctx0_result, ctx1_result], ignore_index=True)
-    combined.to_csv(OUTPUT_DIR / "e2_comparison_summary.csv", index=False)
+    combined_output_file = e2_run_directory / "e2_comparison_summary.csv"
+    combined.to_csv(combined_output_file, index=False)
 
-    logger.info("E2 completed: %d rows written to %s", len(combined), OUTPUT_DIR / "e2_comparison_summary.csv")
+    logger.info("E2 completed: %d rows written to %s", len(combined), combined_output_file)
 
 
 if __name__ == "__main__":

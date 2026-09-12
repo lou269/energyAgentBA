@@ -5,7 +5,7 @@ from __future__ import annotations
 import pandas as pd
 import pytest
 
-from src.numerical_analysis.anomaly_detection import build_anomaly_detection
+from src.numerical_analysis.anomaly_detection import aggregate_daily_anomaly, build_anomaly_detection
 
 
 def _analysis_frame(
@@ -104,3 +104,115 @@ def test_dominant_scale_picks_largest_absolute_score() -> None:
     assert row["anomaly_direction"] == "high"
     assert row["anomaly_level"] == "strong_anomaly"
     assert row["anomaly_score"] == pytest.approx(row["weekly_score"])
+
+
+def _scores(values: dict[str, list[float | None]], start: str = "2013-01-01") -> pd.DataFrame:
+    n = len(next(iter(values.values())))
+    index = pd.date_range(start, periods=n, freq="h", tz="UTC")
+    return pd.DataFrame(
+        {f"{scale}_score": series for scale, series in values.items()},
+        index=index,
+    )
+
+
+def test_daily_aggregate_uses_the_windows_peak_not_the_last_hour() -> None:
+    # Peak liegt 3h vor target_timestamp - der reine Einzelstunden-Blick hätte das komplett verpasst
+    anomaly = _scores(
+        {
+            "short_term": [0.5, 0.6, 4.2, 0.4, 0.3, 0.2],
+            "daily": [0.1] * 6,
+            "weekly": [0.1] * 6,
+            "long_term": [0.1] * 6,
+        }
+    )
+    target_timestamp = anomaly.index[-1]
+
+    summary = aggregate_daily_anomaly(
+        anomaly,
+        target_timestamp=target_timestamp,
+        window_hours=24,
+        sample_period_hours=1.0,
+        unusual_threshold=2.0,
+        strong_anomaly_threshold=3.0,
+    )
+
+    assert summary["dominant_scale"] == "short_term"
+    assert summary["anomaly_score"] == pytest.approx(4.2)
+    assert summary["anomaly_level"] == "strong_anomaly"
+    assert summary["anomaly_peak_timestamp"] == anomaly.index[2]
+    assert summary["short_term_score"] == pytest.approx(4.2)
+
+
+def test_daily_aggregate_counts_all_elevated_hours_not_just_a_streak() -> None:
+    # auffällig, normal, auffällig, auffällig - ein reiner Streak-Zähler würde bei der Lücke auf 0 zurückfallen
+    anomaly = _scores(
+        {
+            "short_term": [2.5, 0.1, 2.5, 2.5],
+            "daily": [0.1] * 4,
+            "weekly": [0.1] * 4,
+            "long_term": [0.1] * 4,
+        }
+    )
+    target_timestamp = anomaly.index[-1]
+
+    summary = aggregate_daily_anomaly(
+        anomaly,
+        target_timestamp=target_timestamp,
+        window_hours=24,
+        sample_period_hours=1.0,
+        unusual_threshold=2.0,
+        strong_anomaly_threshold=3.0,
+    )
+
+    assert summary["short_term_elevated_hours"] == pytest.approx(3.0)
+
+
+def test_daily_aggregate_ignores_hours_outside_the_window() -> None:
+    # riesiger Ausreisser liegt eine Stunde vor dem 3h-Fenster -> darf die Aggregation nicht beeinflussen
+    anomaly = _scores(
+        {
+            "short_term": [9.0, 0.2, 0.3, 0.4],
+            "daily": [0.1] * 4,
+            "weekly": [0.1] * 4,
+            "long_term": [0.1] * 4,
+        }
+    )
+    target_timestamp = anomaly.index[-1]
+
+    summary = aggregate_daily_anomaly(
+        anomaly,
+        target_timestamp=target_timestamp,
+        window_hours=3,
+        sample_period_hours=1.0,
+        unusual_threshold=2.0,
+        strong_anomaly_threshold=3.0,
+    )
+
+    assert summary["anomaly_score"] == pytest.approx(0.4)
+    assert summary["anomaly_level"] == "normal"
+
+
+def test_daily_aggregate_is_null_when_no_scale_has_a_score_in_the_window() -> None:
+    anomaly = _scores(
+        {
+            "short_term": [None, None, None],
+            "daily": [None, None, None],
+            "weekly": [None, None, None],
+            "long_term": [None, None, None],
+        }
+    )
+    target_timestamp = anomaly.index[-1]
+
+    summary = aggregate_daily_anomaly(
+        anomaly,
+        target_timestamp=target_timestamp,
+        window_hours=24,
+        sample_period_hours=1.0,
+        unusual_threshold=2.0,
+        strong_anomaly_threshold=3.0,
+    )
+
+    assert pd.isna(summary["anomaly_score"]) # type: ignore
+    assert pd.isna(summary["dominant_scale"]) # type: ignore
+    assert pd.isna(summary["anomaly_level"]) # type: ignore
+    assert pd.isna(summary["anomaly_peak_timestamp"]) # type: ignore

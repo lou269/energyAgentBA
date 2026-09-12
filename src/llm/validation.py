@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from collections.abc import Collection, Mapping
+from typing import cast
 
-from src.llm.llm_schema import LLMOutput, validate_llm_output
+from src.llm.llm_schema import EvidenceReference, EvidenceValue, LLMOutput, RawLLMOutput, validate_llm_output
 from src.structured_state.structured_state_schema import StructuredState, validate_structured_state
 
 
@@ -24,6 +25,7 @@ ALLOWED_EVIDENCE_PATHS = frozenset(
         "anomaly.level",
         "anomaly.direction",
         "anomaly.dominant_scale",
+        "anomaly.peak_timestamp",
         "anomaly.scale_scores.short_term",
         "anomaly.scale_scores.daily",
         "anomaly.scale_scores.weekly",
@@ -80,19 +82,20 @@ def collect_scalar_evidence_paths(
 
 
 def validate_llm_output_against_state(
-    output: LLMOutput,
+    output: RawLLMOutput,
     state: StructuredState,
     *,
     allowed_paths: Collection[str] | None = None,
-) -> None:
+) -> LLMOutput:
+    # value kommt nie vom Modell, sondern wird hier aus dem State nachgeschlagen
     allowed_paths = frozenset(allowed_paths if allowed_paths is not None else collect_scalar_evidence_paths(state))
     validate_llm_output(output)
 
     referenced_paths: set[str] = set()
+    resolved_references: list[EvidenceReference] = []
 
     for index, reference in enumerate(output["evidence_references"]):
         path = reference["path"]
-        referenced_value = reference["value"]
         reference_name = f"evidence_references[{index}]"
 
         if path in referenced_paths:
@@ -111,15 +114,16 @@ def validate_llm_output_against_state(
         if not _is_json_scalar(state_value):
             raise TypeError(f"Structured-State value at {path!r} is not a supported JSON scalar.")
 
-        if type(referenced_value) is not type(state_value):
-            raise ValueError(
-                f"{reference_name}.value has the wrong JSON type for {path!r}: expected {type(state_value).__name__}, got {type(referenced_value).__name__}."
-            )
+        resolved_references.append({"path": path, "value": cast(EvidenceValue, state_value)})
 
-        if referenced_value != state_value:
-            raise ValueError(
-                f"{reference_name}.value does not match the Structured State for {path!r}: expected {state_value!r}, got {referenced_value!r}."
-            )
+    return {
+        "schema_version": output["schema_version"],
+        "classification": output["classification"],
+        "explanation": output["explanation"],
+        "evidence_references": resolved_references,
+        "user_recommendation": output["user_recommendation"],
+        "uncertainty": output["uncertainty"],
+    }
 
 
 def _collect_scalar_paths(

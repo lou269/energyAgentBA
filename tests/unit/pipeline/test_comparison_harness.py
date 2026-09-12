@@ -8,9 +8,12 @@ import numpy as np
 import pandas as pd
 
 from src.config.config_forecasting import LLMConfig
+from src.config.project_config import ProjectConfig
 from src.llm.client import ModelMetadata
 from src.pipeline.comparison_harness import ScenarioData, build_scenario_from_split_manifest, run_comparison
 from src.pipeline.cycle_variants import SYS_VARIANTS
+
+PROJECT_ROOT = ProjectConfig().project_root
 
 EXPECTED_COLUMNS = {
     "decision_time",
@@ -125,7 +128,7 @@ def test_build_scenario_from_split_manifest_integrates_with_run_comparison(tmp_p
     )
 
     scenario = build_scenario_from_split_manifest(treated_hourly, split_manifest, "target")
-    result = run_comparison(scenario, {"SYS0": SYS_VARIANTS["SYS0"]}, tmp_path)
+    result = run_comparison(scenario, {"SYS0": SYS_VARIANTS["SYS0"]}, tmp_path, PROJECT_ROOT)
 
     assert len(result) == len(scenario.decision_times)
     assert result["mae_w"].apply(math.isfinite).all()
@@ -135,18 +138,19 @@ def test_run_comparison_produces_one_row_per_decision_and_config(tmp_path: Path)
     scenario = _synthetic_scenario()
     configs = {"SYS0": SYS_VARIANTS["SYS0"], "SYS1": SYS_VARIANTS["SYS1"]}
 
-    result = run_comparison(scenario, configs, tmp_path)
+    result = run_comparison(scenario, configs, tmp_path, PROJECT_ROOT)
 
     assert len(result) == len(scenario.decision_times) * len(configs)
     assert EXPECTED_COLUMNS.issubset(result.columns)
     assert (tmp_path / "comparison_summary.csv").is_file()
+    assert (tmp_path / "run_manifest.json").is_file()
 
 
 def test_run_comparison_off_mode_never_classifies_or_adapts(tmp_path: Path) -> None:
     scenario = _synthetic_scenario()
     configs = {"SYS0": SYS_VARIANTS["SYS0"]}
 
-    result = run_comparison(scenario, configs, tmp_path)
+    result = run_comparison(scenario, configs, tmp_path, PROJECT_ROOT)
 
     assert result["classification"].isna().all()
     assert (result["adaption_action"] == "none").all()
@@ -156,7 +160,7 @@ def test_run_comparison_fixed_train_retrains_only_once(tmp_path: Path) -> None:
     scenario = _synthetic_scenario(decision_count=3)
     configs = {"SYS0": SYS_VARIANTS["SYS0"]}
 
-    result = run_comparison(scenario, configs, tmp_path).sort_values("decision_time")
+    result = run_comparison(scenario, configs, tmp_path, PROJECT_ROOT).sort_values("decision_time")
 
     assert result["retrained"].tolist() == [True, False, False]
 
@@ -165,7 +169,7 @@ def test_run_comparison_expanding_variant_retrains_every_cycle(tmp_path: Path) -
     scenario = _synthetic_scenario(decision_count=3)
     configs = {"SYS1": SYS_VARIANTS["SYS1"]}
 
-    result = run_comparison(scenario, configs, tmp_path).sort_values("decision_time")
+    result = run_comparison(scenario, configs, tmp_path, PROJECT_ROOT).sort_values("decision_time")
 
     assert result["retrained"].tolist() == [True, True, True]
 
@@ -174,7 +178,7 @@ def test_run_comparison_mae_is_finite(tmp_path: Path) -> None:
     scenario = _synthetic_scenario()
     configs = {"SYS0": SYS_VARIANTS["SYS0"], "SYS1": SYS_VARIANTS["SYS1"]}
 
-    result = run_comparison(scenario, configs, tmp_path)
+    result = run_comparison(scenario, configs, tmp_path, PROJECT_ROOT)
 
     for mae_w in result["mae_w"]:
         assert isinstance(mae_w, float)
@@ -214,6 +218,7 @@ def test_run_comparison_survives_llm_inference_failures(tmp_path: Path) -> None:
         scenario,
         {"SYS_TEST": config},
         tmp_path,
+        PROJECT_ROOT,
         llm_prompt="irrelevant for this test",
         llm_client=_AlwaysEmptyClient(),
     )
@@ -247,7 +252,7 @@ def test_run_comparison_records_rule_based_explanation(tmp_path: Path) -> None:
         numerical_analysis_config=replace(base_config.numerical_analysis_config, min_reference_samples=5, unusual_threshold=1.0),
     )
 
-    result = run_comparison(scenario, {"SYS2": config}, tmp_path)
+    result = run_comparison(scenario, {"SYS2": config}, tmp_path, PROJECT_ROOT)
 
     classified = result.loc[result["classification"].notna()]
     assert not classified.empty

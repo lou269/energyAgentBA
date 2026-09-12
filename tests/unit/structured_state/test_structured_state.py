@@ -44,6 +44,7 @@ def _analysis_row() -> pd.Series:
             "dominant_scale": "daily",
             "anomaly_direction": "high",
             "anomaly_level": "unusual",
+            "anomaly_peak_timestamp": DECISION_TIME - pd.Timedelta(hours=1),
         }
     )
 
@@ -192,6 +193,7 @@ def test_partial_and_missing_scale_scores_are_explicit() -> None:
         "dominant_scale",
         "anomaly_direction",
         "anomaly_level",
+        "anomaly_peak_timestamp",
     ):
         analysis_row[field] = None
 
@@ -203,6 +205,23 @@ def test_partial_and_missing_scale_scores_are_explicit() -> None:
     assert missing_state["anomaly"]["level"] is None
     assert missing_state["anomaly"]["direction"] is None
     assert missing_state["anomaly"]["dominant_scale"] is None
+    assert missing_state["anomaly"]["peak_timestamp"] is None
+
+
+def test_peak_timestamp_outside_the_anomaly_window_is_rejected() -> None:
+    state = _build_state()
+    state["anomaly"]["peak_timestamp"] = (DECISION_TIME - pd.Timedelta(hours=25)).isoformat()
+
+    with pytest.raises(ValueError, match="aggregation window"):
+        validate_structured_state(state)
+
+
+def test_peak_timestamp_after_the_analyzed_hour_is_rejected() -> None:
+    state = _build_state()
+    state["anomaly"]["peak_timestamp"] = DECISION_TIME.isoformat()
+
+    with pytest.raises(ValueError, match="analyzed hour"):
+        validate_structured_state(state)
 
 
 def test_invalid_calendar_context_is_rejected() -> None:

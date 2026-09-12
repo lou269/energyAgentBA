@@ -6,7 +6,7 @@ from typing import Literal
 import pandas as pd
 
 from src.llm.llm_schema import Classification
-from src.structured_state.structured_state_schema import StructuredState
+from src.structured_state.structured_state_schema import ANOMALY_WINDOW_HOURS, StructuredState
 
 
 AdaptionActionKind = Literal["none", "advance_history_start", "exclude_range"]
@@ -37,24 +37,26 @@ def adaption_policy(
     if classification == "absence":
         decision_time = _timestamp(context["decision_time"])
         elevated_hours = _dominant_elevated_hours(context)
-        day_start = (decision_time - pd.Timedelta(hours=1)).normalize()
+        range_end = decision_time - pd.Timedelta(hours=1)
+        window_start = range_end - pd.Timedelta(hours=ANOMALY_WINDOW_HOURS - 1)
 
         return AdaptionAction(
             kind="exclude_range",
-            range_start=day_start,
-            range_end=decision_time - pd.Timedelta(hours=1),
-            reason=f"absence on {day_start.date()} ({elevated_hours:.0f}h elevated today)",
+            range_start=window_start,
+            range_end=range_end,
+            reason=f"absence in the {ANOMALY_WINDOW_HOURS}h up to {range_end.isoformat()} ({elevated_hours:.0f}h elevated in that window)",
         )
 
     if classification == "new_pattern":
         decision_time = _timestamp(context["decision_time"])
         elevated_hours = _dominant_elevated_hours(context)
-        new_history_start = (decision_time - pd.Timedelta(hours=1)).normalize()
+        range_end = decision_time - pd.Timedelta(hours=1)
+        new_history_start = range_end - pd.Timedelta(hours=ANOMALY_WINDOW_HOURS - 1)
 
         return AdaptionAction(
             kind="advance_history_start",
             new_history_start=new_history_start,
-            reason=f"new_pattern since {new_history_start.date()} ({elevated_hours:.0f}h elevated that day)",
+            reason=f"new_pattern since {new_history_start.isoformat()} ({elevated_hours:.0f}h elevated in the {ANOMALY_WINDOW_HOURS}h window)",
         )
 
     return AdaptionAction(kind="none", reason=f"{classification}: no action")

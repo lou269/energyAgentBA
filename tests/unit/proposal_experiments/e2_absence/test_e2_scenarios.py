@@ -7,10 +7,13 @@ import numpy as np
 import pandas as pd
 
 from experiments.proposal_experiments.e2_absence.e2_scenarios import build_ctx_scenarios
+from src.config.project_config import ProjectConfig
 from src.pipeline.cycle_variants import SYS_VARIANTS
 from src.pipeline.comparison_harness import run_comparison
 from src.pipeline.daily_cycle import CycleState, run_cycle
 from src.context.calendar_context import build_calendar_context
+
+PROJECT_ROOT = ProjectConfig().project_root
 
 
 def _series(hours: int) -> pd.Series:
@@ -115,8 +118,8 @@ def test_run_comparison_completes_for_both_ctx_scenarios(tmp_path: Path) -> None
     ctx0_dir.mkdir()
     ctx1_dir.mkdir()
 
-    ctx0_result = run_comparison(ctx0, config, ctx0_dir)
-    ctx1_result = run_comparison(ctx1, config, ctx1_dir)
+    ctx0_result = run_comparison(ctx0, config, ctx0_dir, PROJECT_ROOT)
+    ctx1_result = run_comparison(ctx1, config, ctx1_dir, PROJECT_ROOT)
 
     assert len(ctx0_result) == len(decision_times)
     assert len(ctx1_result) == len(decision_times)

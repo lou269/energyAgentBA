@@ -53,8 +53,7 @@ def build_anomaly_detection(
         result[score_column] = (result[residual_column] - residual_mean) / residual_std
 
         elevated = result[score_column].abs() >= unusual_threshold
-        elevated = elevated & result[score_column].notna()
-
+        
         # Anzahl auffälliger Stunden seit Mitternacht bis zur jeweiligen Zeile 
         result[elevated_hours_column] = (elevated.groupby(day_key).cumsum() * sample_period_hours).where(result[score_column].notna())
         
@@ -105,3 +104,73 @@ def build_anomaly_detection(
     result.index.name = "timestamp"
 
     return result
+
+
+def aggregate_daily_anomaly(
+    anomaly: pd.DataFrame,
+    *,
+    target_timestamp: pd.Timestamp,
+    window_hours: float,
+    sample_period_hours: float,
+    unusual_threshold: float,
+    strong_anomaly_threshold: float,
+) -> dict[str, object]:
+    # Ersetzt die Einzelstunden-Sicht auf target_timestamp durch eine Zusammenfassung der letzten
+    # window_hours Stunden davor - eine Stunde allein ist kein verlässlicher Indikator für den Tag als Ganzes
+    scales = ("short_term", "daily", "weekly", "long_term")
+    n_samples = max(1, round(window_hours / sample_period_hours))
+    window = anomaly.loc[:target_timestamp].tail(n_samples)
+
+    summary: dict[str, object] = {}
+    peak_abs: dict[str, float] = {}
+    peak_signed: dict[str, float] = {}
+    peak_timestamp_by_scale: dict[str, pd.Timestamp] = {}
+
+    for scale in scales:
+        score_column = f"{scale}_score"
+        elevated_hours_column = f"{scale}_elevated_hours"
+        scores = window[score_column]
+
+        if scores.notna().any():
+            abs_scores = scores.abs()
+            peak_index = cast(pd.Timestamp, abs_scores.idxmax())
+            peak_abs[scale] = abs_scores.loc[peak_index]
+            peak_signed[scale] = scores.loc[peak_index]
+            peak_timestamp_by_scale[scale] = peak_index
+            summary[score_column] = peak_signed[scale]
+            summary[elevated_hours_column] = (abs_scores >= unusual_threshold).sum() * sample_period_hours
+        else:
+            summary[score_column] = np.nan
+            summary[elevated_hours_column] = np.nan
+
+    if not peak_abs:
+        summary["anomaly_score"] = np.nan
+        summary["dominant_scale"] = pd.NA
+        summary["anomaly_direction"] = pd.NA
+        summary["anomaly_level"] = pd.NA
+        summary["anomaly_peak_timestamp"] = pd.NaT
+        return summary
+
+    dominant_scale = max(peak_abs, key=lambda scale: peak_abs[scale])
+    anomaly_score = peak_abs[dominant_scale]
+    dominant_signed_score = peak_signed[dominant_scale]
+
+    summary["anomaly_score"] = anomaly_score
+    summary["dominant_scale"] = dominant_scale
+    summary["anomaly_peak_timestamp"] = peak_timestamp_by_scale[dominant_scale]
+
+    if dominant_signed_score > 0:
+        summary["anomaly_direction"] = "high"
+    elif dominant_signed_score < 0:
+        summary["anomaly_direction"] = "low"
+    else:
+        summary["anomaly_direction"] = pd.NA
+
+    if anomaly_score >= strong_anomaly_threshold:
+        summary["anomaly_level"] = "strong_anomaly"
+    elif anomaly_score >= unusual_threshold:
+        summary["anomaly_level"] = "unusual"
+    else:
+        summary["anomaly_level"] = "normal"
+
+    return summary

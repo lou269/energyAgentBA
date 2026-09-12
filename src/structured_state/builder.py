@@ -50,6 +50,7 @@ ANALYSIS_FIELDS = frozenset(
         "dominant_scale",
         "anomaly_direction",
         "anomaly_level",
+        "anomaly_peak_timestamp",
         "value_implausible",
     }
 )
@@ -152,6 +153,7 @@ def build_structured_state(
             "level": _nullable_text(analysis_row["anomaly_level"], "anomaly.level", ANOMALY_LEVELS),
             "direction": _nullable_text(analysis_row["anomaly_direction"],"anomaly.direction", ANOMALY_DIRECTIONS),
             "dominant_scale": _nullable_text(analysis_row["dominant_scale"], "anomaly.dominant_scale", SCALE_NAMES),
+            "peak_timestamp": _nullable_timestamp(analysis_row["anomaly_peak_timestamp"], "analysis.anomaly_peak_timestamp"),
             "scale_scores": scale_scores,
             "scale_elevated_hours": scale_elevated_hours,
             "available_scales": available_scales,
@@ -298,6 +300,16 @@ def _nullable_text(
         raise ValueError(f"{field_name} contains an unsupported value.")
 
     return cast(TextType, value)
+
+
+def _nullable_timestamp(
+    value: object,
+    field_name: str,
+) -> str | None:
+    if _is_missing(value):
+        return None
+
+    return utc_timestamp(value, field_name).isoformat()
 
 
 def _bool(

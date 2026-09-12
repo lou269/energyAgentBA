@@ -53,6 +53,10 @@ class NumericalAnalysisConfig:
     unusual_threshold: float = 2.0
     strong_anomaly_threshold: float = 3.0
 
+    # gegen H1-M54-Train-Split kalibriert (rollierendes 24h-Fenster) - hält die Gesamt-Trigger-Rate
+    # nahe an dem, was das frühere Einzelstunden-Gate ergab, statt bei jedem Tagesmaximum auszulösen
+    min_elevated_hours_for_gate: float = 4.0
+
 
 ''' PROPHET '''
 @dataclass(frozen=True)
@@ -113,7 +117,7 @@ class ForecastingConfig:
 @dataclass(frozen=True)
 class LLMConfig:
     model: str
-    prompt_version: str = "v5"
+    prompt_version: str = "v6"
     temperature: float = 0.0
     seed: int | None = 42
     max_attempts: int = 2

@@ -4,7 +4,13 @@ import pandas as pd
 import pytest
 
 from experiments.proposal_experiments.e2_absence.e2_config import ACTIVE_ABSENCE_EVENT_ID,CALENDAR_EVENTS_FILE
-from experiments.proposal_experiments.e2_absence.e2_selection import build_decision_times, load_calendar_events, resolve_absence_window
+from experiments.proposal_experiments.e2_absence.e2_selection import (
+    build_decision_times,
+    channels_meeting_thresholds,
+    load_calendar_events,
+    resolve_absence_window,
+    select_channels_for_subtraction,
+)
 
 
 
@@ -45,3 +51,37 @@ def test_build_decision_times_applies_margins_on_both_sides() -> None:
     assert decision_times[0] == window_start - pd.Timedelta(days=7)
     assert decision_times[-1] == window_end + pd.Timedelta(days=4)
     assert all(second - first == pd.Timedelta(hours=24) for first, second in zip(decision_times, decision_times[1:]))
+
+
+def test_channels_meeting_thresholds_ignores_activity_share() -> None:
+    # Spülmaschinen-Fall: niedrige activity_share, aber hohe coverage_share(-> soll trotzdem ausgesucht werden)
+    ranking = pd.DataFrame(
+        [
+            {"meter_key": "H1_M6", "coverage_share": 1.0, "activity_share": 0.036},
+            {"meter_key": "H1_M9", "coverage_share": 0.5, "activity_share": 0.3},
+        ]
+    )
+
+    selected = channels_meeting_thresholds(ranking, min_coverage_share=0.9)
+
+    assert selected.tolist() == [True, False]
+
+
+def test_select_channels_for_subtraction_filters_by_coverage_only() -> None:
+    ranking = pd.DataFrame(
+        [
+            {"meter_key": "H1_M6", "coverage_share": 1.0, "activity_share": 0.036},
+            {"meter_key": "H1_M9", "coverage_share": 0.5, "activity_share": 0.3},
+        ]
+    )
+
+    selected = select_channels_for_subtraction(ranking, min_coverage_share=0.9)
+
+    assert selected == ["H1_M6"]
+
+
+def test_select_channels_for_subtraction_raises_when_none_reach_coverage() -> None:
+    ranking = pd.DataFrame([{"meter_key": "H1_M9", "coverage_share": 0.5, "activity_share": 0.3}])
+
+    with pytest.raises(ValueError, match="min_coverage_share"):
+        select_channels_for_subtraction(ranking, min_coverage_share=0.9)

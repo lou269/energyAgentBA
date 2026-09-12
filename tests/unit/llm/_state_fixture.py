@@ -31,6 +31,7 @@ _BASE_STATE_JSON = """
     "direction": "high",
     "dominant_scale": "daily",
     "level": "strong_anomaly",
+    "peak_timestamp": "2015-12-15T10:00:00+00:00",
     "scale_scores": {
       "daily": 3.7674342117758495,
       "long_term": 3.264114829329143,
@@ -227,7 +228,7 @@ _BASE_STATE_JSON = """
     "observation_start": "2015-12-15T10:00:00+00:00",
     "value_implausible": false
   },
-  "schema_version": "1.2"
+  "schema_version": "1.3"
 }
 """
 
@@ -238,15 +239,15 @@ def valid_structured_state() -> StructuredState:
     return cast(StructuredState, copy.deepcopy(_BASE_STATE))
 
 
-# Passend zu valid_structured_state() gegrundet: alle evidence_references-Werte stimmen exakt (Typ und Wert) mit dem Fixture-Zustand überein.
+# rohe Modellantwort, nur path, kein value
 _BASE_OUTPUT = {
-    "schema_version": "1.1",
+    "schema_version": "1.2",
     "classification": "peak",
     "explanation": "Der aktuelle Verbrauch liegt deutlich über dem taeglichen Erwartungswert.",
     "evidence_references": [
-        {"path": "observation.current_power_w", "value": 1319.8837},
-        {"path": "analysis.daily_expected_w", "value": 344.33525171806167},
-        {"path": "anomaly.level", "value": "strong_anomaly"},
+        {"path": "observation.current_power_w"},
+        {"path": "analysis.daily_expected_w"},
+        {"path": "anomaly.level"},
     ],
     "user_recommendation": "Keine spezifische Aktion empfohlen.",
     "uncertainty": "Gering.",

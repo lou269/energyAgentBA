@@ -171,6 +171,11 @@ def _hourly_data(meter_key: str, values: list[float], *, start: str = "2020-01-0
     return pd.DataFrame({meter_key: values}, index=index)
 
 
+def _hourly_mains(values: list[float], *, start: str = "2020-01-01") -> pd.Series:
+    index = pd.date_range(start, periods=len(values), freq="1h", tz="UTC")
+    return pd.Series(values, index=index, name="mains")
+
+
 def test_rank_by_coverage_orders_descending_by_activity_share() -> None:
     candidates = pd.DataFrame(
         [
@@ -185,11 +190,13 @@ def test_rank_by_coverage_orders_descending_by_activity_share() -> None:
     data_a = _hourly_data("H1_M1", [0.0, 0.0, 0.0, 0.0], start="2020-01-01")
     data_b = _hourly_data("H1_M2", [10.0, 10.0, 0.0, 0.0], start="2020-01-01")
     data = data_a.join(data_b)
+    mains = _hourly_mains([10.0, 10.0, 10.0, 10.0], start="2020-01-01")
 
     ranked = rank_by_coverage(
         quality,
         data,
         candidates,
+        mains,
         window_start=pd.Timestamp("2020-01-01", tz="UTC"),
         window_end=pd.Timestamp("2020-01-01T04:00:00", tz="UTC"),
     )
@@ -214,11 +221,13 @@ def test_rank_by_coverage_breaks_activity_ties_by_coverage_share() -> None:
     data_a = _hourly_data("H1_M1", [0.0, 0.0, 0.0, 0.0], start="2020-01-01")
     data_b = _hourly_data("H1_M2", [0.0, 0.0, 0.0, 0.0], start="2020-01-01")
     data = data_a.join(data_b)
+    mains = _hourly_mains([10.0, 10.0, 10.0, 10.0], start="2020-01-01")
 
     ranked = rank_by_coverage(
         quality,
         data,
         candidates,
+        mains,
         window_start=pd.Timestamp("2020-01-01", tz="UTC"),
         window_end=pd.Timestamp("2020-01-01T04:00:00", tz="UTC"),
     )
@@ -228,32 +237,64 @@ def test_rank_by_coverage_breaks_activity_ties_by_coverage_share() -> None:
     assert ranked.loc[ranked["meter_key"] == "H1_M1", "coverage_share"].iloc[0] == 0.75
 
 
-def test_rank_by_coverage_computes_activity_share_from_real_values() -> None:
+def test_rank_by_coverage_computes_activity_share_as_mains_consumption_share() -> None:
     candidates = pd.DataFrame([{"meter_key": "H1_M1", "appliances": "washer dryer"}])
     quality = _hourly_quality("H1_M1", [True, True, True, True], start="2020-01-01")
-    # nur eine von vier Stunden über der Aktivitätsschwelle (Standard 5W)  (Rest nur Standby)
-    data = _hourly_data("H1_M1", [0.8, 1.0, 45.0, 0.9], start="2020-01-01")
+    data = _hourly_data("H1_M1", [20.0, 20.0, 20.0, 20.0], start="2020-01-01")
+    mains = _hourly_mains([100.0, 100.0, 100.0, 100.0], start="2020-01-01")
 
     ranked = rank_by_coverage(
         quality,
         data,
         candidates,
+        mains,
         window_start=pd.Timestamp("2020-01-01", tz="UTC"),
         window_end=pd.Timestamp("2020-01-01T04:00:00", tz="UTC"),
     )
 
-    assert ranked["activity_share"].iloc[0] == 0.25
+    assert ranked["activity_share"].iloc[0] == 0.2
+
+
+def test_rank_by_coverage_ranks_rare_high_power_channel_above_frequent_low_power_channel() -> None:
+    # Spülmaschinen-Fall: läuft nur 1 von 4 Stunden, stellt in der Stunde aber die Hauptlast -
+    # ein reiner Aktiv-Stunden-Anteil (alte Logik) hätte das Gegenteil ergeben
+    candidates = pd.DataFrame(
+        [
+            {"meter_key": "H1_M1", "appliances": "HTPC (fast durchgehend an, aber wenig Leistung)"},
+            {"meter_key": "H1_M2", "appliances": "dish washer (selten an, viel Leistung)"},
+        ]
+    )
+    quality_a = _hourly_quality("H1_M1", [True, True, True, True], start="2020-01-01")
+    quality_b = _hourly_quality("H1_M2", [True, True, True, True], start="2020-01-01")
+    quality = quality_a.join(quality_b)
+    data_a = _hourly_data("H1_M1", [10.0, 10.0, 10.0, 10.0], start="2020-01-01")
+    data_b = _hourly_data("H1_M2", [600.0, 0.0, 0.0, 0.0], start="2020-01-01")
+    data = data_a.join(data_b)
+    mains = _hourly_mains([700.0, 100.0, 100.0, 100.0], start="2020-01-01")
+
+    ranked = rank_by_coverage(
+        quality,
+        data,
+        candidates,
+        mains,
+        window_start=pd.Timestamp("2020-01-01", tz="UTC"),
+        window_end=pd.Timestamp("2020-01-01T04:00:00", tz="UTC"),
+    )
+
+    assert ranked["meter_key"].tolist() == ["H1_M2", "H1_M1"]
 
 
 def test_rank_by_coverage_treats_missing_channel_as_zero_coverage_and_activity() -> None:
     candidates = pd.DataFrame([{"meter_key": "H1_M9", "appliances": "toaster"}])
     quality = _hourly_quality("H1_M1", [True, True], start="2020-01-01")
     data = _hourly_data("H1_M1", [10.0, 10.0], start="2020-01-01")
+    mains = _hourly_mains([10.0, 10.0], start="2020-01-01")
 
     ranked = rank_by_coverage(
         quality,
         data,
         candidates,
+        mains,
         window_start=pd.Timestamp("2020-01-01", tz="UTC"),
         window_end=pd.Timestamp("2020-01-01T02:00:00", tz="UTC"),
     )
@@ -262,11 +303,30 @@ def test_rank_by_coverage_treats_missing_channel_as_zero_coverage_and_activity()
     assert ranked["activity_share"].iloc[0] == 0.0
 
 
+def test_rank_by_coverage_treats_zero_mains_as_zero_activity() -> None:
+    candidates = pd.DataFrame([{"meter_key": "H1_M1", "appliances": "washer dryer"}])
+    quality = _hourly_quality("H1_M1", [True, True], start="2020-01-01")
+    data = _hourly_data("H1_M1", [10.0, 10.0], start="2020-01-01")
+    mains = _hourly_mains([0.0, 0.0], start="2020-01-01")
+
+    ranked = rank_by_coverage(
+        quality,
+        data,
+        candidates,
+        mains,
+        window_start=pd.Timestamp("2020-01-01", tz="UTC"),
+        window_end=pd.Timestamp("2020-01-01T02:00:00", tz="UTC"),
+    )
+
+    assert ranked["activity_share"].iloc[0] == 0.0
+
+
 def test_rank_by_coverage_returns_empty_frame_for_no_candidates() -> None:
     ranked = rank_by_coverage(
         pd.DataFrame(),
         pd.DataFrame(),
         pd.DataFrame(columns=["meter_key", "appliances"]),
+        pd.Series(dtype="float64"),
         window_start=WINDOW_START,
         window_end=WINDOW_END,
     )

@@ -41,25 +41,26 @@ def test_measurement_error_excludes_exactly_the_observation_hour() -> None:
     assert action.range_start.isoformat() == "2024-01-07T09:00:00+00:00"
 
 
-def test_absence_excludes_the_analyzed_calendar_day() -> None:
+def test_absence_excludes_the_analyzed_24h_window() -> None:
     context = _context(decision_time="2024-01-07T10:00:00+00:00", dominant_scale="daily", elevated_hours=20.0)
 
     action = adaption_policy("absence", context)
 
     assert action.kind == "exclude_range"
     assert action.range_start is not None and action.range_end is not None
-    assert action.range_start.isoformat() == "2024-01-07T00:00:00+00:00"
+    # ANOMALY_WINDOW_HOURS=24, endet bei decision_time - 1h -> Fensterstart ist 23h davor
+    assert action.range_start.isoformat() == "2024-01-06T10:00:00+00:00"
     assert action.range_end.isoformat() == "2024-01-07T09:00:00+00:00"
 
 
-def test_new_pattern_advances_the_history_start_to_the_analyzed_calendar_day() -> None:
+def test_new_pattern_advances_the_history_start_to_the_analyzed_24h_window() -> None:
     context = _context(decision_time="2024-01-07T10:00:00+00:00", dominant_scale="short_term", elevated_hours=18.0)
 
     action = adaption_policy("new_pattern", context)
 
     assert action.kind == "advance_history_start"
     assert action.new_history_start is not None
-    assert action.new_history_start.isoformat() == "2024-01-07T00:00:00+00:00"
+    assert action.new_history_start.isoformat() == "2024-01-06T10:00:00+00:00"
 
 
 @pytest.mark.parametrize("classification", ["peak", "normal", "unknown"])

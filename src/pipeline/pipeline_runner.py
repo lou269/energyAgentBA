@@ -18,7 +18,7 @@ from src.config.config_forecasting import PreprocessingConfig
 from src.config.project_config import ProjectConfig, ensure_project_directories
 from src.llm.llm_run_artifacts import load_prompt
 from src.llm.llm_runner import PROMPT_DIRECTORY
-from src.pipeline.comparison_harness import build_scenario_from_split_manifest, run_comparison
+from src.pipeline.comparison_harness import build_scenario_from_split_manifest, create_cycle_run_id, run_comparison
 from src.pipeline.cycle_variants import SYS_VARIANTS
 from src.pipeline.daily_cycle import CycleConfig
 from src.preprocessing.preprocessing_runner import run_preprocessing
@@ -119,7 +119,12 @@ def main() -> None:
 
     logger.info("Running daily cycle for configs %s over %d decision times...", ", ".join(configs), len(scenario.decision_times))
 
-    comparison = run_comparison(scenario, configs, project_config.cycle_output_dir, llm_prompt=llm_prompt)
+    run_id = create_cycle_run_id(project_config.cycle_output_dir, configs)
+    run_directory = project_config.cycle_output_dir / run_id
+
+    comparison = run_comparison(
+        scenario, configs, run_directory, project_config.project_root, run_id=run_id, llm_prompt=llm_prompt,
+    )
 
     logger.info("Pipeline completed successfully: %d cycle rows across %d configs.", len(comparison), len(configs))
 

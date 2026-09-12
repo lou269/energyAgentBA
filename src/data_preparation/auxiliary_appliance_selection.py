@@ -24,8 +24,6 @@ PRESENCE_EXCLUDED_CHANNELS: dict[str, str] = {
 
 DEFAULT_MIN_SAMPLING_SHARE = 0.5
 
-DEFAULT_ACTIVE_THRESHOLD_W = 5.0
-
 REQUIRED_REGISTRY_COLUMNS = MERGE_KEYS + ["appliances"]
 REQUIRED_QUALITY_COLUMNS = MERGE_KEYS + ["is_mains", "start", "end", "sampling_share", "quality_error"]
 
@@ -78,10 +76,10 @@ def rank_by_coverage(
     quality: pd.DataFrame,
     data: pd.DataFrame,
     candidates: pd.DataFrame,
+    mains_data: pd.Series,
     *,
     window_start: pd.Timestamp,
     window_end: pd.Timestamp,
-    active_threshold_w: float = DEFAULT_ACTIVE_THRESHOLD_W,
 ) -> pd.DataFrame:
 
     if candidates.empty:
@@ -89,6 +87,9 @@ def rank_by_coverage(
 
     windowed_quality = quality.loc[window_start : window_end - pd.Timedelta(seconds=1)]
     windowed_data = data.loc[window_start : window_end - pd.Timedelta(seconds=1)]
+    windowed_mains = mains_data.loc[window_start : window_end - pd.Timedelta(seconds=1)]
+    mains_sum = float(windowed_mains.sum()) if not windowed_mains.empty else 0.0
+
     rows: list[dict[str, object]] = []
 
     for candidate in candidates.itertuples(index=False):
@@ -100,10 +101,10 @@ def rank_by_coverage(
         else:
             coverage_share = float(windowed_quality[mask_column].mean())
 
-        if meter_key not in windowed_data.columns or windowed_data.empty:
+        if meter_key not in windowed_data.columns or windowed_data.empty or mains_sum <= 0.0:
             activity_share = 0.0
         else:
-            activity_share = float(windowed_data[meter_key].gt(active_threshold_w).mean())
+            activity_share = float(windowed_data[meter_key].sum() / mains_sum)
 
         rows.append(
             {
@@ -135,6 +136,7 @@ def build_auxiliary_appliance_selection(
     dataset: DataSet,
     channel_registry: pd.DataFrame,
     channel_quality: pd.DataFrame,
+    mains_data: pd.Series,
     *,
     house: int,
     window_start: pd.Timestamp,
@@ -184,6 +186,7 @@ def build_auxiliary_appliance_selection(
         quality_hourly,
         data_hourly,
         candidates,
+        mains_data,
         window_start=window_start,
         window_end=window_end,
     )

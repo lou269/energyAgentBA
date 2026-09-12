@@ -3,6 +3,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 import logging
 from pathlib import Path
+from time import perf_counter
 from typing import cast
 
 import numpy as np
@@ -12,8 +13,9 @@ from src.context.calendar_context import build_calendar_context
 from src.context.calendar_schema import CalendarContext
 from src.llm.client import LLMClient, OllamaClient
 from src.llm.inference import LLMInferenceError
+from src.pipeline.cycle_run_manifest import build_cycle_run_manifest
 from src.pipeline.daily_cycle import CycleConfig, CycleResult, CycleState, run_cycle
-from src.pipeline.io import df_to_csv
+from src.pipeline.io import df_to_csv, find_run_directory, save_json
 
 logger = logging.getLogger(__name__)
 
@@ -56,17 +58,28 @@ def build_scenario_from_split_manifest(
     )
 
 
+FORECAST_COLUMNS = ["target_timestamp", "model_id", "y_pred", "y_lower", "y_upper"]
+
+
 def run_comparison(
     scenario: ScenarioData,
     configs: Mapping[str, CycleConfig],
-    output_dir: Path,
+    run_directory: Path,
+    project_root: Path,
     *,
+    run_id: str | None = None,
     llm_prompt: str | None = None,
     llm_client: LLMClient | None = None,
     max_consecutive_llm_failures: int = 5,
     max_total_llm_failures: int = 15,
 ) -> pd.DataFrame:
+    run_started = perf_counter()
+    run_id = run_id or run_directory.name
+    run_directory.mkdir(parents=True, exist_ok=True)
+
     rows: list[dict[str, object]] = []
+    forecast_frames: list[pd.DataFrame] = []
+    llm_output_records: list[dict[str, object]] = []
 
     for config_label, config in configs.items():
         state = CycleState(
@@ -123,7 +136,7 @@ def run_comparison(
                     )
                     for attempt in error.attempts:
                         dump_path = _dump_failed_attempt(
-                            output_dir, config_label, decision_time, attempt.attempt_number, attempt.raw_content,
+                            run_directory, config_label, decision_time, attempt.attempt_number, attempt.raw_content,
                         )
                         logger.warning(
                             "  attempt %d: %s | full response dumped to %s",
@@ -168,6 +181,16 @@ def run_comparison(
                 predicted = result.forecast["y_pred"].to_numpy()
                 mae_w = float(np.nanmean(np.abs(actual - predicted)))
 
+                forecast_slice = result.forecast[FORECAST_COLUMNS].copy()
+                forecast_slice.insert(0, "config", config_label)
+                forecast_slice.insert(1, "decision_time", decision_time)
+                forecast_frames.append(forecast_slice)
+
+                if result.llm_output is not None:
+                    llm_output_records.append(
+                        {"config": config_label, "decision_time": decision_time.isoformat(), **result.llm_output}
+                    )
+
                 rows.append(
                     {
                         "decision_time": decision_time,
@@ -187,8 +210,48 @@ def run_comparison(
                 active_llm_client.close()
 
     comparison = pd.DataFrame(rows)
-    df_to_csv(comparison, output_dir, "comparison_summary")
+    df_to_csv(comparison, run_directory, "comparison_summary")
+
+    output_paths = {"comparison_summary": run_directory / "comparison_summary.csv"}
+
+    if forecast_frames:
+        forecasts = pd.concat(forecast_frames, ignore_index=True)
+        df_to_csv(forecasts, run_directory, "forecasts")
+        output_paths["forecasts"] = run_directory / "forecasts.csv"
+
+    if llm_output_records:
+        llm_outputs_file = run_directory / "llm_outputs.json"
+        save_json({"llm_outputs": llm_output_records}, llm_outputs_file)
+        output_paths["llm_outputs"] = llm_outputs_file
+
+    llm_failures_directory = run_directory / "llm_failures"
+    decision_times = scenario.decision_times
+
+    manifest = build_cycle_run_manifest(
+        project_root=project_root,
+        run_id=run_id,
+        configs=configs,
+        coldstart_hours=scenario.coldstart_hours,
+        decision_time_count=len(decision_times),
+        decision_time_start=decision_times[0].isoformat() if decision_times else None,
+        decision_time_end=decision_times[-1].isoformat() if decision_times else None,
+        row_count=len(comparison),
+        llm_failure_count=int((comparison["error"] != "").sum()) if not comparison.empty else 0,
+        llm_failures_directory=llm_failures_directory if llm_failures_directory.is_dir() else None,
+        output_paths=output_paths,
+        runtime_seconds=perf_counter() - run_started,
+    )
+    save_json(manifest, run_directory / "run_manifest.json")
+
+    logger.info("Cycle comparison saved to %s.", run_directory)
+
     return comparison
+
+
+def create_cycle_run_id(output_dir: Path, configs: Mapping[str, CycleConfig]) -> str:
+    latest_run = find_run_directory(output_dir, prefix="cycle")
+    number = (latest_run[0] if latest_run is not None else 0) + 1
+    return f"cycle_{number:03d}_{'-'.join(configs)}"
 
 
 def _explanation(result: CycleResult) -> str:
@@ -202,13 +265,13 @@ def _explanation(result: CycleResult) -> str:
 
 
 def _dump_failed_attempt(
-    output_dir: Path,
+    run_directory: Path,
     config_label: str,
     decision_time: pd.Timestamp,
     attempt_number: int,
     raw_content: str,
 ) -> Path:
-    dump_dir = output_dir / "llm_failures"
+    dump_dir = run_directory / "llm_failures"
     dump_dir.mkdir(parents=True, exist_ok=True)
 
     timestamp_slug = decision_time.strftime("%Y%m%dT%H%M%S")

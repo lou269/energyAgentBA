@@ -10,8 +10,9 @@ from src.context.calendar_schema import CALENDAR_CONTEXT_FIELDS, CalendarEvent, 
 from src.pipeline.schema_validation import is_real_number, validate_fields
 
 
-SCHEMA_VERSION = "1.2"
+SCHEMA_VERSION = "1.3"
 FORECAST_HORIZON_HOURS = 24
+ANOMALY_WINDOW_HOURS = 24
 
 FLOAT_COMPARISON_REL_TOL = 1e-9
 FLOAT_COMPARISON_ABS_TOL = 1e-9
@@ -51,6 +52,7 @@ ANOMALY_FIELDS = frozenset(
         "level",
         "direction",
         "dominant_scale",
+        "peak_timestamp",
         "scale_scores",
         "scale_elevated_hours",
         "available_scales",
@@ -128,6 +130,7 @@ class AnomalyState(TypedDict):
     level: AnomalyLevel | None
     direction: AnomalyDirection | None
     dominant_scale: ScaleName | None
+    peak_timestamp: str | None
     scale_scores: ScaleScores
     scale_elevated_hours: ScaleElevatedHours
     available_scales: list[ScaleName]
@@ -276,12 +279,23 @@ def validate_structured_state(
     if not available_scales:
         if any(
             anomaly[field] is not None
-            for field in ("score", "level", "direction", "dominant_scale")
+            for field in ("score", "level", "direction", "dominant_scale", "peak_timestamp")
         ):
             raise ValueError("Aggregate anomaly fields must be null when no scale scores are available.")
     else:
         if anomaly["score"] is None or anomaly["level"] is None:
             raise ValueError("anomaly.score and anomaly.level are required when scale scores are available.")
+
+        if anomaly["peak_timestamp"] is None:
+            raise ValueError("anomaly.peak_timestamp is required when scale scores are available.")
+
+        peak_timestamp = _timestamp(anomaly["peak_timestamp"], "anomaly.peak_timestamp")
+
+        if peak_timestamp > decision_time - pd.Timedelta(hours=1):
+            raise ValueError("anomaly.peak_timestamp must not be after the analyzed hour.")
+
+        if peak_timestamp < decision_time - pd.Timedelta(hours=ANOMALY_WINDOW_HOURS):
+            raise ValueError("anomaly.peak_timestamp must lie within the anomaly aggregation window.")
 
         if anomaly["dominant_scale"] not in available_scales:
             raise ValueError("anomaly.dominant_scale must be an available scale.")

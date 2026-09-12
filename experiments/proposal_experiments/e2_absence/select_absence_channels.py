@@ -32,6 +32,13 @@ def main() -> None:
     channel_registry = pd.read_csv(project_config.meta_output_dir / "channel_registry.csv")
     channel_quality = pd.read_csv(project_config.analysis_output_dir / "channel_quality.csv")
 
+    canonical_manifest = pd.read_csv(project_config.canonical_output_dir / "canonical_manifest.csv")
+    target_column = str(canonical_manifest.iloc[0]["column_name"])
+    treated_hourly = pd.read_csv(
+        project_config.preprocessing_output_dir / "treated_hourly.csv", parse_dates=["timestamp"], index_col="timestamp"
+    )
+    mains_data = treated_hourly[target_column]
+
     calendar_events = load_calendar_events(CALENDAR_EVENTS_FILE)
     window_start, window_end = resolve_absence_window(calendar_events, ACTIVE_ABSENCE_EVENT_ID)
 
@@ -41,6 +48,7 @@ def main() -> None:
         dataset,
         channel_registry,
         channel_quality,
+        mains_data,
         house=house,
         window_start=window_start,
         window_end=window_end,
