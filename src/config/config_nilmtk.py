@@ -20,7 +20,6 @@ class AnalysisConfig:
 @dataclass(frozen=True)
 class DataPreparationConfig:
     selected_house_ids: list[int] = field(default_factory=lambda: [1])
-    alignment_sample_period_seconds: int = 6
     canonical_ac_type: str = CANONICAL_AC_TYPE
 
     min_coverage_share: float = 0.80

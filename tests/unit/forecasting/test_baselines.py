@@ -1,7 +1,5 @@
 # python -m pytest tests/unit/forecasting/test_baselines.py -v
 
-from __future__ import annotations
-
 import pandas as pd
 import pytest
 

@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.2",
+  "classification": "peak",
+  "explanation": "The current observation shows high consumption (832 W) with an elevated anomaly score and 'high' direction. The deviation is supported by short-term anomaly evidence but has not persisted for multiple hours at the relevant scales (scale_elevated_hours values are low), so it does not meet the criteria for new_pattern. No relevant events are present to support absence.",
+  "evidence_references": [
+    {
+      "path": "observation.current_power_w"
+    },
+    {
+      "path": "anomaly.score"
+    },
+    {
+      "path": "anomaly.direction"
+    },
+    {
+      "path": "anomaly.level"
+    },
+    {
+      "path": "anomaly.scale_elevated_hours.daily"
+    },
+    {
+      "path": "anomaly.scale_elevated_hours.weekly"
+    },
+    {
+      "path": "anomaly.scale_elevated_hours.long_term"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    }
+  ],
+  "user_recommendation": "No specific action is recommended.",
+  "uncertainty": "Low."
+}

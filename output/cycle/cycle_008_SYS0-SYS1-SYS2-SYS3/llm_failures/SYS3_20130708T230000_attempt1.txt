@@ -1,0 +1,7 @@
+{
+  "schema_version": "1.2",
+  "classification": "peak",
+  "explanation": "The current observation shows high consumption (149.6 W) relative to the short-term mean (278.3 W), daily expected (291.9 W), and weekly expected (305.6 W) values. The anomaly score is elevated (2.81) with a 'high' direction, and the dominant scale is 'long_term'. Although the trend is increasing, the deviation is supported by short-term anomaly evidence but lacks persistence across multiple hours at relevant scales (scale_elevated_hours are 0 for daily/weekly), so it does not qualify as new_pattern. No relevant events are present to support absence.",
+  "evidence_references": [
+    {
+      "path": "observation.current

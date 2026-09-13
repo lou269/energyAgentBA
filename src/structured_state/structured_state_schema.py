@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import math
 from collections.abc import Mapping
 from typing import Literal, TypedDict
@@ -7,13 +5,14 @@ from typing import Literal, TypedDict
 import pandas as pd
 
 from src.common.timestamps import parse_utc_timestamp_field
-from src.config.config_forecasting import NumericalAnalysisConfig
+from src.config.config_forecasting import ForecastingConfig, NumericalAnalysisConfig
 from src.context.calendar_schema import CALENDAR_CONTEXT_FIELDS, CalendarEvent, validate_calendar_context
+from src.numerical_analysis.anomaly_detection import resolve_dominant_scale
 from src.pipeline.schema_validation import is_real_number, validate_fields
 
 
 SCHEMA_VERSION = "1.3"
-FORECAST_HORIZON_HOURS = 24
+FORECAST_HORIZON_HOURS = ForecastingConfig().horizon_hours
 
 ANOMALY_WINDOW_HOURS = NumericalAnalysisConfig().anomaly_window_hours
 
@@ -303,34 +302,16 @@ def validate_structured_state(
         if anomaly["dominant_scale"] not in available_scales:
             raise ValueError("anomaly.dominant_scale must be an available scale.")
 
-        expected_score = max(abs(scale_score) for scale_score in validated_scale_scores.values())
+        expected_dominant_scale, expected_score, expected_direction = resolve_dominant_scale(validated_scale_scores)
 
         if score is None or not _float_matches(float(score), expected_score):
             raise ValueError("anomaly.score must match the largest absolute available scale score.")
 
-        dominant_scales = [
-            scale
-            for scale, scale_score in validated_scale_scores.items()
-            if _float_matches(abs(scale_score), expected_score)
-        ]
+        if anomaly["dominant_scale"] != expected_dominant_scale:
+            raise ValueError("anomaly.dominant_scale must reference the scale with the largest absolute scale score.")
 
-        if anomaly["dominant_scale"] not in dominant_scales:
-            raise ValueError("anomaly.dominant_scale must reference a scale with the largest absolute scale score.")
-
-        dominant_score = next(
-            scale_score
-            for scale, scale_score in validated_scale_scores.items()
-            if scale == anomaly["dominant_scale"]
-        )
-
-        if dominant_score > 0 and anomaly["direction"] != "high":
-            raise ValueError("anomaly.direction must be 'high' for a positive dominant scale score.")
-
-        if dominant_score < 0 and anomaly["direction"] != "low":
-            raise ValueError("anomaly.direction must be 'low' for a negative dominant scale score.")
-
-        if dominant_score == 0 and anomaly["direction"] is not None:
-            raise ValueError("anomaly.direction must be null when the dominant scale score is zero.")
+        if anomaly["direction"] != expected_direction:
+            raise ValueError("anomaly.direction must match the sign of the dominant scale score.")
 
     forecast = _mapping(state["forecast"], "forecast")
     validate_fields(forecast, FORECAST_FIELDS, "forecast")

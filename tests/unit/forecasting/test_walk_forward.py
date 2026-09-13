@@ -1,7 +1,5 @@
 # python -m pytest tests/unit/forecasting/test_walk_forward.py -v
 
-from __future__ import annotations
-
 import pandas as pd
 
 from src.forecasting.walk_forward import ProphetVariantParameters, build_walk_forward_forecasts
@@ -37,6 +35,7 @@ def test_only_complete_horizons_are_forecasted() -> None:
         split="validation",
         horizon_hours=24,
         forecast_origin_step_hours=24,
+        frequency="1h",
         baseline_model_ids=("B1",),
         prophet_variants=(),
         growth="linear",
@@ -69,6 +68,7 @@ def test_available_history_is_strictly_causal_and_grows_between_origins() -> Non
         split="validation",
         horizon_hours=24,
         forecast_origin_step_hours=24,
+        frequency="1h",
         baseline_model_ids=("B1",),
         prophet_variants=(),
         growth="linear",
@@ -121,6 +121,7 @@ def test_prophet_expanding_history_grows_and_retrains_on_schedule() -> None:
         split="validation",
         horizon_hours=24,
         forecast_origin_step_hours=24,
+        frequency="1h",
         baseline_model_ids=(),
         prophet_variants=(variant,),
         growth="linear",
@@ -170,6 +171,7 @@ def test_prophet_fixed_train_reuses_the_same_model_and_history() -> None:
         split="validation",
         horizon_hours=24,
         forecast_origin_step_hours=24,
+        frequency="1h",
         baseline_model_ids=(),
         prophet_variants=(variant,),
         growth="linear",

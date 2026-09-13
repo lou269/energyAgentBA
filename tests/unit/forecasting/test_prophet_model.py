@@ -1,7 +1,5 @@
 # python -m pytest tests/unit/forecasting/test_prophet_model.py -v
 
-from __future__ import annotations
-
 import numpy as np
 import pandas as pd
 import pytest

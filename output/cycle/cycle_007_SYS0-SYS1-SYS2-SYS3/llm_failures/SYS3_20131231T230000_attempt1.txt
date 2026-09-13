@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.2",
+  "classification": "peak",
+  "explanation": "The current observation shows a strong anomaly with high consumption (418 W) compared to expected levels across all scales. The anomaly score is elevated, and the direction is 'high'. However, the deviation has not persisted for multiple hours at the relevant scale (scale_elevated_hours values are 4-9 hours but the dominant scale is long_term which typically requires longer persistence; additionally, the forecast predicts a return to lower levels soon). The absence of events in context.events rules out 'absence'. The reading is plausible (value_implausible is false), ruling out 'measurement_error'. While there is an increasing trend, the current high value is best characterized as a short-term peak rather than a new persistent pattern.",
+  "evidence_references": [
+    {
+      "path": "observation.value_implausible"
+    },
+    {
+      "path": "anomaly.score"
+    },
+    {
+      "path": "anomaly.direction"
+    },
+    {
+      "path": "an

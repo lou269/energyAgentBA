@@ -1,8 +1,6 @@
 # conda activate forecasting-env
 # python -m experiments.component_studies.k2_cold_start.cold_start_runner
 
-from __future__ import annotations
-
 import logging
 from dataclasses import asdict
 from time import perf_counter
@@ -98,7 +96,7 @@ class ColdStartRunner:
         expected_initial_index = pd.date_range(
             start=initial_start,
             periods=self.experiment_config.initial_history_hours,
-            freq="1h",
+            freq=self.experiment_config.frequency,
         )
 
         fixed_history = treated_hourly[target_column].reindex(expected_initial_index)
@@ -134,6 +132,7 @@ class ColdStartRunner:
             split=split,
             horizon_hours=self.experiment_config.horizon_hours,
             forecast_origin_step_hours=self.experiment_config.forecast_origin_step_hours,
+            frequency=self.experiment_config.frequency,
             baseline_model_ids=self.experiment_config.baseline_model_ids,
             prophet_variants=prophet_variants,
             growth=self.experiment_config.growth,
@@ -157,6 +156,7 @@ class ColdStartRunner:
             comparison_model_ids=prophet_model_ids,
             reference_model_ids=(*self.experiment_config.baseline_model_ids, "C1"),
             nominal_interval_level=self.experiment_config.interval_width,
+            mape_min_eligible_watts=self.experiment_config.mape_min_eligible_watts,
         )
 
         if split == "validation":

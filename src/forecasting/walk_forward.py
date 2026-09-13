@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from typing import Literal, TypedDict
 
 import numpy as np
@@ -36,6 +34,7 @@ def build_walk_forward_forecasts(
     split: str,
     horizon_hours: int,
     forecast_origin_step_hours: int,
+    frequency: str,
     baseline_model_ids: tuple[str, ...],
     prophet_variants: tuple[ProphetVariantParameters, ...],
     growth: str,
@@ -64,7 +63,7 @@ def build_walk_forward_forecasts(
         if len(fixed_history) != initial_history_hours:
             raise ValueError(f"Initial history must contain exactly {initial_history_hours} hours, got {len(fixed_history)}.")
 
-    _validate_walk_forward_data(fixed_history, evaluation_targets, evaluation_imputation_mask)
+    _validate_walk_forward_data(fixed_history, evaluation_targets, evaluation_imputation_mask, frequency)
 
     for name, value in {"run_id": run_id, "experiment_id": experiment_id, "split": split}.items():
         if not value:
@@ -138,7 +137,7 @@ def build_walk_forward_forecasts(
     forecast_outputs: list[pd.DataFrame] = []
 
     for forecast_origin in forecast_origins:
-        target_index = pd.date_range(start=forecast_origin, periods=horizon_hours, freq="1h")
+        target_index = pd.date_range(start=forecast_origin, periods=horizon_hours, freq=frequency)
         available_history = complete_history.loc[complete_history.index < forecast_origin]
 
         target_values = evaluation_targets.loc[target_index]
@@ -375,7 +374,7 @@ def _build_forecast_output(
     return output[FORECAST_OUTPUT_COLUMNS]
 
 
-def _validate_hourly_series(series: pd.Series, name: str) -> None:
+def _validate_hourly_series(series: pd.Series, name: str, frequency: str) -> None:
     if not isinstance(series, pd.Series):
         raise TypeError(f"{name} must be a pandas Series.")
 
@@ -394,10 +393,10 @@ def _validate_hourly_series(series: pd.Series, name: str) -> None:
     if str(series.index.tz) != "UTC":
         raise ValueError(f"{name} must use UTC.")
 
-    expected_index = pd.date_range(start=series.index[0], periods=len(series), freq="1h")
+    expected_index = pd.date_range(start=series.index[0], periods=len(series), freq=frequency)
 
     if not series.index.equals(expected_index):
-        raise ValueError(f"{name} must contain a continuous hourly index.")
+        raise ValueError(f"{name} must contain a continuous index at the configured frequency.")
 
     try:
         values = pd.to_numeric(series, errors="raise").to_numpy(dtype="float64")
@@ -412,12 +411,13 @@ def _validate_walk_forward_data(
     fixed_history: pd.Series,
     evaluation_targets: pd.Series,
     evaluation_imputation_mask: pd.Series,
+    frequency: str,
 ) -> None:
     for name, series in {
         "fixed_history": fixed_history,
         "evaluation_targets": evaluation_targets,
     }.items():
-        _validate_hourly_series(series, name)
+        _validate_hourly_series(series, name, frequency)
 
     expected_evaluation_start = fixed_history.index[-1] + pd.Timedelta(hours=1)
 

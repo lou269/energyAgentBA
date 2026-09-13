@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import numpy as np
 import pandas as pd
 
@@ -18,7 +16,7 @@ def evaluate_forecasts(
     comparison_model_ids: tuple[str, ...],
     reference_model_ids: tuple[str, ...],
     nominal_interval_level: float,
-    mape_min_eligible_watts: float = 0.0,
+    mape_min_eligible_watts: float,
 ) -> dict[str, pd.DataFrame]:
     validate_forecast_output(
         forecasts,
@@ -200,6 +198,14 @@ def _calculate_grouped_metrics(
     return pd.DataFrame(rows)
 
 
+def calculate_mae(y_true: np.ndarray, y_pred: np.ndarray, eligible: np.ndarray) -> float:
+    if not eligible.any():
+        return float("nan")
+
+    errors = y_pred[eligible] - y_true[eligible]
+    return float(np.mean(np.abs(errors)))
+
+
 def _calculate_error_metrics(
     forecasts: pd.DataFrame,
     mape_min_eligible_watts: float,
@@ -211,12 +217,16 @@ def _calculate_error_metrics(
     evaluated_count = len(evaluated)
     excluded_count = possible_count - evaluated_count
 
+    mae = calculate_mae(
+        forecasts["y_true"].to_numpy(dtype="float64"),
+        forecasts["y_pred"].to_numpy(dtype="float64"),
+        eligible.to_numpy(),
+    )
+
     if evaluated.empty:
-        mae = np.nan
         rmse = np.nan
     else:
         errors = evaluated["y_pred"].to_numpy(dtype="float64") - evaluated["y_true"].to_numpy(dtype="float64")
-        mae = float(np.mean(np.abs(errors)))
         rmse = float(np.sqrt(np.mean(np.square(errors))))
 
     mape_eligible = eligible & forecasts["y_true"].gt(mape_min_eligible_watts)

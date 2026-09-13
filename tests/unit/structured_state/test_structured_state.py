@@ -1,6 +1,4 @@
 # python -m pytest tests/unit/structured_state/test_structured_state.py -v
-from __future__ import annotations
-
 import json
 from pathlib import Path
 

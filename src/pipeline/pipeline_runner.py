@@ -6,16 +6,14 @@
 
 # open -a Ollama
 
-from __future__ import annotations
-
 import argparse
 import logging
 import subprocess
 
 import pandas as pd
 
-from src.common.column_naming import treated_column
-from src.config.config_forecasting import PreprocessingConfig
+from src.common.column_naming import imputation_column, treated_column
+from src.config.config_forecasting import ForecastingConfig, PreprocessingConfig
 from src.config.project_config import ProjectConfig, ensure_project_directories
 from src.llm.llm_run_artifacts import load_prompt
 from src.llm.llm_runner import PROMPT_DIRECTORY
@@ -87,6 +85,8 @@ def main() -> None:
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO)
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("httpcore").setLevel(logging.WARNING)
 
     project_config = ProjectConfig()
     ensure_project_directories(project_config)
@@ -95,7 +95,8 @@ def main() -> None:
         logger.info("=== data_preparation [%s] ===", DATA_PREPARATION_ENVIRONMENT)
         run_data_preparation()
 
-    target_column = treated_column(_read_target_meter_key(project_config))
+    target_meter_key = _read_target_meter_key(project_config)
+    target_column = treated_column(target_meter_key)
 
     logger.info("Running preprocessing for target column %s...", target_column)
 
@@ -116,16 +117,20 @@ def main() -> None:
         assert real_config.llm_config is not None
         llm_prompt = load_prompt(PROMPT_DIRECTORY / f"prompt_{real_config.llm_config.prompt_version}.txt")
 
-    scenario = build_scenario_from_split_manifest(preprocessing_result.treated_hourly, preprocessing_result.split_manifest, target_column)
+    scenario = build_scenario_from_split_manifest(
+        preprocessing_result.treated_hourly,
+        preprocessing_result.split_manifest,
+        target_column,
+        coldstart_hours=ForecastingConfig().cycle_coldstart_hours,
+        target_imputed=preprocessing_result.imputation_mask_hourly[imputation_column(target_meter_key)],
+    )
 
     logger.info("Running daily cycle for configs %s over %d decision times...", ", ".join(configs), len(scenario.decision_times))
 
     run_id = create_cycle_run_id(project_config.cycle_output_dir, configs)
     run_directory = project_config.cycle_output_dir / run_id
 
-    comparison = run_comparison(
-        scenario, configs, run_directory, project_config.project_root, run_id=run_id, llm_prompt=llm_prompt,
-    )
+    comparison = run_comparison(scenario, configs, run_directory, project_config.project_root, run_id=run_id, llm_prompt=llm_prompt)
 
     logger.info("Pipeline completed successfully: %d cycle rows across %d configs.", len(comparison), len(configs))
 

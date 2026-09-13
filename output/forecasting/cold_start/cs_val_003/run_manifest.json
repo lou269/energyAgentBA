@@ -1,0 +1,309 @@
+{
+  "candidate_id": "H1-M54-S2",
+  "code_version": {
+    "git_commit": "114ac08ac1d0ec72540c74b4984a9d7c2a897b01",
+    "git_dirty": true
+  },
+  "config": {
+    "sha256": "161104596186a61c5357130ff75de1fa506984d79093b1414d013d8f47a52a0a",
+    "values": {
+      "baseline_model_ids": [
+        "B1",
+        "B2",
+        "B3"
+      ],
+      "config_version": "cold-start-0.1",
+      "country_holidays": null,
+      "cycle_coldstart_hours": 1440,
+      "daily_seasonality": true,
+      "data_end": null,
+      "data_start": null,
+      "experiment_id": "K2_cold_start",
+      "forecast_origin_step_hours": 24,
+      "frequency": "1h",
+      "growth": "linear",
+      "horizon_hours": 24,
+      "initial_history_hours": 168,
+      "interval_width": 0.8,
+      "log_transform": false,
+      "mape_min_eligible_watts": 10.0,
+      "negative_forecast_handling": "raw",
+      "output_subdir": "cold_start",
+      "primary_naive_reference": null,
+      "prophet_variants": [
+        {
+          "history_mode": "fixed_train",
+          "model_id": "C1",
+          "retraining_interval_hours": null,
+          "rolling_window_hours": null,
+          "weekly_seasonality": false
+        },
+        {
+          "history_mode": "expanding",
+          "model_id": "C2",
+          "retraining_interval_hours": 24,
+          "rolling_window_hours": null,
+          "weekly_seasonality": false
+        },
+        {
+          "history_mode": "rolling",
+          "model_id": "C3",
+          "retraining_interval_hours": 24,
+          "rolling_window_hours": 168,
+          "weekly_seasonality": false
+        }
+      ],
+      "seed": 42,
+      "selected_prophet_variant": {
+        "history_mode": "expanding",
+        "model_id": "C2",
+        "retraining_interval_hours": 24,
+        "rolling_window_hours": null,
+        "weekly_seasonality": false
+      },
+      "split": "validation",
+      "timezone": "Europe/London",
+      "uncertainty_samples": 1000,
+      "yearly_seasonality": false
+    }
+  },
+  "created_at_utc": "2026-09-13T10:43:55.889573+00:00",
+  "environment": {
+    "file": "environment-forecasting.yml",
+    "sha256": "e07be1814925f5d4b5a9157a0407fea4db7bf9e316768c928978359c9f60dd9d"
+  },
+  "evaluation": {
+    "exclusion_rules": {
+      "complete_horizons_only": true,
+      "exclude_imputed_targets": true
+    },
+    "forecast_origins": [
+      "2014-04-17 05:00:00+00:00",
+      "2014-04-18 05:00:00+00:00",
+      "2014-04-19 05:00:00+00:00",
+      "2014-04-20 05:00:00+00:00",
+      "2014-04-21 05:00:00+00:00",
+      "2014-04-22 05:00:00+00:00",
+      "2014-04-23 05:00:00+00:00",
+      "2014-04-24 05:00:00+00:00",
+      "2014-04-25 05:00:00+00:00",
+      "2014-04-26 05:00:00+00:00",
+      "2014-04-27 05:00:00+00:00",
+      "2014-04-28 05:00:00+00:00",
+      "2014-04-29 05:00:00+00:00",
+      "2014-04-30 05:00:00+00:00",
+      "2014-05-01 05:00:00+00:00",
+      "2014-05-02 05:00:00+00:00",
+      "2014-05-03 05:00:00+00:00",
+      "2014-05-04 05:00:00+00:00",
+      "2014-05-05 05:00:00+00:00",
+      "2014-05-06 05:00:00+00:00",
+      "2014-05-07 05:00:00+00:00",
+      "2014-05-08 05:00:00+00:00",
+      "2014-05-09 05:00:00+00:00",
+      "2014-05-10 05:00:00+00:00",
+      "2014-05-11 05:00:00+00:00",
+      "2014-05-12 05:00:00+00:00",
+      "2014-05-13 05:00:00+00:00",
+      "2014-05-14 05:00:00+00:00",
+      "2014-05-15 05:00:00+00:00",
+      "2014-05-16 05:00:00+00:00",
+      "2014-05-17 05:00:00+00:00",
+      "2014-05-18 05:00:00+00:00",
+      "2014-05-19 05:00:00+00:00",
+      "2014-05-20 05:00:00+00:00",
+      "2014-05-21 05:00:00+00:00",
+      "2014-05-22 05:00:00+00:00",
+      "2014-05-23 05:00:00+00:00",
+      "2014-05-24 05:00:00+00:00",
+      "2014-05-25 05:00:00+00:00",
+      "2014-05-26 05:00:00+00:00",
+      "2014-05-27 05:00:00+00:00",
+      "2014-05-28 05:00:00+00:00",
+      "2014-05-29 05:00:00+00:00",
+      "2014-05-30 05:00:00+00:00",
+      "2014-05-31 05:00:00+00:00",
+      "2014-06-01 05:00:00+00:00",
+      "2014-06-02 05:00:00+00:00"
+    ],
+    "metric_definitions": {
+      "mape_positive_targets_only": true,
+      "metrics": [
+        "mae",
+        "rmse",
+        "mape"
+      ],
+      "primary_metric": "mae"
+    },
+    "primary_naive_reference": "B1",
+    "split_boundaries": {
+      "evaluation_end": "2014-06-03 16:00:00+00:00",
+      "first_forecast_origin": "2014-04-17 05:00:00+00:00",
+      "initial_history_end": "2014-04-17 04:00:00+00:00",
+      "initial_history_start": "2014-04-10 05:00:00+00:00",
+      "split_end": "2014-06-03 16:00:00+00:00",
+      "split_start": "2014-04-17 05:00:00+00:00"
+    }
+  },
+  "experiment_id": "K2_cold_start",
+  "inputs": {
+    "canonical_manifest": {
+      "path": "output/canonical/canonical_manifest.csv",
+      "sha256": "346a66266e5891e56a7e285fed8149b166225df4cc4c6cfbff22cda1f8246ed1",
+      "size_bytes": 124
+    },
+    "imputation_mask_hourly": {
+      "path": "output/preprocessing/imputation_mask_hourly.csv",
+      "sha256": "4f6a8a39ad80d4a26e4d4007cb11fa8a6a4332fac101d2ed7f23d852ab9dc88f",
+      "size_bytes": 365103
+    },
+    "split_manifest": {
+      "path": "output/preprocessing/split_manifest.csv",
+      "sha256": "36c623d4d84107b21d26c510db1806c51072c6fff4381f8c4416854bafc50efa",
+      "size_bytes": 462
+    },
+    "treated_hourly": {
+      "path": "output/preprocessing/treated_hourly.csv",
+      "sha256": "6e99fa7e96bfef6a0752a68560a4371d82cd54b0fa5e40f084900e4d7bfdb5c5",
+      "size_bytes": 407946
+    }
+  },
+  "models": {
+    "history_rules": {
+      "first_forecast_after_initial_history": true,
+      "initial_history_hours": 168,
+      "variants": {
+        "C1": {
+          "history_mode": "fixed_train",
+          "retraining_interval_hours": null,
+          "rolling_window_hours": null
+        },
+        "C2": {
+          "history_mode": "expanding",
+          "retraining_interval_hours": 24,
+          "rolling_window_hours": null
+        },
+        "C3": {
+          "history_mode": "rolling",
+          "retraining_interval_hours": 24,
+          "rolling_window_hours": 168
+        }
+      }
+    },
+    "parameters": {
+      "country_holidays": null,
+      "daily_seasonality": true,
+      "growth": "linear",
+      "interval_width": 0.8,
+      "local_timezone": "Europe/London",
+      "log_transform": false,
+      "variants": [
+        {
+          "history_mode": "fixed_train",
+          "model_id": "C1",
+          "retraining_interval_hours": null,
+          "rolling_window_hours": null,
+          "weekly_seasonality": false
+        },
+        {
+          "history_mode": "expanding",
+          "model_id": "C2",
+          "retraining_interval_hours": 24,
+          "rolling_window_hours": null,
+          "weekly_seasonality": false
+        },
+        {
+          "history_mode": "rolling",
+          "model_id": "C3",
+          "retraining_interval_hours": 24,
+          "rolling_window_hours": 168,
+          "weekly_seasonality": false
+        }
+      ],
+      "yearly_seasonality": false
+    },
+    "seasonalities": {
+      "C1": {
+        "daily": true,
+        "holidays": null,
+        "local_timezone": "Europe/London",
+        "log_transform": false,
+        "weekly": false,
+        "yearly": false
+      },
+      "C2": {
+        "daily": true,
+        "holidays": null,
+        "local_timezone": "Europe/London",
+        "log_transform": false,
+        "weekly": false,
+        "yearly": false
+      },
+      "C3": {
+        "daily": true,
+        "holidays": null,
+        "local_timezone": "Europe/London",
+        "log_transform": false,
+        "weekly": false,
+        "yearly": false
+      }
+    },
+    "seed": 42,
+    "uncertainty_samples": 1000
+  },
+  "outputs": {
+    "forecasts": {
+      "path": "output/forecasting/cold_start/cs_val_003/forecasts.csv",
+      "sha256": "a558924cfaed303463a2dcf0e66f48e5cdc7c9d2d0c1925a406dc6b0b69ad756",
+      "size_bytes": 2118896
+    },
+    "horizon_metrics": {
+      "path": "output/forecasting/cold_start/cs_val_003/horizon_metrics.csv",
+      "sha256": "0075e53ad80a685473ace8043f9d26f6ee850000f456a3283999091efb4669bb",
+      "size_bytes": 18296
+    },
+    "interval_metrics": {
+      "path": "output/forecasting/cold_start/cs_val_003/interval_metrics.csv",
+      "sha256": "d211fb8270fb5f0f2e78fe60966c0073b0cc1e5117ec73cac831d3e63e52048c",
+      "size_bytes": 6882
+    },
+    "mae_skill": {
+      "path": "output/forecasting/cold_start/cs_val_003/mae_skill.csv",
+      "sha256": "6cfcbdfd5276106f1355ba6b5c2f5a08c01cf4881cee5247999983864e99ba72",
+      "size_bytes": 1047
+    },
+    "origin_metric_distribution": {
+      "path": "output/forecasting/cold_start/cs_val_003/origin_metric_distribution.csv",
+      "sha256": "d1fa773f4ec9cf88625a47642a9bfffd1f7503a8d67573cd55386bc7216d2a1c",
+      "size_bytes": 2134
+    },
+    "origin_metrics": {
+      "path": "output/forecasting/cold_start/cs_val_003/origin_metrics.csv",
+      "sha256": "a0c9e0d19bcacda47cda84c9f42002e26ac57498847f139ad3a5ec399c4b9109",
+      "size_bytes": 41523
+    },
+    "overall_metrics": {
+      "path": "output/forecasting/cold_start/cs_val_003/overall_metrics.csv",
+      "sha256": "6267efbdf6b7807abd0efaeac1af168def469ad0ec82eae37fed0fc08265e3cc",
+      "size_bytes": 1308
+    },
+    "paired_origin_differences": {
+      "path": "output/forecasting/cold_start/cs_val_003/paired_origin_differences.csv",
+      "sha256": "d07f76b161ac4f325b4180f52e66bc690c39650d27ee9372e9b9beafe25ca88b",
+      "size_bytes": 59483
+    },
+    "primary_naive_reference": {
+      "path": "output/forecasting/cold_start/cs_val_003/primary_naive_reference.csv",
+      "sha256": "3bafc9e2025918dbd1186c3cb05cec54733bf8a31f41daec0470c94e1f321db3",
+      "size_bytes": 12
+    },
+    "target_exclusions": {
+      "path": "output/forecasting/cold_start/cs_val_003/target_exclusions.csv",
+      "sha256": "6ad8e6729236498f5aa7ddeeddf9f42e7458c33b2ea3f29ce7e582852553517f",
+      "size_bytes": 90
+    }
+  },
+  "run_id": "validation_003",
+  "runtime_seconds": 5.511775625000155,
+  "split": "validation"
+}

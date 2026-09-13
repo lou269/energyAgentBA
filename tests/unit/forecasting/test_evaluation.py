@@ -1,7 +1,5 @@
 # python -m pytest tests/unit/forecasting/test_evaluation.py -v
 
-from __future__ import annotations
-
 import pandas as pd
 import pytest
 
@@ -33,6 +31,7 @@ def _b1_forecasts(
         split="validation",
         horizon_hours=len(y_true),
         forecast_origin_step_hours=len(y_true),
+        frequency="1h",
         baseline_model_ids=("B1",),
         prophet_variants=(),
         growth="linear",
@@ -58,6 +57,7 @@ def test_mae_and_rmse_match_hand_calculated_errors() -> None:
         comparison_model_ids=("B1",),
         reference_model_ids=("B1",),
         nominal_interval_level=0.8,
+        mape_min_eligible_watts=0.0,
     )
 
     overall = results["overall_metrics"].iloc[0]

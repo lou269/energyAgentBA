@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import logging
 import math
 from typing import Protocol, TypedDict
@@ -66,6 +64,7 @@ class OllamaClient:
             options=options,
             think=False,
             stream=False,
+            keep_alive=0,
         )
 
         if response.done_reason == "length":

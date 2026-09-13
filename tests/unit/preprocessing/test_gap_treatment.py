@@ -1,7 +1,5 @@
 # python -m pytest tests/unit/preprocessing/test_gap_treatment.py -v
 
-from __future__ import annotations
-
 import pandas as pd
 import pytest
 

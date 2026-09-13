@@ -1,0 +1,3 @@
+decision_time,config,classification,explanation,adaption_action,adaption_reason,retrained,reference_reset,mae_w,error
+2013-05-31 23:00:00+00:00,SYS3,normal,,none,normal: no action,True,True,59.63534484751634,
+2013-06-01 23:00:00+00:00,SYS3,normal,,none,normal: no action,True,False,229.03885808514647,

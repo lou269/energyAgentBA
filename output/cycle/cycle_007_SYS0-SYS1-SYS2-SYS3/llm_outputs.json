@@ -1,0 +1,1295 @@
+{
+  "llm_outputs": [
+    {
+      "classification": "peak",
+      "config": "SYS3",
+      "decision_time": "2013-06-28T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.value_implausible",
+          "value": false
+        },
+        {
+          "path": "anomaly.score",
+          "value": 3.81833989062939
+        },
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        }
+      ],
+      "explanation": "The current observation shows a strong anomaly with a high direction and an implausibly low expected value relative to the short-term mean, indicating unusually high consumption at this moment.",
+      "schema_version": "1.2",
+      "uncertainty": "The classification relies on the current reading being anomalous relative to historical baselines.",
+      "user_recommendation": "No specific action is recommended."
+    },
+    {
+      "classification": "peak",
+      "config": "SYS3",
+      "decision_time": "2013-07-16T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.value_implausible",
+          "value": false
+        },
+        {
+          "path": "anomaly.score",
+          "value": 3.4360080549353498
+        },
+        {
+          "path": "anomaly.scale_elevated_hours.short_term",
+          "value": 3.0
+        },
+        {
+          "path": "anomaly.scale_elevated_hours.daily",
+          "value": 3.0
+        },
+        {
+          "path": "anomaly.scale_elevated_hours.weekly",
+          "value": 3.0
+        },
+        {
+          "path": "anomaly.scale_elevated_hours.long_term",
+          "value": 4.0
+        }
+      ],
+      "explanation": "The current observation shows a strong anomaly with a high direction and an elevated score across multiple scales (short_term, daily, weekly, long_term). The anomaly scale_elevated_hours values are non-zero for all scales, indicating the deviation has persisted. However, the evidence does not support 'new_pattern' because the rules require persistence at relevant scales combined with trend analysis to distinguish a new pattern from a short-term peak; here, the high consumption is supported by short-term anomaly evidence but lacks the specific multi-scale trend change evidence required for 'new_pattern' classification under the provided constraints. The absence of events and the high consumption level support a 'peak' classification.",
+      "schema_version": "1.2",
+      "uncertainty": "Low.",
+      "user_recommendation": "No specific action is recommended."
+    },
+    {
+      "classification": "peak",
+      "config": "SYS3",
+      "decision_time": "2013-07-29T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.current_power_w",
+          "value": 626.14996
+        },
+        {
+          "path": "analysis.short_term_mean_w",
+          "value": 341.30879562499996
+        },
+        {
+          "path": "analysis.daily_expected_w",
+          "value": 291.91707775000003
+        },
+        {
+          "path": "analysis.long_term_mean_w",
+          "value": 235.60554665694448
+        },
+        {
+          "path": "anomaly.score",
+          "value": 2.804497210851075
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        }
+      ],
+      "explanation": "The current power consumption of 626 W is significantly higher than the short-term mean (341 W), daily expected value (292 W), and long-term mean (236 W). The anomaly score is high (2.8) with a 'high' direction, indicating an unusual spike in consumption.",
+      "schema_version": "1.2",
+      "uncertainty": "Low.",
+      "user_recommendation": "No specific action is recommended."
+    },
+    {
+      "classification": "unknown",
+      "config": "SYS3",
+      "decision_time": "2013-10-26T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.current_power_w",
+          "value": 271.48444
+        },
+        {
+          "path": "anomaly.score",
+          "value": 7.6926119089568505
+        },
+        {
+          "path": "anomaly.scale_elevated_hours.daily",
+          "value": 4.0
+        },
+        {
+          "path": "context.source_available",
+          "value": false
+        }
+      ],
+      "explanation": "The current observation shows high consumption (271.48 W) with an anomaly score of 7.69, but the scale_elevated_hours is only 3 hours. This duration is insufficient to support a 'new_pattern' classification which requires persistence at multiple scales. There are no relevant calendar events in context.events to support 'absence', and observation.value_implausible is false, ruling out 'measurement_error'. The evidence does not definitively support a short-term 'peak' as the high value may be part of normal variation without specific anomaly scale elevation for peaks.",
+      "schema_version": "1.2",
+      "uncertainty": "Insufficient evidence to confirm a persistent new pattern or a definitive peak.",
+      "user_recommendation": "No specific action is recommended at this time."
+    },
+    {
+      "classification": "peak",
+      "config": "SYS3",
+      "decision_time": "2013-11-07T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.current_power_w",
+          "value": 757.59863
+        },
+        {
+          "path": "analysis.short_term_mean_w",
+          "value": 382.3284454166666
+        },
+        {
+          "path": "analysis.daily_expected_w",
+          "value": 387.15302
+        },
+        {
+          "path": "analysis.long_term_mean_w",
+          "value": 314.3228257236111
+        },
+        {
+          "path": "anomaly.score",
+          "value": 3.6093521574142065
+        },
+        {
+          "path": "anomaly.dominant_scale",
+          "value": "long_term"
+        }
+      ],
+      "explanation": "The current power consumption of 757.6 W is significantly higher than the short-term mean (382.3 W), daily expected value (387.2 W), and long-term mean (314.3 W). The anomaly score is strong (3.61) across all scales, with a dominant scale of 'long_term'. This indicates an unusually high short-term consumption event.",
+      "schema_version": "1.2",
+      "uncertainty": "Low.",
+      "user_recommendation": "No specific action is recommended."
+    },
+    {
+      "classification": "peak",
+      "config": "SYS3",
+      "decision_time": "2013-11-08T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.current_power_w",
+          "value": 865.07935
+        },
+        {
+          "path": "analysis.short_term_mean_w",
+          "value": 372.46345729166666
+        },
+        {
+          "path": "analysis.daily_expected_w",
+          "value": 387.15302
+        },
+        {
+          "path": "analysis.long_term_mean_w",
+          "value": 315.94247754305553
+        },
+        {
+          "path": "anomaly.score",
+          "value": 5.984325377156387
+        },
+        {
+          "path": "anomaly.dominant_scale",
+          "value": "long_term"
+        }
+      ],
+      "explanation": "The current power consumption of 865 W is significantly higher than the short-term mean (372 W), daily expected value (387 W), and long-term mean (316 W). The anomaly score is strong (5.98) across all scales, with a dominant scale of 'long_term'. This indicates an unusually high short-term consumption event.",
+      "schema_version": "1.2",
+      "uncertainty": "The classification relies on the current high reading and anomaly scores; no measurement error flag was present.",
+      "user_recommendation": "No specific action is recommended at this time."
+    },
+    {
+      "classification": "peak",
+      "config": "SYS3",
+      "decision_time": "2013-11-12T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.current_power_w",
+          "value": 244.54143
+        },
+        {
+          "path": "anomaly.score",
+          "value": 8.03075366974112
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        },
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "observation.value_implausible",
+          "value": false
+        }
+      ],
+      "explanation": "The current observation shows high consumption (244.5 W) with a high anomaly score (8.03) and direction 'high'. The deviation has not persisted for multiple hours at the relevant scale (scale_elevated_hours are small), so it does not qualify as new_pattern. There is no relevant calendar event to support absence. The reading is plausible (value_implausible is false).",
+      "schema_version": "1.2",
+      "uncertainty": "Low.",
+      "user_recommendation": "No specific action is recommended."
+    },
+    {
+      "classification": "peak",
+      "config": "SYS3",
+      "decision_time": "2013-11-17T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.current_power_w",
+          "value": 213.3951
+        },
+        {
+          "path": "anomaly.score",
+          "value": 5.196127699626249
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        },
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "anomaly.scale_elevated_hours.short_term",
+          "value": 2.0
+        }
+      ],
+      "explanation": "The current observation shows high consumption (213.4 W) with an elevated anomaly score and 'high' direction. The deviation is short-term, as indicated by low scale_elevated_hours values, so it does not qualify as a new_pattern. There is no relevant calendar event to support absence.",
+      "schema_version": "1.2",
+      "uncertainty": "Low.",
+      "user_recommendation": "No specific action is recommended at this time."
+    },
+    {
+      "classification": "peak",
+      "config": "SYS3",
+      "decision_time": "2013-11-22T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.current_power_w",
+          "value": 1268.4707
+        },
+        {
+          "path": "analysis.short_term_mean_w",
+          "value": 499.25758516666673
+        },
+        {
+          "path": "analysis.daily_expected_w",
+          "value": 387.15302
+        },
+        {
+          "path": "analysis.long_term_mean_w",
+          "value": 317.8579769861111
+        },
+        {
+          "path": "anomaly.score",
+          "value": 6.399435672565148
+        },
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "anomaly.scale_elevated_hours.daily",
+          "value": 6.0
+        }
+      ],
+      "explanation": "The current power consumption of 1268 W is significantly higher than the short-term mean (499 W), daily expected value (387 W), and long-term mean (318 W). The anomaly score is strong (6.4) across all scales, indicating a high-consumption event. However, the deviation is recent (scale_elevated_hours values are 4-6 hours), so it does not yet constitute a persistent new_pattern.",
+      "schema_version": "1.2",
+      "uncertainty": "Low.",
+      "user_recommendation": "No specific action is recommended."
+    },
+    {
+      "classification": "peak",
+      "config": "SYS3",
+      "decision_time": "2013-11-23T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.current_power_w",
+          "value": 441.09888
+        },
+        {
+          "path": "anomaly.score",
+          "value": 5.536829634572412
+        },
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        },
+        {
+          "path": "anomaly.scale_elevated_hours.short_term",
+          "value": 3.0
+        },
+        {
+          "path": "anomaly.scale_elevated_hours.daily",
+          "value": 4.0
+        },
+        {
+          "path": "anomaly.scale_elevated_hours.weekly",
+          "value": 3.0
+        }
+      ],
+      "explanation": "The current observation shows high consumption (441 W) with an elevated anomaly score and 'high' direction across all scales. The deviation is recent, as scale_elevated_hours values are low (3-5 hours), indicating a short-term spike rather than a persistent new pattern.",
+      "schema_version": "1.2",
+      "uncertainty": "Low.",
+      "user_recommendation": "No specific action is recommended."
+    },
+    {
+      "classification": "peak",
+      "config": "SYS3",
+      "decision_time": "2013-11-28T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.current_power_w",
+          "value": 391.21042
+        },
+        {
+          "path": "anomaly.score",
+          "value": 4.679112808651465
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        },
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        }
+      ],
+      "explanation": "The current observation shows a strong anomaly with high consumption (391.2 W) compared to expected levels across multiple scales. The anomaly score is elevated, and the direction is 'high'. However, the deviation does not meet the persistence criteria for 'new_pattern' as scale_elevated_hours values are relatively low (4-5 hours), indicating a recent spike rather than a sustained new pattern.",
+      "schema_version": "1.2",
+      "uncertainty": "The classification relies on the current strong anomaly signal, but the persistence of the deviation is limited.",
+      "user_recommendation": "No specific action is recommended at this time as the high consumption appears to be a short-term anomaly rather than a sustained change in behavior."
+    },
+    {
+      "classification": "peak",
+      "config": "SYS3",
+      "decision_time": "2013-11-30T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.current_power_w",
+          "value": 451.9168
+        },
+        {
+          "path": "anomaly.score",
+          "value": 6.878857213281285
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        }
+      ],
+      "explanation": "The current observation shows high consumption (451.9 W) with an elevated anomaly score and 'high' direction, indicating a short-term spike in usage.",
+      "schema_version": "1.2",
+      "uncertainty": "The classification relies on the current reading being plausible and the absence of events that might explain the spike.",
+      "user_recommendation": "No specific action is recommended at this time as the high consumption appears to be a short-term anomaly rather than a sustained change in behavior."
+    },
+    {
+      "classification": "peak",
+      "config": "SYS3",
+      "decision_time": "2013-12-06T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.current_power_w",
+          "value": 321.58945
+        },
+        {
+          "path": "anomaly.score",
+          "value": 6.234084147368073
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        },
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "anomaly.scale_elevated_hours.short_term",
+          "value": 2.0
+        }
+      ],
+      "explanation": "The current observation shows high consumption (321.59 W) with an elevated anomaly score and direction 'high'. The deviation is supported by short-term evidence but lacks the multi-hour persistence required for 'new_pattern'. No relevant calendar events are present to support 'absence'.",
+      "schema_version": "1.2",
+      "uncertainty": "The classification relies on short-term anomaly evidence which may not reflect a sustained new pattern.",
+      "user_recommendation": "No specific action is recommended at this time."
+    },
+    {
+      "classification": "peak",
+      "config": "SYS3",
+      "decision_time": "2013-12-08T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.current_power_w",
+          "value": 1018.3347
+        },
+        {
+          "path": "anomaly.score",
+          "value": 4.668547206705283
+        },
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        },
+        {
+          "path": "anomaly.scale_elevated_hours.short_term",
+          "value": 3.0
+        }
+      ],
+      "explanation": "The current observation shows high consumption (1018 W) with an elevated anomaly score and 'high' direction across all scales. The deviation is recent, as indicated by low scale_elevated_hours values (3-4 hours), supporting a short-term peak rather than a persistent new pattern.",
+      "schema_version": "1.2",
+      "uncertainty": "The classification relies on current anomaly metrics which may fluctuate rapidly.",
+      "user_recommendation": "No specific action is recommended at this time as the high consumption appears to be a short-term anomaly."
+    },
+    {
+      "classification": "peak",
+      "config": "SYS3",
+      "decision_time": "2013-12-20T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.current_power_w",
+          "value": 798.06366
+        },
+        {
+          "path": "analysis.short_term_mean_w",
+          "value": 398.9490258333333
+        },
+        {
+          "path": "analysis.daily_expected_w",
+          "value": 387.15302
+        },
+        {
+          "path": "anomaly.score",
+          "value": 5.105556130953866
+        },
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        }
+      ],
+      "explanation": "The current power consumption of 798 W is significantly higher than the short-term mean (399 W) and daily expected value (387 W). The anomaly analysis confirms a strong high-level deviation with elevated scores across all scales. However, the deviation is recent (scale_elevated_hours are small), indicating a short-term spike rather than a persistent new pattern.",
+      "schema_version": "1.2",
+      "uncertainty": "Low.",
+      "user_recommendation": "No specific action is recommended."
+    },
+    {
+      "classification": "peak",
+      "config": "SYS3",
+      "decision_time": "2013-12-21T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.current_power_w",
+          "value": 161.63957
+        },
+        {
+          "path": "anomaly.score",
+          "value": 12.247465456153353
+        },
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        }
+      ],
+      "explanation": "The current observation shows a strong anomaly with high consumption (161.64 W) relative to historical baselines, supported by elevated scores across multiple scales. The deviation is recent and does not yet show persistence over multiple hours at the relevant scales required for 'new_pattern'.",
+      "schema_version": "1.2",
+      "uncertainty": "Low.",
+      "user_recommendation": "No specific action is recommended."
+    },
+    {
+      "classification": "unknown",
+      "config": "SYS3",
+      "decision_time": "2014-01-03T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.current_power_w",
+          "value": 341.037
+        },
+        {
+          "path": "observation.value_implausible",
+          "value": false
+        },
+        {
+          "path": "analysis.short_term_mean_w",
+          "value": 449.90604125000004
+        },
+        {
+          "path": "analysis.daily_expected_w",
+          "value": 387.15302
+        },
+        {
+          "path": "anomaly.score",
+          "value": 3.59394071899111
+        },
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        }
+      ],
+      "explanation": "The current observation shows high consumption (341 W) with an elevated anomaly score across multiple scales. However, the deviation has not persisted for multiple hours at the relevant scale (scale_elevated_hours are low: 1-4 hours), and there is no evidence of a new pattern forming. Since the consumption is high but not implausible, it is classified as unknown due to insufficient evidence for peak or new_pattern.",
+      "schema_version": "1.2",
+      "uncertainty": "The classification is uncertain due to conflicting signals between high consumption and lack of persistence.",
+      "user_recommendation": "No specific action is recommended."
+    },
+    {
+      "classification": "peak",
+      "config": "SYS3",
+      "decision_time": "2014-01-09T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.current_power_w",
+          "value": 439.03763
+        },
+        {
+          "path": "anomaly.score",
+          "value": 4.170785908697991
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        },
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "anomaly.scale_elevated_hours.short_term",
+          "value": 1.0
+        }
+      ],
+      "explanation": "The current observation shows high consumption (439 W) with an elevated anomaly score and direction indicating high usage. The deviation is recent, as scale_elevated_hours values are low, supporting a short-term peak rather than a persistent new pattern.",
+      "schema_version": "1.2",
+      "uncertainty": "Low.",
+      "user_recommendation": "No specific action is recommended."
+    },
+    {
+      "classification": "peak",
+      "config": "SYS3",
+      "decision_time": "2014-01-17T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.current_power_w",
+          "value": 487.8504
+        },
+        {
+          "path": "anomaly.score",
+          "value": 4.079749797586671
+        },
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        }
+      ],
+      "explanation": "The current observation shows a strong anomaly with high consumption (487.85 W) compared to historical baselines across all scales, particularly the long-term mean. The anomaly score is elevated and the direction is high, indicating unusually high short-term consumption.",
+      "schema_version": "1.2",
+      "uncertainty": "The classification is based on the current high consumption reading and associated anomaly metrics.",
+      "user_recommendation": "No specific action is recommended."
+    },
+    {
+      "classification": "peak",
+      "config": "SYS3",
+      "decision_time": "2014-01-18T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.current_power_w",
+          "value": 232.38971
+        },
+        {
+          "path": "analysis.short_term_mean_w",
+          "value": 392.8964945833334
+        },
+        {
+          "path": "analysis.daily_expected_w",
+          "value": 387.15302
+        },
+        {
+          "path": "analysis.long_term_mean_w",
+          "value": 330.8172691625
+        },
+        {
+          "path": "anomaly.score",
+          "value": 4.976230500712789
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        },
+        {
+          "path": "anomaly.scale_elevated_hours.short_term",
+          "value": 3.0
+        },
+        {
+          "path": "anomaly.scale_elevated_hours.daily",
+          "value": 4.0
+        },
+        {
+          "path": "anomaly.scale_elevated_hours.long_term",
+          "value": 4.0
+        }
+      ],
+      "explanation": "The current observation shows high consumption (232 W) with an anomaly score of 4.98 and direction 'high', indicating a short-term spike. The deviation is supported by evidence at multiple scales (short_term, daily, long_term), but the scale_elevated_hours values are low (3-4 hours), meaning the deviation has not persisted sufficiently to support 'new_pattern'. No relevant calendar event supports 'absence'.",
+      "schema_version": "1.2",
+      "uncertainty": "Low.",
+      "user_recommendation": "No specific action is recommended."
+    },
+    {
+      "classification": "peak",
+      "config": "SYS3",
+      "decision_time": "2014-01-21T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.current_power_w",
+          "value": 1075.2261
+        },
+        {
+          "path": "analysis.short_term_mean_w",
+          "value": 455.13378291666663
+        },
+        {
+          "path": "analysis.daily_expected_w",
+          "value": 387.15302
+        },
+        {
+          "path": "anomaly.score",
+          "value": 4.32030649791053
+        },
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        }
+      ],
+      "explanation": "The current power consumption of 1075.23 W is significantly higher than the short-term mean (455.13 W) and daily expected value (387.15 W). The anomaly analysis confirms a strong high-level deviation with elevated scores across all scales, indicating an unusually high short-term consumption event.",
+      "schema_version": "1.2",
+      "uncertainty": "The classification is based on the provided numerical evidence indicating a short-term anomaly.",
+      "user_recommendation": "No specific action is recommended at this time."
+    },
+    {
+      "classification": "peak",
+      "config": "SYS3",
+      "decision_time": "2014-02-01T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.current_power_w",
+          "value": 406.65497
+        },
+        {
+          "path": "analysis.short_term_mean_w",
+          "value": 415.02428249999997
+        },
+        {
+          "path": "analysis.daily_expected_w",
+          "value": 387.15302
+        },
+        {
+          "path": "anomaly.score",
+          "value": 4.51910086793436
+        },
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        }
+      ],
+      "explanation": "The current power consumption of 406.7 W is significantly higher than the short-term mean (415 W) and daily expected value (387 W). The anomaly analysis confirms a strong high-level deviation with elevated scores across multiple scales (daily, weekly, long_term), indicating an unusually high short-term consumption event.",
+      "schema_version": "1.2",
+      "uncertainty": "Low.",
+      "user_recommendation": "No specific action is recommended."
+    },
+    {
+      "classification": "peak",
+      "config": "SYS3",
+      "decision_time": "2014-02-08T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.current_power_w",
+          "value": 394.18906
+        },
+        {
+          "path": "anomaly.score",
+          "value": 4.019906308936047
+        },
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        }
+      ],
+      "explanation": "The current observation shows high consumption (394 W) with a strong anomaly score and elevated level across all scales. The deviation is supported by short-term anomaly evidence, indicating unusually high short-term consumption.",
+      "schema_version": "1.2",
+      "uncertainty": "Low.",
+      "user_recommendation": "No specific action is recommended."
+    },
+    {
+      "classification": "peak",
+      "config": "SYS3",
+      "decision_time": "2014-02-14T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.current_power_w",
+          "value": 398.51035
+        },
+        {
+          "path": "anomaly.score",
+          "value": 4.457979437743281
+        },
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        }
+      ],
+      "explanation": "The current observation shows high consumption (398.5 W) with a strong anomaly score (4.45) and elevated status across multiple scales. The deviation is supported by short-term anomaly evidence, indicating unusually high short-term consumption.",
+      "schema_version": "1.2",
+      "uncertainty": "Low.",
+      "user_recommendation": "No specific action is recommended."
+    },
+    {
+      "classification": "peak",
+      "config": "SYS3",
+      "decision_time": "2014-03-09T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.value_implausible",
+          "value": false
+        },
+        {
+          "path": "anomaly.score",
+          "value": 4.992235802972259
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        },
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "context.source_available",
+          "value": false
+        }
+      ],
+      "explanation": "The current observation shows high consumption (191.89 W) with a high anomaly score (4.99) and direction 'high'. The deviation is recent, as scale_elevated_hours are small or zero for some scales, indicating it has not persisted for multiple hours to support 'new_pattern'. There is no relevant calendar event in context.events to support 'absence'. The reading is plausible (value_implausible is false). Therefore, the evidence supports a short-term peak.",
+      "schema_version": "1.2",
+      "uncertainty": "Low.",
+      "user_recommendation": "No specific action is recommended."
+    },
+    {
+      "classification": "peak",
+      "config": "SYS3",
+      "decision_time": "2014-03-15T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.current_power_w",
+          "value": 296.31943
+        },
+        {
+          "path": "anomaly.score",
+          "value": 7.0622507982756915
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        },
+        {
+          "path": "anomaly.scale_elevated_hours.short_term",
+          "value": 5.0
+        }
+      ],
+      "explanation": "The current observation shows a strong anomaly with high consumption (296 W) compared to historical baselines across all scales. The anomaly score is elevated, and the direction is 'high'. However, the deviation has only persisted for a short duration (5 hours at each scale), which supports a peak classification rather than a new_pattern.",
+      "schema_version": "1.2",
+      "uncertainty": "The classification is based on the current strong anomaly and short-term persistence.",
+      "user_recommendation": "No specific action is recommended at this time."
+    },
+    {
+      "classification": "peak",
+      "config": "SYS3",
+      "decision_time": "2014-03-20T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.current_power_w",
+          "value": 394.44205
+        },
+        {
+          "path": "anomaly.score",
+          "value": 3.962067589425471
+        },
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        }
+      ],
+      "explanation": "The current observation shows a strong anomaly with high consumption (394.4 W) compared to expected values across multiple scales. The anomaly score is elevated, and the direction is 'high', indicating unusually high short-term consumption.",
+      "schema_version": "1.2",
+      "uncertainty": "The classification is based on the current high consumption and anomaly evidence.",
+      "user_recommendation": "No specific action is recommended at this time."
+    },
+    {
+      "classification": "peak",
+      "config": "SYS3",
+      "decision_time": "2014-03-25T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.current_power_w",
+          "value": 234.11964
+        },
+        {
+          "path": "anomaly.score",
+          "value": 4.658213223152309
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        }
+      ],
+      "explanation": "The current observation shows high consumption (234 W) with an elevated anomaly score and 'high' direction, indicating unusually high short-term consumption supported by numerical evidence.",
+      "schema_version": "1.2",
+      "uncertainty": "Low.",
+      "user_recommendation": "No specific action is recommended."
+    },
+    {
+      "classification": "peak",
+      "config": "SYS3",
+      "decision_time": "2014-03-27T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.current_power_w",
+          "value": 258.88464
+        },
+        {
+          "path": "anomaly.score",
+          "value": 8.394386693389093
+        },
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        }
+      ],
+      "explanation": "The current observation shows a strong anomaly with high consumption relative to short-term, daily, weekly, and long-term baselines. The anomaly score is elevated across all scales, indicating a significant deviation from expected patterns.",
+      "schema_version": "1.2",
+      "uncertainty": "The classification is based on the current strong anomaly detected in the data.",
+      "user_recommendation": "No specific action is recommended at this time."
+    },
+    {
+      "classification": "peak",
+      "config": "SYS3",
+      "decision_time": "2014-03-29T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.current_power_w",
+          "value": 765.4428
+        },
+        {
+          "path": "analysis.short_term_mean_w",
+          "value": 360.01110708333334
+        },
+        {
+          "path": "analysis.daily_expected_w",
+          "value": 387.15302
+        },
+        {
+          "path": "anomaly.score",
+          "value": 3.657691940853333
+        },
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        }
+      ],
+      "explanation": "The current power consumption of 765.4 W is significantly higher than the short-term mean (360.0 W) and daily expected value (387.2 W). The anomaly analysis confirms a strong high-level deviation with elevated scores across all scales, indicating an unusually high short-term consumption event.",
+      "schema_version": "1.2",
+      "uncertainty": "The classification relies on the current observation and anomaly scores indicating a high deviation.",
+      "user_recommendation": "No specific action is recommended at this time."
+    },
+    {
+      "classification": "peak",
+      "config": "SYS3",
+      "decision_time": "2014-03-30T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.current_power_w",
+          "value": 200.42688
+        },
+        {
+          "path": "anomaly.score",
+          "value": 3.358773281484795
+        },
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        },
+        {
+          "path": "anomaly.scale_elevated_hours.short_term",
+          "value": 3.0
+        }
+      ],
+      "explanation": "The current observation shows high consumption (200.43 W) with an elevated anomaly score and 'high' direction, indicating a short-term spike. The deviation has not persisted for multiple hours at the relevant scale (scale_elevated_hours is low), so it does not meet the criteria for 'new_pattern'.",
+      "schema_version": "1.2",
+      "uncertainty": "Low.",
+      "user_recommendation": "No specific action is recommended."
+    },
+    {
+      "classification": "peak",
+      "config": "SYS3",
+      "decision_time": "2014-04-01T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.current_power_w",
+          "value": 820.7547
+        },
+        {
+          "path": "analysis.short_term_mean_w",
+          "value": 457.2685295833333
+        },
+        {
+          "path": "analysis.daily_expected_w",
+          "value": 291.91707775000003
+        },
+        {
+          "path": "anomaly.score",
+          "value": 5.9828024931883945
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        }
+      ],
+      "explanation": "The current power consumption of 820.75 W is significantly higher than the short-term mean (457.27 W) and daily expected value (291.92 W). The anomaly score is strong (5.98) with a high direction, indicating an unusual spike in consumption. This supports a peak classification.",
+      "schema_version": "1.2",
+      "uncertainty": "The classification is based on the current high consumption reading and anomaly metrics.",
+      "user_recommendation": "No specific action is recommended at this time."
+    },
+    {
+      "classification": "peak",
+      "config": "SYS3",
+      "decision_time": "2014-04-15T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.current_power_w",
+          "value": 119.81722
+        },
+        {
+          "path": "anomaly.score",
+          "value": 3.6756215011824716
+        },
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        },
+        {
+          "path": "anomaly.scale_elevated_hours.short_term",
+          "value": 5.0
+        },
+        {
+          "path": "anomaly.scale_elevated_hours.daily",
+          "value": 6.0
+        }
+      ],
+      "explanation": "The current observation shows high consumption (119.8 W) with a strong anomaly score and elevated levels across multiple scales. The deviation is recent, as indicated by low scale_elevated_hours values, meaning it has not yet persisted to qualify as a new_pattern.",
+      "schema_version": "1.2",
+      "uncertainty": "Low.",
+      "user_recommendation": "No specific action is recommended."
+    },
+    {
+      "classification": "peak",
+      "config": "SYS3",
+      "decision_time": "2014-04-19T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.current_power_w",
+          "value": 930.13965
+        },
+        {
+          "path": "anomaly.score",
+          "value": 4.3065435723749514
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        },
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "anomaly.scale_elevated_hours.short_term",
+          "value": 3.0
+        },
+        {
+          "path": "context.source_available",
+          "value": false
+        }
+      ],
+      "explanation": "The current observation shows high consumption (930 W) with an elevated anomaly score and 'high' direction across all scales. The deviation has persisted for multiple hours (scale_elevated_hours values are 3-5 hours). There is no relevant calendar event to support an absence classification, and the reading is not implausible.",
+      "schema_version": "1.2",
+      "uncertainty": "Low.",
+      "user_recommendation": "No specific action is recommended."
+    },
+    {
+      "classification": "unknown",
+      "config": "SYS3",
+      "decision_time": "2014-04-26T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.current_power_w",
+          "value": 260.875
+        },
+        {
+          "path": "anomaly.score",
+          "value": 4.136968945762384
+        },
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "anomaly.scale_elevated_hours.daily",
+          "value": 3.0
+        },
+        {
+          "path": "anomaly.scale_elevated_hours.weekly",
+          "value": 3.0
+        }
+      ],
+      "explanation": "The current reading shows high consumption (260.875 W) with a strong anomaly score, but the deviation has not persisted for multiple hours at the relevant scales (scale_elevated_hours is 3.0 or 4.0). A new_pattern requires persistence and multi-scale support. A peak requires short-term anomaly evidence, which exists, but without further context on whether this is an isolated spike or part of a trend, and given the lack of explicit event data to rule out other causes, the situation remains ambiguous between a transient peak and an emerging pattern.",
+      "schema_version": "1.2",
+      "uncertainty": "High. The classification depends on whether the current high reading represents a transient peak or the beginning of a new pattern, which cannot be determined from the single observation without additional temporal data.",
+      "user_recommendation": "No specific action is recommended at this time. Monitor the consumption trend over the next few hours to determine if the high usage persists."
+    },
+    {
+      "classification": "peak",
+      "config": "SYS3",
+      "decision_time": "2014-04-30T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.current_power_w",
+          "value": 148.8745
+        },
+        {
+          "path": "anomaly.score",
+          "value": 5.276732686879324
+        },
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        },
+        {
+          "path": "anomaly.scale_elevated_hours.short_term",
+          "value": 2.0
+        },
+        {
+          "path": "anomaly.scale_elevated_hours.daily",
+          "value": 4.0
+        },
+        {
+          "path": "anomaly.scale_elevated_hours.weekly",
+          "value": 4.0
+        },
+        {
+          "path": "anomaly.scale_elevated_hours.long_term",
+          "value": 4.0
+        }
+      ],
+      "explanation": "The current observation shows high consumption (148.9 W) with elevated anomaly scores across multiple scales. The deviation is recent, indicated by low scale_elevated_hours values, meaning it has not persisted long enough to be classified as a new_pattern. No relevant calendar events are present.",
+      "schema_version": "1.2",
+      "uncertainty": "Low.",
+      "user_recommendation": "No specific action is recommended."
+    },
+    {
+      "classification": "peak",
+      "config": "SYS3",
+      "decision_time": "2014-05-23T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.current_power_w",
+          "value": 379.3491
+        },
+        {
+          "path": "anomaly.score",
+          "value": 3.4789285277592694
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        },
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        }
+      ],
+      "explanation": "The current observation shows high consumption (379.35 W) with an elevated anomaly score and 'high' direction. The deviation is supported by short-term anomaly evidence but has not persisted for multiple hours at the relevant scale to support 'new_pattern'. There is no relevant calendar event to support 'absence'.",
+      "schema_version": "1.2",
+      "uncertainty": "Low.",
+      "user_recommendation": "No specific action is recommended."
+    },
+    {
+      "classification": "peak",
+      "config": "SYS3",
+      "decision_time": "2014-06-27T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.current_power_w",
+          "value": 363.73315
+        },
+        {
+          "path": "anomaly.score",
+          "value": 6.075010423507834
+        },
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        }
+      ],
+      "explanation": "The current observation shows high consumption (363.7W) with a strong anomaly score (6.075). The deviation is supported by short-term anomaly evidence but has not persisted for multiple hours at the relevant scales to support 'new_pattern', and there is no relevant calendar event to support 'absence'. Therefore, the situation is classified as a peak.",
+      "schema_version": "1.2",
+      "uncertainty": "Low.",
+      "user_recommendation": "No specific action is recommended."
+    },
+    {
+      "classification": "peak",
+      "config": "SYS3",
+      "decision_time": "2014-07-07T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.value_implausible",
+          "value": false
+        },
+        {
+          "path": "anomaly.score",
+          "value": 5.434081205982578
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        },
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "anomaly.scale_elevated_hours.short_term",
+          "value": 3.0
+        },
+        {
+          "path": "anomaly.scale_elevated_hours.daily",
+          "value": 3.0
+        },
+        {
+          "path": "anomaly.scale_elevated_hours.weekly",
+          "value": 5.0
+        },
+        {
+          "path": "anomaly.scale_elevated_hours.long_term",
+          "value": 4.0
+        }
+      ],
+      "explanation": "The current observation shows a strong anomaly with high consumption relative to historical baselines across all scales (short_term, daily, weekly, long_term). The anomaly score is elevated and the direction is 'high'. However, the deviation has not persisted for multiple hours at the relevant scales (scale_elevated_hours values are low), so it does not meet the criteria for new_pattern. There is no relevant calendar event to support absence. The reading is plausible.",
+      "schema_version": "1.2",
+      "uncertainty": "Low.",
+      "user_recommendation": "No specific action is recommended."
+    },
+    {
+      "classification": "peak",
+      "config": "SYS3",
+      "decision_time": "2014-07-10T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.current_power_w",
+          "value": 292.80722
+        },
+        {
+          "path": "anomaly.score",
+          "value": 4.491308085365211
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        },
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "anomaly.scale_elevated_hours.short_term",
+          "value": 2.0
+        }
+      ],
+      "explanation": "The current observation shows high consumption (292.8 W) with an elevated anomaly score and 'high' direction, indicating a short-term spike. The deviation has not persisted for multiple hours at the relevant scales (scale_elevated_hours values are low), so it is classified as a peak rather than a new_pattern. No relevant calendar events are present to support an absence classification.",
+      "schema_version": "1.2",
+      "uncertainty": "Low.",
+      "user_recommendation": "No specific action is recommended."
+    },
+    {
+      "classification": "peak",
+      "config": "SYS3",
+      "decision_time": "2014-07-16T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.current_power_w",
+          "value": 182.54199
+        },
+        {
+          "path": "anomaly.score",
+          "value": 3.244633096933769
+        },
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        }
+      ],
+      "explanation": "The current observation shows a strong anomaly with high consumption (182.54 W) relative to historical baselines across multiple scales, particularly the long-term scale. The anomaly score is elevated and the direction is high, indicating unusually high short-term consumption.",
+      "schema_version": "1.2",
+      "uncertainty": "The classification is based on the current strong anomaly indicating high consumption.",
+      "user_recommendation": "No specific action is recommended."
+    }
+  ]
+}

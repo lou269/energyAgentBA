@@ -1,14 +1,12 @@
-from __future__ import annotations
-
 import json
+from collections.abc import Mapping
 from dataclasses import asdict
 from pathlib import Path
-from typing import cast
+from typing import Any, cast
 
-from src.config.config_forecasting import LLMConfig
 from src.llm.inference import LLMAttemptRecord, LLMInferenceError, LLMInferenceResult
 from src.llm.llm_run_manifest import LLMRunStatus, build_llm_run_manifest
-from src.pipeline.io import find_run_directory, save_json
+from src.pipeline.io import find_run_directory, save_json, write_text_atomic
 from src.structured_state.structured_state_schema import StructuredState
 
 from src.llm.client import ModelMetadata
@@ -53,7 +51,7 @@ def save_successful_llm_run(
     state_file: Path,
     prompt: str,
     prompt_file: Path,
-    llm_config: LLMConfig,
+    config_values: Mapping[str, Any],
     model_metadata: ModelMetadata,
     result: LLMInferenceResult,
     runtime_seconds: float,
@@ -78,7 +76,7 @@ def save_successful_llm_run(
         state=state,
         state_file=state_file,
         prompt_file=prompt_file,
-        llm_config=llm_config,
+        config_values=config_values,
         model_metadata=model_metadata,
         attempts=result.attempts,
         output_paths=output_paths,
@@ -96,7 +94,7 @@ def save_failed_llm_run(
     state_file: Path,
     prompt: str,
     prompt_file: Path,
-    llm_config: LLMConfig,
+    config_values: Mapping[str, Any],
     model_metadata: ModelMetadata,
     error: LLMInferenceError,
     runtime_seconds: float,
@@ -117,7 +115,7 @@ def save_failed_llm_run(
         state=state,
         state_file=state_file,
         prompt_file=prompt_file,
-        llm_config=llm_config,
+        config_values=config_values,
         model_metadata=model_metadata,
         attempts=error.attempts,
         output_paths=output_paths,
@@ -135,7 +133,7 @@ def save_request_failed_llm_run(
     state_file: Path,
     prompt: str,
     prompt_file: Path,
-    llm_config: LLMConfig,
+    config_values: Mapping[str, Any],
     model_metadata: ModelMetadata,
     error: Exception,
     runtime_seconds: float,
@@ -157,7 +155,7 @@ def save_request_failed_llm_run(
         state=state,
         state_file=state_file,
         prompt_file=prompt_file,
-        llm_config=llm_config,
+        config_values=config_values,
         model_metadata=model_metadata,
         attempts=attempts,
         output_paths=output_paths,
@@ -185,7 +183,7 @@ def _save_common_artifacts(
     attempts_output_file = run_directory / "attempts.json"
 
     save_json(dict(state), state_output_file)
-    _save_text_atomically(prompt, prompt_output_file)
+    write_text_atomic(prompt, prompt_output_file)
     save_json(
         {"run_id": run_id, "attempts": [asdict(attempt) for attempt in attempts]},
         attempts_output_file,
@@ -206,7 +204,7 @@ def _save_manifest(
     state: StructuredState,
     state_file: Path,
     prompt_file: Path,
-    llm_config: LLMConfig,
+    config_values: Mapping[str, Any],
     model_metadata: ModelMetadata,
     attempts: tuple[LLMAttemptRecord, ...],
     output_paths: dict[str, Path],
@@ -220,7 +218,7 @@ def _save_manifest(
         status=status,
         decision_time=state["decision_time"],
         forecast_run_id=state["forecast"]["run_id"],
-        config_values=asdict(llm_config),
+        config_values=config_values,
         model_metadata=dict(model_metadata),
         input_paths={"structured_state": state_file, "prompt": prompt_file},
         output_paths=output_paths,
@@ -230,15 +228,3 @@ def _save_manifest(
     )
 
     save_json(manifest, run_directory / "run_manifest.json")
-
-
-def _save_text_atomically(content: str, output_file: Path) -> None:
-    output_file.parent.mkdir(parents=True, exist_ok=True)
-
-    temporary_file = output_file.with_suffix(output_file.suffix + ".tmp")
-
-    try:
-        temporary_file.write_text(content, encoding="utf-8")
-        temporary_file.replace(output_file)
-    finally:
-        temporary_file.unlink(missing_ok=True)

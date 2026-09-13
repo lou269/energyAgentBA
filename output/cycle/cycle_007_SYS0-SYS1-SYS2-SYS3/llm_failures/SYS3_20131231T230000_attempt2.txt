@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.2",
+  "classification": "peak",
+  "explanation": "The current observation shows high consumption (418 W) with an elevated anomaly score and 'high' direction across all scales. The deviation has not persisted for multiple hours at the relevant scale to support 'new_pattern', and no relevant events are present to support 'absence'. The reading is plausible, ruling out 'measurement_error'.",
+  "evidence_references": [
+    {
+      "path": "observation.value_implausible"
+    },
+    {
+      "path": "anomaly.score"
+    },
+    {
+      "path": "anomaly.direction"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    }
+  ],
+  "user_recommendation": "No specific action is recommended.",
+  "uncertainty": "Low."
+}

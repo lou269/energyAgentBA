@@ -1,0 +1,35 @@
+{
+  "llm_outputs": [
+    {
+      "classification": "peak",
+      "config": "SYS3_CTX0",
+      "decision_time": "2013-06-03T00:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.current_power_w",
+          "value": 144.73001
+        },
+        {
+          "path": "anomaly.score",
+          "value": 4.59573858853632
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        },
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "anomaly.scale_elevated_hours.daily",
+          "value": 4.0
+        }
+      ],
+      "explanation": "The current observation shows a strong anomaly with high consumption (144.73 W) compared to expected levels across multiple scales. The anomaly score is elevated and the direction is 'high'. However, the deviation does not appear persistent enough for 'new_pattern' as scale_elevated_hours values are low (4.0 hours), indicating a recent spike rather than a sustained new pattern.",
+      "schema_version": "1.2",
+      "uncertainty": "The classification relies on current anomaly metrics which indicate a temporary spike.",
+      "user_recommendation": "No specific action is recommended at this time as the high consumption appears to be a short-term anomaly rather than a sustained change."
+    }
+  ]
+}

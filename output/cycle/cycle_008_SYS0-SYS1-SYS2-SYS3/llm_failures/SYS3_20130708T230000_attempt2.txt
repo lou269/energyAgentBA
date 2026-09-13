@@ -1,0 +1,42 @@
+{
+  "schema_version": "1.2",
+  "classification": "unknown",
+  "explanation": "The current observation shows high consumption (149.6 W) relative to the short-term mean (278.3 W), daily expected (291.9 W), and weekly expected (305.6 W) values. The anomaly score is elevated (2.81) with a 'high' direction, and the dominant scale is 'long_term'. Although the trend is increasing, the deviation lacks persistence across multiple hours at relevant scales (scale_elevated_hours are 0 for daily/weekly), so it does not qualify as new_pattern. No relevant events are present to support absence.",
+  "evidence_references": [
+    {
+      "path": "observation.current_power_w"
+    },
+    {
+      "path": "observation.value_implausible"
+    },
+    {
+      "path": "analysis.trend"
+    },
+    {
+      "path": "analysis.trend_change"
+    },
+    {
+      "path": "anomaly.score"
+    },
+    {
+      "path": "anomaly.direction"
+    },
+    {
+      "path": "anomaly.dominant_scale"
+    },
+    {
+      "path": "anomaly.scale_elevated_hours.daily"
+    },
+    {
+      "path": "anomaly.scale_elevated_hours.weekly"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    }
+  ],
+  "user_recommendation": "No specific action is recommended.",
+  "uncertainty": "Insufficient evidence to confirm a persistent new pattern or a peak due to lack of multi-hour persistence and absence of supporting events."
+}

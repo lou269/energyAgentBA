@@ -1,8 +1,6 @@
 # python -m src.forecasting.forecast_runner
 # python -m src.forecasting.forecast_runner --split test
 
-from __future__ import annotations
-
 import argparse
 from dataclasses import asdict, dataclass
 import logging
@@ -79,6 +77,7 @@ def run_forecasting(
         split=split,
         horizon_hours=config.horizon_hours,
         forecast_origin_step_hours=config.forecast_origin_step_hours,
+        frequency=config.frequency,
         baseline_model_ids=config.baseline_model_ids,
         prophet_variants=prophet_variants,
         growth=config.growth,

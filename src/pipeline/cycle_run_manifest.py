@@ -1,12 +1,8 @@
-from __future__ import annotations
-
 from collections.abc import Mapping
-from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from src.pipeline.daily_cycle import CycleConfig
 from src.pipeline.provenance import (
     build_code_version,
     build_environment_reference,
@@ -29,7 +25,7 @@ def build_cycle_run_manifest(
     *,
     project_root: Path,
     run_id: str,
-    configs: Mapping[str, CycleConfig],
+    config_values: Mapping[str, Mapping[str, Any]],
     coldstart_hours: int,
     decision_time_count: int,
     decision_time_start: str | None,
@@ -40,7 +36,6 @@ def build_cycle_run_manifest(
     output_paths: Mapping[str, Path],
     runtime_seconds: float,
 ) -> dict[str, Any]:
-    config_values = {label: asdict(config) for label, config in configs.items()}
     outputs = {
         name: build_file_metadata(project_root, path)
         for name, path in output_paths.items()
@@ -50,7 +45,7 @@ def build_cycle_run_manifest(
         "run_id": run_id,
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
         "configs": {
-            "labels": list(configs),
+            "labels": list(config_values),
             "values": config_values,
             "sha256": json_sha256(config_values),
         },

@@ -76,7 +76,7 @@ def _synthetic_scenario(
     )
 
 
-def test_build_scenario_from_split_manifest_uses_train_as_coldstart() -> None:
+def test_build_scenario_from_split_manifest_uses_given_coldstart_hours() -> None:
     index = pd.date_range("2024-01-01", periods=100, freq="1h", tz="UTC")
     treated_hourly = pd.DataFrame({"target": range(100)}, index=index)
     split_manifest = pd.DataFrame(
@@ -87,12 +87,12 @@ def test_build_scenario_from_split_manifest_uses_train_as_coldstart() -> None:
         ]
     )
 
-    scenario = build_scenario_from_split_manifest(treated_hourly, split_manifest, "target")
+    scenario = build_scenario_from_split_manifest(treated_hourly, split_manifest, "target", coldstart_hours=10)
 
-    assert scenario.coldstart_hours == 70
+    assert scenario.coldstart_hours == 10
     assert scenario.target_series.index[-1] == index[99]
-    # decision_times[0] muss NACH dem Ende der Coldstart-History (index[69]) liegen, sonst ist new_observations beim ersten Zyklus-Aufruf leer
-    assert scenario.decision_times[0] == index[71]
+    # decision_times[0] muss NACH dem Ende der Coldstart-History (index[9]) liegen, sonst ist new_observations beim ersten Zyklus-Aufruf leer
+    assert scenario.decision_times[0] == index[11]
     assert scenario.decision_times[-1] <= index[99]
     assert all(second - first == pd.Timedelta(hours=24) for first, second in zip(scenario.decision_times, scenario.decision_times[1:]))
 
@@ -127,7 +127,7 @@ def test_build_scenario_from_split_manifest_integrates_with_run_comparison(tmp_p
         ]
     )
 
-    scenario = build_scenario_from_split_manifest(treated_hourly, split_manifest, "target")
+    scenario = build_scenario_from_split_manifest(treated_hourly, split_manifest, "target", coldstart_hours=72)
     result = run_comparison(scenario, {"SYS0": SYS_VARIANTS["SYS0"]}, tmp_path, PROJECT_ROOT)
 
     assert len(result) == len(scenario.decision_times)
@@ -183,6 +183,20 @@ def test_run_comparison_mae_is_finite(tmp_path: Path) -> None:
     for mae_w in result["mae_w"]:
         assert isinstance(mae_w, float)
         assert math.isfinite(mae_w)
+
+
+def test_run_comparison_with_target_imputed_shorter_than_forecast_horizon(tmp_path: Path) -> None:
+    scenario_base = _synthetic_scenario()
+    target_imputed = pd.Series(
+        False,
+        index=scenario_base.target_series.index[: scenario_base.coldstart_hours],
+        dtype=bool,
+    )
+    scenario = replace(scenario_base, target_imputed=target_imputed)
+
+    result = run_comparison(scenario, {"SYS0": SYS_VARIANTS["SYS0"]}, tmp_path, PROJECT_ROOT)
+
+    assert result["mae_w"].apply(math.isfinite).all()
 
 
 def test_run_comparison_survives_llm_inference_failures(tmp_path: Path) -> None:

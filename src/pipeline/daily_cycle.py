@@ -118,28 +118,7 @@ def run_cycle(
         model_history = state.model_history
         model_fitted_at = state.model_fitted_at
 
-    target_index = pd.date_range(
-        start=decision_time,
-        periods=config.forecasting_config.horizon_hours,
-        freq="1h",
-    )
-
-    raw_forecast = build_prophet_forecast(
-        prophet_model,
-        target_index,
-        clip_negative_forecasts=config.forecasting_config.negative_forecast_handling == "clip_zero",
-        history_end=model_history.index[-1],
-        local_timezone=config.forecasting_config.timezone,
-        log_transform=config.forecasting_config.log_transform,
-    )
-
-    forecast = raw_forecast.reset_index()[["target_timestamp", "y_pred", "y_lower", "y_upper"]].copy()
-    forecast["run_id"] = f"cycle_{decision_time.strftime('%Y%m%dT%H%M')}"
-    # "split" hier nur ein Platzhalter für den Abgleich mit analysis_row weiter unten, keine echte Train/Val/Test-Bedeutung wie in walk_forward.py
-    forecast["split"] = "test"
-    forecast["model_id"] = variant.model_id
-    forecast["config_version"] = config.forecasting_config.config_version
-    forecast["forecast_origin"] = decision_time
+    forecast = _build_forecast(prophet_model, model_history, decision_time, config, variant)
 
     reference_window_end = state.reference_window_end
     reference_reset = reference_window_end is None
@@ -227,7 +206,6 @@ def run_cycle(
     if adaption_action is not None and adaption_action.kind != "none":
         history = _apply_adaption(history, adaption_action)
 
-        # Prophet und die numerical_analysis-Referenz sollen die Adaption sofort sehen, nicht erst beim nächsten regulären Retraining-Intervall
         model_history = select_prophet_history(
             history,
             history,
@@ -237,6 +215,7 @@ def run_cycle(
         )
         prophet_model = _fit_variant(model_history, variant, config.forecasting_config)
         model_fitted_at = decision_time
+        forecast = _build_forecast(prophet_model, model_history, decision_time, config, variant)
 
         if len(history) < 3:
             raise ValueError("history must contain at least 3 observed hours after adaption to recompute the numerical_analysis reference.")
@@ -267,6 +246,39 @@ def run_cycle(
     )
 
     return result, new_state
+
+
+def _build_forecast(
+    prophet_model: Prophet,
+    model_history: pd.Series,
+    decision_time: pd.Timestamp,
+    config: CycleConfig,
+    variant: ProphetVariantConfig,
+) -> pd.DataFrame:
+    target_index = pd.date_range(
+        start=decision_time,
+        periods=config.forecasting_config.horizon_hours,
+        freq=config.forecasting_config.frequency,
+    )
+
+    raw_forecast = build_prophet_forecast(
+        prophet_model,
+        target_index,
+        clip_negative_forecasts=config.forecasting_config.negative_forecast_handling == "clip_zero",
+        history_end=model_history.index[-1],
+        local_timezone=config.forecasting_config.timezone,
+        log_transform=config.forecasting_config.log_transform,
+    )
+
+    forecast = raw_forecast.reset_index()[["target_timestamp", "y_pred", "y_lower", "y_upper"]].copy()
+    forecast["run_id"] = f"cycle_{decision_time.strftime('%Y%m%dT%H%M')}"
+    # "split" hier nur ein Platzhalter für den Abgleich mit analysis_row weiter unten, keine echte Train/Val/Test-Bedeutung wie in walk_forward.py
+    forecast["split"] = "test"
+    forecast["model_id"] = variant.model_id
+    forecast["config_version"] = config.forecasting_config.config_version
+    forecast["forecast_origin"] = decision_time
+
+    return forecast
 
 
 def _fit_variant(

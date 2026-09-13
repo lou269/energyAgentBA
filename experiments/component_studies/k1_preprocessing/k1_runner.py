@@ -3,8 +3,6 @@
 #
 # Voraussetzung: k1_data_preparation_runner.py wurde vorher in nilmtk-env ausgeführt
 
-from __future__ import annotations
-
 from dataclasses import asdict, replace
 import logging
 from time import perf_counter
@@ -116,6 +114,7 @@ def run() -> None:
                 split="validation",
                 horizon_hours=forecasting_config.horizon_hours,
                 forecast_origin_step_hours=forecasting_config.forecast_origin_step_hours,
+                frequency=forecasting_config.frequency,
                 baseline_model_ids=K1_BASELINE_MODEL_IDS,
                 prophet_variants=prophet_variants,
                 growth=forecasting_config.growth,

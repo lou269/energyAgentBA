@@ -1,7 +1,16 @@
+from collections.abc import Mapping
 from typing import cast
 
 import numpy as np
 import pandas as pd
+
+
+def resolve_dominant_scale(scale_scores: Mapping[str, float]) -> tuple[str, float, str | None]:
+    dominant_scale = max(scale_scores, key=lambda scale: abs(scale_scores[scale]))
+    signed_score = scale_scores[dominant_scale]
+    direction = "high" if signed_score > 0 else "low" if signed_score < 0 else None
+
+    return dominant_scale, abs(signed_score), direction
 
 
 def build_anomaly_detection(
@@ -123,7 +132,6 @@ def aggregate_daily_anomaly(
     window = anomaly.loc[:target_timestamp].tail(n_samples)
 
     summary: dict[str, object] = {}
-    peak_abs: dict[str, float] = {}
     peak_signed: dict[str, float] = {}
     peak_timestamp_by_scale: dict[str, pd.Timestamp] = {}
 
@@ -135,7 +143,6 @@ def aggregate_daily_anomaly(
         if scores.notna().any():
             abs_scores = scores.abs()
             peak_index = cast(pd.Timestamp, abs_scores.idxmax())
-            peak_abs[scale] = abs_scores.loc[peak_index]
             peak_signed[scale] = scores.loc[peak_index]
             peak_timestamp_by_scale[scale] = peak_index
             summary[score_column] = peak_signed[scale]
@@ -144,7 +151,7 @@ def aggregate_daily_anomaly(
             summary[score_column] = np.nan
             summary[elevated_hours_column] = np.nan
 
-    if not peak_abs:
+    if not peak_signed:
         summary["anomaly_score"] = np.nan
         summary["dominant_scale"] = pd.NA
         summary["anomaly_direction"] = pd.NA
@@ -152,20 +159,12 @@ def aggregate_daily_anomaly(
         summary["anomaly_peak_timestamp"] = pd.NaT
         return summary
 
-    dominant_scale = max(peak_abs, key=lambda scale: peak_abs[scale])
-    anomaly_score = peak_abs[dominant_scale]
-    dominant_signed_score = peak_signed[dominant_scale]
+    dominant_scale, anomaly_score, direction = resolve_dominant_scale(peak_signed)
 
     summary["anomaly_score"] = anomaly_score
     summary["dominant_scale"] = dominant_scale
     summary["anomaly_peak_timestamp"] = peak_timestamp_by_scale[dominant_scale]
-
-    if dominant_signed_score > 0:
-        summary["anomaly_direction"] = "high"
-    elif dominant_signed_score < 0:
-        summary["anomaly_direction"] = "low"
-    else:
-        summary["anomaly_direction"] = pd.NA
+    summary["anomaly_direction"] = direction if direction is not None else pd.NA
 
     if anomaly_score >= strong_anomaly_threshold:
         summary["anomaly_level"] = "strong_anomaly"

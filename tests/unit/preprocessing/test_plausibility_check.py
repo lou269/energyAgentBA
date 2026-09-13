@@ -1,7 +1,5 @@
 # python -m pytest tests/unit/preprocessing/test_plausibility_check.py -v
 
-from __future__ import annotations
-
 import pandas as pd
 
 from src.common.column_naming import plausibility_column

@@ -23,8 +23,6 @@ PRESENCE_EXCLUDED_CHANNELS: dict[str, str] = {
     "H1_M46": "baby_monitor_tx - an Kind/Betreuung gekoppelt, nicht zwingend an Abwesenheit des ganzen Haushalts"
 }
 
-DEFAULT_MIN_SAMPLING_SHARE = 0.5
-
 REQUIRED_REGISTRY_COLUMNS = MERGE_KEYS + ["appliances"]
 REQUIRED_QUALITY_COLUMNS = MERGE_KEYS + ["is_mains", "start", "end", "sampling_share", "quality_error"]
 
@@ -37,7 +35,7 @@ def filter_candidate_channels(
     window_start: pd.Timestamp,
     window_end: pd.Timestamp,
     excluded_channels: dict[str, str] = PRESENCE_EXCLUDED_CHANNELS,
-    min_sampling_share: float = DEFAULT_MIN_SAMPLING_SHARE,
+    min_sampling_share: float,
 ) -> pd.DataFrame:
     """Grober Metadaten-Vorfilter """
     require_columns(channel_registry, REQUIRED_REGISTRY_COLUMNS, "channel_registry")
@@ -144,8 +142,8 @@ def build_auxiliary_appliance_selection(
     window_end: pd.Timestamp,
     canonical_ac_type: str,
     min_coverage_share: float,
+    min_sampling_share: float,
     excluded_channels: dict[str, str] = PRESENCE_EXCLUDED_CHANNELS,
-    min_sampling_share: float = DEFAULT_MIN_SAMPLING_SHARE,
 ) -> AuxiliaryApplianceSelection:
    
    

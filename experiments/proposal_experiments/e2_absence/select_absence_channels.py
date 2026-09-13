@@ -13,7 +13,7 @@ from experiments.proposal_experiments.e2_absence.e2_config import ACTIVE_ABSENCE
 from experiments.proposal_experiments.e2_absence.e2_selection import channels_meeting_thresholds, load_calendar_events, resolve_absence_window
 from src.common.channel_tables import load_channel_tables
 from src.common.column_naming import treated_column
-from src.config.config_nilmtk import DataPreparationConfig
+from src.config.config_nilmtk import AnalysisConfig, DataPreparationConfig
 from src.config.project_config import ProjectConfig
 from src.data_preparation.auxiliary_appliance_selection import build_auxiliary_appliance_selection
 from src.pipeline.io import df_to_csv
@@ -28,6 +28,7 @@ def main() -> None:
 
     project_config = ProjectConfig()
     data_config = DataPreparationConfig()
+    analysis_config = AnalysisConfig()
     house = data_config.selected_house_ids[0]
 
     dataset = DataSet(project_config.dataset_path)
@@ -55,6 +56,7 @@ def main() -> None:
         window_end=window_end,
         canonical_ac_type=data_config.canonical_ac_type,
         min_coverage_share=data_config.min_coverage_share,
+        min_sampling_share=analysis_config.min_auxiliary_window_coverage_share,
     )
 
     ranking = selection.ranking.copy()

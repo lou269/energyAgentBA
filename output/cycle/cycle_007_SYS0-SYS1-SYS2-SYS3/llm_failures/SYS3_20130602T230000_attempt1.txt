@@ -1,0 +1,10 @@
+{
+  "schema_version": "1.2",
+  "classification": "peak",
+  "explanation": "The current observation shows a strong anomaly with high consumption relative to historical baselines across all scales (short_term, daily, weekly, long_term). The anomaly score is elevated and the direction is 'high'. However, the deviation has not persisted for multiple hours at the relevant scale (scale_elevated_hours values are 4.0 but this represents a single hour of elevation in the context of the window, not necessarily multi-hour persistence required for new_pattern without further evidence). The high consumption alone does not prove a peak without short-term anomaly evidence, which is present here with a strong_anomaly level and elevated scores across scales. Since there is no relevant calendar event (context.events is empty) and source_available is false, absence is not applicable. The situation supports a peak classification due to the short-term anomaly evidence.",
+  "evidence_references": [
+    {
+      "path": "observation.value_implausible"
+    },
+    {
+      "path": "an

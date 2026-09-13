@@ -4,8 +4,6 @@
 
 # Fünf Läufe: SYS1 (Referenz, adaptionsfrei) + SYS2 (Regel) und SYS3 (LLM) je einmal ohne (CTX0) und mit (CTX1) Kalenderkontext.
 
-from __future__ import annotations
-
 import logging
 from pathlib import Path
 
@@ -28,7 +26,7 @@ from experiments.proposal_experiments.e2_absence.e2_selection import (
     resolve_absence_window,
     select_channels_for_subtraction,
 )
-from src.common.column_naming import treated_column
+from src.common.column_naming import imputation_column, treated_column
 from src.config.config_forecasting import PreprocessingConfig
 from src.config.project_config import ProjectConfig, ensure_project_directories
 from src.llm.llm_run_artifacts import load_prompt
@@ -83,7 +81,9 @@ def main() -> None:
     project_config = ProjectConfig()
     ensure_project_directories(project_config)
 
-    target_column = treated_column(_read_target_meter_key(project_config))
+    meter_key = _read_target_meter_key(project_config)
+    target_column = treated_column(meter_key)
+    mask_column = imputation_column(meter_key)
 
     preprocessing_result = run_preprocessing(
         _read_canonical(project_config, "canonical_data_15min"),
@@ -94,6 +94,7 @@ def main() -> None:
     )
 
     mains_series = preprocessing_result.treated_hourly[target_column]
+    target_imputed = preprocessing_result.imputation_mask_hourly[mask_column]
 
     calendar_events = load_calendar_events(CALENDAR_EVENTS_FILE)
     window_start, window_end = resolve_absence_window(calendar_events, ACTIVE_ABSENCE_EVENT_ID)
@@ -125,6 +126,7 @@ def main() -> None:
         coldstart_hours=COLDSTART_HOURS,
         decision_times=decision_times,
         calendar_events=calendar_events,
+        target_imputed=target_imputed,
     )
 
     sys3_config = SYS_VARIANTS["SYS3"]

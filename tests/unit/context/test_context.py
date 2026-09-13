@@ -1,7 +1,5 @@
 # python -m pytest tests/unit/context/test_context.py -v
 
-from __future__ import annotations
-
 import json
 from collections.abc import Mapping
 

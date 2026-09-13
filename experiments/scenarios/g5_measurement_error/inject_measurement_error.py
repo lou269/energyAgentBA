@@ -7,8 +7,6 @@
 # experiments/scenarios/calendar_events.json, damit der G5-Testfall nicht mit G2/absence
 # vermischt wird.
 
-from __future__ import annotations
-
 from pathlib import Path
 
 import pandas as pd

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from collections.abc import Mapping, Sequence
 
 import pandas as pd
@@ -45,6 +43,7 @@ def build_ctx_scenarios(
     coldstart_hours: int,
     decision_times: tuple[pd.Timestamp, ...],
     calendar_events: tuple[Mapping[str, object], ...],
+    target_imputed: pd.Series | None = None,
 ) -> tuple[ScenarioData, ScenarioData]:
     ctx0 = ScenarioData(
         target_series=target_series,
@@ -53,6 +52,7 @@ def build_ctx_scenarios(
         calendar_events=(),
         calendar_source_available=False,
         calendar_source="none",
+        target_imputed=target_imputed,
     )
     ctx1 = ScenarioData(
         target_series=target_series,
@@ -61,6 +61,7 @@ def build_ctx_scenarios(
         calendar_events=calendar_events,
         calendar_source_available=True,
         calendar_source="user_calendar",
+        target_imputed=target_imputed,
     )
 
     return ctx0, ctx1

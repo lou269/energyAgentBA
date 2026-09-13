@@ -1,0 +1,31 @@
+{
+  "llm_outputs": [
+    {
+      "classification": "peak",
+      "config": "SYS3_CTX1",
+      "decision_time": "2013-06-03T00:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.current_power_w",
+          "value": 144.73001
+        },
+        {
+          "path": "anomaly.score",
+          "value": 4.59573858853632
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        },
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        }
+      ],
+      "explanation": "The current observation shows high consumption (144.73 W) with an elevated anomaly score and 'high' direction across multiple scales. The deviation has not persisted for multiple hours at the relevant scale, so it does not meet the criteria for new_pattern. No relevant events are present to support absence.",
+      "schema_version": "1.2",
+      "uncertainty": "Low.",
+      "user_recommendation": "No specific action is recommended."
+    }
+  ]
+}

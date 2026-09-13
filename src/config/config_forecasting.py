@@ -1,11 +1,9 @@
-from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal
 
 ProductionGapMethod = Literal["ffill", "none"]
 HistoryMode = Literal["fixed_train", "expanding", "rolling"]
 NegativeForecastHandling = Literal["raw", "clip_zero"]
-MetricName = Literal["mae", "rmse", "mape"]
 
 
 ''' PREPROCESSING '''
@@ -19,14 +17,6 @@ class PreprocessingConfig:
     max_imputation_gap_hourly: int = 6  # nicht das gleiche wie DataPreparationConfig.max_availability_gap_hours
 
     stuck_value_min_hours: float = 6.0
-
-    lags_15min: tuple[int, ...] = (1, 4, 96, 672)
-    lags_hourly: tuple[int, ...] = (1, 24, 168)
-
-    rolling_windows_15min: tuple[int, ...] = (4, 96, 672)
-    rolling_windows_hourly: tuple[int, ...] = (24, 168)
-
-    feature_variance_threshold: float = 0.0
 
 
 
@@ -55,7 +45,7 @@ class NumericalAnalysisConfig:
 
     # gegen H1-M54-Train-Split kalibriert (rollierendes 24h-Fenster) - hält die Gesamt-Trigger-Rate
     # nahe an dem, was das frühere Einzelstunden-Gate ergab, statt bei jedem Tagesmaximum auszulösen
-    min_elevated_hours_for_gate: float = 4.0
+    min_elevated_hours_for_gate: float = 3.0
 
     # Fenstergröße für "Anomalie in den letzten X Stunden" -> steuert aggregate_daily_anomaly,
     # das Adaptionsfenster in adaption_policy.py und die Peak-Timestamp-Grenze im Structured-State-Schema
@@ -101,6 +91,8 @@ class ForecastingConfig:
     # Walk-Forward-Evaluation
     forecast_origin_step_hours: int = 24
 
+    cycle_coldstart_hours: int =  60 * 24
+
     # Naive Baselines
     baseline_model_ids: tuple[str, ...] = ("B1", "B2", "B3")
 
@@ -126,7 +118,7 @@ class ForecastingConfig:
 @dataclass(frozen=True)
 class LLMConfig:
     model: str
-    prompt_version: str = "v6"
+    prompt_version: str = "v7"
     temperature: float = 0.0
     seed: int | None = 42
     max_attempts: int = 2

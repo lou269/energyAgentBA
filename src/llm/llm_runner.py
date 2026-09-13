@@ -1,10 +1,9 @@
 # python -m src.llm.llm_runner --model qwen3:4b
 # python -m src.llm.llm_runner --model qwen3.5:9b
 
-from __future__ import annotations
-
 import argparse
 import logging
+from dataclasses import asdict
 from pathlib import Path
 from time import perf_counter
 
@@ -107,7 +106,7 @@ class LLMRunner:
                 state_file=state_file,
                 prompt=prompt,
                 prompt_file=prompt_file,
-                llm_config=self.llm_config,
+                config_values=asdict(self.llm_config),
                 model_metadata=model_metadata,
                 error=error,
                 runtime_seconds=runtime_seconds,
@@ -125,7 +124,7 @@ class LLMRunner:
                 state_file=state_file,
                 prompt=prompt,
                 prompt_file=prompt_file,
-                llm_config=self.llm_config,
+                config_values=asdict(self.llm_config),
                 model_metadata=model_metadata,
                 error=error,
                 runtime_seconds=runtime_seconds,
@@ -142,7 +141,7 @@ class LLMRunner:
             state_file=state_file,
             prompt=prompt,
             prompt_file=prompt_file,
-            llm_config=self.llm_config,
+            config_values=asdict(self.llm_config),
             model_metadata=model_metadata,
             result=result,
             runtime_seconds=runtime_seconds,

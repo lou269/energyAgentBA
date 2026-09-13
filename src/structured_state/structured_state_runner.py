@@ -4,7 +4,6 @@
 # liest standardmäßig den neuesten output/numerical_analysis/an_<nummer>/ Ordner; --analysis-run-number erzwingt einen bestimmten
 # --calendar-events weglassen = kein Kalenderzugriff (CTX0, source_available=false); die anderen --calendar-* Felder sind auch dann Pflicht
 # jeder Lauf landet in einem eigenen Ordner output/structured_state/ss_<nummer>_fc_<forecast-nummer>_an_<analysis-nummer>_<decision_time>/
-from __future__ import annotations
 
 import argparse
 import json

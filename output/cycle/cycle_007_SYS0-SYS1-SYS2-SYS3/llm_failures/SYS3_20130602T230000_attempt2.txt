@@ -1,0 +1,27 @@
+{
+  "schema_version": "1.2",
+  "classification": "peak",
+  "explanation": "The current observation shows high consumption supported by short-term anomaly evidence (anomaly.score is 3.5 and anomaly.level is 'high'). The deviation has not persisted for multiple hours at the relevant scale (scale_elevated_hours is 4.0, indicating a single hour of elevation), so it does not support new_pattern. There are no relevant calendar events in context.events to support absence.",
+  "evidence_references": [
+    {
+      "path": "observation.value_implausible"
+    },
+    {
+      "path": "anomaly.score"
+    },
+    {
+      "path": "anomaly.level"
+    },
+    {
+      "path": "anomaly.scale_elevated_hours.short_term"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    }
+  ],
+  "user_recommendation": "No specific action is recommended.",
+  "uncertainty": "Low."
+}
