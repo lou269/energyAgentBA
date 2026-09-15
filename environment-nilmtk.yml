@@ -1,9 +1,13 @@
 # conda activate nilmtk-env
+
 name: nilmtk-env
+
 channels:
   - nilmtk
   - conda-forge
+  
 dependencies:
   - python=3.8
   - nilmtk=0.4.3
   - pytest
+  - pandas
