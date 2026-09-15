@@ -1,0 +1,37 @@
+{
+  "experiment_id": "K4_1_llm_model",
+  "note": "Kein eigener Lauf - manuell zusammengefuehrt aus k4_001 (MDL0-3), k4_003 (MDL4-6, MDL6 unvollstaendig: 8/18) und k4_005 (MDL7). k4_002/k4_004 sind verwaiste Teil-Runs und bewusst ausgeschlossen.",
+  "source_runs": {
+    "k4_001": ["MDL0", "MDL1", "MDL2", "MDL3"],
+    "k4_003": ["MDL4", "MDL5", "MDL6"],
+    "k4_005": ["MDL7"]
+  },
+  "cases": {
+    "absence": "absence",
+    "measurement_error": "measurement_error",
+    "new_pattern": "new_pattern",
+    "normal": "normal",
+    "peak": "peak",
+    "unknown": "unknown"
+  },
+  "config": {
+    "config_version": "llm-model-0.2",
+    "experiment_id": "K4_1_llm_model",
+    "max_attempts": 2,
+    "model_variants": [
+      {"model": "qwen3:4b", "model_id": "MDL0"},
+      {"model": "qwen3:8b", "model_id": "MDL1"},
+      {"model": "qwen3.5:9b", "model_id": "MDL2"},
+      {"model": "llama3.1:8b", "model_id": "MDL3"},
+      {"model": "gemma3:12b", "model_id": "MDL4"},
+      {"model": "qwen3:14b", "model_id": "MDL5"},
+      {"model": "gpt-oss:20b", "model_id": "MDL6"},
+      {"model": "gemma4:12b", "model_id": "MDL7"}
+    ],
+    "prompt_version": "v8",
+    "repetitions": 3,
+    "request_timeout_seconds": 120.0,
+    "seed": 42,
+    "temperature": 0.0
+  }
+}

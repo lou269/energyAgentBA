@@ -1,0 +1,40 @@
+{
+  "attempts": [
+    {
+      "attempt_number": 1,
+      "generation_seconds": 27.344290582999975,
+      "raw_content": "{\"schema_version\": \"1.2\", \"classification\": \"absence\", \"explanation\": \"The current power consumption is significantly lower than expected, with a value of 45.0W. This is supported by a calendar",
+      "valid": false,
+      "validation_error": "JSONDecodeError: Unterminated string starting at: line 1 column 71 (char 70)"
+    },
+    {
+      "attempt_number": 2,
+      "generation_seconds": 14.826053249999973,
+      "raw_content": "{\"schema_version\": \"1.2\", \"classification\": \"absence\", \"explanation\": \"The current power consumption is significantly lower than expected, with a value of 45.0W. This is supported by a calendar event.\", \"evidence_references\": [{\"path\": \"observation.current_power_w\"}, {\"path\": \"context.events.0.event_type\"}], \"user_recommendation\": \"No specific action is recommended.\", \"uncertainty\": \"Low\"}",
+      "valid": true,
+      "validation_error": null
+    }
+  ],
+  "case_id": "absence",
+  "error": null,
+  "expected_classification": "absence",
+  "model": "gemma3:12b",
+  "output": {
+    "classification": "absence",
+    "evidence_references": [
+      {
+        "path": "observation.current_power_w",
+        "value": 45.0
+      },
+      {
+        "path": "context.events.0.event_type",
+        "value": "absence"
+      }
+    ],
+    "explanation": "The current power consumption is significantly lower than expected, with a value of 45.0W. This is supported by a calendar event.",
+    "schema_version": "1.2",
+    "uncertainty": "Low",
+    "user_recommendation": "No specific action is recommended."
+  },
+  "repetition": 2
+}

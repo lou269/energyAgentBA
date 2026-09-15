@@ -1,0 +1,24 @@
+{
+  "attempts": [
+    {
+      "attempt_number": 1,
+      "generation_seconds": 26.114208957999836,
+      "raw_content": "",
+      "valid": false,
+      "validation_error": "ValueError: LLM returned an empty response."
+    },
+    {
+      "attempt_number": 2,
+      "generation_seconds": 20.33260733299994,
+      "raw_content": "",
+      "valid": false,
+      "validation_error": "ValueError: LLM returned an empty response."
+    }
+  ],
+  "case_id": "peak",
+  "error": "LLM returned no valid output after 2 attempt(s).",
+  "expected_classification": "peak",
+  "model": "gpt-oss:20b",
+  "output": null,
+  "repetition": 2
+}

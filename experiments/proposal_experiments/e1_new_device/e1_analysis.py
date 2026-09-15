@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from experiments.proposal_experiments.config import E1Config
+from experiments.proposal_experiments.e_config import E1Config
 from experiments.proposal_experiments.shared_analysis import summarize_classification_detection, summarize_mae_before_after
 from src.common.timestamps import parse_utc_timestamp
 from src.pipeline.io import df_to_csv, find_run_directory

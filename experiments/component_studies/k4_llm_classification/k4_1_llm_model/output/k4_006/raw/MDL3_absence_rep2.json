@@ -1,0 +1,37 @@
+{
+  "attempts": [
+    {
+      "attempt_number": 1,
+      "generation_seconds": 21.070582332999038,
+      "raw_content": "{\n  \"schema_version\": \"1.2\",\n  \"classification\": \"new_pattern\",\n  \"explanation\": \"The current reading of 45.0 W is supported by a strong anomaly at the daily scale, with a score of -3.7. This anomaly has persisted for 5 days at the daily scale, and is also supported by anomalies at the weekly and long-term scales.\",\n  \"evidence_references\": [\n    {\"path\": \"anomaly.score\"},\n    {\"path\": \"anomaly.scale_scores.daily\"},\n    {\"path\": \"anomaly.scale_anomaly_streak_days.daily\"}\n  ],\n  \"user_recommendation\": \"Investigate the cause of the anomaly to determine if it is a persistent change in consumption patterns.\",\n  \"uncertainty\": \"The classification of 'new_pattern' is based on the persistence of the anomaly over multiple days, but the physical cause of the anomaly remains unknown.\"\n}",
+      "valid": true,
+      "validation_error": null
+    }
+  ],
+  "case_id": "absence",
+  "error": null,
+  "expected_classification": "absence",
+  "model": "llama3.1:8b",
+  "output": {
+    "classification": "new_pattern",
+    "evidence_references": [
+      {
+        "path": "anomaly.score",
+        "value": 3.7
+      },
+      {
+        "path": "anomaly.scale_scores.daily",
+        "value": -3.7
+      },
+      {
+        "path": "anomaly.scale_anomaly_streak_days.daily",
+        "value": 5.0
+      }
+    ],
+    "explanation": "The current reading of 45.0 W is supported by a strong anomaly at the daily scale, with a score of -3.7. This anomaly has persisted for 5 days at the daily scale, and is also supported by anomalies at the weekly and long-term scales.",
+    "schema_version": "1.2",
+    "uncertainty": "The classification of 'new_pattern' is based on the persistence of the anomaly over multiple days, but the physical cause of the anomaly remains unknown.",
+    "user_recommendation": "Investigate the cause of the anomaly to determine if it is a persistent change in consumption patterns."
+  },
+  "repetition": 2
+}

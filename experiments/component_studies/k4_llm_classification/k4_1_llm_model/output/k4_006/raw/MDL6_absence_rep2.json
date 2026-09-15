@@ -1,0 +1,9 @@
+{
+  "attempts": [],
+  "case_id": "absence",
+  "error": "LLM client request failed during attempt 1.",
+  "expected_classification": "absence",
+  "model": "gpt-oss:20b",
+  "output": null,
+  "repetition": 2
+}

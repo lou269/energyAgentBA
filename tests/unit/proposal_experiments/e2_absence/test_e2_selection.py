@@ -3,7 +3,7 @@
 import pandas as pd
 import pytest
 
-from experiments.proposal_experiments.config import E2Config
+from experiments.proposal_experiments.e_config import E2Config
 from experiments.proposal_experiments.e2_absence.e2_selection import channels_meeting_thresholds, load_calendar_events, resolve_absence_window, select_channels_for_subtraction
 
 

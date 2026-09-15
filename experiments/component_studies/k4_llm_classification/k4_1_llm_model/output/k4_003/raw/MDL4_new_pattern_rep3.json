@@ -1,0 +1,52 @@
+{
+  "attempts": [
+    {
+      "attempt_number": 1,
+      "generation_seconds": 32.270815292000066,
+      "raw_content": "{\"schema_version\": \"1.2\", \"classification\": \"peak\", \"explanation\": \"The current power is unusually high (980.0 W) compared to the daily expected power (344.3 W) and long-term mean (405.7 W). The anomaly score is strong (3.5) and the dominant scale is daily.\", \"evidence_references\": [ {\"path\": \"anomaly.score\"}, {\"path\": \"observation.current_power_w\"}, {\"path\": \"analysis.daily_expected_w\"}, {\"path\": \"analysis.long_term_mean_w\"}, {\"path\": \"anomaly.dominant_scale\"} ], \"user_recommendation\": \"No specific action is recommended. Investigate",
+      "valid": false,
+      "validation_error": "JSONDecodeError: Unterminated string starting at: line 1 column 493 (char 492)"
+    },
+    {
+      "attempt_number": 2,
+      "generation_seconds": 19.839289750000034,
+      "raw_content": "{\"schema_version\": \"1.2\", \"classification\": \"peak\", \"explanation\": \"The current power is unusually high (980.0 W) compared to the daily expected power (344.3 W) and long-term mean (405.7 W). The anomaly score is strong (3.5) and the dominant scale is daily.\", \"evidence_references\": [ {\"path\": \"anomaly.score\"}, {\"path\": \"observation.current_power_w\"}, {\"path\": \"analysis.daily_expected_w\"}, {\"path\": \"analysis.long_term_mean_w\"}, {\"path\": \"anomaly.dominant_scale\"} ], \"user_recommendation\": \"No specific action is recommended. Investigate the cause of the high power consumption.\", \"uncertainty\": \"The high power reading could be due to a temporary appliance usage or a measurement anomaly. Further monitoring is advised.\"}",
+      "valid": true,
+      "validation_error": null
+    }
+  ],
+  "case_id": "new_pattern",
+  "error": null,
+  "expected_classification": "new_pattern",
+  "model": "gemma3:12b",
+  "output": {
+    "classification": "peak",
+    "evidence_references": [
+      {
+        "path": "anomaly.score",
+        "value": 3.5
+      },
+      {
+        "path": "observation.current_power_w",
+        "value": 980.0
+      },
+      {
+        "path": "analysis.daily_expected_w",
+        "value": 344.33525171806167
+      },
+      {
+        "path": "analysis.long_term_mean_w",
+        "value": 405.7294889722222
+      },
+      {
+        "path": "anomaly.dominant_scale",
+        "value": "daily"
+      }
+    ],
+    "explanation": "The current power is unusually high (980.0 W) compared to the daily expected power (344.3 W) and long-term mean (405.7 W). The anomaly score is strong (3.5) and the dominant scale is daily.",
+    "schema_version": "1.2",
+    "uncertainty": "The high power reading could be due to a temporary appliance usage or a measurement anomaly. Further monitoring is advised.",
+    "user_recommendation": "No specific action is recommended. Investigate the cause of the high power consumption."
+  },
+  "repetition": 3
+}

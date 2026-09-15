@@ -1,0 +1,29 @@
+{
+  "attempts": [
+    {
+      "attempt_number": 1,
+      "generation_seconds": 32.267930833000264,
+      "raw_content": "{\n  \"schema_version\": \"1.2\",\n  \"classification\": \"measurement_error\",\n  \"explanation\": \"The current reading is flagged as implausible, meaning the data is not a reliable indicator of actual consumption patterns.\",\n  \"evidence_references\": [\n    {\n      \"path\": \"observation.value_implausible\"\n    }\n  ],\n  \"user_recommendation\": \"No specific action is recommended.\",\n  \"uncertainty\": \"none\"\n}",
+      "valid": true,
+      "validation_error": null
+    }
+  ],
+  "case_id": "measurement_error",
+  "error": null,
+  "expected_classification": "measurement_error",
+  "model": "gemma4:12b",
+  "output": {
+    "classification": "measurement_error",
+    "evidence_references": [
+      {
+        "path": "observation.value_implausible",
+        "value": true
+      }
+    ],
+    "explanation": "The current reading is flagged as implausible, meaning the data is not a reliable indicator of actual consumption patterns.",
+    "schema_version": "1.2",
+    "uncertainty": "none",
+    "user_recommendation": "No specific action is recommended."
+  },
+  "repetition": 1
+}

@@ -1,0 +1,4 @@
+model_id,model,model_digest,case_id,expected_classification,repetition,valid,classification,correct,attempt_count,evidence_reference_count,generation_seconds,error_kind,error
+MDL4,gemma3:12b,f4031aab637d1ffa37b42570452ae0e4fad0314754d17ded67322e4b95836f8a,normal,normal,1,True,peak,False,1,4,37.27638520800002,,
+MDL4,gemma3:12b,f4031aab637d1ffa37b42570452ae0e4fad0314754d17ded67322e4b95836f8a,normal,normal,2,True,peak,False,1,4,39.087779834,,
+MDL4,gemma3:12b,f4031aab637d1ffa37b42570452ae0e4fad0314754d17ded67322e4b95836f8a,normal,normal,3,True,peak,False,1,4,31.25877308300005,,

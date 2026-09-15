@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from experiments.proposal_experiments.config import E1Config
+from experiments.proposal_experiments.e_config import E1Config
 from experiments.proposal_experiments.shared_nilmtk import load_nilmtk_context, load_treated_mains_series
 from src.config.config_nilmtk import AnalysisConfig, DataPreparationConfig
 from src.config.project_config import ProjectConfig

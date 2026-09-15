@@ -1,0 +1,9 @@
+{
+  "attempts": [],
+  "case_id": "normal",
+  "error": "LLM client request failed during attempt 1.",
+  "expected_classification": "normal",
+  "model": "qwen3:14b",
+  "output": null,
+  "repetition": 1
+}

@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from experiments.proposal_experiments.config import E1Config
+from experiments.proposal_experiments.e_config import E1Config
 from experiments.proposal_experiments.e1_new_device.e1_scenarios import build_device_scenario
 from experiments.proposal_experiments.shared import build_decision_times, load_target_series
 from src.common.timestamps import parse_utc_timestamp

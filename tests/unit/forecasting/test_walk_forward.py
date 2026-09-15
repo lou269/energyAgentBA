@@ -40,7 +40,6 @@ def test_only_complete_horizons_are_forecasted() -> None:
         prophet_variants=(),
         growth="linear",
         daily_seasonality=True,
-        yearly_seasonality=False,
         country_holidays=None,
         local_timezone="UTC",
         log_transform=False,
@@ -73,7 +72,6 @@ def test_available_history_is_strictly_causal_and_grows_between_origins() -> Non
         prophet_variants=(),
         growth="linear",
         daily_seasonality=True,
-        yearly_seasonality=False,
         country_holidays=None,
         local_timezone="UTC",
         log_transform=False,
@@ -110,6 +108,7 @@ def test_prophet_expanding_history_grows_and_retrains_on_schedule() -> None:
         "rolling_window_hours": None,
         "retraining_interval_hours": 24,
         "weekly_seasonality": False,
+        "yearly_seasonality": False,
     }
 
     forecasts = build_walk_forward_forecasts(
@@ -126,7 +125,6 @@ def test_prophet_expanding_history_grows_and_retrains_on_schedule() -> None:
         prophet_variants=(variant,),
         growth="linear",
         daily_seasonality=False,
-        yearly_seasonality=False,
         country_holidays=None,
         local_timezone="UTC",
         log_transform=False,
@@ -160,6 +158,7 @@ def test_prophet_fixed_train_reuses_the_same_model_and_history() -> None:
         "rolling_window_hours": None,
         "retraining_interval_hours": None,
         "weekly_seasonality": False,
+        "yearly_seasonality": False,
     }
 
     forecasts = build_walk_forward_forecasts(
@@ -176,7 +175,6 @@ def test_prophet_fixed_train_reuses_the_same_model_and_history() -> None:
         prophet_variants=(variant,),
         growth="linear",
         daily_seasonality=False,
-        yearly_seasonality=False,
         country_holidays=None,
         local_timezone="UTC",
         log_transform=False,

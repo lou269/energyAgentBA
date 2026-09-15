@@ -1,0 +1,53 @@
+{
+  "attempts": [
+    {
+      "attempt_number": 1,
+      "generation_seconds": 15.19040820900409,
+      "raw_content": "{\n  \"schema_version\": \"1.2\",\n  \"classification\": \"peak\",\n  \"explanation\": \"The current reading shows unusually high consumption with a strong anomaly score of 3.5 on the daily scale, and the peak timestamp aligns with the highest predicted power value (582.136795833332 W) at 2015-12-15T20:00:00+00:00. The anomaly level is 'strong_anomaly' with high direction, and the scale_anomaly_streak_days for daily is 5.0, indicating persistence at the daily scale. However, the classification is 'peak' because the numerical evidence supports unusually high consumption on the analyzed day, and the anomaly score is high enough to indicate a peak without requiring persistence across multiple scales.\",\n  \"evidence_references\": [\n    {\n      \"path\": \"anomaly.score\"\n    },\n    {\n      \"path\": \"anomaly.level\"\n    },\n    {\n      \"path\": \"anomaly.direction\"\n    },\n    {\n      \"path\": \"anomaly.dominant_scale\"\n    },\n    {\n      \"path\": \"anomaly.scale_scores.daily\"\n    },\n    {\n      \"path\": \"anomaly.scale_anomaly_streak_days.daily\"\n    },\n    {\n      \"path\": \"observation.current_power_w\"\n    }\n  ],\n  \"user_recommendation\": \"No specific action is recommended as the peak is a normal consumption pattern for the analyzed day.\",\n  \"uncertainty\": \"Low\"\n}",
+      "valid": true,
+      "validation_error": null
+    }
+  ],
+  "case_id": "new_pattern",
+  "error": null,
+  "expected_classification": "new_pattern",
+  "model": "qwen3:4b",
+  "output": {
+    "classification": "peak",
+    "evidence_references": [
+      {
+        "path": "anomaly.score",
+        "value": 3.5
+      },
+      {
+        "path": "anomaly.level",
+        "value": "strong_anomaly"
+      },
+      {
+        "path": "anomaly.direction",
+        "value": "high"
+      },
+      {
+        "path": "anomaly.dominant_scale",
+        "value": "daily"
+      },
+      {
+        "path": "anomaly.scale_scores.daily",
+        "value": 3.5
+      },
+      {
+        "path": "anomaly.scale_anomaly_streak_days.daily",
+        "value": 5.0
+      },
+      {
+        "path": "observation.current_power_w",
+        "value": 980.0
+      }
+    ],
+    "explanation": "The current reading shows unusually high consumption with a strong anomaly score of 3.5 on the daily scale, and the peak timestamp aligns with the highest predicted power value (582.136795833332 W) at 2015-12-15T20:00:00+00:00. The anomaly level is 'strong_anomaly' with high direction, and the scale_anomaly_streak_days for daily is 5.0, indicating persistence at the daily scale. However, the classification is 'peak' because the numerical evidence supports unusually high consumption on the analyzed day, and the anomaly score is high enough to indicate a peak without requiring persistence across multiple scales.",
+    "schema_version": "1.2",
+    "uncertainty": "Low",
+    "user_recommendation": "No specific action is recommended as the peak is a normal consumption pattern for the analyzed day."
+  },
+  "repetition": 1
+}

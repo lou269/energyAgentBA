@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from experiments.proposal_experiments.config import E2Config
+from experiments.proposal_experiments.e_config import E2Config
 from experiments.proposal_experiments.e2_absence.e2_selection import load_calendar_events, resolve_absence_window
 from experiments.proposal_experiments.shared_analysis import summarize_classification_detection, summarize_mae_before_after
 from src.pipeline.io import df_to_csv

@@ -82,7 +82,6 @@ def run_forecasting(
         prophet_variants=prophet_variants,
         growth=config.growth,
         daily_seasonality=config.daily_seasonality,
-        yearly_seasonality=config.yearly_seasonality,
         country_holidays=config.country_holidays,
         local_timezone=config.timezone,
         log_transform=config.log_transform,
@@ -251,7 +250,6 @@ class ForecastingRunner:
             model_parameters={
                 "growth": self.forecasting_config.growth,
                 "daily_seasonality": self.forecasting_config.daily_seasonality,
-                "yearly_seasonality": self.forecasting_config.yearly_seasonality,
                 "country_holidays": self.forecasting_config.country_holidays,
                 "local_timezone": self.forecasting_config.timezone,
                 "log_transform": self.forecasting_config.log_transform,
@@ -262,7 +260,7 @@ class ForecastingRunner:
                 self.forecasting_config.selected_prophet_variant.model_id: {
                     "daily": self.forecasting_config.daily_seasonality,
                     "weekly": self.forecasting_config.selected_prophet_variant.weekly_seasonality,
-                    "yearly": self.forecasting_config.yearly_seasonality,
+                    "yearly": self.forecasting_config.selected_prophet_variant.yearly_seasonality,
                     "holidays": self.forecasting_config.country_holidays,
                     "local_timezone": self.forecasting_config.timezone,
                     "log_transform": self.forecasting_config.log_transform,

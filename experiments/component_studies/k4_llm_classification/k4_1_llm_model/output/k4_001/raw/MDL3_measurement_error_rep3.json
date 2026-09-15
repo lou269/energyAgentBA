@@ -1,0 +1,29 @@
+{
+  "attempts": [
+    {
+      "attempt_number": 1,
+      "generation_seconds": 15.623649417000706,
+      "raw_content": "{\n  \"schema_version\": \"1.2\",\n  \"classification\": \"measurement_error\",\n  \"explanation\": \"The current reading is implausible.\",\n  \"evidence_references\": [\n    {\"path\": \"observation.value_implausible\"}\n  ],\n  \"user_recommendation\": \"No specific action is recommended.\",\n  \"uncertainty\": \"The current reading is not trustworthy.\"\n}",
+      "valid": true,
+      "validation_error": null
+    }
+  ],
+  "case_id": "measurement_error",
+  "error": null,
+  "expected_classification": "measurement_error",
+  "model": "llama3.1:8b",
+  "output": {
+    "classification": "measurement_error",
+    "evidence_references": [
+      {
+        "path": "observation.value_implausible",
+        "value": true
+      }
+    ],
+    "explanation": "The current reading is implausible.",
+    "schema_version": "1.2",
+    "uncertainty": "The current reading is not trustworthy.",
+    "user_recommendation": "No specific action is recommended."
+  },
+  "repetition": 3
+}

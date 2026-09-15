@@ -36,7 +36,6 @@ def _b1_forecasts(
         prophet_variants=(),
         growth="linear",
         daily_seasonality=True,
-        yearly_seasonality=False,
         country_holidays=None,
         local_timezone="UTC",
         log_transform=False,

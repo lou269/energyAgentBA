@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from experiments.proposal_experiments.config import E2Config
+from experiments.proposal_experiments.e_config import E2Config
 from experiments.proposal_experiments.e2_absence.e2_scenarios import build_ctx_scenarios
 from experiments.proposal_experiments.e2_absence.e2_selection import load_calendar_events, resolve_absence_window, select_channels_for_subtraction
 from experiments.proposal_experiments.shared import build_decision_times, load_target_series, subtract_channels_in_window

@@ -279,7 +279,7 @@ def _fit_variant(
         growth=forecasting_config.growth,
         daily_seasonality=forecasting_config.daily_seasonality,
         weekly_seasonality=variant.weekly_seasonality,
-        yearly_seasonality=forecasting_config.yearly_seasonality,
+        yearly_seasonality=variant.yearly_seasonality,
         country_holidays=forecasting_config.country_holidays,
         local_timezone=forecasting_config.timezone,
         log_transform=forecasting_config.log_transform,

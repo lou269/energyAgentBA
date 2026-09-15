@@ -1,0 +1,7 @@
+model_id,case_id,expected_classification,n_repetitions,accuracy,classifications
+MDL7,absence,absence,3,0.0,"unknown,unknown,unknown"
+MDL7,measurement_error,measurement_error,3,1.0,"measurement_error,measurement_error,measurement_error"
+MDL7,new_pattern,new_pattern,3,0.0,"peak,peak,peak"
+MDL7,normal,normal,3,1.0,"normal,normal,normal"
+MDL7,peak,peak,3,1.0,"peak,peak,peak"
+MDL7,unknown,unknown,3,0.0,"normal,normal,normal"

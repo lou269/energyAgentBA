@@ -137,7 +137,6 @@ class ColdStartRunner:
             prophet_variants=prophet_variants,
             growth=self.experiment_config.growth,
             daily_seasonality=self.experiment_config.daily_seasonality,
-            yearly_seasonality=self.experiment_config.yearly_seasonality,
             country_holidays=self.experiment_config.country_holidays,
             local_timezone=self.experiment_config.timezone,
             log_transform=self.experiment_config.log_transform,
@@ -208,7 +207,6 @@ class ColdStartRunner:
             model_parameters={
                 "growth": self.experiment_config.growth,
                 "daily_seasonality": self.experiment_config.daily_seasonality,
-                "yearly_seasonality": self.experiment_config.yearly_seasonality,
                 "country_holidays": self.experiment_config.country_holidays,
                 "local_timezone": self.experiment_config.timezone,
                 "log_transform": self.experiment_config.log_transform,
@@ -219,7 +217,7 @@ class ColdStartRunner:
                 variant.model_id: {
                     "daily": self.experiment_config.daily_seasonality,
                     "weekly": variant.weekly_seasonality,
-                    "yearly": self.experiment_config.yearly_seasonality,
+                    "yearly": variant.yearly_seasonality,
                     "holidays": self.experiment_config.country_holidays,
                     "local_timezone": self.experiment_config.timezone,
                     "log_transform": self.experiment_config.log_transform,

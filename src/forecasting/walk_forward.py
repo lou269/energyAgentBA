@@ -15,6 +15,7 @@ class ProphetVariantParameters(TypedDict):
     rolling_window_hours: int | None
     retraining_interval_hours: int | None
     weekly_seasonality: bool
+    yearly_seasonality: bool
 
 
 _BASELINE_BUILDERS = {
@@ -39,7 +40,6 @@ def build_walk_forward_forecasts(
     prophet_variants: tuple[ProphetVariantParameters, ...],
     growth: str,
     daily_seasonality: bool,
-    yearly_seasonality: bool,
     country_holidays: str | None,
     local_timezone: str,
     log_transform: bool,
@@ -226,7 +226,7 @@ def build_walk_forward_forecasts(
                     growth=growth,
                     daily_seasonality=daily_seasonality,
                     weekly_seasonality=variant["weekly_seasonality"],
-                    yearly_seasonality=yearly_seasonality,
+                    yearly_seasonality=variant["yearly_seasonality"],
                     country_holidays=country_holidays,
                     local_timezone=local_timezone,
                     log_transform=log_transform,
@@ -256,7 +256,7 @@ def build_walk_forward_forecasts(
             seasonality_config = (
                 f"daily={daily_seasonality};"
                 f"weekly={variant['weekly_seasonality']};"
-                f"yearly={yearly_seasonality};"
+                f"yearly={variant['yearly_seasonality']};"
                 f"holidays={country_holidays};"
                 f"tz={local_timezone};"
                 f"log={log_transform}"

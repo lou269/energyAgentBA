@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import Literal
 
@@ -66,6 +68,7 @@ class ProphetVariantConfig:
     rolling_window_hours: int | None
     retraining_interval_hours: int | None
     weekly_seasonality: bool = False
+    yearly_seasonality: bool = False
 
 
 ''' FORECASTING '''
@@ -100,7 +103,6 @@ class ForecastingConfig:
     # Gemeinsame Prophet-Konfiguration
     growth: str = "linear"
     daily_seasonality: bool = True
-    yearly_seasonality: bool = False
     country_holidays: str | None = "UK"
     # Prophet fitted auf log(y) statt y, Rücktransformation via exp() nach dem Predict
     log_transform: bool = True
@@ -119,7 +121,7 @@ class ForecastingConfig:
 @dataclass(frozen=True)
 class LLMConfig:
     model: str
-    prompt_version: str = "v8"
+    prompt_version: str = "v9"
     temperature: float = 0.0
     seed: int | None = 42
     max_attempts: int = 2

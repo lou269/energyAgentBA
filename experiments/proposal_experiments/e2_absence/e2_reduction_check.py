@@ -9,7 +9,7 @@ from typing import cast
 
 import pandas as pd
 
-from experiments.proposal_experiments.config import E2Config
+from experiments.proposal_experiments.e_config import E2Config
 from experiments.proposal_experiments.e2_absence.e2_selection import (
     load_calendar_events,
     resolve_absence_window,
