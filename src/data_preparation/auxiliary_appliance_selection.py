@@ -18,13 +18,12 @@ PRESENCE_EXCLUDED_CHANNELS: dict[str, str] = {
     "H1_M12": "fridge - Kühlschrank, läuft unabhängig von Anwesenheit durch",
     "H1_M18": "adsl_router - Router, läuft unabhängig von Anwesenheit durch",
     "H1_M21": "gigE_&_USBhub - Netzwerk-Hardware, läuft unabhängig von Anwesenheit durch",
-    "H1_M43": "data_logger_pc - Messrechner der UK-DALE-Erfassung selbst, kein Haushaltsgerät, läuft zwangsläufig durchgehend; taucht in channel_registry.csv"
-    "nur als 'computer / external hard disk' auf",
-    "H1_M46": "baby_monitor_tx - an Kind/Betreuung gekoppelt, nicht zwingend an Abwesenheit des ganzen Haushalts"
+    "H1_M43": "data_logger_pc - Messrechner der UK-DALE-Erfassung selbst, kein Haushaltsgerät, läuft zwangsläufig durchgehend; taucht in channel_registry.csv nur als 'computer / external hard disk' auf"
 }
 
 REQUIRED_REGISTRY_COLUMNS = MERGE_KEYS + ["appliances"]
 REQUIRED_QUALITY_COLUMNS = MERGE_KEYS + ["is_mains", "start", "end", "sampling_share", "quality_error"]
+RANKING_COLUMNS = ["meter_key", "appliance", "coverage_share", "activity_share", "rank"]
 
 
 def filter_candidate_channels(
@@ -80,14 +79,13 @@ def rank_by_coverage(
     window_start: pd.Timestamp,
     window_end: pd.Timestamp,
 ) -> pd.DataFrame:
-
     if candidates.empty:
-        return pd.DataFrame(columns=["meter_key", "appliance", "coverage_share", "activity_share", "rank"])
+        return pd.DataFrame(columns=RANKING_COLUMNS)
 
-    windowed_quality = quality.loc[window_start : window_end - pd.Timedelta(seconds=1)]
-    windowed_data = data.loc[window_start : window_end - pd.Timedelta(seconds=1)]
-    windowed_mains = mains_data.loc[window_start : window_end - pd.Timedelta(seconds=1)]
-    mains_sum = float(windowed_mains.sum()) if not windowed_mains.empty else 0.0
+    window_end_inclusive = window_end - pd.Timedelta(seconds=1)
+    windowed_quality = quality.loc[window_start:window_end_inclusive]
+    windowed_data = data.loc[window_start:window_end_inclusive]
+    mains_sum = float(mains_data.loc[window_start:window_end_inclusive].sum())
 
     rows: list[dict[str, object]] = []
 
@@ -113,7 +111,6 @@ def rank_by_coverage(
                 "activity_share": activity_share,
             }
         )
-        
 
     ranked = pd.DataFrame(rows).sort_values(
         by=["activity_share", "coverage_share", "meter_key"],
@@ -129,6 +126,7 @@ def rank_by_coverage(
 class AuxiliaryApplianceSelection:
     ranking: pd.DataFrame  # meter_key, appliance, coverage_share, activity_share, rank -> nach activity_share absteigend sortiert
     data_hourly: pd.DataFrame  # echte, aggregierte Stundenwerte der Kandidaten im Zielfenster (W) -> für die eigentliche Addition/Subtraktion in E1/E2, kein zweiter Load nötig
+    quality_hourly: pd.DataFrame  # {meter_key}_coverage_share/_coverage_mask/_valid_observation_count je Kandidat und Stunde -> für zeitlich aufgelöste Abdeckungs-Checks (z.B. E1-Cutover-Wahl)
 
 
 def build_auxiliary_appliance_selection(
@@ -144,9 +142,9 @@ def build_auxiliary_appliance_selection(
     min_coverage_share: float,
     min_sampling_share: float,
     excluded_channels: dict[str, str] = PRESENCE_EXCLUDED_CHANNELS,
+    restrict_to_meter_keys: set[str] | None = None,
 ) -> AuxiliaryApplianceSelection:
-   
-   
+
     candidates = filter_candidate_channels(
         channel_registry,
         channel_quality,
@@ -157,10 +155,12 @@ def build_auxiliary_appliance_selection(
         min_sampling_share=min_sampling_share,
     )
 
-    empty_ranking = pd.DataFrame(columns=["meter_key", "appliance", "coverage_share", "activity_share", "rank"])
+    if restrict_to_meter_keys is not None:
+        candidates = candidates.loc[candidates["meter_key"].isin(restrict_to_meter_keys)]
 
     if candidates.empty:
-        return AuxiliaryApplianceSelection(ranking=empty_ranking, data_hourly=pd.DataFrame())
+        empty_ranking = pd.DataFrame(columns=RANKING_COLUMNS)
+        return AuxiliaryApplianceSelection(ranking=empty_ranking, data_hourly=pd.DataFrame(), quality_hourly=pd.DataFrame())
 
     loaded_channels = build_loaded_channels(
         dataset=dataset,
@@ -193,4 +193,5 @@ def build_auxiliary_appliance_selection(
     return AuxiliaryApplianceSelection(
         ranking=ranking,
         data_hourly=data_hourly.loc[window_start : window_end - pd.Timedelta(hours=1)],
+        quality_hourly=quality_hourly.loc[window_start : window_end - pd.Timedelta(hours=1)],
     )

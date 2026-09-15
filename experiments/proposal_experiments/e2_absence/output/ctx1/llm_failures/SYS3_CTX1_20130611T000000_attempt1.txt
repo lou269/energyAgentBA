@@ -1,4 +1,0 @@
-{
-  "schema_version": "1.1",
-  "classification": "absence",
-  "explanation": "The current power consumption is significantly lower than expected, supported

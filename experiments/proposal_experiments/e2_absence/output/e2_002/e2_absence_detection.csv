@@ -1,0 +1,6 @@
+config,post_event_days,target_classification,target_classification_days,first_detection,days_to_first_detection,adaption_count
+SYS1,12,absence,0,,,0
+SYS2_CTX0,12,absence,0,,,0
+SYS2_CTX1,12,absence,0,,,0
+SYS3_CTX0,12,absence,0,,,0
+SYS3_CTX1,12,absence,0,,,0

@@ -10,8 +10,6 @@ import argparse
 import logging
 import subprocess
 
-import pandas as pd
-
 from src.common.column_naming import imputation_column, treated_column
 from src.config.config_forecasting import ForecastingConfig, PreprocessingConfig
 from src.config.project_config import ProjectConfig, ensure_project_directories
@@ -20,6 +18,7 @@ from src.llm.llm_runner import PROMPT_DIRECTORY
 from src.pipeline.comparison_harness import build_scenario_from_split_manifest, create_cycle_run_id, run_comparison
 from src.pipeline.cycle_variants import SYS_VARIANTS
 from src.pipeline.daily_cycle import CycleConfig
+from src.pipeline.io import read_canonical_frame, read_target_meter_key
 from src.preprocessing.preprocessing_runner import run_preprocessing
 
 logger = logging.getLogger(__name__)
@@ -45,23 +44,6 @@ def run_data_preparation() -> None:
         ],
         check=True,
     )
-
-
-def _read_canonical(project_config: ProjectConfig, name: str) -> pd.DataFrame:
-    return pd.read_csv(
-        project_config.canonical_output_dir / f"{name}.csv",
-        parse_dates=["timestamp"],
-        index_col="timestamp",
-    )
-
-
-def _read_target_meter_key(project_config: ProjectConfig) -> str:
-    canonical_manifest = pd.read_csv(project_config.canonical_output_dir / "canonical_manifest.csv")
-
-    if len(canonical_manifest) != 1:
-        raise ValueError("Canonical manifest must contain exactly one mains target.")
-
-    return str(canonical_manifest.iloc[0]["meter_key"])
 
 
 def _parse_configs(labels: str) -> dict[str, CycleConfig]:
@@ -95,16 +77,16 @@ def main() -> None:
         logger.info("=== data_preparation [%s] ===", DATA_PREPARATION_ENVIRONMENT)
         run_data_preparation()
 
-    target_meter_key = _read_target_meter_key(project_config)
+    target_meter_key = read_target_meter_key(project_config)
     target_column = treated_column(target_meter_key)
 
     logger.info("Running preprocessing for target column %s...", target_column)
 
     preprocessing_result = run_preprocessing(
-        _read_canonical(project_config, "canonical_data_15min"),
-        _read_canonical(project_config, "canonical_quality_15min"),
-        _read_canonical(project_config, "canonical_data_hourly"),
-        _read_canonical(project_config, "canonical_quality_hourly"),
+        read_canonical_frame(project_config, "canonical_data_15min"),
+        read_canonical_frame(project_config, "canonical_quality_15min"),
+        read_canonical_frame(project_config, "canonical_data_hourly"),
+        read_canonical_frame(project_config, "canonical_quality_hourly"),
         PreprocessingConfig(),
     )
 

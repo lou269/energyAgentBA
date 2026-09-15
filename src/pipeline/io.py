@@ -7,6 +7,25 @@ from typing import Any
 
 import pandas as pd
 
+from src.config.project_config import ProjectConfig
+
+
+def read_canonical_frame(project_config: ProjectConfig, name: str) -> pd.DataFrame:
+    return pd.read_csv(
+        project_config.canonical_output_dir / f"{name}.csv",
+        parse_dates=["timestamp"],
+        index_col="timestamp",
+    )
+
+
+def read_target_meter_key(project_config: ProjectConfig) -> str:
+    canonical_manifest = pd.read_csv(project_config.canonical_output_dir / "canonical_manifest.csv")
+
+    if len(canonical_manifest) != 1:
+        raise ValueError("Canonical manifest must contain exactly one mains target.")
+
+    return str(canonical_manifest.iloc[0]["meter_key"])
+
 
 def df_to_csv(df: pd.DataFrame, output_path: Path, filename: str) -> None:
     output_file = output_path / f"{filename}.csv"

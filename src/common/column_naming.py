@@ -1,6 +1,3 @@
-from __future__ import annotations
-
-
 def channel_data_column(meter_key: str, resolution: str) -> str:
     return f"{meter_key}_mean_{resolution}"
 
