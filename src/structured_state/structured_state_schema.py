@@ -1,11 +1,11 @@
 import math
 from collections.abc import Mapping
-from typing import Literal, TypedDict
+from typing import Literal, TypedDict, cast
 
 import pandas as pd
 
 from src.common.timestamps import parse_utc_timestamp_field
-from src.config.config_forecasting import ForecastingConfig, NumericalAnalysisConfig
+from src.config.config_forecasting import ForecastingConfig
 from src.context.calendar_schema import CALENDAR_CONTEXT_FIELDS, CalendarEvent, validate_calendar_context
 from src.numerical_analysis.anomaly_detection import resolve_dominant_scale
 from src.pipeline.schema_validation import is_real_number, validate_fields
@@ -14,12 +14,10 @@ from src.pipeline.schema_validation import is_real_number, validate_fields
 SCHEMA_VERSION = "1.3"
 FORECAST_HORIZON_HOURS = ForecastingConfig().horizon_hours
 
-ANOMALY_WINDOW_HOURS = NumericalAnalysisConfig().anomaly_window_hours
-
 FLOAT_COMPARISON_REL_TOL = 1e-9
 FLOAT_COMPARISON_ABS_TOL = 1e-9
 
-ScaleName = Literal["short_term", "daily", "weekly", "long_term"]
+ScaleName = Literal["daily", "weekly", "long_term"]
 TrendName = Literal["stable", "increasing", "decreasing"]
 AnomalyLevel = Literal["normal", "unusual", "strong_anomaly"]
 AnomalyDirection = Literal["high", "low"]
@@ -30,7 +28,7 @@ ANOMALY_LEVELS: tuple[AnomalyLevel, ...] = ("normal", "unusual", "strong_anomaly
 
 ANOMALY_DIRECTIONS: tuple[AnomalyDirection, ...] = ("high", "low")
 
-SCALE_NAMES: tuple[ScaleName, ...] = ("short_term", "daily", "weekly", "long_term")
+SCALE_NAMES: tuple[ScaleName, ...] = ("daily", "weekly", "long_term")
 
 OBSERVATION_FIELDS = frozenset(
     {"observation_start", "observation_end", "current_power_w", "value_implausible"}
@@ -38,7 +36,6 @@ OBSERVATION_FIELDS = frozenset(
 
 ANALYSIS_FIELDS = frozenset(
     {
-        "short_term_mean_w",
         "daily_expected_w",
         "weekly_expected_w",
         "long_term_mean_w",
@@ -56,7 +53,7 @@ ANOMALY_FIELDS = frozenset(
         "dominant_scale",
         "peak_timestamp",
         "scale_scores",
-        "scale_elevated_hours",
+        "scale_anomaly_streak_days",
         "available_scales",
     }
 )
@@ -104,7 +101,6 @@ class ObservationState(TypedDict):
 
 
 class AnalysisState(TypedDict):
-    short_term_mean_w: float | None
     daily_expected_w: float | None
     weekly_expected_w: float | None
     long_term_mean_w: float | None
@@ -114,14 +110,12 @@ class AnalysisState(TypedDict):
 
 
 class ScaleScores(TypedDict):
-    short_term: float | None
     daily: float | None
     weekly: float | None
     long_term: float | None
 
 
-class ScaleElevatedHours(TypedDict):
-    short_term: float | None
+class ScaleAnomalyStreakDays(TypedDict):
     daily: float | None
     weekly: float | None
     long_term: float | None
@@ -134,7 +128,7 @@ class AnomalyState(TypedDict):
     dominant_scale: ScaleName | None
     peak_timestamp: str | None
     scale_scores: ScaleScores
-    scale_elevated_hours: ScaleElevatedHours
+    scale_anomaly_streak_days: ScaleAnomalyStreakDays
     available_scales: list[ScaleName]
 
 
@@ -197,11 +191,11 @@ def validate_structured_state(
     observation_start = parse_utc_timestamp_field(observation["observation_start"], "observation.observation_start")
     observation_end = parse_utc_timestamp_field(observation["observation_end"], "observation.observation_end")
 
-    if observation_start != decision_time - pd.Timedelta(hours=1):
-        raise ValueError("observation_start must be exactly one hour before decision_time.")
-
     if observation_end != decision_time:
         raise ValueError("observation_end must equal decision_time.")
+
+    if observation_start >= observation_end:
+        raise ValueError("observation_start must be before observation_end.")
 
     _number(observation["current_power_w"], "observation.current_power_w", nullable=True)
 
@@ -212,7 +206,6 @@ def validate_structured_state(
     validate_fields(analysis, ANALYSIS_FIELDS, "analysis")
 
     for field in (
-        "short_term_mean_w",
         "daily_expected_w",
         "weekly_expected_w",
         "long_term_mean_w",
@@ -257,16 +250,16 @@ def validate_structured_state(
         if scale_score is not None:
             validated_scale_scores[scale] = float(scale_score)
 
-    scale_elevated_hours = _mapping(anomaly["scale_elevated_hours"], "anomaly.scale_elevated_hours")
-    validate_fields(scale_elevated_hours, frozenset(SCALE_NAMES), "anomaly.scale_elevated_hours")
+    scale_streak_days = _mapping(anomaly["scale_anomaly_streak_days"], "anomaly.scale_anomaly_streak_days")
+    validate_fields(scale_streak_days, frozenset(SCALE_NAMES), "anomaly.scale_anomaly_streak_days")
 
     for scale in SCALE_NAMES:
-        elevated_hours = _number(scale_elevated_hours[scale], f"anomaly.scale_elevated_hours.{scale}", nullable=True)
-        if (elevated_hours is not None) != (scale in validated_scale_scores):
-            raise ValueError(f"anomaly.scale_elevated_hours.{scale} must be null exactly when anomaly.scale_scores.{scale} is null.")
+        streak_days = _number(scale_streak_days[scale], f"anomaly.scale_anomaly_streak_days.{scale}", nullable=True)
+        if (streak_days is not None) != (scale in validated_scale_scores):
+            raise ValueError(f"anomaly.scale_anomaly_streak_days.{scale} must be null exactly when anomaly.scale_scores.{scale} is null.")
 
-        if elevated_hours is not None and elevated_hours < 0:
-            raise ValueError(f"anomaly.scale_elevated_hours.{scale} must not be negative.")
+        if streak_days is not None and streak_days < 0:
+            raise ValueError(f"anomaly.scale_anomaly_streak_days.{scale} must not be negative.")
 
     available_scales = anomaly["available_scales"]
 
@@ -296,13 +289,13 @@ def validate_structured_state(
         if peak_timestamp > decision_time - pd.Timedelta(hours=1):
             raise ValueError("anomaly.peak_timestamp must not be after the analyzed hour.")
 
-        if peak_timestamp < decision_time - pd.Timedelta(hours=ANOMALY_WINDOW_HOURS):
-            raise ValueError("anomaly.peak_timestamp must lie within the anomaly aggregation window.")
-
         if anomaly["dominant_scale"] not in available_scales:
             raise ValueError("anomaly.dominant_scale must be an available scale.")
 
-        expected_dominant_scale, expected_score, expected_direction = resolve_dominant_scale(validated_scale_scores)
+        # Mapping ist im Key-Typ invariant - ScaleName ist ein str-Literal, aber nicht "str" selbst
+        expected_dominant_scale, expected_score, expected_direction = resolve_dominant_scale(
+            cast(Mapping[str, float], validated_scale_scores)
+        )
 
         if score is None or not _float_matches(float(score), expected_score):
             raise ValueError("anomaly.score must match the largest absolute available scale score.")

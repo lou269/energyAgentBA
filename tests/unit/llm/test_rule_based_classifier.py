@@ -16,7 +16,7 @@ def test_measurement_error_takes_priority_over_the_anomaly_pattern() -> None:
     state = valid_structured_state()
     state["observation"]["value_implausible"] = True
 
-    result = rule_based_classify(state, sustained_daily_elevated_hours=18.0, multi_scale_minimum=2)
+    result = rule_based_classify(state, sustained_anomaly_streak_days=3, multi_scale_minimum=2)
 
     assert result.classification == "measurement_error"
 
@@ -25,10 +25,10 @@ def test_strong_sustained_low_deviation_is_an_absence() -> None:
     state = _state(
         direction="low",
         dominant_scale="daily",
-        scale_elevated_hours={"short_term": 1.0, "daily": 30.0, "weekly": 1.0, "long_term": 1.0},
+        scale_anomaly_streak_days={"daily": 5.0, "weekly": 1.0, "long_term": 1.0},
     )
 
-    result = rule_based_classify(state, sustained_daily_elevated_hours=18.0, multi_scale_minimum=2)
+    result = rule_based_classify(state, sustained_anomaly_streak_days=3, multi_scale_minimum=2)
 
     assert result.classification == "absence"
 
@@ -37,18 +37,18 @@ def test_sustained_deviation_across_two_scales_is_a_new_pattern() -> None:
     # direction bleibt "high" (Basiszustand) - sonst greift  absence-Regel zuerst
     state = _state(
         dominant_scale="daily",
-        scale_elevated_hours={"short_term": 1.0, "daily": 30.0, "weekly": 25.0, "long_term": 1.0},
+        scale_anomaly_streak_days={"daily": 5.0, "weekly": 4.0, "long_term": 1.0},
     )
 
-    result = rule_based_classify(state, sustained_daily_elevated_hours=18.0, multi_scale_minimum=2)
+    result = rule_based_classify(state, sustained_anomaly_streak_days=3, multi_scale_minimum=2)
 
     assert result.classification == "new_pattern"
 
 
 def test_unsustained_anomaly_falls_back_to_peak() -> None:
-    # unveränderter Fixture-Zustand: strong_anomaly, aber alle scale_elevated_hours nur 1.0
+    # unveränderter Fixture-Zustand: strong_anomaly, aber alle scale_anomaly_streak_days nur 1.0
     state = valid_structured_state()
 
-    result = rule_based_classify(state, sustained_daily_elevated_hours=18.0, multi_scale_minimum=2)
+    result = rule_based_classify(state, sustained_anomaly_streak_days=3, multi_scale_minimum=2)
 
     assert result.classification == "peak"

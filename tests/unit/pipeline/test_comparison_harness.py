@@ -48,9 +48,9 @@ class _AlwaysEmptyClient:
 
 
 def _synthetic_scenario(
-    *, 
-    hours: int = 240, 
-    coldstart_hours: int = 72, 
+    *,
+    hours: int = 360,
+    coldstart_hours: int = 144,
     decision_count: int = 2
 ) -> ScenarioData:
     index = pd.date_range("2024-01-01", periods=hours, freq="1h", tz="UTC")
@@ -127,7 +127,7 @@ def test_build_scenario_from_split_manifest_integrates_with_run_comparison(tmp_p
         ]
     )
 
-    scenario = build_scenario_from_split_manifest(treated_hourly, split_manifest, "target", coldstart_hours=72)
+    scenario = build_scenario_from_split_manifest(treated_hourly, split_manifest, "target", coldstart_hours=144)
     result = run_comparison(scenario, {"SYS0": SYS_VARIANTS["SYS0"]}, tmp_path, PROJECT_ROOT)
 
     assert len(result) == len(scenario.decision_times)
@@ -199,21 +199,25 @@ def test_run_comparison_with_target_imputed_shorter_than_forecast_horizon(tmp_pa
     assert result["mae_w"].apply(math.isfinite).all()
 
 
+def _series_with_a_sustained_jump(hours: int, coldstart_hours: int, *, seed: int = 1) -> pd.Series:
+    
+    index = pd.date_range("2024-01-01", periods=hours, freq="1h", tz="UTC")
+    day_of_series = np.arange(hours) // 24
+    jitter_by_day = np.random.default_rng(seed).normal(0.0, 5.0, size=day_of_series.max() + 1)
+    values = 200.0 + 50.0 * np.sin(2 * np.pi * index.hour.to_numpy() / 24) + jitter_by_day[day_of_series]
+    values[coldstart_hours:] += 300.0
+    return pd.Series(values, index=index, name="target")
+
+
 def test_run_comparison_survives_llm_inference_failures(tmp_path: Path) -> None:
     # Ollama liefert gelegentlich ungültige Ausgaben -> Fehlschlag darf Vergleichslauf nciht abbrechen
-    #
-    # cos() statt sin(): decision_times liegen alle auf derselben Tagesphase (24h-Abstand ab coldstart_hours=72 -> immer Stunde 0) 
-    # -> bei sin() fällt das genau auf den Nulldurchgang,
-    # residual wäre dort immer 0 und "normal" statt "auffällig" -> mit cos() ist der Ausschlag an Stunde 0 maximal, 
-    # garantiert also einen echten anomaly_level != "normal" pro Zyklus.
-    hours, coldstart_hours = 240, 72
-    index = pd.date_range("2024-01-01", periods=hours, freq="1h", tz="UTC")
-    values = 200.0 + 50.0 * np.cos(2 * np.pi * index.hour.to_numpy() / 24) + 10.0
+    hours, coldstart_hours = 24 * 30, 24 * 24
+    series = _series_with_a_sustained_jump(hours, coldstart_hours)
     scenario = ScenarioData(
-        target_series=pd.Series(values, index=index, name="target"),
+        target_series=series,
         coldstart_hours=coldstart_hours,
         decision_times=tuple(
-            pd.date_range(start=index[coldstart_hours] + pd.Timedelta(hours=1), periods=3, freq="24h")
+            pd.date_range(start=series.index[coldstart_hours] + pd.Timedelta(hours=1), periods=3, freq="24h")
         ),
         calendar_events=(),
         calendar_source_available=False,
@@ -225,7 +229,7 @@ def test_run_comparison_survives_llm_inference_failures(tmp_path: Path) -> None:
         base_config,
         llm_mode="real",
         llm_config=LLMConfig(model="test-model", max_attempts=1),
-        numerical_analysis_config=replace(base_config.numerical_analysis_config, min_reference_samples=5, unusual_threshold=1.0),
+        numerical_analysis_config=replace(base_config.numerical_analysis_config, min_reference_samples_daily=5),
     )
 
     result = run_comparison(
@@ -244,16 +248,14 @@ def test_run_comparison_survives_llm_inference_failures(tmp_path: Path) -> None:
 
 
 def test_run_comparison_records_rule_based_explanation(tmp_path: Path) -> None:
-    # gleiches cos()-Muster wie oben, garantiert eine echte Anomalie pro Zyklus -> rule_based_classify
-    # wird aufgerufen und liefert eine reasoning, die hier als "explanation" landen muss
-    hours, coldstart_hours = 240, 72
-    index = pd.date_range("2024-01-01", periods=hours, freq="1h", tz="UTC")
-    values = 200.0 + 50.0 * np.cos(2 * np.pi * index.hour.to_numpy() / 24) + 10.0
+    # garantiert eine echte Anomalie pro Zyklus -> rule_based_classify wird aufgerufen und liefert eine reasoning, die hier als "explanation" landen muss
+    hours, coldstart_hours = 24 * 30, 24 * 24
+    series = _series_with_a_sustained_jump(hours, coldstart_hours, seed=2)
     scenario = ScenarioData(
-        target_series=pd.Series(values, index=index, name="target"),
+        target_series=series,
         coldstart_hours=coldstart_hours,
         decision_times=tuple(
-            pd.date_range(start=index[coldstart_hours] + pd.Timedelta(hours=1), periods=2, freq="24h")
+            pd.date_range(start=series.index[coldstart_hours] + pd.Timedelta(hours=1), periods=2, freq="24h")
         ),
         calendar_events=(),
         calendar_source_available=False,
@@ -263,7 +265,7 @@ def test_run_comparison_records_rule_based_explanation(tmp_path: Path) -> None:
     base_config = SYS_VARIANTS["SYS2"]
     config = replace(
         base_config,
-        numerical_analysis_config=replace(base_config.numerical_analysis_config, min_reference_samples=5, unusual_threshold=1.0),
+        numerical_analysis_config=replace(base_config.numerical_analysis_config, min_reference_samples_daily=5),
     )
 
     result = run_comparison(scenario, {"SYS2": config}, tmp_path, PROJECT_ROOT)

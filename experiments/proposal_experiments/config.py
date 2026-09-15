@@ -28,9 +28,10 @@ class E2Config:
 
     decision_time_margin_before_days: int = 7
     decision_time_margin_after_days: int = 4
-    
-    
-    coldstart_hours: int = 168
+
+    # länger als die 7 Tage im Proposal ->  Tages-Anomalieerkennung braucht genug Wochentag-Wiederholungen im Training 
+    # (min_weekly_reference_samples braucht mind. 4 desselben Wochentags)
+    coldstart_hours: int = 60 * 24
 
     min_coverage_share_for_subtraction: float = 0.9
     

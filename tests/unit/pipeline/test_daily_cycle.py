@@ -36,9 +36,12 @@ def _calendar_context(decision_time: pd.Timestamp):
     )
 
 
-def _calm_series(hours: int) -> pd.Series:
+def _calm_series(hours: int, *, day_jitter_w: float = 5.0, seed: int = 42) -> pd.Series:
+
     index = pd.date_range("2024-01-01", periods=hours, freq="1h", tz="UTC")
-    values = 200.0 + 2.0 * np.sin(2 * np.pi * index.hour.to_numpy() / 24)
+    day_of_series = np.arange(hours) // 24
+    jitter_by_day = np.random.default_rng(seed).normal(0.0, day_jitter_w, size=day_of_series.max() + 1)
+    values = 200.0 + 2.0 * np.sin(2 * np.pi * index.hour.to_numpy() / 24) + jitter_by_day[day_of_series]
     return pd.Series(values, index=index, name="target")
 
 
@@ -74,100 +77,82 @@ def test_new_observations_must_end_one_hour_before_decision_time() -> None:
         run_cycle(_state(history), new_observations, wrong_decision_time, SYS_VARIANTS["SYS0"])
 
 
-def test_classification_is_unknown_when_reference_is_insufficient() -> None:
-    # min_reference_samples default ist 100 - 45 Trainingsstunden reichen bewusst nicht, um den "zu wenig Referenzdaten" statt "normal"-Fall zu treffen
-    series = _calm_series(50)
-    coldstart_hours = 45
+def _run_single_cycle(series: pd.Series, coldstart_hours: int, config) -> tuple:
+    
     state = _state(series.iloc[:coldstart_hours])
-    decision_time = series.index[coldstart_hours] + pd.Timedelta(hours=1)
+    decision_time = series.index[coldstart_hours + 24]
     new_observations = series.loc[state.history.index[-1] + pd.Timedelta(hours=1) : decision_time - pd.Timedelta(hours=1)]
+    return run_cycle(state, new_observations, decision_time, config, calendar_context=_calendar_context(decision_time))
+
+
+def test_classification_is_unknown_when_reference_is_insufficient() -> None:
+    # min_reference_samples_daily default ist 21 - ein einziger Trainingstag reicht bewusst nicht
+    series = _calm_series(24 * 6)
     config = replace(SYS_VARIANTS["SYS1"], llm_mode="rule")
 
-    result, _ = run_cycle(state, new_observations, decision_time, config, calendar_context=_calendar_context(decision_time))
+    result, _ = _run_single_cycle(series, coldstart_hours=100, config=config)
 
     assert result.classification == "unknown"
     assert result.rule_output is None
 
 
 def test_classification_is_normal_without_calling_the_rule_classifier() -> None:
-    series = _calm_series(24 * 10)
-    coldstart_hours = 24 * 8
-    state = _state(series.iloc[:coldstart_hours])
-    decision_time = series.index[coldstart_hours] + pd.Timedelta(hours=1)
-    new_observations = series.loc[state.history.index[-1] + pd.Timedelta(hours=1) : decision_time - pd.Timedelta(hours=1)]
+    series = _calm_series(24 * 50)
     config = replace(SYS_VARIANTS["SYS1"], llm_mode="rule")
 
-    result, _ = run_cycle(state, new_observations, decision_time, config, calendar_context=_calendar_context(decision_time))
+    result, _ = _run_single_cycle(series, coldstart_hours=24 * 48, config=config)
 
     assert result.analysis_row["anomaly_level"] == "normal"
     assert result.classification == "normal"
     assert result.rule_output is None
 
 
-def test_isolated_single_hour_spike_is_filtered_as_noise() -> None:
-    series = _calm_series(24 * 10)
-    coldstart_hours = 24 * 8
+def test_isolated_single_hour_spike_is_diluted_by_the_daily_mean() -> None:
+    series = _calm_series(24 * 50)
+    coldstart_hours = 24 * 48
     values = series.to_numpy().copy()
-    spike_index = coldstart_hours
-    values[spike_index] = 600.0
+    values[coldstart_hours] = 300.0
     series = pd.Series(values, index=series.index, name="target")
-
-    state = _state(series.iloc[:coldstart_hours])
-    decision_time = series.index[coldstart_hours] + pd.Timedelta(hours=1)
-    new_observations = series.loc[state.history.index[-1] + pd.Timedelta(hours=1) : decision_time - pd.Timedelta(hours=1)]
     config = replace(SYS_VARIANTS["SYS1"], llm_mode="rule")
 
-    result, _ = run_cycle(state, new_observations, decision_time, config, calendar_context=_calendar_context(decision_time))
+    result, _ = _run_single_cycle(series, coldstart_hours=coldstart_hours, config=config)
 
-    assert result.analysis_row["anomaly_level"] in ("unusual", "strong_anomaly")
+   
+    assert result.analysis_row["anomaly_level"] == "normal"
     assert result.classification == "normal"
-    assert result.rule_output is None
 
 
-def test_sustained_absence_triggers_immediate_retrain_and_range_exclusion() -> None:
-    # Werte gewählt, dass der Drop beim ersten decision_time erst 6h alt ist (über min_elevated_hours_for_gate,
-    # das Gate lässt es also durch, aber klar unter SUSTAINED_DAILY_ELEVATED_HOURS -> "peak") und beim zweiten
-    # im 24h-Fenster durchgehend auffällig war (klar über der 18h-Schwelle, -> "absence") -> rule_based_classifier.py
-    hours = 24 * 12
-    index = pd.date_range("2024-01-01", periods=hours, freq="1h", tz="UTC")
-    baseline = 200.0 + 2.0 * np.sin(2 * np.pi * index.hour.to_numpy() / 24)
-    drop_start = 24 * 6
-    drop_len = 40
-    values = baseline.copy()
-    values[drop_start : drop_start + drop_len] = 5.0
-    series = pd.Series(values, index=index, name="target")
+def _advance_one_day(series: pd.Series, state: CycleState, config) -> tuple:
+    decision_time = state.history.index[-1] + pd.Timedelta(hours=1) + pd.Timedelta(hours=24)
+    new_observations = series.loc[state.history.index[-1] + pd.Timedelta(hours=1) : decision_time - pd.Timedelta(hours=1)]
+    return run_cycle(state, new_observations, decision_time, config, calendar_context=_calendar_context(decision_time))
 
-    coldstart_hours = drop_start - 3
+
+def test_sustained_absence_triggers_retrain_and_range_exclusion() -> None:
+    hours = 24 * 90
+    series = _calm_series(hours, day_jitter_w=5.0)
+    values = series.to_numpy().copy()
+    drop_start = 60 * 24
+    values[drop_start : drop_start + 6 * 24] = 5.0
+    series = pd.Series(values, index=series.index, name="target")
+
     config = SYS_VARIANTS["SYS2"]
-    state = _state(series.iloc[:coldstart_hours])
-    
-    warmup_decision_time = series.index[coldstart_hours] + pd.Timedelta(hours=1)
-    new_observations = series.loc[state.history.index[-1] + pd.Timedelta(hours=1) : warmup_decision_time - pd.Timedelta(hours=1)]
-    _, state = run_cycle(state, new_observations, warmup_decision_time, config, calendar_context=_calendar_context(warmup_decision_time))
+    state = _state(series.iloc[:drop_start])
 
-    first_decision_time = series.index[drop_start + 6]
-    new_observations = series.loc[state.history.index[-1] + pd.Timedelta(hours=1) : first_decision_time - pd.Timedelta(hours=1)]
-    first_result, state = run_cycle(state, new_observations, first_decision_time, config, calendar_context=_calendar_context(first_decision_time))
-
+    # ein Tag in den Drop hinein, Streak ist noch keine 3 Tage alt -> peak, keine Adaption
+    first_result, state = _advance_one_day(series, state, config)
     assert first_result.classification == "peak"
     assert first_result.adaption_action is not None and first_result.adaption_action.kind == "none"
 
-    second_decision_time = series.index[drop_start + 24]
-    new_observations = series.loc[state.history.index[-1] + pd.Timedelta(hours=1) : second_decision_time - pd.Timedelta(hours=1)]
-    second_result, second_state = run_cycle(state, new_observations, second_decision_time, config, calendar_context=_calendar_context(second_decision_time))
-
-    # nur  ersten 24 Drop-Stunden sind zu diesem decision_time überhaupt schon beobachtet ->  Rest von drop_len liegt in der Zukunft 
-    # -> wird hier nicht ausgeschlossen
-    observed_drop_end = second_decision_time - pd.Timedelta(hours=1)
+    # zwei weitere Tage im Drop -> Streak erreicht sustained_anomaly_streak_days -> absence
+    _, state = _advance_one_day(series, state, config)
+    second_result, second_state = _advance_one_day(series, state, config)
 
     assert second_result.classification == "absence"
     assert second_result.adaption_action is not None
     assert second_result.adaption_action.kind == "exclude_range"
-    assert second_result.adaption_action.range_start == index[drop_start]
-    assert second_result.adaption_action.range_end == observed_drop_end
     assert second_result.retrained
     assert second_result.reference_reset
 
-    excluded = second_state.history.loc[index[drop_start] : observed_drop_end]
+    excluded = second_state.history.loc[second_result.adaption_action.range_start : second_result.adaption_action.range_end]
     assert excluded.isna().all()
-    assert not second_state.history.loc[: index[drop_start - 1]].isna().any()

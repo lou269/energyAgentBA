@@ -13,13 +13,15 @@ from src.llm.client import LLMClient
 from src.llm.inference import infer_llm_output
 from src.llm.llm_schema import Classification, LLMOutput
 from src.llm.rule_based_classifier import RuleClassificationResult, rule_based_classify
-from src.numerical_analysis.anomaly_detection import aggregate_daily_anomaly, build_anomaly_detection
+from src.numerical_analysis.anomaly_detection import build_anomaly_detection
 from src.numerical_analysis.multi_scale_analysis import build_multi_scale_analysis
 from src.structured_state.builder import build_structured_state
 from src.structured_state.structured_state_schema import StructuredState, validate_structured_state
 
 
 LLMMode = Literal["off", "rule", "real"]
+
+DAILY_ANOMALY_SCALES = {"daily": "daily_expected", "weekly": "weekly_expected", "long_term": "long_term_mean"}
 
 
 @dataclass(frozen=True)
@@ -124,9 +126,7 @@ def run_cycle(
     reference_reset = reference_window_end is None
 
     if reference_reset:
-        if len(history) < 3:
-            raise ValueError("history must contain at least 3 observed hours before numerical_analysis can be computed.")
-        reference_window_end = history.index[-3]
+        reference_window_end = _reset_reference_window_end(history)
 
     assert reference_window_end is not None
 
@@ -159,17 +159,11 @@ def run_cycle(
         # Proposal S.8: "Bei Z-Score > Schwelle -> LLM-Klassifikation" - ohne auffälligen Score gibt es nichts zu klassifizieren,
         # spart den LLM-/Regel-Aufruf
         anomaly_level = analysis_row["anomaly_level"]
-        dominant_scale = analysis_row["dominant_scale"]
 
         if pd.isna(anomaly_level):
             # zu wenig Referenzdaten für einen Score -> "weiß es nciht", nicht "alles normal"
             classification = "unknown"
         elif anomaly_level == "normal":
-            classification = "normal"
-        elif (
-            pd.notna(dominant_scale)
-            and analysis_row[f"{dominant_scale}_elevated_hours"] < config.numerical_analysis_config.min_elevated_hours_for_gate
-        ):
             classification = "normal"
         elif config.llm_mode == "real":
             if llm_client is None or llm_prompt is None or config.llm_config is None:
@@ -190,18 +184,14 @@ def run_cycle(
         elif config.llm_mode == "rule":
             rule_output = rule_based_classify(
                 structured_state,
-                sustained_daily_elevated_hours=config.numerical_analysis_config.sustained_daily_elevated_hours,
+                sustained_anomaly_streak_days=config.numerical_analysis_config.sustained_anomaly_streak_days,
                 multi_scale_minimum=config.numerical_analysis_config.multi_scale_minimum,
             )
             classification = rule_output.classification
 
         if config.event_adaptation:
             assert classification is not None
-            adaption_action = adaption_policy(
-                classification,
-                structured_state,
-                anomaly_window_hours=config.numerical_analysis_config.anomaly_window_hours,
-            )
+            adaption_action = adaption_policy(classification, structured_state)
 
     if adaption_action is not None and adaption_action.kind != "none":
         history = _apply_adaption(history, adaption_action)
@@ -217,9 +207,7 @@ def run_cycle(
         model_fitted_at = decision_time
         forecast = _build_forecast(prophet_model, model_history, decision_time, config, variant)
 
-        if len(history) < 3:
-            raise ValueError("history must contain at least 3 observed hours after adaption to recompute the numerical_analysis reference.")
-        reference_window_end = history.index[-3]
+        reference_window_end = _reset_reference_window_end(history)
 
         fit_required = True
         reference_reset = True
@@ -317,6 +305,14 @@ def _apply_adaption(
     raise ValueError(f"unknown AdaptionAction: {action.kind}")
 
 
+def _reset_reference_window_end(history: pd.Series) -> pd.Timestamp:
+    # lässt genug von der schon vorhandenen history übrig, dass nach der Tages-Aggregation noch
+    # mindestens 1 Tag validation + der Zieltag als test bleiben (siehe _compute_analysis_row)
+    if len(history) < 72:
+        raise ValueError("history must contain at least 72 observed hours before numerical_analysis can be computed.")
+    return history.index[-1] - pd.Timedelta(hours=71)
+
+
 def _compute_analysis_row(
     history: pd.Series,
     *,
@@ -326,8 +322,16 @@ def _compute_analysis_row(
     local_timezone: str,
 ) -> pd.Series:
     target_column = str(history.name)
+
+    daily_history = history.tz_convert(local_timezone).resample("D").mean()
+
+    # der Tag von reference_window_end ist evtl. nur teilweise beobachtet -> ganz raus aus dem
+    # Training, fällt stattdessen unter validation
+    daily_cutoff = reference_window_end.tz_convert(local_timezone).normalize() - pd.Timedelta(days=1)
+    target_day = target_timestamp.tz_convert(local_timezone).normalize()
+
     train_data, validation_data, test_data = _split_for_numerical_analysis(
-        history, reference_window_end=reference_window_end, target_column=target_column
+        daily_history, reference_window_end=daily_cutoff, target_column=target_column
     )
 
     analysis = build_multi_scale_analysis(
@@ -335,9 +339,9 @@ def _compute_analysis_row(
         validation_data=validation_data,
         test_data=test_data,
         target_column=target_column,
-        short_term_window=config.short_term_window_hourly,
-        sample_period_hours=config.sample_period_hours_hourly,
-        long_term_window=config.long_term_window_hourly,
+        short_term_window=config.trend_window_days,
+        sample_period_hours=config.sample_period_hours_daily,
+        long_term_window=config.long_term_window_days,
         min_daily_reference_samples=config.min_daily_reference_samples,
         min_weekly_reference_samples=config.min_weekly_reference_samples,
         trend_threshold=config.trend_threshold,
@@ -347,31 +351,20 @@ def _compute_analysis_row(
 
     anomaly = build_anomaly_detection(
         analysis_results=analysis,
-        min_reference_samples=config.min_reference_samples,
+        min_reference_samples=config.min_reference_samples_daily,
         min_residual_std_w=config.min_residual_std_w,
         unusual_threshold=config.unusual_threshold,
         strong_anomaly_threshold=config.strong_anomaly_threshold,
-        sample_period_hours=config.sample_period_hours_hourly,
+        sample_period_hours=config.sample_period_hours_daily,
         local_timezone=local_timezone,
+        reference_columns=DAILY_ANOMALY_SCALES,
     )
 
-    row = cast(pd.Series, anomaly.loc[target_timestamp]).copy()
-    row["timestamp"] = target_timestamp
+    row = cast(pd.Series, anomaly.loc[target_day]).copy()
+    row["timestamp"] = target_day
     # history kommt schon aus preprocessing, Gap-Treatment/Plausibilitätscheck liegen davor -> kein zweiter Check hier
     row["value_implausible"] = False
-
-    
-    daily_summary = aggregate_daily_anomaly(
-        anomaly,
-        target_timestamp=target_timestamp,
-        window_hours=config.anomaly_window_hours,
-        sample_period_hours=config.sample_period_hours_hourly,
-        unusual_threshold=config.unusual_threshold,
-        strong_anomaly_threshold=config.strong_anomaly_threshold,
-    )
-
-    for field, value in daily_summary.items():
-        row[field] = value
+    row["anomaly_peak_timestamp"] = target_day if pd.notna(row["anomaly_score"]) else pd.NaT
 
     return row
 
@@ -388,7 +381,7 @@ def _split_for_numerical_analysis(
     remaining = frame.loc[frame.index > reference_window_end]
 
     if len(remaining) < 2:
-        raise ValueError("Not enough observed hours after the reference window to score validation and test.")
+        raise ValueError("Not enough observed rows after the reference window to score validation and test.")
 
     validation_data = remaining.iloc[:-1]
     test_data = remaining.iloc[-1:]

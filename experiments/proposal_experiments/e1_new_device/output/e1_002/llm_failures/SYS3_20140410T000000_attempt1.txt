@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.2",
+  "classification": "unknown",
+  "explanation": "The current power reading is low compared to historical baselines, but the available evidence is insufficient to classify this as 'absence' because no relevant calendar events are present in context.events (which is empty). The deviation does not persist across multiple days or scales to support 'new_pattern', and there is no anomaly evidence supporting a 'peak'. Therefore, the situation remains unknown.",
+  "evidence_references": [
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path":

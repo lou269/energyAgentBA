@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.2",
+  "classification": "unknown",
+  "explanation": "The current power reading is low, but the available evidence is insufficient to classify this as 'absence' because no relevant calendar events are present in context.events. The deviation is recent and does not support 'new_pattern'. No anomaly evidence supports a 'peak'.",
+  "evidence_references": [
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    }
+  ],
+  "user_recommendation": "No specific action is recommended.",
+  "uncertainty": "Insufficient evidence to determine the cause of reduced consumption."
+}

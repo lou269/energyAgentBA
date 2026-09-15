@@ -23,21 +23,18 @@ def _analysis_row() -> pd.Series:
             "split": "validation",
             "current_power": 120.0,
             "value_implausible": False,
-            "short_term_mean": 110.0,
             "daily_expected": 100.0,
             "weekly_expected": 105.0,
             "long_term_mean": 108.0,
             "trend_slope_w_per_hour": 1.5,
             "trend_change": 0.2,
             "trend": "increasing",
-            "short_term_score": 1.0,
             "daily_score": 2.0,
             "weekly_score": None,
             "long_term_score": 0.5,
-            "short_term_elevated_hours": 1.0,
-            "daily_elevated_hours": 2.0,
-            "weekly_elevated_hours": None,
-            "long_term_elevated_hours": 0.0,
+            "daily_anomaly_streak_days": 2.0,
+            "weekly_anomaly_streak_days": None,
+            "long_term_anomaly_streak_days": 0.0,
             "anomaly_score": 2.0,
             "dominant_scale": "daily",
             "anomaly_direction": "high",
@@ -102,7 +99,7 @@ def test_complete_structured_state_is_valid() -> None:
 
     assert state["observation"]["observation_start"]== (DECISION_TIME - pd.Timedelta(hours=1)).isoformat()
     assert len(state["forecast"]["points"]) == 24
-    assert state["anomaly"]["available_scales"] == ["short_term", "daily", "long_term"]
+    assert state["anomaly"]["available_scales"] == ["daily", "long_term"]
 
     serialized = json.dumps(state)
     assert "y_true" not in serialized
@@ -118,11 +115,11 @@ def test_timestamp_accepts_zulu_suffix() -> None:
 
 
 
-def test_analysis_timestamp_must_precede_decision_time_by_one_hour() -> None:
+def test_analysis_timestamp_must_precede_decision_time() -> None:
     analysis_row = _analysis_row()
     analysis_row["timestamp"] = DECISION_TIME
 
-    with pytest.raises(ValueError, match="exactly one hour before"):
+    with pytest.raises(ValueError, match="before decision_time"):
         _build_state(analysis_row=analysis_row)
 
 
@@ -161,7 +158,7 @@ def test_forecast_summary_must_match_points() -> None:
         validate_structured_state(state)
 
 
-@pytest.mark.parametrize(("field", "value"), [("score", 1.0), ("dominant_scale", "short_term"), ("direction", "low")])
+@pytest.mark.parametrize(("field", "value"), [("score", 1.0), ("dominant_scale", "long_term"), ("direction", "low")])
 def test_aggregate_anomaly_fields_must_match_scale_scores(
     field: str, 
     value: object
@@ -179,14 +176,12 @@ def test_partial_and_missing_scale_scores_are_explicit() -> None:
 
     analysis_row = _analysis_row()
     for field in (
-        "short_term_score",
         "daily_score",
         "weekly_score",
         "long_term_score",
-        "short_term_elevated_hours",
-        "daily_elevated_hours",
-        "weekly_elevated_hours",
-        "long_term_elevated_hours",
+        "daily_anomaly_streak_days",
+        "weekly_anomaly_streak_days",
+        "long_term_anomaly_streak_days",
         "anomaly_score",
         "dominant_scale",
         "anomaly_direction",
@@ -204,14 +199,6 @@ def test_partial_and_missing_scale_scores_are_explicit() -> None:
     assert missing_state["anomaly"]["direction"] is None
     assert missing_state["anomaly"]["dominant_scale"] is None
     assert missing_state["anomaly"]["peak_timestamp"] is None
-
-
-def test_peak_timestamp_outside_the_anomaly_window_is_rejected() -> None:
-    state = _build_state()
-    state["anomaly"]["peak_timestamp"] = (DECISION_TIME - pd.Timedelta(hours=25)).isoformat()
-
-    with pytest.raises(ValueError, match="aggregation window"):
-        validate_structured_state(state)
 
 
 def test_peak_timestamp_after_the_analyzed_hour_is_rejected() -> None:

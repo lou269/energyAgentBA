@@ -13,7 +13,6 @@ _BASE_STATE_JSON = """
   "analysis": {
     "daily_expected_w": 344.33525171806167,
     "long_term_mean_w": 405.7294889722222,
-    "short_term_mean_w": 410.7360345833333,
     "trend": "decreasing",
     "trend_change": -0.4256972486075171,
     "trend_slope_w_per_hour": -7.285383326086958,
@@ -21,7 +20,6 @@ _BASE_STATE_JSON = """
   },
   "anomaly": {
     "available_scales": [
-      "short_term",
       "daily",
       "weekly",
       "long_term"
@@ -33,13 +31,11 @@ _BASE_STATE_JSON = """
     "scale_scores": {
       "daily": 3.7674342117758495,
       "long_term": 3.264114829329143,
-      "short_term": 3.3281636839228255,
       "weekly": 3.734920041231248
     },
-    "scale_elevated_hours": {
+    "scale_anomaly_streak_days": {
       "daily": 1.0,
       "long_term": 1.0,
-      "short_term": 1.0,
       "weekly": 1.0
     },
     "score": 3.7674342117758495

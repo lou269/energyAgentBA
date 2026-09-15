@@ -1,0 +1,207 @@
+{
+  "analysis": {
+    "daily_expected_w": 280.04175868557354,
+    "long_term_mean_w": 307.8109877036339,
+    "trend": "stable",
+    "trend_change": -0.0495715914447618,
+    "trend_slope_w_per_hour": -0.09633909644476907,
+    "weekly_expected_w": 269.7277162989083
+  },
+  "anomaly": {
+    "available_scales": [
+      "daily",
+      "weekly",
+      "long_term"
+    ],
+    "direction": "high",
+    "dominant_scale": "daily",
+    "level": "strong_anomaly",
+    "peak_timestamp": "2014-04-05T23:00:00+00:00",
+    "scale_anomaly_streak_days": {
+      "daily": 1.0,
+      "long_term": 1.0,
+      "weekly": 1.0
+    },
+    "scale_scores": {
+      "daily": 7.203593455320094,
+      "long_term": 6.98417634155875,
+      "weekly": 7.082799529957137
+    },
+    "score": 7.203593455320094
+  },
+  "context": {
+    "events": [],
+    "retrieved_at": "2014-04-06T00:00:00+00:00",
+    "source": "none",
+    "source_available": false,
+    "window_end": "2014-04-07T00:00:00+00:00",
+    "window_start": "2014-04-05T00:00:00+00:00"
+  },
+  "decision_time": "2014-04-06T00:00:00+00:00",
+  "forecast": {
+    "config_version": "0.5",
+    "horizon_hours": 24,
+    "model_id": "C2",
+    "origin": "2014-04-06T00:00:00+00:00",
+    "points": [
+      {
+        "lower_w": 105.53294698638177,
+        "predicted_power_w": 190.59352094508844,
+        "timestamp": "2014-04-06T00:00:00+00:00",
+        "upper_w": 320.4820767305036
+      },
+      {
+        "lower_w": 99.34494759789466,
+        "predicted_power_w": 170.65855393822795,
+        "timestamp": "2014-04-06T01:00:00+00:00",
+        "upper_w": 298.0194507416707
+      },
+      {
+        "lower_w": 90.50256635010027,
+        "predicted_power_w": 158.84539670434742,
+        "timestamp": "2014-04-06T02:00:00+00:00",
+        "upper_w": 278.49113396839516
+      },
+      {
+        "lower_w": 86.32846542652639,
+        "predicted_power_w": 158.96722562806525,
+        "timestamp": "2014-04-06T03:00:00+00:00",
+        "upper_w": 283.61244160969846
+      },
+      {
+        "lower_w": 93.6329447747201,
+        "predicted_power_w": 177.32455828485652,
+        "timestamp": "2014-04-06T04:00:00+00:00",
+        "upper_w": 315.3975718652233
+      },
+      {
+        "lower_w": 120.37012689390563,
+        "predicted_power_w": 217.9016966688673,
+        "timestamp": "2014-04-06T05:00:00+00:00",
+        "upper_w": 388.4056282577953
+      },
+      {
+        "lower_w": 148.88877386569675,
+        "predicted_power_w": 273.93369935119443,
+        "timestamp": "2014-04-06T06:00:00+00:00",
+        "upper_w": 475.8239954921754
+      },
+      {
+        "lower_w": 184.30668008200846,
+        "predicted_power_w": 320.9184063557404,
+        "timestamp": "2014-04-06T07:00:00+00:00",
+        "upper_w": 579.2996173670197
+      },
+      {
+        "lower_w": 192.39286510042095,
+        "predicted_power_w": 334.26345487369554,
+        "timestamp": "2014-04-06T08:00:00+00:00",
+        "upper_w": 606.4196963369095
+      },
+      {
+        "lower_w": 178.1902246345702,
+        "predicted_power_w": 318.5420221193817,
+        "timestamp": "2014-04-06T09:00:00+00:00",
+        "upper_w": 573.314011179799
+      },
+      {
+        "lower_w": 168.4917899416978,
+        "predicted_power_w": 298.33012368351825,
+        "timestamp": "2014-04-06T10:00:00+00:00",
+        "upper_w": 517.5139407430047
+      },
+      {
+        "lower_w": 160.408923521447,
+        "predicted_power_w": 289.260015657106,
+        "timestamp": "2014-04-06T11:00:00+00:00",
+        "upper_w": 526.2970719583684
+      },
+      {
+        "lower_w": 167.4676054093421,
+        "predicted_power_w": 290.15932066796216,
+        "timestamp": "2014-04-06T12:00:00+00:00",
+        "upper_w": 524.8475090389527
+      },
+      {
+        "lower_w": 164.69067339770532,
+        "predicted_power_w": 292.1488388897453,
+        "timestamp": "2014-04-06T13:00:00+00:00",
+        "upper_w": 508.8629692212129
+      },
+      {
+        "lower_w": 165.2856832608588,
+        "predicted_power_w": 292.3400322175994,
+        "timestamp": "2014-04-06T14:00:00+00:00",
+        "upper_w": 516.7484068990933
+      },
+      {
+        "lower_w": 167.6018289286443,
+        "predicted_power_w": 300.00258932139457,
+        "timestamp": "2014-04-06T15:00:00+00:00",
+        "upper_w": 526.4947945511617
+      },
+      {
+        "lower_w": 187.1685934680035,
+        "predicted_power_w": 328.7037045775775,
+        "timestamp": "2014-04-06T16:00:00+00:00",
+        "upper_w": 583.8365500864809
+      },
+      {
+        "lower_w": 214.49117538264824,
+        "predicted_power_w": 382.74149477074906,
+        "timestamp": "2014-04-06T17:00:00+00:00",
+        "upper_w": 690.2217654434627
+      },
+      {
+        "lower_w": 255.51205973004016,
+        "predicted_power_w": 442.4801902335264,
+        "timestamp": "2014-04-06T18:00:00+00:00",
+        "upper_w": 796.9887647319094
+      },
+      {
+        "lower_w": 269.45568446355094,
+        "predicted_power_w": 464.0900222530087,
+        "timestamp": "2014-04-06T19:00:00+00:00",
+        "upper_w": 831.7935593388835
+      },
+      {
+        "lower_w": 227.02005709274906,
+        "predicted_power_w": 421.9820820313775,
+        "timestamp": "2014-04-06T20:00:00+00:00",
+        "upper_w": 753.0620987863576
+      },
+      {
+        "lower_w": 191.0621829419561,
+        "predicted_power_w": 343.46500235891585,
+        "timestamp": "2014-04-06T21:00:00+00:00",
+        "upper_w": 608.5245577948533
+      },
+      {
+        "lower_w": 155.99181835336253,
+        "predicted_power_w": 271.07835433204343,
+        "timestamp": "2014-04-06T22:00:00+00:00",
+        "upper_w": 479.8501980297103
+      },
+      {
+        "lower_w": 125.75114207414506,
+        "predicted_power_w": 221.67813717552758,
+        "timestamp": "2014-04-06T23:00:00+00:00",
+        "upper_w": 375.8221777348658
+      }
+    ],
+    "run_id": "cycle_20140406T0000",
+    "summary": {
+      "mean_interval_width_w": 351.6766761762138,
+      "mean_w": 290.01701845997985,
+      "peak_timestamp": "2014-04-06T19:00:00+00:00",
+      "peak_w": 464.0900222530087
+    }
+  },
+  "observation": {
+    "current_power_w": 831.5842,
+    "observation_end": "2014-04-06T00:00:00+00:00",
+    "observation_start": "2014-04-05T23:00:00+00:00",
+    "value_implausible": false
+  },
+  "schema_version": "1.3"
+}

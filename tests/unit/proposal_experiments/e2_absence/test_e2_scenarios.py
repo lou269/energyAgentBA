@@ -59,7 +59,7 @@ def test_ctx0_and_ctx1_share_identical_series_and_timing() -> None:
 def test_ctx1_structured_state_carries_the_calendar_event_through_run_cycle() -> None:
     # Nachweis: Kalender-Event kommt im Structured State, ohne würde CTX1 LLM gar keinen Kontext liefern
     series = _series(240)
-    coldstart_hours = 72
+    coldstart_hours = 144
     decision_time = series.index[coldstart_hours] + pd.Timedelta(hours=1)
     event = {
         "event_id": "vacation-test",

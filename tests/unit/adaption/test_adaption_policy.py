@@ -10,12 +10,12 @@ from src.llm.llm_schema import Classification
 from src.structured_state.structured_state_schema import StructuredState
 
 
-# minimaler Kontext - adaption_policy liest nur observation.observation_start, decision_time und anomaly.dominant_scale/scale_elevated_hours
+# minimaler Kontext, adaption_policy liest nur observation.observation_start, decision_time und anomaly.dominant_scale/scale_anomaly_streak_days
 def _context(
-    *, 
+    *,
     decision_time: str,
-    dominant_scale: str | None, 
-    elevated_hours: float | None
+    dominant_scale: str | None,
+    streak_days: float | None
 ) -> StructuredState:
     return cast(
         StructuredState,
@@ -24,16 +24,16 @@ def _context(
             "observation": {"observation_start": "2024-01-07T09:00:00+00:00"},
             "anomaly": {
                 "dominant_scale": dominant_scale,
-                "scale_elevated_hours": {dominant_scale: elevated_hours} if dominant_scale else {},
+                "scale_anomaly_streak_days": {dominant_scale: streak_days} if dominant_scale else {},
             },
         },
     )
 
 
 def test_measurement_error_excludes_exactly_the_observation_hour() -> None:
-    context = _context(decision_time="2024-01-07T10:00:00+00:00", dominant_scale=None, elevated_hours=None)
+    context = _context(decision_time="2024-01-07T10:00:00+00:00", dominant_scale=None, streak_days=None)
 
-    action = adaption_policy("measurement_error", context, anomaly_window_hours=24)
+    action = adaption_policy("measurement_error", context)
 
     assert action.kind == "exclude_range"
     assert action.range_start == action.range_end
@@ -41,33 +41,33 @@ def test_measurement_error_excludes_exactly_the_observation_hour() -> None:
     assert action.range_start.isoformat() == "2024-01-07T09:00:00+00:00"
 
 
-def test_absence_excludes_the_analyzed_24h_window() -> None:
-    context = _context(decision_time="2024-01-07T10:00:00+00:00", dominant_scale="daily", elevated_hours=20.0)
+def test_absence_excludes_the_streak_length_in_hours() -> None:
+    context = _context(decision_time="2024-01-07T10:00:00+00:00", dominant_scale="daily", streak_days=2)
 
-    action = adaption_policy("absence", context, anomaly_window_hours=24)
+    action = adaption_policy("absence", context)
 
     assert action.kind == "exclude_range"
     assert action.range_start is not None and action.range_end is not None
-    # anomaly_window_hours=24, endet bei decision_time - 1h -> Fensterstart ist 23h davor
-    assert action.range_start.isoformat() == "2024-01-06T10:00:00+00:00"
+    # 2 Tage Streak, endet bei decision_time - 1h -> Fensterstart ist 47h davor
+    assert action.range_start.isoformat() == "2024-01-05T10:00:00+00:00"
     assert action.range_end.isoformat() == "2024-01-07T09:00:00+00:00"
 
 
-def test_new_pattern_advances_the_history_start_to_the_analyzed_24h_window() -> None:
-    context = _context(decision_time="2024-01-07T10:00:00+00:00", dominant_scale="short_term", elevated_hours=18.0)
+def test_new_pattern_advances_the_history_start_by_the_streak_length() -> None:
+    context = _context(decision_time="2024-01-07T10:00:00+00:00", dominant_scale="weekly", streak_days=2)
 
-    action = adaption_policy("new_pattern", context, anomaly_window_hours=24)
+    action = adaption_policy("new_pattern", context)
 
     assert action.kind == "advance_history_start"
     assert action.new_history_start is not None
-    assert action.new_history_start.isoformat() == "2024-01-06T10:00:00+00:00"
+    assert action.new_history_start.isoformat() == "2024-01-05T10:00:00+00:00"
 
 
 @pytest.mark.parametrize("classification", ["peak", "normal", "unknown"])
 def test_classifications_without_a_defined_reaction_trigger_no_action(classification: Classification) -> None:
-    context = _context(decision_time="2024-01-07T10:00:00+00:00", dominant_scale=None, elevated_hours=None)
+    context = _context(decision_time="2024-01-07T10:00:00+00:00", dominant_scale=None, streak_days=None)
 
-    action = adaption_policy(classification, context, anomaly_window_hours=24)
+    action = adaption_policy(classification, context)
 
     assert action.kind == "none"
 

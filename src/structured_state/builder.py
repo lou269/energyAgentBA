@@ -18,7 +18,7 @@ from src.structured_state.structured_state_schema import (
     ContextState,
     ForecastPoint,
     ForecastState,
-    ScaleElevatedHours,
+    ScaleAnomalyStreakDays,
     ScaleName,
     ScaleScores,
     StructuredState,
@@ -30,21 +30,18 @@ ANALYSIS_FIELDS = frozenset(
         "timestamp",
         "split",
         "current_power",
-        "short_term_mean",
         "daily_expected",
         "weekly_expected",
         "long_term_mean",
         "trend_slope_w_per_hour",
         "trend_change",
         "trend",
-        "short_term_score",
         "daily_score",
         "weekly_score",
         "long_term_score",
-        "short_term_elevated_hours",
-        "daily_elevated_hours",
-        "weekly_elevated_hours",
-        "long_term_elevated_hours",
+        "daily_anomaly_streak_days",
+        "weekly_anomaly_streak_days",
+        "long_term_anomaly_streak_days",
         "anomaly_score",
         "dominant_scale",
         "anomaly_direction",
@@ -90,8 +87,8 @@ def build_structured_state(
 
     analysis_timestamp = parse_utc_timestamp(analysis_row["timestamp"], "analysis.timestamp")
 
-    if analysis_timestamp != decision_time - pd.Timedelta(hours=1):
-        raise ValueError("Analysis timestamp must be exactly one hour before decision_time.")
+    if analysis_timestamp >= decision_time:
+        raise ValueError("Analysis timestamp must be before decision_time.")
 
     context_decision_time = parse_utc_timestamp(calendar_context["decision_time"], "calendar_context.decision_time")
 
@@ -99,17 +96,15 @@ def build_structured_state(
         raise ValueError("Calendar context decision_time must match decision_time.")
 
     scale_scores: ScaleScores = {
-        "short_term": _nullable_float(analysis_row["short_term_score"], "analysis.short_term_score"),
         "daily": _nullable_float(analysis_row["daily_score"], "analysis.daily_score"),
         "weekly": _nullable_float(analysis_row["weekly_score"], "analysis.weekly_score"),
         "long_term": _nullable_float(analysis_row["long_term_score"], "analysis.long_term_score"),
     }
 
-    scale_elevated_hours: ScaleElevatedHours = {
-        "short_term": _nullable_float(analysis_row["short_term_elevated_hours"], "analysis.short_term_elevated_hours"),
-        "daily": _nullable_float(analysis_row["daily_elevated_hours"], "analysis.daily_elevated_hours"),
-        "weekly": _nullable_float(analysis_row["weekly_elevated_hours"], "analysis.weekly_elevated_hours"),
-        "long_term": _nullable_float(analysis_row["long_term_elevated_hours"], "analysis.long_term_elevated_hours"),
+    scale_streak_days: ScaleAnomalyStreakDays = {
+        "daily": _nullable_float(analysis_row["daily_anomaly_streak_days"], "analysis.daily_anomaly_streak_days"),
+        "weekly": _nullable_float(analysis_row["weekly_anomaly_streak_days"], "analysis.weekly_anomaly_streak_days"),
+        "long_term": _nullable_float(analysis_row["long_term_anomaly_streak_days"], "analysis.long_term_anomaly_streak_days"),
     }
 
     available_scales: list[ScaleName] = [scale for scale in SCALE_NAMES if scale_scores[scale] is not None]
@@ -139,7 +134,6 @@ def build_structured_state(
             "value_implausible": _bool(analysis_row["value_implausible"], "analysis.value_implausible"),
         },
         "analysis": {
-            "short_term_mean_w": _nullable_float(analysis_row["short_term_mean"], "analysis.short_term_mean"),
             "daily_expected_w": _nullable_float(analysis_row["daily_expected"], "analysis.daily_expected"),
             "weekly_expected_w": _nullable_float(analysis_row["weekly_expected"], "analysis.weekly_expected"),
             "long_term_mean_w": _nullable_float(analysis_row["long_term_mean"], "analysis.long_term_mean"),
@@ -154,7 +148,7 @@ def build_structured_state(
             "dominant_scale": _nullable_text(analysis_row["dominant_scale"], "anomaly.dominant_scale", SCALE_NAMES),
             "peak_timestamp": _nullable_timestamp(analysis_row["anomaly_peak_timestamp"], "analysis.anomaly_peak_timestamp"),
             "scale_scores": scale_scores,
-            "scale_elevated_hours": scale_elevated_hours,
+            "scale_anomaly_streak_days": scale_streak_days,
             "available_scales": available_scales,
         },
         "forecast": forecast_state,

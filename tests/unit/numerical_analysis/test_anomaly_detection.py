@@ -264,3 +264,41 @@ def test_elevated_hours_resets_at_local_not_utc_midnight() -> None:
     # lokaler Tageswechsel liegt zwischen 23:00 und 00:00 UTC (BST = UTC+1) -> Zähler muss dort auf 1 zurückfallen, 
     # nicht erst eine Stunde später bei 00:00 UTC
     assert elevated.tolist() == pytest.approx([1.0, 1.0, 2.0, 3.0])
+
+
+def test_reference_columns_parameter_restricts_scales() -> None:
+    train_residuals = [-2.0, -1.0, 0.0, 1.0, 2.0] * 20
+    reference = 100.0
+    split = ["train"] * len(train_residuals) + ["test"]
+    current_power = [reference + r for r in train_residuals] + [reference + 500.0]
+
+    result = build_anomaly_detection(
+        _analysis_frame(current_power, reference, split),
+        min_reference_samples=50, min_residual_std_w=0.1,
+        unusual_threshold=2.0, strong_anomaly_threshold=3.0,
+        sample_period_hours=1.0,
+        local_timezone="UTC",
+        reference_columns={"daily": "daily_expected", "weekly": "weekly_expected", "long_term": "long_term_mean"},
+    )
+
+    assert "short_term_score" not in result.columns
+    assert result["dominant_scale"].iloc[-1] in ("daily", "weekly", "long_term")
+
+
+def test_anomaly_streak_days_resets_on_a_normal_day() -> None:
+    train_residuals = [-2.0, -1.0, 0.0, 1.0, 2.0] * 20
+    reference = 100.0
+    tail = [500.0, 0.0, 500.0, 500.0]  # auffällig, normal, auffällig, auffällig
+    split = ["train"] * len(train_residuals) + ["test"] * len(tail)
+    current_power = [reference + r for r in train_residuals] + [reference + t for t in tail]
+
+    result = build_anomaly_detection(
+        _analysis_frame(current_power, reference, split),
+        min_reference_samples=50, min_residual_std_w=0.1,
+        unusual_threshold=2.0, strong_anomaly_threshold=3.0,
+        sample_period_hours=1.0,
+        local_timezone="UTC",
+    )
+
+    # eine Unterbrechung durch einen unauffälligen Tag setzt den Streak zurück auf 0, anders  als das Fenster in aggregate_daily_anomaly
+    assert result["short_term_anomaly_streak_days"].iloc[-4:].tolist() == pytest.approx([1.0, 0.0, 1.0, 2.0])

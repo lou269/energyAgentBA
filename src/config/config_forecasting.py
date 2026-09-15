@@ -43,18 +43,19 @@ class NumericalAnalysisConfig:
     unusual_threshold: float = 2.0
     strong_anomaly_threshold: float = 3.0
 
-    # gegen H1-M54-Train-Split kalibriert (rollierendes 24h-Fenster) - hält die Gesamt-Trigger-Rate
-    # nahe an dem, was das frühere Einzelstunden-Gate ergab, statt bei jedem Tagesmaximum auszulösen
-    min_elevated_hours_for_gate: float = 3.0
-
-    # Fenstergröße für "Anomalie in den letzten X Stunden" -> steuert aggregate_daily_anomaly,
-    # das Adaptionsfenster in adaption_policy.py und die Peak-Timestamp-Grenze im Structured-State-Schema
-    anomaly_window_hours: int = 24
-
-    # noch nicht kalibriert -> grob geschätzt als 75% von anomaly_window_hours (18 von 24h).
-    # Entscheidet absence vs. new_pattern vs. peak in rule_based_classifier.py
-    sustained_daily_elevated_hours: float = 18.0
     multi_scale_minimum: int = 2
+
+    # run_cycle rechnet die Anomalieerkennung auf Tagesmittelwerten statt Einzelstunden
+    sample_period_hours_daily: float = 24.0
+    trend_window_days: int = 7  # unkalibriert, Startwert wie trend_threshold seinerzeit
+    long_term_window_days: int = 30
+
+    # unkalibriert, nur grob unter der Trainingslänge gehalten (E2 läuft mit 60 Tagen Coldstart)
+    min_reference_samples_daily: int = 21
+
+    # Tage am Stück, die eine Skala mindestens auffällig sein muss, um absence/new_pattern statt peak zu ergeben (rule_based_classifier.py)
+    # unkalibriert, erster Schätzwert
+    sustained_anomaly_streak_days: int = 3
 
 
 ''' PROPHET '''
@@ -118,7 +119,7 @@ class ForecastingConfig:
 @dataclass(frozen=True)
 class LLMConfig:
     model: str
-    prompt_version: str = "v7"
+    prompt_version: str = "v8"
     temperature: float = 0.0
     seed: int | None = 42
     max_attempts: int = 2

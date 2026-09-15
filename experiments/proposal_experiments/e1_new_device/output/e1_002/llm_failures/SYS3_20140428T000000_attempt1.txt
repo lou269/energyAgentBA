@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.2",
+  "classification": "normal",
+  "explanation": "The current power reading of 133.3 W is lower than expected, but the available evidence does not support a classification of 'absence' because no relevant calendar events are present in context.events (which is empty). The deviation is recent (streak days are 0 or 1) and lacks persistence across multiple scales required for 'new_pattern'. No anomaly evidence supports 'peak'.",
+  "evidence_references": [
+    {
+      "path": "observation.value_implausible"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path":

@@ -13,7 +13,7 @@ class RuleClassificationResult:
 def rule_based_classify(
     state: StructuredState,
     *,
-    sustained_daily_elevated_hours: float,
+    sustained_anomaly_streak_days: int,
     multi_scale_minimum: int,
 )-> RuleClassificationResult:
     # run_cycle ruft das nur bei anomaly.level != "normal" auf (Z-Score-Gate) -> "normal" kommt hier garnicht mehr vor
@@ -28,12 +28,12 @@ def rule_based_classify(
             reasoning="observation.value_implausible is set.",
         )
 
-    scale_elevated_hours = anomaly["scale_elevated_hours"]
+    scale_streak_days = anomaly["scale_anomaly_streak_days"]
 
     sustained_scales = [
         scale
         for scale in anomaly["available_scales"]
-        if (elevated_hours := scale_elevated_hours[scale]) is not None and elevated_hours >= sustained_daily_elevated_hours
+        if (streak_days := scale_streak_days[scale]) is not None and streak_days >= sustained_anomaly_streak_days
     ]
 
     dominant_scale = anomaly["dominant_scale"]
@@ -46,7 +46,7 @@ def rule_based_classify(
         return RuleClassificationResult(
             classification="absence",
             reasoning=(
-                f"strong, sustained downward deviation on scale '{dominant_scale}' ({scale_elevated_hours[dominant_scale]:.0f}h elevated today >= {sustained_daily_elevated_hours:.0f}h)."
+                f"strong, sustained downward deviation on scale '{dominant_scale}' ({scale_streak_days[dominant_scale]:.0f} days elevated in a row >= {sustained_anomaly_streak_days})."
             ),
         )
 

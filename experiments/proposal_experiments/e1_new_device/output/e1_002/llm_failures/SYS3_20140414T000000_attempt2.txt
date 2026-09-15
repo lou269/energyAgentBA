@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.2",
+  "classification": "unknown",
+  "explanation": "The current power reading is low (132 W) compared to expected values, resulting in an 'unusual' anomaly score and a 'low' direction. However, the deviation is recent (streak days are 0 for daily/weekly scales), lacks a relevant calendar event (context.events is empty), and there is no evidence of measurement error (value_implausible is false). Therefore, it cannot be classified as absence, peak, or new_pattern.",
+  "evidence_references": [
+    {
+      "path": "observation.current_power_w"
+    },
+    {
+      "path": "analysis.daily_expected_w"
+    },
+    {
+      "path": "anomaly.score"
+    },
+    {
+      "path": "anomaly.direction"
+    },
+    {
+      "path": "anomaly.scale_anomaly_streak_days.daily"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    }
+  ],
+  "user_recommendation": "No specific action is recommended.",
+  "uncertainty": "Insufficient evidence to determine if the low consumption is due to a temporary factor, a new pattern, or an absence of activity."
+}
