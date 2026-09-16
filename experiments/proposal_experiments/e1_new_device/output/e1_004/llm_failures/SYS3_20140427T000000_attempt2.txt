@@ -1,0 +1,169 @@
+{
+  "schema_version": "1.2",
+  "classification": "normal",
+  "explanation": "The current power reading is plausible and lower than expected, but without a relevant calendar event in context.events, this does not constitute an absence. The anomaly score indicates a deviation, but the scale_anomaly_streak_days values are low (0.0 or 1.0), indicating the deviation has not persisted sufficiently to be classified as new_pattern. Since no events are present and the reading is plausible, the situation is normal.",
+  "evidence_references": [
+    {
+      "path": "observation.current_power_w"
+    },
+    {
+      "path": "observation.value_implausible"
+    },
+    {
+      "path": "analysis.daily_expected_w"
+    },
+    {
+      "path": "analysis.weekly_expected_w"
+    },
+    {
+      "path": "analysis.long_term_mean_w"
+    },
+    {
+      "path": "anomaly.score"
+    },
+    {
+      "path": "anomaly.level"
+    },
+    {
+      "path": "anomaly.scale_anomaly_streak_days.daily"
+    },
+    {
+      "path": "anomaly.scale_anomaly_streak_days.weekly"
+    },
+    {
+      "path": "anomaly.scale_anomaly_streak_days.long_term"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available

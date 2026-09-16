@@ -1,0 +1,44 @@
+{
+  "attempts": [
+    {
+      "attempt_number": 1,
+      "generation_seconds": 20.27357741599917,
+      "raw_content": "{\n  \"schema_version\": \"1.2\",\n  \"classification\": \"peak\",\n  \"explanation\": \"The current power consumption of 1319.9 W is significantly higher than the daily expected value of approximately 344 W, supported by a strong anomaly score (3.77) at the daily scale. The deviation has not persisted across multiple days or scales (streak values are 1.0), so it does not meet the criteria for new_pattern.\",\n  \"e",
+      "valid": false,
+      "validation_error": "JSONDecodeError: Unterminated string starting at: line 5 column 3 (char 400)"
+    },
+    {
+      "attempt_number": 2,
+      "generation_seconds": 14.765465791000679,
+      "raw_content": "{\n  \"schema_version\": \"1.2\",\n  \"classification\": \"peak\",\n  \"explanation\": \"The current power consumption of 1319.9 W is significantly higher than the daily expected value of approximately 344 W, supported by a strong anomaly score (3.77) at the daily scale. The deviation has not persisted across multiple days or scales (streak values are 1.0), so it does not meet the criteria for new_pattern.\",\n  \"evidence_references\": [\n    {\n      \"path\": \"observation.current_power_w\"\n    },\n    {\n      \"path\": \"anomaly.scale_scores.daily\"\n    },\n    {\n      \"path\": \"anomaly.scale_anomaly_streak_days.daily\"\n    }\n  ],\n  \"user_recommendation\": \"No specific action is recommended.\",\n  \"uncertainty\": \"Low.\"\n}",
+      "valid": true,
+      "validation_error": null
+    }
+  ],
+  "case_id": "peak",
+  "error": null,
+  "expected_classification": "peak",
+  "model": "qwen3.5:9b",
+  "output": {
+    "classification": "peak",
+    "evidence_references": [
+      {
+        "path": "observation.current_power_w",
+        "value": 1319.9
+      },
+      {
+        "path": "anomaly.scale_scores.daily",
+        "value": 3.77
+      },
+      {
+        "path": "anomaly.scale_anomaly_streak_days.daily",
+        "value": 1.0
+      }
+    ],
+    "explanation": "The current power consumption of 1319.9 W is significantly higher than the daily expected value of approximately 344 W, supported by a strong anomaly score (3.77) at the daily scale. The deviation has not persisted across multiple days or scales (streak values are 1.0), so it does not meet the criteria for new_pattern.",
+    "schema_version": "1.2",
+    "uncertainty": "Low.",
+    "user_recommendation": "No specific action is recommended."
+  },
+  "repetition": 1
+}

@@ -12,7 +12,7 @@ from src.context.calendar_context import build_calendar_context
 from src.context.calendar_schema import CalendarContext
 from src.forecasting.evaluation import calculate_mae
 from src.llm.client import LLMClient, OllamaClient
-from src.llm.inference import LLMInferenceError
+from src.llm.inference import LLMAttemptRecord, LLMInferenceError
 from src.pipeline.cycle_run_manifest import build_cycle_run_manifest
 from src.pipeline.daily_cycle import CycleConfig, CycleResult, CycleState, run_cycle
 from src.pipeline.io import append_csv, append_jsonl, df_to_csv, find_run_directory, save_json
@@ -152,12 +152,9 @@ def run_comparison(
                             config_label, decision_time, consecutive_llm_failures, total_llm_failures, error,
                         )
                         for attempt in error.attempts:
-                            dump_path = _dump_failed_attempt(
-                                run_directory, config_label, decision_time, attempt.attempt_number, attempt.raw_content,
-                            )
+                            _append_failed_attempt(run_directory, config_label, decision_time, attempt)
                             logger.warning(
-                                "  attempt %d: %s | full response dumped to %s",
-                                attempt.attempt_number, attempt.validation_error, dump_path,
+                                "  attempt %d: %s", attempt.attempt_number, attempt.validation_error,
                             )
 
                         error_row = {
@@ -255,7 +252,7 @@ def run_comparison(
                     )
             except KeyboardInterrupt:
                 interrupted = True
-                logger.warning("%s durch Nutzer abgebrochen nach %d/%d Tagen - bisherige Ergebnisse liegen in %s",
+                logger.warning("%s terminated by user at %d/%d days. Results are safed at %s",
                     config_label, days_completed, len(scenario.decision_times), config_directory,
                 )
                 raise
@@ -294,7 +291,7 @@ def run_comparison(
         save_json({"llm_outputs": llm_output_records}, llm_outputs_file)
         output_paths["llm_outputs"] = llm_outputs_file
 
-    llm_failures_directory = run_directory / "llm_failures"
+    llm_failures_file = run_directory / "llm_failures.jsonl"
     decision_times = scenario.decision_times
 
     manifest = build_cycle_run_manifest(
@@ -307,7 +304,7 @@ def run_comparison(
         decision_time_end=decision_times[-1].isoformat() if decision_times else None,
         row_count=len(comparison),
         llm_failure_count=int((comparison["error"] != "").sum()) if not comparison.empty else 0,
-        llm_failures_directory=llm_failures_directory if llm_failures_directory.is_dir() else None,
+        llm_failures_file=llm_failures_file if llm_failures_file.is_file() else None,
         output_paths=output_paths,
         runtime_seconds=perf_counter() - run_started,
     )
@@ -334,21 +331,21 @@ def _explanation(result: CycleResult) -> str:
     return ""
 
 
-def _dump_failed_attempt(
+def _append_failed_attempt(
     run_directory: Path,
     config_label: str,
     decision_time: pd.Timestamp,
-    attempt_number: int,
-    raw_content: str,
-) -> Path:
-    dump_dir = run_directory / "llm_failures"
-    dump_dir.mkdir(parents=True, exist_ok=True)
-
-    timestamp_slug = decision_time.strftime("%Y%m%dT%H%M%S")
-    dump_path = dump_dir / f"{config_label}_{timestamp_slug}_attempt{attempt_number}.txt"
-    dump_path.write_text(raw_content, encoding="utf-8")
-
-    return dump_path
+    attempt: LLMAttemptRecord,
+) -> None:
+    record = {
+        "config": config_label,
+        "decision_time": decision_time.isoformat(),
+        "attempt_number": attempt.attempt_number,
+        "validation_error": attempt.validation_error,
+        "generation_seconds": attempt.generation_seconds,
+        "raw_content": attempt.raw_content,
+    }
+    append_jsonl(record, run_directory / "llm_failures.jsonl")
 
 
 def _build_calendar_context(

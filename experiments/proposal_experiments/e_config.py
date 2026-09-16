@@ -12,14 +12,16 @@ SCENARIOS_DIR = Path(__file__).resolve().parents[1] / "scenarios"
 ''' E1 - NEUES GERÄT '''
 @dataclass(frozen=True)
 class E1Config:
-    device_meter_key: str = "H1_M5"  # washer dryer, siehe channel_registry.csv appliances
+    device_meter_key: str = "H1_M9"  # HTPC, siehe channel_registry.csv appliances
     coldstart_hours: int = 168
 
     cutover_time: str | None = "2014-04-15T00:00:00+00:00"
 
     # so viel Historie vor dem Cutover, dass long_term_window_hourly (720h=30 Tage) + Coldstart (168h) beim Cutover-Tag einen validen Referenzwert liefern
     margin_before_days: int = 45
-    margin_after_days: int = 28
+    # bis kurz vor Datenende des Kandidaten (2014-07-21, letzter voller Tag 2014-07-20) statt nur 28 Tage -
+    # mehr Beobachtungstage nach dem Cutover, kostet nichts (gleicher Datensatz, ungenutzt)
+    margin_after_days: int = 96
 
 
 ''' E2 - ABWESENHEIT '''

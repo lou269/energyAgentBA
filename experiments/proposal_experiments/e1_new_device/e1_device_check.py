@@ -9,6 +9,7 @@ import pandas as pd
 
 from experiments.proposal_experiments.e_config import E1Config
 from experiments.proposal_experiments.shared_nilmtk import load_nilmtk_context, load_treated_mains_series
+from src.common.column_naming import channel_data_column, quality_column
 from src.config.config_nilmtk import AnalysisConfig, DataPreparationConfig
 from src.config.project_config import ProjectConfig
 from src.data_preparation.auxiliary_appliance_selection import build_auxiliary_appliance_selection
@@ -19,17 +20,17 @@ logger = logging.getLogger(__name__)
 OUTPUT_DIR = Path(__file__).parent / "output"
 
 
-def build_weekly_device_summary(device_hourly: pd.Series, coverage_mask: pd.Series) -> pd.DataFrame:
+def build_weekly_device_summary(device_hourly: pd.Series, coverage_mask: pd.Series, meter_key: str) -> pd.DataFrame:
     """Wochenweise Aktivität/Abdeckung eines Gerätekanals -> Grundlage für die Cutover-Wahl"""
     # active_hours: Stunden mit Leistung > 10W (grober Betriebsindikator, kein harter Schwellenwert)
     is_active = device_hourly > 10.0
 
     weekly = pd.DataFrame(
         {
-            "power_w_mean": device_hourly.resample("7D").mean(),
-            "power_w_max": device_hourly.resample("7D").max(),
-            "active_hours": is_active.resample("7D").sum(),
-            "coverage_share": coverage_mask.resample("7D").mean(),
+            channel_data_column(meter_key, "weekly"): device_hourly.resample("7D").mean(),
+            quality_column(meter_key, "max_weekly"): device_hourly.resample("7D").max(),
+            quality_column(meter_key, "active_hours"): is_active.resample("7D").sum(),
+            quality_column(meter_key, "coverage_share"): coverage_mask.resample("7D").mean(),
         }
     )
 
@@ -77,18 +78,21 @@ class DeviceCheckRunner:
             raise ValueError(f"{device_meter_key} did not pass the auxiliary appliance filters over the candidate window.")
 
         device_hourly = selection.data_hourly[device_meter_key]
-        coverage_mask = selection.quality_hourly[f"{device_meter_key}_coverage_mask"]
-        weekly = build_weekly_device_summary(device_hourly, coverage_mask)
+        coverage_mask = selection.quality_hourly[quality_column(device_meter_key, "coverage_mask")]
+        weekly = build_weekly_device_summary(device_hourly, coverage_mask, device_meter_key)
 
         OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
         df_to_csv(selection.ranking, OUTPUT_DIR, "e1_device_quality")
-        df_to_csv(device_hourly.rename("power_w").reset_index(), OUTPUT_DIR, "h1_m5_hourly")
-        df_to_csv(weekly, OUTPUT_DIR, "h1_m5_weekly_coverage")
+        df_to_csv(
+            device_hourly.rename(channel_data_column(device_meter_key, "hourly")).reset_index(),
+            OUTPUT_DIR, "e1_device_hourly",
+        )
+        df_to_csv(weekly, OUTPUT_DIR, "e1_device_weekly_coverage")
 
         overall_coverage = float(coverage_mask.mean())
         logger.info(
             "Done: %d hourly rows, overall coverage_share=%.3f. See %s for a week-by-week breakdown to pick the cutover.",
-            len(device_hourly), overall_coverage, OUTPUT_DIR / "h1_m5_weekly_coverage.csv"
+            len(device_hourly), overall_coverage, OUTPUT_DIR / "e1_device_weekly_coverage.csv"
         )
 
 

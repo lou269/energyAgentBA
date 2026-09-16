@@ -12,6 +12,7 @@ import pandas as pd
 from experiments.proposal_experiments.e_config import E1Config
 from experiments.proposal_experiments.e1_new_device.e1_scenarios import build_device_scenario
 from experiments.proposal_experiments.shared import build_decision_times, load_target_series
+from src.common.column_naming import channel_data_column
 from src.common.timestamps import parse_utc_timestamp
 from src.config.project_config import ProjectConfig, ensure_project_directories
 from src.llm.llm_run_artifacts import load_prompt
@@ -35,9 +36,9 @@ class E1Runner:
         self.e1_config = e1_config or E1Config()
 
     def _read_device_hourly(self) -> pd.Series:
-        device_data = pd.read_csv(OUTPUT_DIR / "h1_m5_hourly.csv", parse_dates=["timestamp"], index_col="timestamp")
+        device_data = pd.read_csv(OUTPUT_DIR / "e1_device_hourly.csv", parse_dates=["timestamp"], index_col="timestamp")
 
-        return device_data["power_w"]
+        return device_data[channel_data_column(self.e1_config.device_meter_key, "hourly")]
 
     def run(self) -> None:
         cutover_time = parse_utc_timestamp(self.e1_config.cutover_time, "E1Config.cutover_time")

@@ -108,6 +108,10 @@ class LLMModelRunner:
             "repetition": repetition,
         }
 
+        base_seed = self.experiment_config.base_llm_config.seed
+        # pro Repetition eigener Seed, sonst liefert temperature>0 bei gleichem Seed trotzdem identische Antworten
+        seed = base_seed if base_seed is None else base_seed + (repetition - 1)
+
         try:
             result = infer_llm_output(
                 case.state,
@@ -115,7 +119,7 @@ class LLMModelRunner:
                 prompt=prompt,
                 model=variant.model,
                 temperature=self.experiment_config.base_llm_config.temperature,
-                seed=self.experiment_config.base_llm_config.seed,
+                seed=seed,
                 max_attempts=self.experiment_config.base_llm_config.max_attempts,
             )
         except LLMInferenceError as error:

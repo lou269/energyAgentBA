@@ -21,7 +21,8 @@ LLM_MODEL_VARIANTS: tuple[LLMModelVariant, ...] = (
     LLMModelVariant(model_id="MDL7", model="gemma4:12b"),
 )
 
-_BASE_LLM_CONFIG = LLMConfig(model="")
+# temperature>0, damit repetitions überhaupt Streuung erzeugen kann (seed variiert zusätzlich pro Wiederholung in llm_model_runner.py)
+_BASE_LLM_CONFIG = LLMConfig(model="", temperature=0.3)
 
 
 @dataclass(frozen=True)

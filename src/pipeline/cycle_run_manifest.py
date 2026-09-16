@@ -32,7 +32,7 @@ def build_cycle_run_manifest(
     decision_time_end: str | None,
     row_count: int,
     llm_failure_count: int,
-    llm_failures_directory: Path | None,
+    llm_failures_file: Path | None,
     output_paths: Mapping[str, Path],
     runtime_seconds: float,
 ) -> dict[str, Any]:
@@ -58,7 +58,7 @@ def build_cycle_run_manifest(
         "row_count": row_count,
         "llm_failures": {
             "count": llm_failure_count,
-            "directory": _relative_path(project_root, llm_failures_directory),
+            "file": _relative_path(project_root, llm_failures_file),
         },
         "runtime_seconds": runtime_seconds,
         "code_version": build_code_version(project_root),

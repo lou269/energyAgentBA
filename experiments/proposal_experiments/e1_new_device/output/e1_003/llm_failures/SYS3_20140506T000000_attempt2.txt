@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.2",
+  "classification": "unknown",
+  "explanation": "The provided Structured State is empty or missing, so no numerical evidence or context events are available to support a classification.",
+  "evidence_references": [
+    {
+      "path": "observation.value_implausible"
+    },
+    {
+      "path": "anomaly.scale_scores.daily"
+    },
+    {
+      "path": "anomaly.scale_scores.weekly"
+    },
+    {
+      "path": "anomaly.scale_scores.long_term"
+    },
+    {
+      "path": "anomaly.scale_anomaly_streak_days.daily"
+    },
+    {
+      "path": "anomaly.scale_anomaly_streak_days.weekly"
+    },
+    {
+      "path": "anomaly.scale_anomaly_streak_days.long_term"
+    },
+    {
+      "path": "context.source_available"
+    },
+    {
+      "path": "context.source_available"
+    }
+  ],
+  "user_recommendation": "No specific action is recommended due to insufficient data.",
+  "uncertainty": "High uncertainty because the input state contains no observable values or context."
+}

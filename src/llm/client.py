@@ -50,9 +50,11 @@ class OllamaClient:
         temperature: float,
         seed: int | None,
     ) -> str:
-        # ohne explizites num_predict -> Ollama eigenes Default ( 128 Tokens) - reicht für explanation + mehrere evidence_references
-        # nicht aus und die Antwort wird mitten im JSON abgeschnitten
-        options: dict[str, float | int] = {"temperature": temperature, "num_predict": 1024}
+        # ohne num_predict: Ollama eigenes Default (128 Tokens) -> reicht für explanation + mehrere evidence_reference nicht aus und 
+        # Antwort wird mitten im JSON abgeschnitten
+        # ohne num_ctx: Ollama Default (4096) -> Prompt + Structured State + Schema füllen das bei prompt_v9 bereits zu ~97%, 
+        # done_reason kam als "length" obwohl num_predict längst nicht ausgeschöpft war
+        options: dict[str, float | int] = {"temperature": temperature, "num_predict": 1024, "num_ctx": 8192}
 
         if seed is not None:
             options["seed"] = seed
