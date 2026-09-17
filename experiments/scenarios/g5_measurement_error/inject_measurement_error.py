@@ -12,7 +12,7 @@ from pathlib import Path
 import pandas as pd
 
 from src.common.column_naming import channel_data_column, plausibility_column, quality_column, treated_column
-from src.config.config_forecasting import ForecastingConfig, NumericalAnalysisConfig, PreprocessingConfig
+from src.config.config_forecasting import NumericalAnalysisConfig, PreprocessingConfig
 from src.config.project_config import ProjectConfig
 from src.numerical_analysis.anomaly_detection import build_anomaly_detection
 from src.numerical_analysis.multi_scale_analysis import build_multi_scale_analysis
@@ -31,7 +31,6 @@ def main() -> None:
     project_config = ProjectConfig()
     preprocessing_config = PreprocessingConfig()
     analysis_config = NumericalAnalysisConfig()
-    forecasting_config = ForecastingConfig()
 
     data = pd.read_csv(
         project_config.canonical_output_dir / "canonical_data_hourly.csv",
@@ -100,7 +99,7 @@ def main() -> None:
         min_weekly_reference_samples=analysis_config.min_weekly_reference_samples,
         trend_threshold=analysis_config.trend_threshold,
         min_reference_power_w=analysis_config.min_reference_power_w,
-        local_timezone=forecasting_config.timezone,
+        local_timezone=project_config.timezone,
     )
 
     anomaly = build_anomaly_detection(
@@ -110,7 +109,7 @@ def main() -> None:
         unusual_threshold=analysis_config.unusual_threshold,
         strong_anomaly_threshold=analysis_config.strong_anomaly_threshold,
         sample_period_hours=analysis_config.sample_period_hours_hourly,
-        local_timezone=forecasting_config.timezone,
+        local_timezone=project_config.timezone,
     )
 
     anomaly["value_implausible"] = plausibility[plausibility_column(meter_key)].reindex(anomaly.index)

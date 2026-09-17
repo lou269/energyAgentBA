@@ -11,13 +11,13 @@ from src.numerical_analysis.anomaly_detection import resolve_dominant_scale
 from src.pipeline.schema_validation import is_real_number, validate_fields
 
 
-SCHEMA_VERSION = "1.3"
+SCHEMA_VERSION = "1.4"
 FORECAST_HORIZON_HOURS = ForecastingConfig().horizon_hours
 
 FLOAT_COMPARISON_REL_TOL = 1e-9
 FLOAT_COMPARISON_ABS_TOL = 1e-9
 
-ScaleName = Literal["daily", "weekly", "long_term"]
+ScaleName = Literal["daily", "weekday", "weekly", "long_term"]
 TrendName = Literal["stable", "increasing", "decreasing"]
 AnomalyLevel = Literal["normal", "unusual", "strong_anomaly"]
 AnomalyDirection = Literal["high", "low"]
@@ -28,7 +28,7 @@ ANOMALY_LEVELS: tuple[AnomalyLevel, ...] = ("normal", "unusual", "strong_anomaly
 
 ANOMALY_DIRECTIONS: tuple[AnomalyDirection, ...] = ("high", "low")
 
-SCALE_NAMES: tuple[ScaleName, ...] = ("daily", "weekly", "long_term")
+SCALE_NAMES: tuple[ScaleName, ...] = ("daily", "weekday", "weekly", "long_term")
 
 OBSERVATION_FIELDS = frozenset(
     {"observation_start", "observation_end", "current_power_w", "value_implausible"}
@@ -36,9 +36,14 @@ OBSERVATION_FIELDS = frozenset(
 
 ANALYSIS_FIELDS = frozenset(
     {
-        "daily_expected_w",
-        "weekly_expected_w",
-        "long_term_mean_w",
+        "daily_std",
+        "daily_std_expected",
+        "today_mean_expected_w",
+        "weekday_expected_w",
+        "weekly_mean_w",
+        "weekly_mean_expected_w",
+        "long_term_window_mean_w",
+        "long_term_expected_w",
         "trend_slope_w_per_hour",
         "trend_change",
         "trend",
@@ -101,9 +106,14 @@ class ObservationState(TypedDict):
 
 
 class AnalysisState(TypedDict):
-    daily_expected_w: float | None
-    weekly_expected_w: float | None
-    long_term_mean_w: float | None
+    daily_std: float | None
+    daily_std_expected: float | None
+    today_mean_expected_w: float | None
+    weekday_expected_w: float | None
+    weekly_mean_w: float | None
+    weekly_mean_expected_w: float | None
+    long_term_window_mean_w: float | None
+    long_term_expected_w: float | None
     trend_slope_w_per_hour: float | None
     trend_change: float | None
     trend: TrendName | None
@@ -111,12 +121,14 @@ class AnalysisState(TypedDict):
 
 class ScaleScores(TypedDict):
     daily: float | None
+    weekday: float | None
     weekly: float | None
     long_term: float | None
 
 
 class ScaleAnomalyStreakDays(TypedDict):
     daily: float | None
+    weekday: float | None
     weekly: float | None
     long_term: float | None
 
@@ -206,9 +218,14 @@ def validate_structured_state(
     validate_fields(analysis, ANALYSIS_FIELDS, "analysis")
 
     for field in (
-        "daily_expected_w",
-        "weekly_expected_w",
-        "long_term_mean_w",
+        "daily_std",
+        "daily_std_expected",
+        "today_mean_expected_w",
+        "weekday_expected_w",
+        "weekly_mean_w",
+        "weekly_mean_expected_w",
+        "long_term_window_mean_w",
+        "long_term_expected_w",
         "trend_slope_w_per_hour",
         "trend_change",
     ):
@@ -292,9 +309,17 @@ def validate_structured_state(
         if anomaly["dominant_scale"] not in available_scales:
             raise ValueError("anomaly.dominant_scale must be an available scale.")
 
+        today_mean = _number(observation["current_power_w"], "observation.current_power_w", nullable=True)
+        today_mean_expected = _number(analysis["today_mean_expected_w"], "analysis.today_mean_expected_w", nullable=True)
+
+        direction_overrides: dict[str, float] = {}
+        if today_mean is not None and today_mean_expected is not None:
+            direction_overrides["daily"] = today_mean - today_mean_expected
+
         # Mapping ist im Key-Typ invariant - ScaleName ist ein str-Literal, aber nicht "str" selbst
         expected_dominant_scale, expected_score, expected_direction = resolve_dominant_scale(
-            cast(Mapping[str, float], validated_scale_scores)
+            cast(Mapping[str, float], validated_scale_scores),
+            direction_overrides=direction_overrides,
         )
 
         if score is None or not _float_matches(float(score), expected_score):

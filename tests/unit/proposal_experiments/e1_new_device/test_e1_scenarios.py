@@ -9,10 +9,11 @@ import pytest
 from experiments.proposal_experiments.e1_new_device.e1_scenarios import build_device_scenario
 from src.config.project_config import ProjectConfig
 from src.pipeline.comparison_harness import run_comparison
-from src.pipeline.cycle_variants import SYS_VARIANTS
+from src.config.config_forecasting import ComparisonConfig, SYS_VARIANTS
 
 
 PROJECT_ROOT = ProjectConfig().project_root
+COMPARISON_CONFIG = ComparisonConfig()
 DEVICE_METER_KEY = "H1_M5"
 
 
@@ -83,6 +84,16 @@ def test_run_comparison_completes_across_the_cutover(tmp_path: Path) -> None:
     )
 
     config = {"SYS2": SYS_VARIANTS["SYS2"]}
-    result = run_comparison(scenario, config, tmp_path / "run", PROJECT_ROOT)
+    result = run_comparison(
+        scenario,
+        config,
+        tmp_path / "run",
+        PROJECT_ROOT,
+        local_timezone="Europe/London",
+        max_consecutive_llm_failures=COMPARISON_CONFIG.max_consecutive_llm_failures,
+        max_total_llm_failures=COMPARISON_CONFIG.max_total_llm_failures,
+        calendar_lookback_hours=COMPARISON_CONFIG.calendar_lookback_hours,
+        calendar_lookahead_hours=COMPARISON_CONFIG.calendar_lookahead_hours,
+    )
 
     assert len(result) == len(decision_times)

@@ -30,6 +30,8 @@ class ProjectConfig:
     llm_output_dir: Path = output_dir / "llm"
     cycle_output_dir: Path = output_dir / "cycle"
 
+    timezone: str = "Europe/London"
+
     # Dataset
     dataset_release: str = "UK-DALE April 2017"
     dataset_doi: str = "10.5286/UKERC.EDC.000004"
@@ -68,4 +70,3 @@ def ensure_project_directories(config: ProjectConfig) -> None:
 
     for directory in directories:
         directory.mkdir(parents=True, exist_ok=True)
-

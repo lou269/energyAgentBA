@@ -23,6 +23,10 @@ class LLMClient(Protocol):
         output_schema: dict[str, object],
         temperature: float,
         seed: int | None,
+        num_predict: int,
+        num_ctx: int,
+        think: bool,
+        keep_alive: int | str,
     ) -> str: ...
 
     def get_model_metadata(self, model: str) -> ModelMetadata: ...
@@ -49,12 +53,16 @@ class OllamaClient:
         output_schema: dict[str, object],
         temperature: float,
         seed: int | None,
+        num_predict: int,
+        num_ctx: int,
+        think: bool,
+        keep_alive: int | str,
     ) -> str:
-        # ohne num_predict: Ollama eigenes Default (128 Tokens) -> reicht für explanation + mehrere evidence_reference nicht aus und 
-        # Antwort wird mitten im JSON abgeschnitten
-        # ohne num_ctx: Ollama Default (4096) -> Prompt + Structured State + Schema füllen das bei prompt_v9 bereits zu ~97%, 
-        # done_reason kam als "length" obwohl num_predict längst nicht ausgeschöpft war
-        options: dict[str, float | int] = {"temperature": temperature, "num_predict": 1024, "num_ctx": 8192}
+        options: dict[str, float | int] = {
+            "temperature": temperature,
+            "num_predict": num_predict,
+            "num_ctx": num_ctx,
+        }
 
         if seed is not None:
             options["seed"] = seed
@@ -64,9 +72,9 @@ class OllamaClient:
             messages=messages,
             format=output_schema,
             options=options,
-            think=False,
+            think=think,
             stream=False,
-            keep_alive=0,
+            keep_alive=keep_alive,
         )
 
         if response.done_reason == "length":

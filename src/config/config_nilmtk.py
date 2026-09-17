@@ -23,7 +23,7 @@ class DataPreparationConfig:
     canonical_ac_type: str = CANONICAL_AC_TYPE
 
     min_coverage_share: float = 0.80
-    max_availability_gap_hours: int = 6
+    max_availability_gap_hours: int = 24
 
     min_mains_coverage_share: float = 0.95
     min_mains_valid_duration_days: float = 45.0

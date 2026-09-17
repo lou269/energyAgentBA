@@ -138,7 +138,7 @@ class ColdStartRunner:
             growth=self.experiment_config.growth,
             daily_seasonality=self.experiment_config.daily_seasonality,
             country_holidays=self.experiment_config.country_holidays,
-            local_timezone=self.experiment_config.timezone,
+            local_timezone=self.project_config.timezone,
             log_transform=self.experiment_config.log_transform,
             interval_width=self.experiment_config.interval_width,
             uncertainty_samples=self.experiment_config.uncertainty_samples,
@@ -208,7 +208,7 @@ class ColdStartRunner:
                 "growth": self.experiment_config.growth,
                 "daily_seasonality": self.experiment_config.daily_seasonality,
                 "country_holidays": self.experiment_config.country_holidays,
-                "local_timezone": self.experiment_config.timezone,
+                "local_timezone": self.project_config.timezone,
                 "log_transform": self.experiment_config.log_transform,
                 "interval_width": self.experiment_config.interval_width,
                 "variants": [asdict(variant) for variant in self.experiment_config.prophet_variants],
@@ -219,7 +219,7 @@ class ColdStartRunner:
                     "weekly": variant.weekly_seasonality,
                     "yearly": variant.yearly_seasonality,
                     "holidays": self.experiment_config.country_holidays,
-                    "local_timezone": self.experiment_config.timezone,
+                    "local_timezone": self.project_config.timezone,
                     "log_transform": self.experiment_config.log_transform,
                 }
                 for variant in self.experiment_config.prophet_variants

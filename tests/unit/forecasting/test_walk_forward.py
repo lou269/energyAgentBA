@@ -97,6 +97,41 @@ def test_available_history_is_strictly_causal_and_grows_between_origins() -> Non
     assert hours_second - hours_first == 24
 
 
+def test_forecast_origins_stay_on_local_midnight_across_a_dst_transition() -> None:
+    # 2020-03-29: Europe/London stellt die Uhr um 01:00 auf 02:00 vor, feste 24h-Schritte würden
+    # den Ursprung an diesem Tag auf 01:00 lokal verschieben statt auf Mitternacht zu bleiben
+    fixed_history = _hourly("2020-03-19T23:00:00Z", [100.0])
+    evaluation_targets = _hourly(fixed_history.index[-1] + pd.Timedelta(hours=1), [100.0] * (24 * 12))
+    mask = _no_imputation(evaluation_targets.index)
+
+    forecasts = build_walk_forward_forecasts(
+        fixed_history,
+        evaluation_targets,
+        mask,
+        run_id="r1",
+        experiment_id="e1",
+        split="validation",
+        horizon_hours=24,
+        forecast_origin_step_hours=24,
+        frequency="1h",
+        baseline_model_ids=("B1",),
+        prophet_variants=(),
+        growth="linear",
+        daily_seasonality=True,
+        country_holidays=None,
+        local_timezone="Europe/London",
+        log_transform=False,
+        interval_width=0.8,
+        clip_negative_forecasts=False,
+        uncertainty_samples=100,
+        config_version="test",
+    )
+
+    origins = pd.DatetimeIndex(sorted(forecasts["forecast_origin"].unique())).tz_convert("Europe/London")
+    assert (origins.hour == 0).all()
+    assert len(origins) > 10
+
+
 def test_prophet_expanding_history_grows_and_retrains_on_schedule() -> None:
     fixed_history = _hourly("2020-01-01", [float(h % 24) for h in range(72)])
     evaluation_targets = _hourly(fixed_history.index[-1] + pd.Timedelta(hours=1), [float(h % 24) for h in range(48)])

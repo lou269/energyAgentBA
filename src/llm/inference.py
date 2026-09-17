@@ -46,6 +46,10 @@ def infer_llm_output(
     temperature: float,
     seed: int | None,
     max_attempts: int,
+    num_predict: int,
+    num_ctx: int,
+    think: bool,
+    keep_alive: int | str,
 ) -> LLMInferenceResult:
     _validate_inference_parameters(
         prompt=prompt,
@@ -78,6 +82,10 @@ def infer_llm_output(
                 output_schema=output_schema,
                 temperature=float(temperature),
                 seed=seed,
+                num_predict=num_predict,
+                num_ctx=num_ctx,
+                think=think,
+                keep_alive=keep_alive,
             )
         except Exception as error:
             raise RuntimeError(f"LLM client request failed during attempt {attempt_number}.") from error
@@ -194,4 +202,3 @@ def _validate_inference_parameters(
         or max_attempts < 1
     ):
         raise ValueError("max_attempts must be an integer of at least 1.")
-

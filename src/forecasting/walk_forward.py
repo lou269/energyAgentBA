@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from prophet import Prophet
 
+from src.common.timestamps import local_calendar_range
 from src.forecasting.baselines import build_daily_naive_forecast, build_last_value_forecast,build_weekly_naive_forecast
 from src.forecasting.prophet_model import build_prophet_forecast, fit_prophet_model
 from src.forecasting.forecast_schema import FORECAST_OUTPUT_COLUMNS, validate_forecast_output
@@ -128,9 +129,7 @@ def build_walk_forward_forecasts(
     if last_origin < first_origin:
         raise ValueError("Evaluation split contains no complete forecast horizon.")
 
-    forecast_origins = pd.date_range(
-        start=first_origin, end=last_origin, freq=f"{forecast_origin_step_hours}h"
-    )
+    forecast_origins = local_calendar_range(first_origin, forecast_origin_step_hours, last_origin, local_timezone)
 
     complete_history = pd.concat([fixed_history, evaluation_targets])
     prophet_states: dict[str, tuple[Prophet, pd.Timestamp, pd.Series]] = {}

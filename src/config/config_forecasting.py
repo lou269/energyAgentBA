@@ -6,7 +6,7 @@ from typing import Literal
 ProductionGapMethod = Literal["ffill", "none"]
 HistoryMode = Literal["fixed_train", "expanding", "rolling"]
 NegativeForecastHandling = Literal["raw", "clip_zero"]
-
+LLMMode = Literal["off", "rule", "real"]
 
 ''' PREPROCESSING '''
 @dataclass(frozen=True)
@@ -16,10 +16,11 @@ class PreprocessingConfig:
 
     gap_treatment_method: ProductionGapMethod = "ffill"
     max_imputation_gap_15min: int = 4
-    max_imputation_gap_hourly: int = 6  # nicht das gleiche wie DataPreparationConfig.max_availability_gap_hours
+    max_imputation_gap_hourly: int = 3  # nicht das gleiche wie DataPreparationConfig.max_availability_gap_hours
 
     stuck_value_min_hours: float = 6.0
 
+    max_daily_missing_share: float = 0.10
 
 
 ''' NUMERICAL ANALYSIS '''
@@ -35,7 +36,7 @@ class NumericalAnalysisConfig:
     long_term_window_hourly: int = 720
 
     min_daily_reference_samples: int = 7
-    min_weekly_reference_samples: int = 4
+    min_weekday_reference_samples: int = 4  # umbenannt von min_weekly_reference_samples (war Wochentags-Groupby in build_daily_cycle_analysis)
 
     trend_threshold: float = 0.30
     min_reference_power_w: float = 10.0
@@ -51,13 +52,17 @@ class NumericalAnalysisConfig:
     sample_period_hours_daily: float = 24.0
     trend_window_days: int = 7  # unkalibriert, Startwert wie trend_threshold seinerzeit
     long_term_window_days: int = 30
+    weekly_window_days: int = 7  # eigenständig von trend_window_days, auch wenn aktuell derselbe Wert
 
-    # unkalibriert, nur grob unter der Trainingslänge gehalten (E2 läuft mit 60 Tagen Coldstart)
-    min_reference_samples_daily: int = 21
+    # wie viele Tage reference_window_end nach einem Reset noch mitwachsen darf, bevor es einfriert
+    max_reference_window_growth_days: int = 60
+
+    min_weekly_reference_samples: int = 1
+    min_longterm_reference_samples: int = 1
 
     # Tage am Stück, die eine Skala mindestens auffällig sein muss, um absence/new_pattern statt peak zu ergeben (rule_based_classifier.py)
     # unkalibriert, erster Schätzwert
-    sustained_anomaly_streak_days: int = 3
+    sustained_anomaly_streak_days: int = 7
 
 
 ''' PROPHET '''
@@ -71,25 +76,33 @@ class ProphetVariantConfig:
     yearly_seasonality: bool = False
 
 
+C1_STATIC = ProphetVariantConfig(
+    model_id="C1",
+    history_mode="fixed_train",
+    rolling_window_hours=None,
+    retraining_interval_hours=None,
+)
+
+C2_EXPANDING = ProphetVariantConfig(
+    model_id="C2",
+    history_mode="expanding",
+    rolling_window_hours=None,
+    retraining_interval_hours=24,
+)
+
+
 ''' FORECASTING '''
 @dataclass(frozen=True)
 class ForecastingConfig:
     config_version: str = "0.5"
 
-    selected_prophet_variant: ProphetVariantConfig = ProphetVariantConfig(
-        model_id="C2",
-        history_mode="expanding",
-        rolling_window_hours=None,
-        retraining_interval_hours=24,
-        weekly_seasonality=False,
-    )
+    selected_prophet_variant: ProphetVariantConfig = C2_EXPANDING
 
     experiment_id: str = "forecasting"
 
     # Forecast-Ziel
     frequency: str = "1h"
 
-    timezone: str = "Europe/London"
     horizon_hours: int = 24
 
     # Walk-Forward-Evaluation
@@ -126,6 +139,52 @@ class LLMConfig:
     seed: int | None = 42
     max_attempts: int = 2
     request_timeout_seconds: float = 120.0
-    
-    
-    
+    num_predict: int = 1024
+    num_ctx: int = 8192
+    think: bool = False
+    keep_alive: int | str = 0
+
+
+@dataclass(frozen=True)
+class ComparisonConfig:
+    max_consecutive_llm_failures: int = 5
+    max_total_llm_failures: int = 15
+    calendar_lookback_hours: int = 24
+    calendar_lookahead_hours: int = 24
+
+
+@dataclass(frozen=True)
+class CycleConfig:
+    forecasting_config: ForecastingConfig
+    numerical_analysis_config: NumericalAnalysisConfig
+    event_adaptation: bool
+    llm_mode: LLMMode
+    llm_config: LLMConfig | None = None
+
+SYS_VARIANTS: dict[str, CycleConfig] = {
+    "SYS0": CycleConfig(
+        forecasting_config=ForecastingConfig(selected_prophet_variant=C1_STATIC),
+        numerical_analysis_config=NumericalAnalysisConfig(),
+        event_adaptation=False,
+        llm_mode="off",
+    ),
+    "SYS1": CycleConfig(
+        forecasting_config=ForecastingConfig(selected_prophet_variant=C2_EXPANDING),
+        numerical_analysis_config=NumericalAnalysisConfig(),
+        event_adaptation=False,
+        llm_mode="off",
+    ),
+    "SYS2": CycleConfig(
+        forecasting_config=ForecastingConfig(selected_prophet_variant=C2_EXPANDING),
+        numerical_analysis_config=NumericalAnalysisConfig(),
+        event_adaptation=True,
+        llm_mode="rule",
+    ),
+    "SYS3": CycleConfig(
+        forecasting_config=ForecastingConfig(selected_prophet_variant=C2_EXPANDING),
+        numerical_analysis_config=NumericalAnalysisConfig(),
+        event_adaptation=True,
+        llm_mode="real",
+        llm_config=LLMConfig(model="qwen3.5:9b"),
+    ),
+}

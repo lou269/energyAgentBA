@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import pandas as pd
 
+from src.common.column_naming import channel_data_column
+from src.common.timestamps import snap_to_local_midnight_range
+
 
 def build_aggregated_data(
     channels: dict[str, pd.Series],
@@ -55,3 +58,41 @@ def _aggregate_channels(
     quality = pd.DataFrame(quality_columns)
 
     return aggregated, quality
+
+
+def build_canonical_data(
+    data_15min: pd.DataFrame,
+    quality_15min: pd.DataFrame,
+    data_hourly: pd.DataFrame,
+    quality_hourly: pd.DataFrame,
+    meter_key: str,
+    window_start: pd.Timestamp,
+    window_end: pd.Timestamp,
+    local_timezone: str,
+):
+  
+    window_start, window_end = snap_to_local_midnight_range(window_start, window_end, local_timezone)
+
+    quality_columns = [
+        f"{meter_key}_valid_observation_count",
+        f"{meter_key}_coverage_share",
+        f"{meter_key}_coverage_mask",
+    ]
+
+    canonical_data_15min = data_15min.loc[window_start:window_end, [meter_key]].rename(
+        columns={meter_key: channel_data_column(meter_key, "15min")}
+    )
+    canonical_data_hourly = data_hourly.loc[window_start:window_end, [meter_key]].rename(
+        columns={meter_key: channel_data_column(meter_key, "hourly")}
+    )
+    canonical_quality_15min = quality_15min.loc[window_start:window_end, quality_columns]
+    canonical_quality_hourly = quality_hourly.loc[window_start:window_end, quality_columns]
+
+    return (
+        window_start,
+        window_end,
+        canonical_data_15min,
+        canonical_data_hourly,
+        canonical_quality_15min,
+        canonical_quality_hourly,
+    )

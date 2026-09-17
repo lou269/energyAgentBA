@@ -94,6 +94,10 @@ class LLMRunner:
                 temperature=self.llm_config.temperature,
                 seed=self.llm_config.seed,
                 max_attempts=self.llm_config.max_attempts,
+                num_predict=self.llm_config.num_predict,
+                num_ctx=self.llm_config.num_ctx,
+                think=self.llm_config.think,
+                keep_alive=self.llm_config.keep_alive,
             )
 
         except LLMInferenceError as error:

@@ -6,8 +6,9 @@ import logging
 import pandas as pd
 
 from src.pipeline.io import df_to_csv
-from src.config.config_forecasting import PreprocessingConfig
+from src.config.config_forecasting import NumericalAnalysisConfig, PreprocessingConfig
 from src.config.project_config import ProjectConfig, ensure_project_directories
+from src.preprocessing.day_quality import exclude_incomplete_days
 from src.preprocessing.gap_treatment import build_gap_treated_data
 from src.preprocessing.plausibility_check import build_plausibility_flags
 from src.preprocessing.split import build_chronological_split
@@ -33,12 +34,16 @@ def run_preprocessing(
     data_hourly: pd.DataFrame,
     quality_hourly: pd.DataFrame,
     config: PreprocessingConfig,
+    local_timezone: str,
+    *,
+    sample_period_hours_15min: float,
+    sample_period_hours_hourly: float,
 ) -> PreprocessingResult:
     plausibility_15min = build_plausibility_flags(
         data_15min,
         quality_15min,
         stuck_value_min_hours=config.stuck_value_min_hours,
-        sample_period_hours=0.25,
+        sample_period_hours=sample_period_hours_15min,
         resolution="15min",
     )
 
@@ -46,7 +51,7 @@ def run_preprocessing(
         data_hourly,
         quality_hourly,
         stuck_value_min_hours=config.stuck_value_min_hours,
-        sample_period_hours=1.0,
+        sample_period_hours=sample_period_hours_hourly,
         resolution="hourly",
     )
 
@@ -62,6 +67,7 @@ def run_preprocessing(
         quality_15min,
         train_share=config.train_share,
         validation_share=config.validation_share,
+        local_timezone=local_timezone,
     )
 
     (
@@ -76,6 +82,7 @@ def run_preprocessing(
         quality_hourly,
         train_share=config.train_share,
         validation_share=config.validation_share,
+        local_timezone=local_timezone,
     )
 
     split_manifest = pd.DataFrame(
@@ -187,6 +194,15 @@ def run_preprocessing(
         ]
     )
 
+    treated_hourly, imputation_mask_hourly = exclude_incomplete_days(
+        treated_hourly,
+        imputation_mask_hourly,
+        local_timezone=local_timezone,
+        sample_period_hours=sample_period_hours_hourly,
+        max_single_gap_hours=config.max_imputation_gap_hourly,
+        max_daily_missing_share=config.max_daily_missing_share,
+    )
+
     return PreprocessingResult(
         split_manifest=split_manifest,
         treated_15min=treated_15min,
@@ -203,9 +219,11 @@ class PreprocessingRunner:
         self,
         project_config: ProjectConfig | None = None,
         preprocessing_config: PreprocessingConfig | None = None,
+        numerical_analysis_config: NumericalAnalysisConfig | None = None,
     ) -> None:
         self.project_config = project_config or ProjectConfig()
         self.preprocessing_config = preprocessing_config or PreprocessingConfig()
+        self.numerical_analysis_config = numerical_analysis_config or NumericalAnalysisConfig()
 
     def _read_canonical(self, name: str) -> pd.DataFrame:
         return pd.read_csv(
@@ -230,6 +248,9 @@ class PreprocessingRunner:
             data_hourly,
             quality_hourly,
             self.preprocessing_config,
+            self.project_config.timezone,
+            sample_period_hours_15min=self.numerical_analysis_config.sample_period_hours_15min,
+            sample_period_hours_hourly=self.numerical_analysis_config.sample_period_hours_hourly,
         )
 
         df_to_csv(

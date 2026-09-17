@@ -70,7 +70,7 @@ def run() -> None:
         growth=e3_config.growth,
         daily_seasonality=e3_config.daily_seasonality,
         country_holidays=e3_config.country_holidays,
-        local_timezone=e3_config.timezone,
+        local_timezone=project_config.timezone,
         log_transform=e3_config.log_transform,
         interval_width=e3_config.interval_width,
         clip_negative_forecasts=(e3_config.negative_forecast_handling == "clip_zero"),

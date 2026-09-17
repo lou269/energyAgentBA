@@ -17,7 +17,7 @@ from src.config.project_config import ProjectConfig, ensure_project_directories
 from src.llm.llm_run_artifacts import load_prompt
 from src.llm.llm_runner import PROMPT_DIRECTORY
 from src.pipeline.comparison_harness import run_comparison
-from src.pipeline.cycle_variants import SYS_VARIANTS
+from src.config.config_forecasting import ComparisonConfig, SYS_VARIANTS
 from src.pipeline.io import next_sequential_number
 
 logger = logging.getLogger(__name__)
@@ -99,14 +99,28 @@ class E2Runner:
             "SYS3_CTX1": sys3_config
         }
 
+        comparison_config = ComparisonConfig()
+
         logger.info("Running E2/CTX0 (no calendar context) over %d decision times...", len(decision_times))
         ctx0_result = run_comparison(
-            ctx0_scenario, ctx0_configs, ctx0_dir, self.project_config.project_root, run_id=f"{e2_run_directory.name}_ctx0", llm_prompt=llm_prompt
+            ctx0_scenario, ctx0_configs, ctx0_dir, self.project_config.project_root,
+            local_timezone=self.project_config.timezone,
+            run_id=f"{e2_run_directory.name}_ctx0", llm_prompt=llm_prompt,
+            max_consecutive_llm_failures=comparison_config.max_consecutive_llm_failures,
+            max_total_llm_failures=comparison_config.max_total_llm_failures,
+            calendar_lookback_hours=comparison_config.calendar_lookback_hours,
+            calendar_lookahead_hours=comparison_config.calendar_lookahead_hours,
         )
 
         logger.info("Running E2/CTX1 (with calendar context) over %d decision times...", len(decision_times))
         ctx1_result = run_comparison(
-            ctx1_scenario, ctx1_configs, ctx1_dir, self.project_config.project_root, run_id=f"{e2_run_directory.name}_ctx1", llm_prompt=llm_prompt
+            ctx1_scenario, ctx1_configs, ctx1_dir, self.project_config.project_root,
+            local_timezone=self.project_config.timezone,
+            run_id=f"{e2_run_directory.name}_ctx1", llm_prompt=llm_prompt,
+            max_consecutive_llm_failures=comparison_config.max_consecutive_llm_failures,
+            max_total_llm_failures=comparison_config.max_total_llm_failures,
+            calendar_lookback_hours=comparison_config.calendar_lookback_hours,
+            calendar_lookahead_hours=comparison_config.calendar_lookahead_hours,
         )
 
         combined = pd.concat([ctx0_result, ctx1_result], ignore_index=True)

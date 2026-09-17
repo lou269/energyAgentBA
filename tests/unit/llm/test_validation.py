@@ -26,15 +26,15 @@ def test_path_outside_allowlist_is_rejected_even_though_it_exists_in_state() -> 
 
 def test_value_is_resolved_at_full_precision() -> None:
     state = valid_structured_state()
-    daily_expected_w = state["analysis"]["daily_expected_w"]
-    assert daily_expected_w is not None
+    weekday_expected_w = state["analysis"]["weekday_expected_w"]
+    assert weekday_expected_w is not None
 
     output = valid_llm_output()
-    output["evidence_references"] = [{"path": "analysis.daily_expected_w"}]
+    output["evidence_references"] = [{"path": "analysis.weekday_expected_w"}]
 
     resolved = validate_llm_output_against_state(cast(RawLLMOutput, output), state)
 
-    assert resolved["evidence_references"][0] == {"path": "analysis.daily_expected_w", "value": daily_expected_w}
+    assert resolved["evidence_references"][0] == {"path": "analysis.weekday_expected_w", "value": weekday_expected_w}
 
 
 def test_bool_value_is_resolved_with_correct_type() -> None:

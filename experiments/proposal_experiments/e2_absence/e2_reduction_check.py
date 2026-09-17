@@ -16,7 +16,6 @@ from experiments.proposal_experiments.e2_absence.e2_selection import (
     select_channels_for_subtraction,
 )
 from experiments.proposal_experiments.shared import load_target_series, subtract_channels_in_window
-from src.config.config_forecasting import ForecastingConfig
 from src.config.project_config import ProjectConfig
 from src.pipeline.io import df_to_csv
 
@@ -29,11 +28,9 @@ class AbsenceReductionCheckRunner:
     def __init__(
         self,
         project_config: ProjectConfig | None = None,
-        forecasting_config: ForecastingConfig | None = None,
         e2_config: E2Config | None = None,
     ) -> None:
         self.project_config = project_config or ProjectConfig()
-        self.forecasting_config = forecasting_config or ForecastingConfig()
         self.e2_config = e2_config or E2Config()
 
     def run(self) -> None:
@@ -52,7 +49,7 @@ class AbsenceReductionCheckRunner:
         adjusted_window = absence_adjusted_series.loc[window_mask]
 
         # Abwesenheitsfenster liegt im Sommer, UTC-Mitternacht != lokale Mitternacht
-        local_day = cast(pd.DatetimeIndex, raw_window.index).tz_convert(self.forecasting_config.timezone).normalize()
+        local_day = cast(pd.DatetimeIndex, raw_window.index).tz_convert(self.project_config.timezone).normalize()
 
         comparison = pd.DataFrame({
             "mains_before_w": raw_window.groupby(local_day).mean(),

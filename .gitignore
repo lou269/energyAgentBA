@@ -23,11 +23,6 @@ data_2017/
 *.hdf5
 *.parquet
 
-# Output
-# Generated aligned datasets
-output/preparation/selected_data_*.csv
-output/canonical/canonical_data.csv
-#output/
 *.log
 
 old/

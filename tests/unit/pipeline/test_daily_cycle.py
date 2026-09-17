@@ -5,8 +5,8 @@ import pandas as pd
 import pytest
 
 from src.context.calendar_context import build_calendar_context
-from src.pipeline.cycle_variants import SYS_VARIANTS
-from src.pipeline.daily_cycle import CycleState, run_cycle
+from src.config.config_forecasting import SYS_VARIANTS
+from src.pipeline.daily_cycle import CycleState, _compute_reference_window_end, run_cycle
 
 
 def _hourly(start, values: list[float]) -> pd.Series:
@@ -20,7 +20,6 @@ def _state(history: pd.Series) -> CycleState:
         prophet_model=None,
         model_history=None,
         model_fitted_at=None,
-        reference_window_end=None,
     )
 
 
@@ -49,14 +48,20 @@ def test_event_adaptation_requires_a_classification_mode() -> None:
     config = replace(SYS_VARIANTS["SYS0"], event_adaptation=True)
 
     with pytest.raises(ValueError, match="event_adaptation"):
-        run_cycle(_state(_hourly("2024-01-01", [100.0])), _hourly("2024-01-01", [100.0]), pd.Timestamp("2024-01-01", tz="UTC"), config)
+        run_cycle(
+            _state(_hourly("2024-01-01", [100.0])), _hourly("2024-01-01", [100.0]), pd.Timestamp("2024-01-01", tz="UTC"), config,
+            local_timezone="Europe/London",
+        )
 
 
 def test_decision_time_must_be_utc() -> None:
     new_observations = _hourly("2024-01-02", [100.0])
 
     with pytest.raises(ValueError, match="UTC"):
-        run_cycle(_state(_hourly("2024-01-01", [100.0])), new_observations, pd.Timestamp("2024-01-02T01:00:00"), SYS_VARIANTS["SYS0"])
+        run_cycle(
+            _state(_hourly("2024-01-01", [100.0])), new_observations, pd.Timestamp("2024-01-02T01:00:00"), SYS_VARIANTS["SYS0"],
+            local_timezone="Europe/London",
+        )
 
 
 def test_new_observations_must_continue_directly_after_history() -> None:
@@ -65,7 +70,7 @@ def test_new_observations_must_continue_directly_after_history() -> None:
     decision_time = gap_observations.index[-1] + pd.Timedelta(hours=1)
 
     with pytest.raises(ValueError, match="continue directly"):
-        run_cycle(_state(history), gap_observations, decision_time, SYS_VARIANTS["SYS0"])
+        run_cycle(_state(history), gap_observations, decision_time, SYS_VARIANTS["SYS0"], local_timezone="Europe/London")
 
 
 def test_new_observations_must_end_one_hour_before_decision_time() -> None:
@@ -74,7 +79,44 @@ def test_new_observations_must_end_one_hour_before_decision_time() -> None:
     wrong_decision_time = new_observations.index[-1] + pd.Timedelta(hours=2)
 
     with pytest.raises(ValueError, match="one hour before"):
-        run_cycle(_state(history), new_observations, wrong_decision_time, SYS_VARIANTS["SYS0"])
+        run_cycle(_state(history), new_observations, wrong_decision_time, SYS_VARIANTS["SYS0"], local_timezone="Europe/London")
+
+
+def test_compute_reference_window_end_returns_none_below_72_hours() -> None:
+    history = _hourly("2024-01-01", [100.0] * 71)
+
+    assert _compute_reference_window_end(history, local_timezone="UTC", max_growth_days=60) is None
+
+
+def test_compute_reference_window_end_grows_with_history_up_to_the_cap() -> None:
+    history = _hourly("2024-01-01", [100.0] * (24 * 10))
+
+    end = _compute_reference_window_end(history, local_timezone="UTC", max_growth_days=60)
+    assert end == history.index[-1] - pd.Timedelta(hours=71)
+
+    # ueber die Wachstumsgrenze hinaus wird der Deckel gehalten, statt mit history weiterzuwachsen
+    long_history = _hourly("2024-01-01", [100.0] * (24 * 90))
+    capped_end = _compute_reference_window_end(long_history, local_timezone="UTC", max_growth_days=60)
+    growth_ceiling = long_history.index[0].normalize() + pd.DateOffset(days=60)
+    assert capped_end == growth_ceiling - pd.Timedelta(hours=71)
+
+
+def test_run_cycle_survives_less_than_72_hours_of_history() -> None:
+    history = _hourly("2024-01-01", [100.0] * 24)
+    new_observations = _hourly(history.index[-1] + pd.Timedelta(hours=1), [100.0] * 24)
+    decision_time = new_observations.index[-1] + pd.Timedelta(hours=1)
+    config = replace(SYS_VARIANTS["SYS1"], llm_mode="rule")
+
+    result, new_state = run_cycle(
+        _state(history), new_observations, decision_time, config,
+        local_timezone="Europe/London",
+        calendar_context=_calendar_context(decision_time),
+    )
+
+    assert result.analysis_row is None
+    assert result.classification is None
+    assert result.structured_state is None
+    assert len(new_state.history) == 48
 
 
 def _run_single_cycle(series: pd.Series, coldstart_hours: int, config) -> tuple:
@@ -82,11 +124,14 @@ def _run_single_cycle(series: pd.Series, coldstart_hours: int, config) -> tuple:
     state = _state(series.iloc[:coldstart_hours])
     decision_time = series.index[coldstart_hours + 24]
     new_observations = series.loc[state.history.index[-1] + pd.Timedelta(hours=1) : decision_time - pd.Timedelta(hours=1)]
-    return run_cycle(state, new_observations, decision_time, config, calendar_context=_calendar_context(decision_time))
+    return run_cycle(
+        state, new_observations, decision_time, config,
+        local_timezone="Europe/London",
+        calendar_context=_calendar_context(decision_time),
+    )
 
 
 def test_classification_is_unknown_when_reference_is_insufficient() -> None:
-    # min_reference_samples_daily default ist 21 - ein einziger Trainingstag reicht bewusst nicht
     series = _calm_series(24 * 6)
     config = replace(SYS_VARIANTS["SYS1"], llm_mode="rule")
 
@@ -125,34 +170,78 @@ def test_isolated_single_hour_spike_is_diluted_by_the_daily_mean() -> None:
 def _advance_one_day(series: pd.Series, state: CycleState, config) -> tuple:
     decision_time = state.history.index[-1] + pd.Timedelta(hours=1) + pd.Timedelta(hours=24)
     new_observations = series.loc[state.history.index[-1] + pd.Timedelta(hours=1) : decision_time - pd.Timedelta(hours=1)]
-    return run_cycle(state, new_observations, decision_time, config, calendar_context=_calendar_context(decision_time))
+    return run_cycle(
+        state, new_observations, decision_time, config,
+        local_timezone="Europe/London",
+        calendar_context=_calendar_context(decision_time),
+    )
 
 
-def test_sustained_absence_triggers_retrain_and_range_exclusion() -> None:
+def test_sustained_absence_triggers_retrain_without_baseline_reset() -> None:
     hours = 24 * 90
     series = _calm_series(hours, day_jitter_w=5.0)
     values = series.to_numpy().copy()
     drop_start = 60 * 24
-    values[drop_start : drop_start + 6 * 24] = 5.0
+    values[drop_start : drop_start + 10 * 24] = 5.0
     series = pd.Series(values, index=series.index, name="target")
 
     config = SYS_VARIANTS["SYS2"]
     state = _state(series.iloc[:drop_start])
 
-    # ein Tag in den Drop hinein, Streak ist noch keine 3 Tage alt -> peak, keine Adaption
+    # ein Tag in den Drop hinein, Streak ist noch keine sustained_anomaly_streak_days alt -> peak, keine Adaption
     first_result, state = _advance_one_day(series, state, config)
     assert first_result.classification == "peak"
     assert first_result.adaption_action is not None and first_result.adaption_action.kind == "none"
 
-    # zwei weitere Tage im Drop -> Streak erreicht sustained_anomaly_streak_days -> absence
-    _, state = _advance_one_day(series, state, config)
+    history_start_before_adaption = state.history.index[0]
+
+    for _ in range(5):
+        _, state = _advance_one_day(series, state, config)
     second_result, second_state = _advance_one_day(series, state, config)
 
     assert second_result.classification == "absence"
     assert second_result.adaption_action is not None
     assert second_result.adaption_action.kind == "exclude_range"
     assert second_result.retrained
-    assert second_result.reference_reset
+
+    assert second_result.reference_reset is False
+    assert second_state.history.index[0] == history_start_before_adaption
 
     excluded = second_state.history.loc[second_result.adaption_action.range_start : second_result.adaption_action.range_end]
     assert excluded.isna().all()
+
+
+def test_sustained_level_shift_triggers_new_pattern_with_baseline_reset() -> None:
+    hours = 24 * 90
+    series = _calm_series(hours, day_jitter_w=5.0)
+    values = series.to_numpy().copy()
+    shift_start = 60 * 24
+    values[shift_start:] += 100.0
+    series = pd.Series(values, index=series.index, name="target")
+
+    config = SYS_VARIANTS["SYS2"]
+    state = _state(series.iloc[:shift_start])
+
+    first_result, state = _advance_one_day(series, state, config)
+    assert first_result.classification == "peak"
+    assert first_result.adaption_action is not None and first_result.adaption_action.kind == "none"
+
+    history_start_before_adaption = state.history.index[0]
+
+    # sechs weitere Tage im Shift -> mind. zwei Skalen sustained -> new_pattern
+    for _ in range(5):
+        _, state = _advance_one_day(series, state, config)
+    second_result, second_state = _advance_one_day(series, state, config)
+
+    assert second_result.classification == "new_pattern"
+    assert second_result.adaption_action is not None
+    assert second_result.adaption_action.kind == "advance_history_start"
+    assert second_result.retrained
+
+    # advance_history_start ist ein bestätigter Musterwechsel -> Baseline wird zurückgesetzt
+    assert second_result.reference_reset is True
+    assert second_state.history.index[0] > history_start_before_adaption
+
+    new_history_start = second_result.adaption_action.new_history_start
+    assert new_history_start is not None
+    assert second_state.history.index[0] == new_history_start

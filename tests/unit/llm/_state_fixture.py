@@ -13,7 +13,7 @@ _BASE_OUTPUT = {
     "explanation": "Der aktuelle Verbrauch liegt deutlich über dem taeglichen Erwartungswert.",
     "evidence_references": [
         {"path": "observation.current_power_w"},
-        {"path": "analysis.daily_expected_w"},
+        {"path": "analysis.daily_std_expected"},
         {"path": "anomaly.level"},
     ],
     "user_recommendation": "Keine spezifische Aktion empfohlen.",

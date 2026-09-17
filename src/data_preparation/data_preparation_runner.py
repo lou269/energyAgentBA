@@ -8,12 +8,11 @@ import pandas as pd
 from nilmtk import DataSet
 
 from src.common.channel_tables import load_channel_tables
-from src.common.column_naming import channel_data_column
 from src.pipeline.io import df_to_csv
 from src.config.config_nilmtk import DataPreparationConfig
 from src.config.project_config import ProjectConfig, ensure_project_directories
 from src.data_preparation.aggregation.channel_loading import build_loaded_channels
-from src.data_preparation.aggregation.aggregation import build_aggregated_data
+from src.data_preparation.aggregation.aggregation import build_aggregated_data, build_canonical_data
 from src.data_preparation.selection.candidate_availability import build_candidate_availability
 from src.data_preparation.selection.candidate_selection import build_candidate_selection
 
@@ -104,35 +103,28 @@ class DataPreparationRunner:
         winner = winners.iloc[0]
         meter_key = str(winner["meter_key"])
 
+        window_start, window_end, canonical_data_15min, canonical_data_hourly, canonical_quality_15min, canonical_quality_hourly = build_canonical_data(
+            data_15min,
+            quality_15min,
+            data_hourly,
+            quality_hourly,
+            meter_key,
+            pd.to_datetime(winner["window_start"], utc=True),
+            pd.to_datetime(winner["window_end"], utc=True),
+            self.project_config.timezone,
+        )
+
         canonical_manifest = pd.DataFrame(
             [
                 {
                     "candidate_id": winner["candidate_id"],
                     "house": int(winner["house"]),
                     "meter_key": meter_key,
-                    "window_start": winner["window_start"],
-                    "window_end": winner["window_end"],
+                    "window_start": window_start,
+                    "window_end": window_end,
                 }
             ]
         )
-
-        window_start = pd.to_datetime(winner["window_start"], utc=True)
-        window_end = pd.to_datetime(winner["window_end"], utc=True)
-
-        quality_columns = [
-            f"{meter_key}_valid_observation_count",
-            f"{meter_key}_coverage_share",
-            f"{meter_key}_coverage_mask",
-        ]
-
-        canonical_data_15min = data_15min.loc[window_start:window_end, [meter_key]].rename(
-            columns={meter_key: channel_data_column(meter_key, "15min")}
-        )
-        canonical_data_hourly = data_hourly.loc[window_start:window_end, [meter_key]].rename(
-            columns={meter_key: channel_data_column(meter_key, "hourly")}
-        )
-        canonical_quality_15min = quality_15min.loc[window_start:window_end, quality_columns]
-        canonical_quality_hourly = quality_hourly.loc[window_start:window_end, quality_columns]
 
         df_to_csv(
             canonical_manifest,

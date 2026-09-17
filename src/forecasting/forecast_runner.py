@@ -45,6 +45,7 @@ def run_forecasting(
     split: EvaluationSplit,
     run_id: str,
     config: ForecastingConfig,
+    local_timezone: str,
 ) -> ForecastingResult:
     if (
         split == "test"
@@ -83,7 +84,7 @@ def run_forecasting(
         growth=config.growth,
         daily_seasonality=config.daily_seasonality,
         country_holidays=config.country_holidays,
-        local_timezone=config.timezone,
+        local_timezone=local_timezone,
         log_transform=config.log_transform,
         interval_width=config.interval_width,
         uncertainty_samples=config.uncertainty_samples,
@@ -186,6 +187,7 @@ class ForecastingRunner:
             split=split,
             run_id=run_id,
             config=self.forecasting_config,
+            local_timezone=self.project_config.timezone,
         )
 
         forecasts = result.forecasts
@@ -251,7 +253,7 @@ class ForecastingRunner:
                 "growth": self.forecasting_config.growth,
                 "daily_seasonality": self.forecasting_config.daily_seasonality,
                 "country_holidays": self.forecasting_config.country_holidays,
-                "local_timezone": self.forecasting_config.timezone,
+                "local_timezone": self.project_config.timezone,
                 "log_transform": self.forecasting_config.log_transform,
                 "interval_width": self.forecasting_config.interval_width,
                 "variant": asdict(self.forecasting_config.selected_prophet_variant),
@@ -262,7 +264,7 @@ class ForecastingRunner:
                     "weekly": self.forecasting_config.selected_prophet_variant.weekly_seasonality,
                     "yearly": self.forecasting_config.selected_prophet_variant.yearly_seasonality,
                     "holidays": self.forecasting_config.country_holidays,
-                    "local_timezone": self.forecasting_config.timezone,
+                    "local_timezone": self.project_config.timezone,
                     "log_transform": self.forecasting_config.log_transform,
                 }
             },

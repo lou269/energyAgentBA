@@ -5,10 +5,13 @@ from typing import Any
 
 import pytest
 
+from src.config.config_forecasting import LLMConfig
 from src.llm.client import ModelMetadata
 from src.llm.inference import LLMInferenceError, LLMInferenceResult, infer_llm_output
 
 from tests.unit.llm._state_fixture import valid_llm_output, valid_structured_state
+
+LLM_CONFIG = LLMConfig(model="test-model")
 
 
 class ScriptedClient:
@@ -27,6 +30,10 @@ class ScriptedClient:
         output_schema: dict[str, object],
         temperature: float,
         seed: int | None,
+        num_predict: int,
+        num_ctx: int,
+        think: bool,
+        keep_alive: int | str,
     ) -> str:
         self.calls.append(
             {
@@ -34,6 +41,10 @@ class ScriptedClient:
                 "messages": [dict(message) for message in messages],
                 "temperature": temperature,
                 "seed": seed,
+                "num_predict": num_predict,
+                "num_ctx": num_ctx,
+                "think": think,
+                "keep_alive": keep_alive,
             }
         )
 
@@ -65,6 +76,10 @@ def _run(
         temperature=0.0,
         seed=42,
         max_attempts=max_attempts,
+        num_predict=LLM_CONFIG.num_predict,
+        num_ctx=LLM_CONFIG.num_ctx,
+        think=LLM_CONFIG.think,
+        keep_alive=LLM_CONFIG.keep_alive,
     )
     return result
 
@@ -78,6 +93,10 @@ def test_valid_first_attempt_succeeds() -> None:
     assert len(result.attempts) == 1
     assert result.attempts[0].valid is True
     assert len(client.calls) == 1
+    assert client.calls[0]["num_predict"] == LLM_CONFIG.num_predict
+    assert client.calls[0]["num_ctx"] == LLM_CONFIG.num_ctx
+    assert client.calls[0]["think"] == LLM_CONFIG.think
+    assert client.calls[0]["keep_alive"] == LLM_CONFIG.keep_alive
 
 
 def test_malformed_json_is_retried_and_recovers() -> None:
@@ -165,6 +184,10 @@ def test_invalid_parameters_are_rejected_before_calling_client(
         "temperature": 0.0,
         "seed": 42,
         "max_attempts": 2,
+        "num_predict": LLM_CONFIG.num_predict,
+        "num_ctx": LLM_CONFIG.num_ctx,
+        "think": LLM_CONFIG.think,
+        "keep_alive": LLM_CONFIG.keep_alive,
     }
     call_kwargs.update(kwargs)
 

@@ -5,21 +5,25 @@ from typing import cast
 from src.structured_state.structured_state_schema import StructuredState
 
 
-# echter, geprüfter Zustand aus output/llm/llm_007 (H1-M54-Peak-Fall), Basis für Feld-Override-Varianten in Tests und K4
 _BASE_STATE_JSON = """
 {
   "analysis": {
-    "daily_expected_w": 344.33525171806167,
-    "long_term_mean_w": 405.7294889722222,
+    "daily_std": 52.71698472221818,
+    "daily_std_expected": 45.19832571806167,
+    "today_mean_expected_w": null,
+    "weekday_expected_w": 320.81622125,
+    "weekly_mean_w": null,
+    "weekly_mean_expected_w": null,
+    "long_term_window_mean_w": 405.7294889722222,
+    "long_term_expected_w": null,
     "trend": "decreasing",
     "trend_change": -0.4256972486075171,
-    "trend_slope_w_per_hour": -7.285383326086958,
-    "weekly_expected_w": 320.81622125
+    "trend_slope_w_per_hour": -7.285383326086958
   },
   "anomaly": {
     "available_scales": [
       "daily",
-      "weekly",
+      "weekday",
       "long_term"
     ],
     "direction": "high",
@@ -28,13 +32,15 @@ _BASE_STATE_JSON = """
     "peak_timestamp": "2015-12-15T10:00:00+00:00",
     "scale_scores": {
       "daily": 3.7674342117758495,
-      "long_term": 3.264114829329143,
-      "weekly": 3.734920041231248
+      "weekday": 3.734920041231248,
+      "weekly": null,
+      "long_term": 3.264114829329143
     },
     "scale_anomaly_streak_days": {
       "daily": 1.0,
-      "long_term": 1.0,
-      "weekly": 1.0
+      "weekday": 1.0,
+      "weekly": null,
+      "long_term": 1.0
     },
     "score": 3.7674342117758495
   },
@@ -220,7 +226,7 @@ _BASE_STATE_JSON = """
     "observation_start": "2015-12-15T10:00:00+00:00",
     "value_implausible": false
   },
-  "schema_version": "1.3"
+  "schema_version": "1.4"
 }
 """
 

@@ -13,7 +13,7 @@ from src.config.project_config import ProjectConfig
 from src.llm.llm_run_artifacts import load_prompt
 from src.llm.llm_runner import PROMPT_DIRECTORY
 from src.pipeline.comparison_harness import ScenarioData, run_comparison
-from src.pipeline.cycle_variants import SYS_VARIANTS
+from src.config.config_forecasting import ComparisonConfig, SYS_VARIANTS
 from src.pipeline.io import next_sequential_number
 
 logger = logging.getLogger(__name__)
@@ -24,6 +24,7 @@ OUTPUT_DIR = Path(__file__).parent / "output"
 def run() -> None:
     project_config = ProjectConfig()
     e3_config = E3Config()
+    comparison_config = ComparisonConfig()
 
     window_start = parse_utc_timestamp(e3_config.observation_window_start, "observation_window_start")
     window_end = parse_utc_timestamp(e3_config.observation_window_end, "observation_window_end")
@@ -56,7 +57,12 @@ def run() -> None:
     logger.info("Running E3 Teilfrage 2 (%s..%s) über %d Zyklustage...", window_start, window_end, len(decision_times))
     run_comparison(
         scenario, {"SYS3": sys3_config}, run_directory, project_config.project_root,
+        local_timezone=project_config.timezone,
         run_id=run_directory.name, llm_prompt=llm_prompt,
+        max_consecutive_llm_failures=comparison_config.max_consecutive_llm_failures,
+        max_total_llm_failures=comparison_config.max_total_llm_failures,
+        calendar_lookback_hours=comparison_config.calendar_lookback_hours,
+        calendar_lookahead_hours=comparison_config.calendar_lookahead_hours,
     )
 
     logger.info("E3 Teilfrage 2 abgeschlossen, siehe %s.", run_directory)

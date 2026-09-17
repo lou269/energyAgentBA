@@ -23,6 +23,8 @@ class AdaptionAction:
 def adaption_policy(
     classification: Classification,
     context: StructuredState,
+    *,
+    sustained_anomaly_streak_days: int,
 ) -> AdaptionAction:
     if classification == "measurement_error":
         timestamp = parse_utc_timestamp(context["observation"]["observation_start"], "observation.observation_start")
@@ -48,7 +50,7 @@ def adaption_policy(
 
     if classification == "new_pattern":
         decision_time = parse_utc_timestamp(context["decision_time"], "decision_time")
-        streak_days = _dominant_streak_days(context)
+        streak_days = _sustained_streak_days(context, sustained_anomaly_streak_days)
         range_end = decision_time - pd.Timedelta(hours=1)
         new_history_start = range_end - pd.Timedelta(hours=streak_days * 24 - 1)
 
@@ -75,3 +77,22 @@ def _dominant_streak_days(
         raise ValueError("anomaly.scale_anomaly_streak_days for the dominant scale is missing.")
 
     return streak_days
+
+
+def _sustained_streak_days(
+    context: StructuredState,
+    sustained_anomaly_streak_days: int,
+) -> float:
+    # new_pattern kann durch mehrere Skalen ausgelöst werden, ohne dass die dominant_scale (höchster |z-Score|) selbst darunter ist
+    scale_streak_days = context["anomaly"]["scale_anomaly_streak_days"]
+
+    sustained = [
+        streak_days
+        for scale in context["anomaly"]["available_scales"]
+        if (streak_days := scale_streak_days[scale]) is not None and streak_days >= sustained_anomaly_streak_days
+    ]
+
+    if not sustained:
+        raise ValueError("no scale meets sustained_anomaly_streak_days for new_pattern.")
+
+    return min(sustained)

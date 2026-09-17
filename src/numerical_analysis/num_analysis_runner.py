@@ -197,7 +197,7 @@ class NumericalAnalysisRunner:
             split_manifest=split_manifest,
             meter_key=meter_key,
             config=self.analysis_config,
-            local_timezone=self.forecasting_config.timezone,
+            local_timezone=self.project_config.timezone,
         )
 
         run_number = next_sequential_number(self.project_config.numerical_analysis_output_dir, prefix="an")
@@ -225,7 +225,7 @@ class NumericalAnalysisRunner:
             project_root=self.project_config.project_root,
             run_id=run_id,
             candidate_id=candidate_id,
-            config_values={**asdict(self.analysis_config), "local_timezone": self.forecasting_config.timezone},
+            config_values={**asdict(self.analysis_config), "local_timezone": self.project_config.timezone},
             input_paths={
                 "treated_15min": treated_15min_path,
                 "treated_hourly": treated_hourly_path,

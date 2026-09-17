@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pandas as pd
 
 
@@ -32,3 +34,46 @@ def parse_utc_timestamp_field(value: object, field_name: str) -> pd.Timestamp:
         raise ValueError(f"{field_name} must be an ISO-8601 UTC timestamp.")
 
     return timestamp
+
+
+def snap_to_local_midnight_range(
+    start: pd.Timestamp,
+    end: pd.Timestamp,
+    local_timezone: str,
+) -> tuple[pd.Timestamp, pd.Timestamp]:
+    local_start = start.tz_convert(local_timezone)
+    local_end = end.tz_convert(local_timezone)
+
+    snapped_start = local_start.normalize()
+    if snapped_start < local_start:
+        snapped_start = snapped_start + pd.DateOffset(days=1)
+
+    snapped_end = local_end.normalize()
+    if snapped_end > local_end:
+        snapped_end = snapped_end - pd.DateOffset(days=1)
+
+    if snapped_start > snapped_end:
+        raise ValueError("start and end do not span a full local day.")
+
+    return snapped_start.tz_convert("UTC"), snapped_end.tz_convert("UTC")
+
+
+def local_day_index(index: pd.Index, local_timezone: str) -> pd.DatetimeIndex:
+    return pd.DatetimeIndex(index).tz_convert(local_timezone).normalize()
+
+
+def local_calendar_range(
+    start: pd.Timestamp,
+    step_hours: int,
+    end: pd.Timestamp,
+    local_timezone: str,
+) -> pd.DatetimeIndex:
+    if step_hours % 24 == 0:
+        local_index = pd.date_range(
+            start=start.tz_convert(local_timezone),
+            end=end.tz_convert(local_timezone),
+            freq=f"{step_hours // 24}D",
+        )
+        return local_index.tz_convert("UTC")
+
+    return pd.date_range(start=start, end=end, freq=f"{step_hours}h")

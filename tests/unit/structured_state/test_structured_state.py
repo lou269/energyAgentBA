@@ -21,18 +21,25 @@ def _analysis_row() -> pd.Series:
         {
             "timestamp": DECISION_TIME - pd.Timedelta(hours=1),
             "split": "validation",
-            "current_power": 120.0,
+            "today_mean": 120.0,
             "value_implausible": False,
-            "daily_expected": 100.0,
-            "weekly_expected": 105.0,
-            "long_term_mean": 108.0,
+            "daily_std": 12.0,
+            "daily_std_expected": 8.0,
+            "today_mean_expected": 100.0,
+            "weekday_expected": 105.0,
+            "weekly_mean": 110.0,
+            "weekly_mean_expected": 108.0,
+            "long_term_window_mean": 112.0,
+            "long_term_expected": 108.0,
             "trend_slope_w_per_hour": 1.5,
             "trend_change": 0.2,
             "trend": "increasing",
             "daily_score": 2.0,
+            "weekday_score": 1.8,
             "weekly_score": None,
             "long_term_score": 0.5,
             "daily_anomaly_streak_days": 2.0,
+            "weekday_anomaly_streak_days": 2.0,
             "weekly_anomaly_streak_days": None,
             "long_term_anomaly_streak_days": 0.0,
             "anomaly_score": 2.0,
@@ -99,7 +106,7 @@ def test_complete_structured_state_is_valid() -> None:
 
     assert state["observation"]["observation_start"]== (DECISION_TIME - pd.Timedelta(hours=1)).isoformat()
     assert len(state["forecast"]["points"]) == 24
-    assert state["anomaly"]["available_scales"] == ["daily", "long_term"]
+    assert state["anomaly"]["available_scales"] == ["daily", "weekday", "long_term"]
 
     serialized = json.dumps(state)
     assert "y_true" not in serialized
@@ -177,9 +184,11 @@ def test_partial_and_missing_scale_scores_are_explicit() -> None:
     analysis_row = _analysis_row()
     for field in (
         "daily_score",
+        "weekday_score",
         "weekly_score",
         "long_term_score",
         "daily_anomaly_streak_days",
+        "weekday_anomaly_streak_days",
         "weekly_anomaly_streak_days",
         "long_term_anomaly_streak_days",
         "anomaly_score",
@@ -219,7 +228,7 @@ def test_invalid_calendar_context_is_rejected() -> None:
 
 def test_nan_becomes_null_and_infinity_is_rejected() -> None:
     analysis_row = _analysis_row()
-    analysis_row["current_power"] = float("nan")
+    analysis_row["today_mean"] = float("nan")
 
     state = _build_state(analysis_row=analysis_row)
     validate_structured_state(state)
@@ -227,7 +236,7 @@ def test_nan_becomes_null_and_infinity_is_rejected() -> None:
     assert state["observation"]["current_power_w"] is None
     assert "NaN" not in json.dumps(state)
 
-    analysis_row["current_power"] = float("inf")
+    analysis_row["today_mean"] = float("inf")
 
     with pytest.raises(ValueError, match="must be finite"):
         _build_state(analysis_row=analysis_row)

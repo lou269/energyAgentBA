@@ -1,11 +1,12 @@
 from dataclasses import dataclass
-from typing import Literal, cast
+from typing import cast
 
 import pandas as pd
 from prophet import Prophet
 
 from src.adaption.adaption_policy import AdaptionAction, adaption_policy
-from src.config.config_forecasting import ForecastingConfig,LLMConfig, NumericalAnalysisConfig, ProphetVariantConfig
+from src.common.timestamps import local_day_index
+from src.config.config_forecasting import CycleConfig, ForecastingConfig, NumericalAnalysisConfig, ProphetVariantConfig
 from src.context.calendar_schema import CalendarContext
 from src.forecasting.prophet_model import build_prophet_forecast, fit_prophet_model
 from src.forecasting.walk_forward import select_prophet_history
@@ -14,23 +15,21 @@ from src.llm.inference import infer_llm_output
 from src.llm.llm_schema import Classification, LLMOutput
 from src.llm.rule_based_classifier import RuleClassificationResult, rule_based_classify
 from src.numerical_analysis.anomaly_detection import build_anomaly_detection
-from src.numerical_analysis.multi_scale_analysis import build_multi_scale_analysis
+from src.numerical_analysis.multi_scale_analysis import build_daily_cycle_analysis
 from src.structured_state.builder import build_structured_state
 from src.structured_state.structured_state_schema import StructuredState, validate_structured_state
 
 
-LLMMode = Literal["off", "rule", "real"]
+DAILY_ANOMALY_SCALES = {
+    "daily": ("daily_std", "daily_std_expected"),
+    "weekday": ("today_mean", "weekday_expected"),
+    "weekly": ("weekly_mean", "weekly_mean_expected"),
+    "long_term": ("long_term_window_mean", "long_term_expected"),
+}
 
-DAILY_ANOMALY_SCALES = {"daily": "daily_expected", "weekly": "weekly_expected", "long_term": "long_term_mean"}
-
-
-@dataclass(frozen=True)
-class CycleConfig:
-    forecasting_config: ForecastingConfig
-    numerical_analysis_config: NumericalAnalysisConfig
-    event_adaptation: bool
-    llm_mode: LLMMode
-    llm_config: LLMConfig | None = None
+DAILY_DIRECTION_OVERRIDE_COLUMNS = {
+    "daily": ("today_mean", "today_mean_expected"),
+}
 
 
 @dataclass(frozen=True)
@@ -39,14 +38,13 @@ class CycleState:
     prophet_model: Prophet | None
     model_history: pd.Series | None
     model_fitted_at: pd.Timestamp | None
-    reference_window_end: pd.Timestamp | None
 
 
 @dataclass(frozen=True)
 class CycleResult:
     decision_time: pd.Timestamp
     forecast: pd.DataFrame
-    analysis_row: pd.Series
+    analysis_row: pd.Series | None
     retrained: bool
     reference_reset: bool
     structured_state: StructuredState | None
@@ -62,6 +60,7 @@ def run_cycle(
     decision_time: pd.Timestamp,
     config: CycleConfig,
     *,
+    local_timezone: str,
     llm_client: LLMClient | None = None,
     llm_prompt: str | None = None,
     calendar_context: CalendarContext | None = None,
@@ -111,7 +110,7 @@ def run_cycle(
             rolling_window_hours=variant.rolling_window_hours,
         )
 
-        prophet_model = _fit_variant(model_history, variant, config.forecasting_config)
+        prophet_model = _fit_variant(model_history, variant, config.forecasting_config, local_timezone)
         model_fitted_at = decision_time
     else:
         assert state.prophet_model is not None
@@ -120,23 +119,24 @@ def run_cycle(
         model_history = state.model_history
         model_fitted_at = state.model_fitted_at
 
-    forecast = _build_forecast(prophet_model, model_history, decision_time, config, variant)
+    forecast = _build_forecast(prophet_model, model_history, decision_time, config, variant, local_timezone)
 
-    reference_window_end = state.reference_window_end
-    reference_reset = reference_window_end is None
-
-    if reference_reset:
-        reference_window_end = _reset_reference_window_end(history)
-
-    assert reference_window_end is not None
-
-    analysis_row = _compute_analysis_row(
+    reference_window_end = _compute_reference_window_end(
         history,
-        reference_window_end=reference_window_end,
-        target_timestamp=decision_time - pd.Timedelta(hours=1),
-        config=config.numerical_analysis_config,
-        local_timezone=config.forecasting_config.timezone,
+        local_timezone=local_timezone,
+        max_growth_days=config.numerical_analysis_config.max_reference_window_growth_days,
     )
+    reference_reset = False
+
+    analysis_row: pd.Series | None = None
+    if reference_window_end is not None:
+        analysis_row = _compute_analysis_row(
+            history,
+            reference_window_end=reference_window_end,
+            target_timestamp=decision_time - pd.Timedelta(hours=1),
+            config=config.numerical_analysis_config,
+            local_timezone=local_timezone,
+        )
 
     structured_state: StructuredState | None = None
     classification: Classification | None = None
@@ -144,7 +144,7 @@ def run_cycle(
     rule_output: RuleClassificationResult | None = None
     adaption_action: AdaptionAction | None = None
 
-    if config.llm_mode != "off":
+    if analysis_row is not None and config.llm_mode != "off":
         if calendar_context is None:
             raise ValueError("calendar_context is required unless llm_mode is 'off'.")
 
@@ -177,6 +177,10 @@ def run_cycle(
                 temperature=config.llm_config.temperature,
                 seed=config.llm_config.seed,
                 max_attempts=config.llm_config.max_attempts,
+                num_predict=config.llm_config.num_predict,
+                num_ctx=config.llm_config.num_ctx,
+                think=config.llm_config.think,
+                keep_alive=config.llm_config.keep_alive,
             )
             llm_output = inference_result.output
             classification = llm_output["classification"]
@@ -186,12 +190,17 @@ def run_cycle(
                 structured_state,
                 sustained_anomaly_streak_days=config.numerical_analysis_config.sustained_anomaly_streak_days,
                 multi_scale_minimum=config.numerical_analysis_config.multi_scale_minimum,
+                local_timezone=local_timezone,
             )
             classification = rule_output.classification
 
         if config.event_adaptation:
             assert classification is not None
-            adaption_action = adaption_policy(classification, structured_state)
+            adaption_action = adaption_policy(
+                classification,
+                structured_state,
+                sustained_anomaly_streak_days=config.numerical_analysis_config.sustained_anomaly_streak_days,
+            )
 
     if adaption_action is not None and adaption_action.kind != "none":
         history = _apply_adaption(history, adaption_action)
@@ -203,21 +212,21 @@ def run_cycle(
             history_mode=variant.history_mode,
             rolling_window_hours=variant.rolling_window_hours,
         )
-        prophet_model = _fit_variant(model_history, variant, config.forecasting_config)
+        prophet_model = _fit_variant(model_history, variant, config.forecasting_config, local_timezone)
         model_fitted_at = decision_time
-        forecast = _build_forecast(prophet_model, model_history, decision_time, config, variant)
-
-        reference_window_end = _reset_reference_window_end(history)
+        forecast = _build_forecast(prophet_model, model_history, decision_time, config, variant, local_timezone)
 
         fit_required = True
-        reference_reset = True
+
+        # Ein Musterwechsel verschiebt den Beginn der Referenzhistorie.
+        if adaption_action.kind == "advance_history_start":
+            reference_reset = True
 
     new_state = CycleState(
         history=history,
         prophet_model=prophet_model,
         model_history=model_history,
         model_fitted_at=model_fitted_at,
-        reference_window_end=reference_window_end,
     )
 
     result = CycleResult(
@@ -242,6 +251,7 @@ def _build_forecast(
     decision_time: pd.Timestamp,
     config: CycleConfig,
     variant: ProphetVariantConfig,
+    local_timezone: str,
 ) -> pd.DataFrame:
     target_index = pd.date_range(
         start=decision_time,
@@ -254,7 +264,7 @@ def _build_forecast(
         target_index,
         clip_negative_forecasts=config.forecasting_config.negative_forecast_handling == "clip_zero",
         history_end=model_history.index[-1],
-        local_timezone=config.forecasting_config.timezone,
+        local_timezone=local_timezone,
         log_transform=config.forecasting_config.log_transform,
     )
 
@@ -273,6 +283,7 @@ def _fit_variant(
     model_history: pd.Series,
     variant: ProphetVariantConfig,
     forecasting_config: ForecastingConfig,
+    local_timezone: str,
 ) -> Prophet:
     return fit_prophet_model(
         model_history,
@@ -281,7 +292,7 @@ def _fit_variant(
         weekly_seasonality=variant.weekly_seasonality,
         yearly_seasonality=variant.yearly_seasonality,
         country_holidays=forecasting_config.country_holidays,
-        local_timezone=forecasting_config.timezone,
+        local_timezone=local_timezone,
         log_transform=forecasting_config.log_transform,
         interval_width=forecasting_config.interval_width,
         uncertainty_samples=forecasting_config.uncertainty_samples,
@@ -305,12 +316,31 @@ def _apply_adaption(
     raise ValueError(f"unknown AdaptionAction: {action.kind}")
 
 
-def _reset_reference_window_end(history: pd.Series) -> pd.Timestamp:
+def _compute_reference_window_end(
+    history: pd.Series,
+    *,
+    local_timezone: str,
+    max_growth_days: int,
+) -> pd.Timestamp | None:
     # lässt genug von der schon vorhandenen history übrig, dass nach der Tages-Aggregation noch
-    # mindestens 1 Tag validation + der Zieltag als test bleiben (siehe _compute_analysis_row)
+    # mindestens 1 Tag validation + der Zieltag als test bleiben (siehe _compute_analysis_row).
+    # Wird jeden Zyklus neu berechnet statt einmalig eingefroren, damit train nach einem Reset
+    # wieder mitwachsen kann, aber nur bis max_growth_days seit dem Beginn der aktuellen history,
+    # danach bleibt es stehen (Drift-Schutz für die Anomalie-Baseline bei sehr langem, unverändertem Zustand)
     if len(history) < 72:
-        raise ValueError("history must contain at least 72 observed hours before numerical_analysis can be computed.")
-    return history.index[-1] - pd.Timedelta(hours=71)
+        # kurz nach einem advance_history_start-Reset mit kleinem sustained_anomaly_streak_days
+        # (z.B. E1 mit 3 statt 7 Tagen) kann history vorübergehend unter die Mindestgröße fallen.
+        # Analyse für diesen einen Zyklus einfach auslassen statt run_cycle abzubrechen, history
+        # wächst mit den nächsten Beobachtungen automatisch wieder darüber.
+        return None
+
+    window_start = local_day_index(history.index, local_timezone).min()
+    # DateOffset statt Timedelta, damit ein DST-Wechsel innerhalb von max_growth_days die Grenze
+    # nicht um eine Stunde verschiebt (siehe snap_to_local_midnight_range in common/timestamps.py)
+    growth_ceiling = window_start + pd.DateOffset(days=max_growth_days)
+    effective_now = min(history.index[-1], growth_ceiling)
+
+    return effective_now - pd.Timedelta(hours=71)
 
 
 def _compute_analysis_row(
@@ -321,29 +351,16 @@ def _compute_analysis_row(
     config: NumericalAnalysisConfig,
     local_timezone: str,
 ) -> pd.Series:
-    target_column = str(history.name)
-
-    daily_history = history.tz_convert(local_timezone).resample("D").mean()
-
-    # der Tag von reference_window_end ist evtl. nur teilweise beobachtet -> ganz raus aus dem
-    # Training, fällt stattdessen unter validation
-    daily_cutoff = reference_window_end.tz_convert(local_timezone).normalize() - pd.Timedelta(days=1)
     target_day = target_timestamp.tz_convert(local_timezone).normalize()
 
-    train_data, validation_data, test_data = _split_for_numerical_analysis(
-        daily_history, reference_window_end=daily_cutoff, target_column=target_column
-    )
-
-    analysis = build_multi_scale_analysis(
-        train_data=train_data,
-        validation_data=validation_data,
-        test_data=test_data,
-        target_column=target_column,
+    analysis = build_daily_cycle_analysis(
+        history,
+        reference_window_end=reference_window_end,
         short_term_window=config.trend_window_days,
         sample_period_hours=config.sample_period_hours_daily,
         long_term_window=config.long_term_window_days,
-        min_daily_reference_samples=config.min_daily_reference_samples,
-        min_weekly_reference_samples=config.min_weekly_reference_samples,
+        weekly_window_days=config.weekly_window_days,
+        min_weekday_reference_samples=config.min_weekday_reference_samples,
         trend_threshold=config.trend_threshold,
         min_reference_power_w=config.min_reference_power_w,
         local_timezone=local_timezone,
@@ -351,13 +368,19 @@ def _compute_analysis_row(
 
     anomaly = build_anomaly_detection(
         analysis_results=analysis,
-        min_reference_samples=config.min_reference_samples_daily,
+        min_reference_samples={
+            "daily": config.min_daily_reference_samples,
+            "weekday": config.min_weekday_reference_samples,
+            "weekly": config.min_weekly_reference_samples,
+            "long_term": config.min_longterm_reference_samples,
+        },
         min_residual_std_w=config.min_residual_std_w,
         unusual_threshold=config.unusual_threshold,
         strong_anomaly_threshold=config.strong_anomaly_threshold,
         sample_period_hours=config.sample_period_hours_daily,
         local_timezone=local_timezone,
         reference_columns=DAILY_ANOMALY_SCALES,
+        direction_override_columns=DAILY_DIRECTION_OVERRIDE_COLUMNS,
     )
 
     row = cast(pd.Series, anomaly.loc[target_day]).copy()
@@ -367,28 +390,5 @@ def _compute_analysis_row(
     row["anomaly_peak_timestamp"] = target_day if pd.notna(row["anomaly_score"]) else pd.NaT
 
     return row
-
-
-def _split_for_numerical_analysis(
-    history: pd.Series,
-    *,
-    reference_window_end: pd.Timestamp,
-    target_column: str,
-) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    frame = history.to_frame(name=target_column)
-
-    train_data = frame.loc[:reference_window_end]
-    remaining = frame.loc[frame.index > reference_window_end]
-
-    if len(remaining) < 2:
-        raise ValueError("Not enough observed rows after the reference window to score validation and test.")
-
-    validation_data = remaining.iloc[:-1]
-    test_data = remaining.iloc[-1:]
-
-    return train_data, validation_data, test_data
-
-
-
 
 

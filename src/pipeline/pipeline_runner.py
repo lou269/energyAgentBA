@@ -2,7 +2,8 @@
 # python -m src.pipeline.pipeline_runner --configs SYS0,SYS2
 # python -m src.pipeline.pipeline_runner --skip-data-preparation
 # python -m src.pipeline.pipeline_runner --configs SYS0,SYS1,SYS2,SYS3 --skip-data-preparation
-# python -m src.pipeline.pipeline_runner --configs SYS3 --skip-data-preparation
+# python -m src.pipeline.pipeline_runner --configs SYS2 --skip-data-preparation
+# python -m src.pipeline.pipeline_runner --configs SYS2,SYS3 --skip-data-preparation
 
 # open -a Ollama
 
@@ -11,13 +12,11 @@ import logging
 import subprocess
 
 from src.common.column_naming import imputation_column, treated_column
-from src.config.config_forecasting import ForecastingConfig, PreprocessingConfig
+from src.config.config_forecasting import ComparisonConfig, CycleConfig, ForecastingConfig, NumericalAnalysisConfig, PreprocessingConfig, SYS_VARIANTS
 from src.config.project_config import ProjectConfig, ensure_project_directories
 from src.llm.llm_run_artifacts import load_prompt
 from src.llm.llm_runner import PROMPT_DIRECTORY
 from src.pipeline.comparison_harness import build_scenario_from_split_manifest, create_cycle_run_id, run_comparison
-from src.pipeline.cycle_variants import SYS_VARIANTS
-from src.pipeline.daily_cycle import CycleConfig
 from src.pipeline.io import read_canonical_frame, read_target_meter_key
 from src.preprocessing.preprocessing_runner import run_preprocessing
 
@@ -71,6 +70,7 @@ def main() -> None:
     logging.getLogger("httpcore").setLevel(logging.WARNING)
 
     project_config = ProjectConfig()
+    comparison_config = ComparisonConfig()
     ensure_project_directories(project_config)
 
     if not args.skip_data_preparation:
@@ -88,6 +88,9 @@ def main() -> None:
         read_canonical_frame(project_config, "canonical_data_hourly"),
         read_canonical_frame(project_config, "canonical_quality_hourly"),
         PreprocessingConfig(),
+        project_config.timezone,
+        sample_period_hours_15min=NumericalAnalysisConfig().sample_period_hours_15min,
+        sample_period_hours_hourly=NumericalAnalysisConfig().sample_period_hours_hourly,
     )
 
     configs = _parse_configs(args.configs)
@@ -104,6 +107,7 @@ def main() -> None:
         preprocessing_result.split_manifest,
         target_column,
         coldstart_hours=ForecastingConfig().cycle_coldstart_hours,
+        local_timezone=project_config.timezone,
         target_imputed=preprocessing_result.imputation_mask_hourly[imputation_column(target_meter_key)],
     )
 
@@ -112,7 +116,19 @@ def main() -> None:
     run_id = create_cycle_run_id(project_config.cycle_output_dir, configs)
     run_directory = project_config.cycle_output_dir / run_id
 
-    comparison = run_comparison(scenario, configs, run_directory, project_config.project_root, run_id=run_id, llm_prompt=llm_prompt)
+    comparison = run_comparison(
+        scenario,
+        configs,
+        run_directory,
+        project_config.project_root,
+        local_timezone=project_config.timezone,
+        run_id=run_id,
+        llm_prompt=llm_prompt,
+        max_consecutive_llm_failures=comparison_config.max_consecutive_llm_failures,
+        max_total_llm_failures=comparison_config.max_total_llm_failures,
+        calendar_lookback_hours=comparison_config.calendar_lookback_hours,
+        calendar_lookahead_hours=comparison_config.calendar_lookahead_hours,
+    )
 
     logger.info("Pipeline completed successfully: %d cycle rows across %d configs.", len(comparison), len(configs))
 

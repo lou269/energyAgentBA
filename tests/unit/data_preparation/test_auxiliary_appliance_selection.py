@@ -7,7 +7,11 @@ from unittest.mock import Mock
 import pandas as pd
 import pytest
 
-from src.data_preparation.auxiliary_appliance_selection import filter_candidate_channels, rank_by_coverage
+from src.data_preparation.auxiliary_appliance_selection import (
+    PRESENCE_EXCLUDED_CHANNELS,
+    filter_candidate_channels,
+    rank_by_coverage,
+)
 
 WINDOW_START = pd.Timestamp("2020-01-01", tz="UTC")
 WINDOW_END = pd.Timestamp("2020-01-08", tz="UTC")
@@ -64,7 +68,15 @@ def test_excludes_mains_channels_via_is_mains() -> None:
         ]
     )
 
-    result = filter_candidate_channels(registry, quality, house=1, window_start=WINDOW_START, window_end=WINDOW_END, min_sampling_share=0.5)
+    result = filter_candidate_channels(
+        registry,
+        quality,
+        house=1,
+        window_start=WINDOW_START,
+        window_end=WINDOW_END,
+        min_sampling_share=0.5,
+        excluded_channels=PRESENCE_EXCLUDED_CHANNELS,
+    )
 
     assert result["meter_key"].tolist() == ["H1_M62"]
 
@@ -78,7 +90,15 @@ def test_excludes_channels_missing_from_quality() -> None:
     )
     quality = pd.DataFrame([_quality_row(62, "H1_M62", start="2019-12-01", end="2020-02-01")])
 
-    result = filter_candidate_channels(registry, quality, house=1, window_start=WINDOW_START, window_end=WINDOW_END, min_sampling_share=0.5)
+    result = filter_candidate_channels(
+        registry,
+        quality,
+        house=1,
+        window_start=WINDOW_START,
+        window_end=WINDOW_END,
+        min_sampling_share=0.5,
+        excluded_channels=PRESENCE_EXCLUDED_CHANNELS,
+    )
 
     assert result["meter_key"].tolist() == ["H1_M62"]
 
@@ -97,7 +117,15 @@ def test_excludes_presence_untypical_appliances_via_the_hardcoded_list() -> None
         ]
     )
 
-    result = filter_candidate_channels(registry, quality, house=1, window_start=WINDOW_START, window_end=WINDOW_END, min_sampling_share=0.5)
+    result = filter_candidate_channels(
+        registry,
+        quality,
+        house=1,
+        window_start=WINDOW_START,
+        window_end=WINDOW_END,
+        min_sampling_share=0.5,
+        excluded_channels=PRESENCE_EXCLUDED_CHANNELS,
+    )
 
     assert result["meter_key"].tolist() == ["H1_M5"]
 
@@ -118,7 +146,15 @@ def test_excludes_channels_with_quality_error_or_low_sampling_share() -> None:
         ]
     )
 
-    result = filter_candidate_channels(registry, quality, house=1, window_start=WINDOW_START, window_end=WINDOW_END, min_sampling_share=0.5)
+    result = filter_candidate_channels(
+        registry,
+        quality,
+        house=1,
+        window_start=WINDOW_START,
+        window_end=WINDOW_END,
+        min_sampling_share=0.5,
+        excluded_channels=PRESENCE_EXCLUDED_CHANNELS,
+    )
 
     assert result["meter_key"].tolist() == ["H1_M93"]
 
@@ -129,7 +165,15 @@ def test_excludes_channels_that_dont_overlap_the_window() -> None:
         [_quality_row(1, "H1_M1", start="2018-01-01", end="2018-06-01")]
     )
 
-    result = filter_candidate_channels(registry, quality, house=1, window_start=WINDOW_START, window_end=WINDOW_END, min_sampling_share=0.5)
+    result = filter_candidate_channels(
+        registry,
+        quality,
+        house=1,
+        window_start=WINDOW_START,
+        window_end=WINDOW_END,
+        min_sampling_share=0.5,
+        excluded_channels=PRESENCE_EXCLUDED_CHANNELS,
+    )
 
     assert result.empty
 
@@ -148,7 +192,15 @@ def test_excludes_manually_listed_channels_regardless_of_appliance_name() -> Non
         ]
     )
 
-    result = filter_candidate_channels(registry, quality, house=1, window_start=WINDOW_START, window_end=WINDOW_END, min_sampling_share=0.5)
+    result = filter_candidate_channels(
+        registry,
+        quality,
+        house=1,
+        window_start=WINDOW_START,
+        window_end=WINDOW_END,
+        min_sampling_share=0.5,
+        excluded_channels=PRESENCE_EXCLUDED_CHANNELS,
+    )
 
     assert result["meter_key"].tolist() == ["H1_M51"]
 
@@ -158,7 +210,15 @@ def test_window_end_must_be_after_window_start() -> None:
     quality = pd.DataFrame([_quality_row(1, "H1_M1", start="2019-12-01", end="2020-02-01")])
 
     with pytest.raises(ValueError, match="window_end"):
-        filter_candidate_channels(registry, quality, house=1, window_start=WINDOW_END, window_end=WINDOW_START, min_sampling_share=0.5)
+        filter_candidate_channels(
+            registry,
+            quality,
+            house=1,
+            window_start=WINDOW_END,
+            window_end=WINDOW_START,
+            min_sampling_share=0.5,
+            excluded_channels=PRESENCE_EXCLUDED_CHANNELS,
+        )
 
 
 def _hourly_quality(meter_key: str, mask_values: list[bool], *, start: str = "2020-01-01") -> pd.DataFrame:

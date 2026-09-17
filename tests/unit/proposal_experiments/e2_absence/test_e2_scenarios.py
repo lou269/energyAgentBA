@@ -8,12 +8,13 @@ import pandas as pd
 
 from experiments.proposal_experiments.e2_absence.e2_scenarios import build_ctx_scenarios
 from src.config.project_config import ProjectConfig
-from src.pipeline.cycle_variants import SYS_VARIANTS
+from src.config.config_forecasting import ComparisonConfig, SYS_VARIANTS
 from src.pipeline.comparison_harness import run_comparison
 from src.pipeline.daily_cycle import CycleState, run_cycle
 from src.context.calendar_context import build_calendar_context
 
 PROJECT_ROOT = ProjectConfig().project_root
+COMPARISON_CONFIG = ComparisonConfig()
 
 
 def _series(hours: int) -> pd.Series:
@@ -74,7 +75,6 @@ def test_ctx1_structured_state_carries_the_calendar_event_through_run_cycle() ->
         prophet_model=None,
         model_history=None,
         model_fitted_at=None,
-        reference_window_end=None,
     )
     new_observations = series.loc[state.history.index[-1] + pd.Timedelta(hours=1) : decision_time - pd.Timedelta(hours=1)]
 
@@ -90,7 +90,11 @@ def test_ctx1_structured_state_carries_the_calendar_event_through_run_cycle() ->
 
     config = replace(SYS_VARIANTS["SYS1"], llm_mode="rule")
 
-    result, _ = run_cycle(state, new_observations, decision_time, config, calendar_context=calendar_context)
+    result, _ = run_cycle(
+        state, new_observations, decision_time, config,
+        local_timezone="Europe/London",
+        calendar_context=calendar_context,
+    )
 
     assert result.structured_state is not None
     assert result.structured_state["context"]["source_available"] is True
@@ -118,8 +122,22 @@ def test_run_comparison_completes_for_both_ctx_scenarios(tmp_path: Path) -> None
     ctx0_dir.mkdir()
     ctx1_dir.mkdir()
 
-    ctx0_result = run_comparison(ctx0, config, ctx0_dir, PROJECT_ROOT)
-    ctx1_result = run_comparison(ctx1, config, ctx1_dir, PROJECT_ROOT)
+    ctx0_result = run_comparison(
+        ctx0, config, ctx0_dir, PROJECT_ROOT,
+        local_timezone="Europe/London",
+        max_consecutive_llm_failures=COMPARISON_CONFIG.max_consecutive_llm_failures,
+        max_total_llm_failures=COMPARISON_CONFIG.max_total_llm_failures,
+        calendar_lookback_hours=COMPARISON_CONFIG.calendar_lookback_hours,
+        calendar_lookahead_hours=COMPARISON_CONFIG.calendar_lookahead_hours,
+    )
+    ctx1_result = run_comparison(
+        ctx1, config, ctx1_dir, PROJECT_ROOT,
+        local_timezone="Europe/London",
+        max_consecutive_llm_failures=COMPARISON_CONFIG.max_consecutive_llm_failures,
+        max_total_llm_failures=COMPARISON_CONFIG.max_total_llm_failures,
+        calendar_lookback_hours=COMPARISON_CONFIG.calendar_lookback_hours,
+        calendar_lookahead_hours=COMPARISON_CONFIG.calendar_lookahead_hours,
+    )
 
     assert len(ctx0_result) == len(decision_times)
     assert len(ctx1_result) == len(decision_times)

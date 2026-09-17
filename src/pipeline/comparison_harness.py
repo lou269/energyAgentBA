@@ -8,13 +8,15 @@ from typing import cast
 
 import pandas as pd
 
+from src.common.timestamps import local_calendar_range
 from src.context.calendar_context import build_calendar_context
 from src.context.calendar_schema import CalendarContext
 from src.forecasting.evaluation import calculate_mae
 from src.llm.client import LLMClient, OllamaClient
 from src.llm.inference import LLMAttemptRecord, LLMInferenceError
 from src.pipeline.cycle_run_manifest import build_cycle_run_manifest
-from src.pipeline.daily_cycle import CycleConfig, CycleResult, CycleState, run_cycle
+from src.config.config_forecasting import CycleConfig
+from src.pipeline.daily_cycle import CycleResult, CycleState, run_cycle
 from src.pipeline.io import append_csv, append_jsonl, df_to_csv, find_run_directory, save_json
 
 logger = logging.getLogger(__name__)
@@ -40,6 +42,7 @@ def build_scenario_from_split_manifest(
     target_column: str,
     *,
     coldstart_hours: int,
+    local_timezone: str,
     target_imputed: pd.Series | None = None,
 ) -> ScenarioData:
 
@@ -47,10 +50,13 @@ def build_scenario_from_split_manifest(
     cycle_end = cast(pd.Timestamp, hourly_splits.loc["test", "end"])
 
     target_series = treated_hourly.loc[:cycle_end, target_column]
-    cycle_start = target_series.index[coldstart_hours]
-    # state.history endet bereits bei cycle_start - 1h -> der erste decision_time muss min 1h danach liegen,
-    # sonst ist new_observations in run_comparison leer
-    decision_times = tuple(pd.date_range(start=cycle_start + pd.Timedelta(hours=1), end=cycle_end, freq="24h"))
+
+    cycle_start_days = local_calendar_range(target_series.index[0], 24, target_series.index[-1], local_timezone)
+    cycle_start = cycle_start_days[coldstart_hours // 24]
+
+    # state.history endet bereits bei cycle_start - 1h -> der erste decision_time liegt einen vollen lokalen Kalendertag danach, sonst ist new_observations 
+    # in run_comparison leer
+    decision_times = tuple(local_calendar_range(cycle_start, 24, cycle_end, local_timezone))[1:]
 
     return ScenarioData(
         target_series=target_series,
@@ -72,11 +78,14 @@ def run_comparison(
     run_directory: Path,
     project_root: Path,
     *,
+    local_timezone: str,
     run_id: str | None = None,
     llm_prompt: str | None = None,
     llm_client: LLMClient | None = None,
-    max_consecutive_llm_failures: int = 5,
-    max_total_llm_failures: int = 15,
+    max_consecutive_llm_failures: int,
+    max_total_llm_failures: int,
+    calendar_lookback_hours: int,
+    calendar_lookahead_hours: int,
 ) -> pd.DataFrame:
     run_started = perf_counter()
     run_id = run_id or run_directory.name
@@ -95,7 +104,6 @@ def run_comparison(
             prophet_model=None,
             model_history=None,
             model_fitted_at=None,
-            reference_window_end=None,
         )
         consecutive_llm_failures = 0
         total_llm_failures = 0
@@ -125,7 +133,12 @@ def run_comparison(
                     ]
 
                     calendar_context = (
-                        _build_calendar_context(scenario, decision_time)
+                        _build_calendar_context(
+                            scenario,
+                            decision_time,
+                            lookback_hours=calendar_lookback_hours,
+                            lookahead_hours=calendar_lookahead_hours,
+                        )
                         if config.llm_mode != "off"
                         else None
                     )
@@ -136,6 +149,7 @@ def run_comparison(
                             new_observations,
                             decision_time,
                             config,
+                            local_timezone=local_timezone,
                             llm_client=active_llm_client,
                             llm_prompt=llm_prompt,
                             calendar_context=calendar_context,
@@ -206,10 +220,11 @@ def run_comparison(
                     forecast_frames.append(forecast_slice)
                     append_csv(forecast_slice, config_directory / "forecasts.csv")
 
-                    anomaly_row = result.analysis_row.to_frame().T
-                    anomaly_row.insert(0, "config", config_label)
-                    anomaly_row.insert(1, "decision_time", decision_time)
-                    append_csv(anomaly_row, config_directory / "anomaly.csv")
+                    if result.analysis_row is not None:
+                        anomaly_row = result.analysis_row.to_frame().T
+                        anomaly_row.insert(0, "config", config_label)
+                        anomaly_row.insert(1, "decision_time", decision_time)
+                        append_csv(anomaly_row, config_directory / "anomaly.csv")
 
                     if result.structured_state is not None and (result.llm_output is not None or result.rule_output is not None):
                         save_json(
@@ -350,7 +365,10 @@ def _append_failed_attempt(
 
 def _build_calendar_context(
     scenario: ScenarioData, 
-    decision_time: pd.Timestamp
+    decision_time: pd.Timestamp,
+    *,
+    lookback_hours: int,
+    lookahead_hours: int,
 ) -> CalendarContext:
     return build_calendar_context(
         list(scenario.calendar_events),
@@ -358,6 +376,6 @@ def _build_calendar_context(
         source=scenario.calendar_source,
         retrieved_at=decision_time,
         decision_time=decision_time,
-        window_start=decision_time - pd.Timedelta(hours=24),
-        window_end=decision_time + pd.Timedelta(hours=24),
+        window_start=decision_time - pd.Timedelta(hours=lookback_hours),
+        window_end=decision_time + pd.Timedelta(hours=lookahead_hours),
     )

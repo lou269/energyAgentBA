@@ -120,7 +120,7 @@ def run() -> None:
                 growth=forecasting_config.growth,
                 daily_seasonality=forecasting_config.daily_seasonality,
                 country_holidays=forecasting_config.country_holidays,
-                local_timezone=forecasting_config.timezone,
+                local_timezone=project_config.timezone,
                 log_transform=forecasting_config.log_transform,
                 interval_width=forecasting_config.interval_width,
                 clip_negative_forecasts=(forecasting_config.negative_forecast_handling == "clip_zero"),
