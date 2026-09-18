@@ -70,7 +70,7 @@ def infer_llm_output(
     ]
 
     attempts: list[LLMAttemptRecord] = []
-    last_error: TypeError | ValueError | None = None
+    last_error: Exception | None = None
 
     for attempt_number in range(1, max_attempts + 1):
         generation_started = perf_counter()
@@ -88,7 +88,18 @@ def infer_llm_output(
                 keep_alive=keep_alive,
             )
         except Exception as error:
-            raise RuntimeError(f"LLM client request failed during attempt {attempt_number}.") from error
+            generation_seconds = perf_counter() - generation_started
+            last_error = error
+            attempts.append(
+                LLMAttemptRecord(
+                    attempt_number=attempt_number,
+                    raw_content="",
+                    valid=False,
+                    validation_error=f"{type(error).__name__}: {error}",
+                    generation_seconds=generation_seconds,
+                )
+            )
+            continue
 
         generation_seconds = perf_counter() - generation_started
 

@@ -43,7 +43,7 @@ class NumericalAnalysisConfig:
 
     min_reference_samples: int = 100
     min_residual_std_w: float = 1.0
-    unusual_threshold: float = 1.5
+    unusual_threshold: float = 2.0
     strong_anomaly_threshold: float = 3.0
 
     multi_scale_minimum: int = 2

@@ -155,13 +155,25 @@ def test_empty_response_is_treated_as_invalid_attempt() -> None:
     assert result.attempts[1].valid is True
 
 
-def test_client_exception_is_wrapped_and_not_retried() -> None:
-    client = ScriptedClient([ConnectionError("ollama unreachable")])
+def test_client_exception_is_retried_then_raised_as_inference_error() -> None:
+    client = ScriptedClient([ConnectionError("ollama unreachable")] * 3)
 
-    with pytest.raises(RuntimeError, match="attempt 1"):
+    with pytest.raises(LLMInferenceError) as excinfo:
         _run(client, max_attempts=3)
 
-    assert len(client.calls) == 1
+    assert len(client.calls) == 3
+    assert isinstance(excinfo.value.__cause__, ConnectionError)
+    assert all(not attempt.valid for attempt in excinfo.value.attempts)
+
+
+def test_client_exception_recovers_on_later_attempt() -> None:
+    client = ScriptedClient([ConnectionError("ollama unreachable"), json.dumps(valid_llm_output())])
+
+    result = _run(client, max_attempts=3)
+
+    assert len(client.calls) == 2
+    assert result.attempts[0].valid is False
+    assert result.attempts[-1].valid is True
 
 
 @pytest.mark.parametrize(

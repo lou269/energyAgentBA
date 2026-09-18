@@ -35,6 +35,26 @@ def _calendar_context(decision_time: pd.Timestamp):
     )
 
 
+def _calendar_context_with_absence(decision_time: pd.Timestamp, event_start: pd.Timestamp, event_end: pd.Timestamp):
+    return build_calendar_context(
+        [
+            {
+                "event_id": "test-absence",
+                "event_type": "absence",
+                "start": event_start.isoformat(),
+                "end": event_end.isoformat(),
+                "known_at": (event_start - pd.Timedelta(hours=1)).isoformat(),
+            }
+        ],
+        source_available=True,
+        source="test",
+        retrieved_at=decision_time,
+        decision_time=decision_time,
+        window_start=decision_time - pd.Timedelta(hours=24),
+        window_end=decision_time + pd.Timedelta(hours=24),
+    )
+
+
 def _calm_series(hours: int, *, day_jitter_w: float = 5.0, seed: int = 42) -> pd.Series:
 
     index = pd.date_range("2024-01-01", periods=hours, freq="1h", tz="UTC")
@@ -167,17 +187,53 @@ def test_isolated_single_hour_spike_is_diluted_by_the_daily_mean() -> None:
     assert result.classification == "normal"
 
 
-def _advance_one_day(series: pd.Series, state: CycleState, config) -> tuple:
+def _advance_one_day(series: pd.Series, state: CycleState, config, *, calendar_context=None) -> tuple:
     decision_time = state.history.index[-1] + pd.Timedelta(hours=1) + pd.Timedelta(hours=24)
     new_observations = series.loc[state.history.index[-1] + pd.Timedelta(hours=1) : decision_time - pd.Timedelta(hours=1)]
+    context = calendar_context(decision_time) if calendar_context is not None else _calendar_context(decision_time)
     return run_cycle(
         state, new_observations, decision_time, config,
         local_timezone="Europe/London",
-        calendar_context=_calendar_context(decision_time),
+        calendar_context=context,
     )
 
 
-def test_sustained_absence_triggers_retrain_without_baseline_reset() -> None:
+def test_calendar_confirmed_absence_triggers_retrain_without_baseline_reset() -> None:
+    hours = 24 * 90
+    series = _calm_series(hours, day_jitter_w=5.0)
+    values = series.to_numpy().copy()
+    drop_start = 60 * 24
+    drop_hours = 10 * 24
+    values[drop_start : drop_start + drop_hours] = 5.0
+    series = pd.Series(values, index=series.index, name="target")
+
+    event_start = series.index[drop_start]
+    event_end = event_start + pd.Timedelta(hours=drop_hours)
+
+    def with_absence_event(decision_time: pd.Timestamp):
+        return _calendar_context_with_absence(decision_time, event_start, event_end)
+
+    config = SYS_VARIANTS["SYS2"]
+    state = _state(series.iloc[:drop_start])
+
+    history_start_before_adaption = state.history.index[0]
+
+    # ein Tag in den Drop hinein: Kalender bestaetigt die Abwesenheit sofort, kein Warten auf einen Streak noetig
+    first_result, first_state = _advance_one_day(series, state, config, calendar_context=with_absence_event)
+
+    assert first_result.classification == "absence"
+    assert first_result.adaption_action is not None
+    assert first_result.adaption_action.kind == "exclude_range"
+    assert first_result.retrained
+
+    assert first_result.reference_reset is False
+    assert first_state.history.index[0] == history_start_before_adaption
+
+    excluded = first_state.history.loc[first_result.adaption_action.range_start : first_result.adaption_action.range_end]
+    assert excluded.isna().all()
+
+
+def test_sustained_low_deviation_without_a_calendar_event_does_not_trigger_absence() -> None:
     hours = 24 * 90
     series = _calm_series(hours, day_jitter_w=5.0)
     values = series.to_numpy().copy()
@@ -188,27 +244,12 @@ def test_sustained_absence_triggers_retrain_without_baseline_reset() -> None:
     config = SYS_VARIANTS["SYS2"]
     state = _state(series.iloc[:drop_start])
 
-    # ein Tag in den Drop hinein, Streak ist noch keine sustained_anomaly_streak_days alt -> peak, keine Adaption
-    first_result, state = _advance_one_day(series, state, config)
-    assert first_result.classification == "peak"
-    assert first_result.adaption_action is not None and first_result.adaption_action.kind == "none"
+    for _ in range(6):
+        _, state = _advance_one_day(series, state, config)  # kein calendar_context -> source_available=False
 
-    history_start_before_adaption = state.history.index[0]
+    result, _ = _advance_one_day(series, state, config)
 
-    for _ in range(5):
-        _, state = _advance_one_day(series, state, config)
-    second_result, second_state = _advance_one_day(series, state, config)
-
-    assert second_result.classification == "absence"
-    assert second_result.adaption_action is not None
-    assert second_result.adaption_action.kind == "exclude_range"
-    assert second_result.retrained
-
-    assert second_result.reference_reset is False
-    assert second_state.history.index[0] == history_start_before_adaption
-
-    excluded = second_state.history.loc[second_result.adaption_action.range_start : second_result.adaption_action.range_end]
-    assert excluded.isna().all()
+    assert result.classification != "absence"
 
 
 def test_sustained_level_shift_triggers_new_pattern_with_baseline_reset() -> None:
