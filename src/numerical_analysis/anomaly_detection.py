@@ -91,7 +91,7 @@ def build_anomaly_detection(
         streak_min_periods = math.ceil(streak_tolerance_window_days * rolling_window_min_coverage)
         streak_raw = elevated.rolling(window=streak_tolerance_window_days, min_periods=streak_min_periods).sum()
 
-        result[streak_days_column] = streak_raw.where(elevated.isna(), streak_raw.fillna(0))
+        result[streak_days_column] = streak_raw.fillna(0).where(elevated.notna(), np.nan)
 
     score_columns = [f"{scale}_score" for scale in reference_columns]
 
