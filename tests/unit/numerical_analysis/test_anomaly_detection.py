@@ -34,7 +34,8 @@ def test_z_score_uses_only_train_residuals_for_calibration() -> None:
         _analysis_frame(current_power, reference, split),
         min_reference_samples=50, min_residual_std_w=0.1,
         unusual_threshold=2.0, strong_anomaly_threshold=3.0,
-        sample_period_hours=1.0,
+        sample_period_hours=1.0, streak_tolerance_window_days=7,
+        rolling_window_min_coverage=1.0,
         local_timezone="UTC",
     )
 
@@ -53,7 +54,8 @@ def test_insufficient_reference_samples_yields_no_score() -> None:
         _analysis_frame(current_power, reference, ["train"] * len(train_residuals)),
         min_reference_samples=50, min_residual_std_w=0.1,
         unusual_threshold=2.0, strong_anomaly_threshold=3.0,
-        sample_period_hours=1.0,
+        sample_period_hours=1.0, streak_tolerance_window_days=7,
+        rolling_window_min_coverage=1.0,
         local_timezone="UTC",
     )
 
@@ -69,7 +71,8 @@ def test_residual_std_below_floor_yields_no_score() -> None:
         _analysis_frame(current_power, reference, ["train"] * len(noise)),
         min_reference_samples=50, min_residual_std_w=1.0,
         unusual_threshold=2.0, strong_anomaly_threshold=3.0,
-        sample_period_hours=1.0,
+        sample_period_hours=1.0, streak_tolerance_window_days=7,
+        rolling_window_min_coverage=1.0,
         local_timezone="UTC",
     )
 
@@ -96,7 +99,8 @@ def test_dominant_scale_picks_largest_absolute_score() -> None:
         ),
         min_reference_samples=50, min_residual_std_w=0.1,
         unusual_threshold=2.0, strong_anomaly_threshold=3.0,
-        sample_period_hours=1.0,
+        sample_period_hours=1.0, streak_tolerance_window_days=7,
+        rolling_window_min_coverage=1.0,
         local_timezone="UTC",
     )
 
@@ -144,7 +148,8 @@ def test_elevated_hours_resets_at_local_not_utc_midnight() -> None:
         frame,
         min_reference_samples=20, min_residual_std_w=0.001,
         unusual_threshold=2.0, strong_anomaly_threshold=3.0,
-        sample_period_hours=1.0,
+        sample_period_hours=1.0, streak_tolerance_window_days=7,
+        rolling_window_min_coverage=1.0,
         local_timezone="Europe/London",
     )
 
@@ -164,7 +169,8 @@ def test_reference_columns_parameter_restricts_scales() -> None:
         _analysis_frame(current_power, reference, split),
         min_reference_samples=50, min_residual_std_w=0.1,
         unusual_threshold=2.0, strong_anomaly_threshold=3.0,
-        sample_period_hours=1.0,
+        sample_period_hours=1.0, streak_tolerance_window_days=7,
+        rolling_window_min_coverage=1.0,
         local_timezone="UTC",
         reference_columns={
             "daily": ("current_power", "daily_expected"),
@@ -191,7 +197,8 @@ def test_min_reference_samples_accepts_a_per_scale_mapping() -> None:
         min_reference_samples={"short_term": 1000, "daily": 50, "weekly": 50, "long_term": 50},
         min_residual_std_w=0.1,
         unusual_threshold=2.0, strong_anomaly_threshold=3.0,
-        sample_period_hours=1.0,
+        sample_period_hours=1.0, streak_tolerance_window_days=7,
+        rolling_window_min_coverage=1.0,
         local_timezone="UTC",
     )
 
@@ -223,7 +230,8 @@ def test_direction_override_column_replaces_the_scores_own_sign_for_direction() 
         frame,
         min_reference_samples=50, min_residual_std_w=0.1,
         unusual_threshold=2.0, strong_anomaly_threshold=3.0,
-        sample_period_hours=1.0,
+        sample_period_hours=1.0, streak_tolerance_window_days=7,
+        rolling_window_min_coverage=1.0,
         local_timezone="UTC",
         reference_columns={"daily": ("current_power", "daily_expected")},
         direction_override_columns={"daily": ("today_mean", "today_mean_expected")},
@@ -234,22 +242,3 @@ def test_direction_override_column_replaces_the_scores_own_sign_for_direction() 
     assert row["dominant_scale"] == "daily"
     # today_mean (90) > today_mean_expected (80) -> "high", trotz negativem daily_score
     assert row["anomaly_direction"] == "high"
-
-
-def test_anomaly_streak_days_resets_on_a_normal_day() -> None:
-    train_residuals = [-2.0, -1.0, 0.0, 1.0, 2.0] * 20
-    reference = 100.0
-    tail = [500.0, 0.0, 500.0, 500.0]  # auffällig, normal, auffällig, auffällig
-    split = ["train"] * len(train_residuals) + ["test"] * len(tail)
-    current_power = [reference + r for r in train_residuals] + [reference + t for t in tail]
-
-    result = build_anomaly_detection(
-        _analysis_frame(current_power, reference, split),
-        min_reference_samples=50, min_residual_std_w=0.1,
-        unusual_threshold=2.0, strong_anomaly_threshold=3.0,
-        sample_period_hours=1.0,
-        local_timezone="UTC",
-    )
-
-    # eine Unterbrechung durch einen unauffälligen Tag setzt den Streak zurück auf 0, anders  als das Fenster in aggregate_daily_anomaly
-    assert result["short_term_anomaly_streak_days"].iloc[-4:].tolist() == pytest.approx([1.0, 0.0, 1.0, 2.0])

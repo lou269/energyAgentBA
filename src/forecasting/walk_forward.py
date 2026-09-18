@@ -6,7 +6,7 @@ from prophet import Prophet
 
 from src.common.timestamps import local_calendar_range
 from src.forecasting.baselines import build_daily_naive_forecast, build_last_value_forecast,build_weekly_naive_forecast
-from src.forecasting.prophet_model import build_prophet_forecast, fit_prophet_model
+from src.forecasting.prophet_model import build_prophet_forecast, fit_prophet_model, select_prophet_history
 from src.forecasting.forecast_schema import FORECAST_OUTPUT_COLUMNS, validate_forecast_output
 
 
@@ -297,27 +297,6 @@ def build_walk_forward_forecasts(
         raise ValueError("Forecast variants do not use identical forecast origins and targets.")
 
     return forecasts
-
-
-def select_prophet_history(
-    fixed_history: pd.Series,
-    available_history: pd.Series,
-    *,
-    forecast_origin: pd.Timestamp,
-    history_mode: Literal["fixed_train", "expanding", "rolling"],
-    rolling_window_hours: int | None,
-) -> pd.Series:
-    if history_mode == "fixed_train":
-        return fixed_history
-
-    if history_mode == "expanding":
-        return available_history
-
-    if rolling_window_hours is None:
-        raise ValueError("rolling_window_hours is required for rolling history.")
-
-    history_start = forecast_origin - pd.Timedelta(hours=rolling_window_hours)
-    return available_history.loc[available_history.index >= history_start]
 
 
 def _build_forecast_output(

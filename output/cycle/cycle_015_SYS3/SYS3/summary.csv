@@ -1,0 +1,19 @@
+decision_time,config,classification,explanation,adaption_action,adaption_reason,retrained,reference_reset,mae_w,error
+2013-06-01 23:00:00+00:00,SYS3,new_pattern,"The current reading shows a strong anomaly with low consumption (score -3.68 on long_term scale). This deviation is supported by evidence at multiple scales: the weekly scale score is -3.22 and the daily/weekday scores are also negative (-0.82, -0.84). Crucially, the persistence check confirms this is not a single-day spike: the 'scale_anomaly_streak_days' shows 6 days for the weekly scale and 5 days for the long_term scale. Since the deviation persists across multiple scales (weekly and long_term) and has lasted multiple days, it meets the criteria for 'new_pattern' rather than 'peak'.",advance_history_start,"new_pattern, cutting back 7 days to 2013-05-25T23:00:00+00:00",True,True,212.09096762642594,
+2013-06-02 23:00:00+00:00,SYS3,unknown,,none,unknown: no action,True,False,109.49928280379477,
+2013-06-03 23:00:00+00:00,SYS3,unknown,,none,unknown: no action,True,False,110.60497307880405,
+2013-06-04 23:00:00+00:00,SYS3,unknown,,none,unknown: no action,True,False,142.46195034387793,
+2013-06-05 23:00:00+00:00,SYS3,peak,"The current power reading of 319.3 W is significantly higher than the expected daily mean of 184.6 W, resulting in an anomaly score of 2.78 at the weekly scale. The deviation is supported by evidence at the weekly scale but shows no persistence (streak days are 0 for all scales), so it does not meet the criteria for 'new_pattern'. No relevant calendar events are available to support a classification of 'absence'.",none,peak: no action,True,False,103.4730503487138,
+2013-06-06 23:00:00+00:00,SYS3,,,none,,False,False,,LLM returned no valid output after 2 attempt(s).
+2013-06-07 23:00:00+00:00,SYS3,,,none,,False,False,,LLM returned no valid output after 2 attempt(s).
+2013-06-08 23:00:00+00:00,SYS3,,,none,,False,False,,LLM returned no valid output after 2 attempt(s).
+2013-06-09 23:00:00+00:00,SYS3,normal,,none,normal: no action,True,False,112.22657348884752,
+2013-06-10 23:00:00+00:00,SYS3,normal,,none,normal: no action,True,False,121.08347867878001,
+2013-06-11 23:00:00+00:00,SYS3,normal,,none,normal: no action,True,False,65.31404153561552,
+2013-06-12 23:00:00+00:00,SYS3,normal,,none,normal: no action,True,False,156.5433669417104,
+2013-06-13 23:00:00+00:00,SYS3,normal,,none,normal: no action,True,False,169.0046293268141,
+2013-06-14 23:00:00+00:00,SYS3,,,none,,False,False,,LLM returned no valid output after 2 attempt(s).
+2013-06-15 23:00:00+00:00,SYS3,,,none,,False,False,,LLM returned no valid output after 2 attempt(s).
+2013-06-16 23:00:00+00:00,SYS3,,,none,,False,False,,LLM returned no valid output after 2 attempt(s).
+2013-06-17 23:00:00+00:00,SYS3,,,none,,False,False,,LLM returned no valid output after 2 attempt(s).
+2013-06-18 23:00:00+00:00,SYS3,,,none,,False,False,,LLM returned no valid output after 2 attempt(s).

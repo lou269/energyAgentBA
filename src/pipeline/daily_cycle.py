@@ -6,10 +6,9 @@ from prophet import Prophet
 
 from src.adaption.adaption_policy import AdaptionAction, adaption_policy
 from src.common.timestamps import local_day_index
-from src.config.config_forecasting import CycleConfig, ForecastingConfig, NumericalAnalysisConfig, ProphetVariantConfig
+from src.config.config_forecasting import CycleConfig, NumericalAnalysisConfig, ProphetVariantConfig
 from src.context.calendar_schema import CalendarContext
-from src.forecasting.prophet_model import build_prophet_forecast, fit_prophet_model
-from src.forecasting.walk_forward import select_prophet_history
+from src.forecasting.prophet_model import build_prophet_forecast, refit_and_forecast
 from src.llm.client import LLMClient
 from src.llm.inference import infer_llm_output
 from src.llm.llm_schema import Classification, LLMOutput
@@ -100,17 +99,9 @@ def run_cycle(
         fit_required = elapsed_hours >= variant.retraining_interval_hours
 
     if fit_required:
-        # fixed_train würde hier an der aktuellen history einfrieren statt an der ursprünglichen Coldstart-Historie 
+        # fixed_train würde hier an der aktuellen history einfrieren statt an der ursprünglichen Coldstart-Historie
         # -> betrifft nur C1, expanding/rolling sind davon nicht berührt
-        model_history = select_prophet_history(
-            history,
-            history,
-            forecast_origin=decision_time,
-            history_mode=variant.history_mode,
-            rolling_window_hours=variant.rolling_window_hours,
-        )
-
-        prophet_model = _fit_variant(model_history, variant, config.forecasting_config, local_timezone)
+        prophet_model, model_history, forecast = _refit_and_forecast(history, decision_time, config, variant, local_timezone)
         model_fitted_at = decision_time
     else:
         assert state.prophet_model is not None
@@ -118,8 +109,7 @@ def run_cycle(
         prophet_model = state.prophet_model
         model_history = state.model_history
         model_fitted_at = state.model_fitted_at
-
-    forecast = _build_forecast(prophet_model, model_history, decision_time, config, variant, local_timezone)
+        forecast = _build_forecast(prophet_model, model_history, decision_time, config, variant, local_timezone)
 
     reference_window_end = _compute_reference_window_end(
         history,
@@ -160,7 +150,11 @@ def run_cycle(
         # spart den LLM-/Regel-Aufruf
         anomaly_level = analysis_row["anomaly_level"]
 
-        if pd.isna(anomaly_level):
+        if structured_state["observation"]["value_implausible"]:
+            # today_mean fehlt komplett (Tag von exclude_incomplete_days rausgekickt, siehe day_quality.py)
+            # -> anomaly_score ist dadurch selbst auch NaN, würde sonst im "unknown"-Zweig landen statt hier
+            classification = "measurement_error"
+        elif pd.isna(anomaly_level):
             # zu wenig Referenzdaten für einen Score -> "weiß es nciht", nicht "alles normal"
             classification = "unknown"
         elif anomaly_level == "normal":
@@ -189,7 +183,7 @@ def run_cycle(
             rule_output = rule_based_classify(
                 structured_state,
                 sustained_anomaly_streak_days=config.numerical_analysis_config.sustained_anomaly_streak_days,
-                multi_scale_minimum=config.numerical_analysis_config.multi_scale_minimum,
+                multi_scale_minimum_ratio=config.numerical_analysis_config.multi_scale_minimum_ratio,
                 local_timezone=local_timezone,
             )
             classification = rule_output.classification
@@ -199,22 +193,14 @@ def run_cycle(
             adaption_action = adaption_policy(
                 classification,
                 structured_state,
-                sustained_anomaly_streak_days=config.numerical_analysis_config.sustained_anomaly_streak_days,
+                streak_tolerance_window_days=config.numerical_analysis_config.streak_tolerance_window_days,
             )
 
     if adaption_action is not None and adaption_action.kind != "none":
         history = _apply_adaption(history, adaption_action)
 
-        model_history = select_prophet_history(
-            history,
-            history,
-            forecast_origin=decision_time,
-            history_mode=variant.history_mode,
-            rolling_window_hours=variant.rolling_window_hours,
-        )
-        prophet_model = _fit_variant(model_history, variant, config.forecasting_config, local_timezone)
+        prophet_model, model_history, forecast = _refit_and_forecast(history, decision_time, config, variant, local_timezone)
         model_fitted_at = decision_time
-        forecast = _build_forecast(prophet_model, model_history, decision_time, config, variant, local_timezone)
 
         fit_required = True
 
@@ -279,14 +265,19 @@ def _build_forecast(
     return forecast
 
 
-def _fit_variant(
-    model_history: pd.Series,
+def _refit_and_forecast(
+    history: pd.Series,
+    decision_time: pd.Timestamp,
+    config: CycleConfig,
     variant: ProphetVariantConfig,
-    forecasting_config: ForecastingConfig,
     local_timezone: str,
-) -> Prophet:
-    return fit_prophet_model(
-        model_history,
+) -> tuple[Prophet, pd.Series, pd.DataFrame]:
+    forecasting_config = config.forecasting_config
+    return refit_and_forecast(
+        history,
+        decision_time=decision_time,
+        history_mode=variant.history_mode,
+        rolling_window_hours=variant.rolling_window_hours,
         growth=forecasting_config.growth,
         daily_seasonality=forecasting_config.daily_seasonality,
         weekly_seasonality=variant.weekly_seasonality,
@@ -296,6 +287,11 @@ def _fit_variant(
         log_transform=forecasting_config.log_transform,
         interval_width=forecasting_config.interval_width,
         uncertainty_samples=forecasting_config.uncertainty_samples,
+        horizon_hours=forecasting_config.horizon_hours,
+        frequency=forecasting_config.frequency,
+        clip_negative_forecasts=forecasting_config.negative_forecast_handling == "clip_zero",
+        model_id=variant.model_id,
+        config_version=forecasting_config.config_version,
     )
 
 
@@ -306,12 +302,6 @@ def _apply_adaption(
     if action.kind == "advance_history_start":
         assert action.new_history_start is not None
         return history.loc[history.index >= action.new_history_start]
-
-    if action.kind == "exclude_range":
-        assert action.range_start is not None and action.range_end is not None
-        adapted = history.copy()
-        adapted.loc[action.range_start:action.range_end] = float("nan")
-        return adapted
 
     raise ValueError(f"unknown AdaptionAction: {action.kind}")
 
@@ -363,6 +353,7 @@ def _compute_analysis_row(
         min_weekday_reference_samples=config.min_weekday_reference_samples,
         trend_threshold=config.trend_threshold,
         min_reference_power_w=config.min_reference_power_w,
+        rolling_window_min_coverage=config.rolling_window_min_coverage,
         local_timezone=local_timezone,
     )
 
@@ -378,6 +369,8 @@ def _compute_analysis_row(
         unusual_threshold=config.unusual_threshold,
         strong_anomaly_threshold=config.strong_anomaly_threshold,
         sample_period_hours=config.sample_period_hours_daily,
+        streak_tolerance_window_days=config.streak_tolerance_window_days,
+        rolling_window_min_coverage=config.rolling_window_min_coverage,
         local_timezone=local_timezone,
         reference_columns=DAILY_ANOMALY_SCALES,
         direction_override_columns=DAILY_DIRECTION_OVERRIDE_COLUMNS,
@@ -385,8 +378,9 @@ def _compute_analysis_row(
 
     row = cast(pd.Series, anomaly.loc[target_day]).copy()
     row["timestamp"] = target_day
-    # history kommt schon aus preprocessing, Gap-Treatment/Plausibilitätscheck liegen davor -> kein zweiter Check hier
-    row["value_implausible"] = False
+    # exclude_incomplete_days() setzt einen kompletten Tag auf NaN, wenn Lücken/Missing-Share über den Schwellen
+    # liegen (siehe day_quality.py) -> today_mean ist dann NaN, das ist der einzige Fall für value_implausible hier
+    row["value_implausible"] = pd.isna(row["today_mean"])
     row["anomaly_peak_timestamp"] = target_day if pd.notna(row["anomaly_score"]) else pd.NaT
 
     return row

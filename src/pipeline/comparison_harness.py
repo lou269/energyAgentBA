@@ -166,10 +166,8 @@ def run_comparison(
                             config_label, decision_time, consecutive_llm_failures, total_llm_failures, error,
                         )
                         for attempt in error.attempts:
-                            _append_failed_attempt(run_directory, config_label, decision_time, attempt)
-                            logger.warning(
-                                "  attempt %d: %s", attempt.attempt_number, attempt.validation_error,
-                            )
+                            _append_failed_attempt(run_directory, config_directory, config_label, decision_time, attempt)
+                            logger.warning("  attempt %d: %s", attempt.attempt_number, attempt.validation_error)
 
                         error_row = {
                             "decision_time": decision_time,
@@ -227,10 +225,8 @@ def run_comparison(
                         append_csv(anomaly_row, config_directory / "anomaly.csv")
 
                     if result.structured_state is not None and (result.llm_output is not None or result.rule_output is not None):
-                        save_json(
-                            cast(dict, result.structured_state),
-                            config_directory / "structured_state" / f"{decision_time.strftime('%Y%m%dT%H%M%S')}.json",
-                        )
+                        structured_state_record = {"config": config_label, **cast(dict, result.structured_state)}
+                        append_jsonl(structured_state_record, config_directory / "structured_states.jsonl")
 
                     if result.llm_output is not None:
                         llm_output_record = {"config": config_label, "decision_time": decision_time.isoformat(), **result.llm_output}
@@ -348,6 +344,7 @@ def _explanation(result: CycleResult) -> str:
 
 def _append_failed_attempt(
     run_directory: Path,
+    config_directory: Path,
     config_label: str,
     decision_time: pd.Timestamp,
     attempt: LLMAttemptRecord,
@@ -360,6 +357,7 @@ def _append_failed_attempt(
         "generation_seconds": attempt.generation_seconds,
         "raw_content": attempt.raw_content,
     }
+    append_jsonl(record, config_directory / "llm_failures.jsonl")
     append_jsonl(record, run_directory / "llm_failures.jsonl")
 
 

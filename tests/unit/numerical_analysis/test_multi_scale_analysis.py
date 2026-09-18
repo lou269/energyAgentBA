@@ -123,6 +123,7 @@ def test_build_daily_cycle_analysis_resamples_hourly_history_and_splits_on_refer
         weekly_window_days=2,
         min_weekday_reference_samples=1,
         trend_threshold=0.1, min_reference_power_w=0.0,
+        rolling_window_min_coverage=1.0,
         local_timezone="UTC",
     )
 
@@ -154,6 +155,7 @@ def test_build_daily_cycle_analysis_daily_std_expected_is_causal_and_frozen_afte
         weekly_window_days=2,
         min_weekday_reference_samples=1,
         trend_threshold=0.1, min_reference_power_w=0.0,
+        rolling_window_min_coverage=1.0,
         local_timezone="UTC",
     )
 
@@ -196,6 +198,7 @@ def test_build_daily_cycle_analysis_today_mean_expected_is_causal_and_frozen_aft
         weekly_window_days=2,
         min_weekday_reference_samples=1,
         trend_threshold=0.1, min_reference_power_w=0.0,
+        rolling_window_min_coverage=1.0,
         local_timezone="UTC",
     )
 
@@ -228,6 +231,7 @@ def test_build_daily_cycle_analysis_weekly_mean_is_a_contemporary_rolling_window
         weekly_window_days=3,
         min_weekday_reference_samples=1,
         trend_threshold=0.1, min_reference_power_w=0.0,
+        rolling_window_min_coverage=1.0,
         local_timezone="UTC",
     )
 
@@ -267,6 +271,7 @@ def test_build_daily_cycle_analysis_long_term_window_mean_gets_its_own_frozen_re
         weekly_window_days=2,
         min_weekday_reference_samples=1,
         trend_threshold=0.1, min_reference_power_w=0.0,
+        rolling_window_min_coverage=1.0,
         local_timezone="UTC",
     )
 
@@ -283,3 +288,41 @@ def test_build_daily_cycle_analysis_long_term_window_mean_gets_its_own_frozen_re
     expected_frozen = expected_long_term_window_mean.loc[train_index].mean()
     assert result.loc[pd.Timestamp("2020-01-08", tz="UTC"), "long_term_expected"] == pytest.approx(expected_frozen)
     assert result.loc[pd.Timestamp("2020-01-10", tz="UTC"), "long_term_expected"] == pytest.approx(expected_frozen)
+
+
+def test_weekly_mean_tolerates_a_single_missing_day_within_the_window() -> None:
+    index = pd.date_range("2020-01-01", periods=24 * 10, freq="1h", tz="UTC")
+    # Tag 5 (05.01.) fehlt komplett, z.B. wegen exclude_incomplete_days() vorgelagert in der Preprocessing-Stufe
+    day_levels = [100.0, 110.0, 120.0, 130.0, float("nan"), 150.0, 160.0, 170.0, 180.0, 190.0]
+    values = [level for level in day_levels for _ in range(24)]
+    history = pd.Series(values, index=index, name="p")
+
+    reference_window_end = pd.Timestamp("2020-01-08T12:00:00Z")
+
+    result = build_daily_cycle_analysis(
+        history,
+        reference_window_end=reference_window_end,
+        short_term_window=2, sample_period_hours=24.0, long_term_window=5,
+        weekly_window_days=5,
+        min_weekday_reference_samples=1,
+        trend_threshold=0.1, min_reference_power_w=0.0,
+        rolling_window_min_coverage=0.8,
+        local_timezone="UTC",
+    )
+
+    # Fenster 04.-08.01. enthält genau den einen NaN-Tag -> min_periods=ceil(5*0.8)=4, mit 4 gültigen Tagen also kein Totalausfall
+    assert result.loc[pd.Timestamp("2020-01-08", tz="UTC"), "weekly_mean"] == pytest.approx((130.0 + 150.0 + 160.0 + 170.0) / 4)
+
+    # Kontrollprobe: mit voller Abdeckung (altes Verhalten) reißt derselbe eine NaN-Tag das ganze Fenster
+    strict = build_daily_cycle_analysis(
+        history,
+        reference_window_end=reference_window_end,
+        short_term_window=2, sample_period_hours=24.0, long_term_window=5,
+        weekly_window_days=5,
+        min_weekday_reference_samples=1,
+        trend_threshold=0.1, min_reference_power_w=0.0,
+        rolling_window_min_coverage=1.0,
+        local_timezone="UTC",
+    )
+
+    assert pd.isna(strict.loc[pd.Timestamp("2020-01-08", tz="UTC"), "weekly_mean"])

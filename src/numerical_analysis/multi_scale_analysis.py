@@ -1,7 +1,9 @@
+import math
+
 import numpy as np
 import pandas as pd
 
-
+# alte build analysis muss noch raus
 def build_multi_scale_analysis(
     train_data: pd.DataFrame,
     validation_data: pd.DataFrame,
@@ -55,13 +57,8 @@ def build_multi_scale_analysis(
 
     previous_power = result["current_power"].shift(1)
 
-    result["trend_reference_mean"] = previous_power.rolling(
-        window=short_term_window, min_periods=short_term_window
-    ).mean()
-
-    result["long_term_mean"] = previous_power.rolling(
-        window=long_term_window, min_periods=long_term_window
-    ).mean()
+    result["trend_reference_mean"] = previous_power.rolling(window=short_term_window, min_periods=short_term_window).mean()
+    result["long_term_mean"] = previous_power.rolling(window=long_term_window, min_periods=long_term_window).mean()
 
     trend_time = np.arange(short_term_window) * sample_period_hours
     centered_trend_time = trend_time - trend_time.mean()
@@ -107,13 +104,8 @@ def build_multi_scale_analysis(
 
     result.loc[train_data.index, "daily_expected"] = train_daily_expected
 
-    weekly_profile = train_reference.groupby(
-        ["day_of_week", "hour", "minute"]
-    )["power"].agg(["mean", "count"])
-
-    weekly_profile.loc[
-        weekly_profile["count"] < min_weekly_reference_samples, "mean"
-    ] = np.nan
+    weekly_profile = train_reference.groupby(["day_of_week", "hour", "minute"])["power"].agg(["mean", "count"])
+    weekly_profile.loc[weekly_profile["count"] < min_weekly_reference_samples, "mean"] = np.nan
 
     weekly_keys = pd.MultiIndex.from_arrays(
         [data_index.dayofweek, data_index.hour, data_index.minute],
@@ -132,30 +124,21 @@ def build_multi_scale_analysis(
 
     result.loc[train_data.index, "weekly_expected"] = train_weekly_expected
 
-    daily_reference = result["daily_expected"].where(
-        result["daily_expected"].abs() >= min_reference_power_w
-    )
-    weekly_reference = result["weekly_expected"].where(
-        result["weekly_expected"].abs() >= min_reference_power_w
-    )
-    trend_reference = result["trend_reference_mean"].where(
-        result["trend_reference_mean"].abs() >= min_reference_power_w
-    )
+    daily_reference = result["daily_expected"].where(result["daily_expected"].abs() >= min_reference_power_w)
+    weekly_reference = result["weekly_expected"].where(result["weekly_expected"].abs() >= min_reference_power_w)
+    trend_reference = result["trend_reference_mean"].where(result["trend_reference_mean"].abs() >= min_reference_power_w)
 
     result["daily_deviation"] = (result["current_power"] - daily_reference) / daily_reference
-
     result["weekly_deviation"] = (result["current_power"] - weekly_reference) / weekly_reference
 
     trend_window_hours = short_term_window * sample_period_hours
 
     result["trend_change"] = (result["trend_slope_w_per_hour"] * trend_window_hours) / trend_reference
-
+    
     result["trend"] = "stable"
 
     result.loc[result["trend_change"] > trend_threshold, "trend"] = "increasing"
-
     result.loc[result["trend_change"] < -trend_threshold, "trend"] = "decreasing"
-
     result.loc[result["trend_change"].isna(), "trend"] = pd.NA
 
     result.index.name = "timestamp"
@@ -174,6 +157,7 @@ def build_daily_cycle_analysis(
     min_weekday_reference_samples: int,
     trend_threshold: float,
     min_reference_power_w: float,
+    rolling_window_min_coverage: float,
     local_timezone: str,
 ) -> pd.DataFrame:
     local_history = history.tz_convert(local_timezone)
@@ -205,9 +189,9 @@ def build_daily_cycle_analysis(
         window=short_term_window, min_periods=short_term_window
     ).mean()
 
-    result["long_term_window_mean"] = result["today_mean"].rolling(
-        window=long_term_window, min_periods=long_term_window
-    ).mean()
+    # min_periods < window, damit ein einzelner NaN-Tag (z.B. measurement_error) im Fenster nicht die komplette Skala für long_term_window Tage lahmlegt
+    long_term_min_periods = math.ceil(long_term_window * rolling_window_min_coverage)
+    result["long_term_window_mean"] = result["today_mean"].rolling(window=long_term_window, min_periods=long_term_min_periods).mean()
 
     trend_time = np.arange(short_term_window) * sample_period_hours
     centered_trend_time = trend_time - trend_time.mean()
@@ -240,12 +224,8 @@ def build_daily_cycle_analysis(
 
     result.loc[train_index, "weekday_expected"] = train_weekday_expected
 
-    weekday_reference = result["weekday_expected"].where(
-        result["weekday_expected"].abs() >= min_reference_power_w
-    )
-    trend_reference = result["trend_reference_mean"].where(
-        result["trend_reference_mean"].abs() >= min_reference_power_w
-    )
+    weekday_reference = result["weekday_expected"].where(result["weekday_expected"].abs() >= min_reference_power_w)
+    trend_reference = result["trend_reference_mean"].where(result["trend_reference_mean"].abs() >= min_reference_power_w)
 
     result["weekday_deviation"] = (result["today_mean"] - weekday_reference) / weekday_reference
 
@@ -277,9 +257,8 @@ def build_daily_cycle_analysis(
 
     result.loc[remaining_index, "today_mean_expected"] = daily_mean.loc[train_index].mean()
 
-    result["weekly_mean"] = result["today_mean"].rolling(
-        window=weekly_window_days, min_periods=weekly_window_days
-    ).mean()
+    weekly_min_periods = math.ceil(weekly_window_days * rolling_window_min_coverage)
+    result["weekly_mean"] = result["today_mean"].rolling(window=weekly_window_days, min_periods=weekly_min_periods).mean()
 
     train_weekly_mean_expected = result["weekly_mean"].loc[train_index].shift(1).expanding(min_periods=1).mean()
     result["weekly_mean_expected"] = np.nan

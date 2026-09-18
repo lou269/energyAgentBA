@@ -2,7 +2,7 @@
 # python -m src.pipeline.pipeline_runner --configs SYS0,SYS2
 # python -m src.pipeline.pipeline_runner --skip-data-preparation
 # python -m src.pipeline.pipeline_runner --configs SYS0,SYS1,SYS2,SYS3 --skip-data-preparation
-# python -m src.pipeline.pipeline_runner --configs SYS2 --skip-data-preparation
+# python -m src.pipeline.pipeline_runner --configs SYS3 --skip-data-preparation
 # python -m src.pipeline.pipeline_runner --configs SYS2,SYS3 --skip-data-preparation
 
 # open -a Ollama

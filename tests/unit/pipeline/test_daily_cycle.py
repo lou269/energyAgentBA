@@ -35,26 +35,6 @@ def _calendar_context(decision_time: pd.Timestamp):
     )
 
 
-def _calendar_context_with_absence(decision_time: pd.Timestamp, event_start: pd.Timestamp, event_end: pd.Timestamp):
-    return build_calendar_context(
-        [
-            {
-                "event_id": "test-absence",
-                "event_type": "absence",
-                "start": event_start.isoformat(),
-                "end": event_end.isoformat(),
-                "known_at": (event_start - pd.Timedelta(hours=1)).isoformat(),
-            }
-        ],
-        source_available=True,
-        source="test",
-        retrieved_at=decision_time,
-        decision_time=decision_time,
-        window_start=decision_time - pd.Timedelta(hours=24),
-        window_end=decision_time + pd.Timedelta(hours=24),
-    )
-
-
 def _calm_series(hours: int, *, day_jitter_w: float = 5.0, seed: int = 42) -> pd.Series:
 
     index = pd.date_range("2024-01-01", periods=hours, freq="1h", tz="UTC")
@@ -198,58 +178,19 @@ def _advance_one_day(series: pd.Series, state: CycleState, config, *, calendar_c
     )
 
 
-def test_calendar_confirmed_absence_triggers_retrain_without_baseline_reset() -> None:
-    hours = 24 * 90
-    series = _calm_series(hours, day_jitter_w=5.0)
+def test_fully_missing_target_day_is_classified_as_measurement_error() -> None:
+    series = _calm_series(24 * 50)
+    coldstart_hours = 24 * 48
     values = series.to_numpy().copy()
-    drop_start = 60 * 24
-    drop_hours = 10 * 24
-    values[drop_start : drop_start + drop_hours] = 5.0
+    values[coldstart_hours : coldstart_hours + 24] = np.nan
     series = pd.Series(values, index=series.index, name="target")
+    config = replace(SYS_VARIANTS["SYS1"], llm_mode="rule")
 
-    event_start = series.index[drop_start]
-    event_end = event_start + pd.Timedelta(hours=drop_hours)
+    result, _ = _run_single_cycle(series, coldstart_hours=coldstart_hours, config=config)
 
-    def with_absence_event(decision_time: pd.Timestamp):
-        return _calendar_context_with_absence(decision_time, event_start, event_end)
-
-    config = SYS_VARIANTS["SYS2"]
-    state = _state(series.iloc[:drop_start])
-
-    history_start_before_adaption = state.history.index[0]
-
-    # ein Tag in den Drop hinein: Kalender bestaetigt die Abwesenheit sofort, kein Warten auf einen Streak noetig
-    first_result, first_state = _advance_one_day(series, state, config, calendar_context=with_absence_event)
-
-    assert first_result.classification == "absence"
-    assert first_result.adaption_action is not None
-    assert first_result.adaption_action.kind == "exclude_range"
-    assert first_result.retrained
-
-    assert first_result.reference_reset is False
-    assert first_state.history.index[0] == history_start_before_adaption
-
-    excluded = first_state.history.loc[first_result.adaption_action.range_start : first_result.adaption_action.range_end]
-    assert excluded.isna().all()
-
-
-def test_sustained_low_deviation_without_a_calendar_event_does_not_trigger_absence() -> None:
-    hours = 24 * 90
-    series = _calm_series(hours, day_jitter_w=5.0)
-    values = series.to_numpy().copy()
-    drop_start = 60 * 24
-    values[drop_start : drop_start + 10 * 24] = 5.0
-    series = pd.Series(values, index=series.index, name="target")
-
-    config = SYS_VARIANTS["SYS2"]
-    state = _state(series.iloc[:drop_start])
-
-    for _ in range(6):
-        _, state = _advance_one_day(series, state, config)  # kein calendar_context -> source_available=False
-
-    result, _ = _advance_one_day(series, state, config)
-
-    assert result.classification != "absence"
+    assert result.analysis_row["value_implausible"]
+    assert result.classification == "measurement_error"
+    assert result.rule_output is None
 
 
 def test_sustained_level_shift_triggers_new_pattern_with_baseline_reset() -> None:
@@ -269,8 +210,8 @@ def test_sustained_level_shift_triggers_new_pattern_with_baseline_reset() -> Non
 
     history_start_before_adaption = state.history.index[0]
 
-    # sechs weitere Tage im Shift -> mind. zwei Skalen sustained -> new_pattern
-    for _ in range(5):
+    # vier weitere Tage im Shift -> streak_tolerance_window_days=7 mit 6 Treffern noetig -> new_pattern
+    for _ in range(3):
         _, state = _advance_one_day(series, state, config)
     second_result, second_state = _advance_one_day(series, state, config)
 

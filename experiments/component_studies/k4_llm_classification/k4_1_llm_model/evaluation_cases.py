@@ -119,7 +119,7 @@ def build_evaluation_cases() -> tuple[LLMEvaluationCase, ...]:
         _case(
             case_id="new_pattern",
             expected="new_pattern",
-            reasoning="Abweichung nach oben, seit mehreren Tagen anhaltend auf zwei Skalen zugleich (multi_scale_minimum=2).",
+            reasoning="Abweichung nach oben, seit mehreren Tagen anhaltend auf einem Großteil der verfügbaren Skalen zugleich (multi_scale_minimum_ratio=0.5).",
             current_power_w=980.0,
             value_implausible=False,
             anomaly=_anomaly_block(

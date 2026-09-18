@@ -18,7 +18,8 @@ _BASE_STATE_JSON = """
     "long_term_expected_w": null,
     "trend": "decreasing",
     "trend_change": -0.4256972486075171,
-    "trend_slope_w_per_hour": -7.285383326086958
+    "trend_slope_w_per_hour": -7.285383326086958,
+    "weekday_deviation": 3.1141426541878765
   },
   "anomaly": {
     "available_scales": [
@@ -226,7 +227,7 @@ _BASE_STATE_JSON = """
     "observation_start": "2015-12-15T10:00:00+00:00",
     "value_implausible": false
   },
-  "schema_version": "1.4"
+  "schema_version": "1.5"
 }
 """
 

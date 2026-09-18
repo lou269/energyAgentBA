@@ -4,14 +4,16 @@ from typing import Literal, TypedDict, cast
 
 import pandas as pd
 
+from src.common.forecast_summary import mean_and_peak, mean_interval_width
 from src.common.timestamps import parse_utc_timestamp_field
+from src.common.validation import require_non_empty_string
 from src.config.config_forecasting import ForecastingConfig
 from src.context.calendar_schema import CALENDAR_CONTEXT_FIELDS, CalendarEvent, validate_calendar_context
 from src.numerical_analysis.anomaly_detection import resolve_dominant_scale
 from src.pipeline.schema_validation import is_real_number, validate_fields
 
 
-SCHEMA_VERSION = "1.4"
+SCHEMA_VERSION = "1.5"
 FORECAST_HORIZON_HOURS = ForecastingConfig().horizon_hours
 
 FLOAT_COMPARISON_REL_TOL = 1e-9
@@ -47,6 +49,7 @@ ANALYSIS_FIELDS = frozenset(
         "trend_slope_w_per_hour",
         "trend_change",
         "trend",
+        "weekday_deviation",
     }
 )
 
@@ -117,6 +120,7 @@ class AnalysisState(TypedDict):
     trend_slope_w_per_hour: float | None
     trend_change: float | None
     trend: TrendName | None
+    weekday_deviation: float | None
 
 
 class ScaleScores(TypedDict):
@@ -228,6 +232,7 @@ def validate_structured_state(
         "long_term_expected_w",
         "trend_slope_w_per_hour",
         "trend_change",
+        "weekday_deviation",
     ):
         _number(analysis[field], f"analysis.{field}", nullable=True)
 
@@ -335,7 +340,7 @@ def validate_structured_state(
     validate_fields(forecast, FORECAST_FIELDS, "forecast")
 
     for field in ("run_id", "model_id", "config_version"):
-        _non_empty_string(forecast[field], f"forecast.{field}")
+        require_non_empty_string(forecast[field], f"forecast.{field}")
 
     forecast_origin = parse_utc_timestamp_field(forecast["origin"], "forecast.origin")
 
@@ -404,8 +409,7 @@ def validate_structured_state(
     assert mean_w is not None
     assert peak_w is not None
 
-    expected_mean_w = sum(predictions) / len(predictions)
-    expected_peak_w = max(predictions)
+    expected_mean_w, expected_peak_w = mean_and_peak(predictions)
 
     if not _float_matches(float(mean_w), expected_mean_w):
         raise ValueError("forecast.summary.mean_w must match forecast points.")
@@ -424,15 +428,16 @@ def validate_structured_state(
     if peak_timestamp not in expected_peak_timestamps:
         raise ValueError("forecast.summary.peak_timestamp must reference a peak forecast point.")
 
-    mean_interval_width = _number(summary["mean_interval_width_w"], "forecast.summary.mean_interval_width_w", nullable=True)
+    mean_interval_width_w = _number(summary["mean_interval_width_w"], "forecast.summary.mean_interval_width_w", nullable=True)
 
-    if interval_states[0] != (mean_interval_width is not None):
+    if interval_states[0] != (mean_interval_width_w is not None):
         raise ValueError("mean_interval_width_w must be present exactly when prediction intervals are available.")
 
-    if mean_interval_width is not None:
-        expected_interval_width = sum(interval_widths) / len(interval_widths)
+    if mean_interval_width_w is not None:
+        expected_interval_width = mean_interval_width(interval_widths)
+        assert expected_interval_width is not None
 
-        if not _float_matches(float(mean_interval_width), expected_interval_width):
+        if not _float_matches(float(mean_interval_width_w), expected_interval_width):
             raise ValueError("forecast.summary.mean_interval_width_w must match forecast points.")
 
     context = _mapping(state["context"], "context")
@@ -449,16 +454,6 @@ def _mapping(
  ) -> Mapping[str, object]:
     if not isinstance(value, Mapping):
         raise TypeError(f"{field_name} must be a mapping.")
-
-    return value
-
-
-def _non_empty_string(
-    value: object, 
-    field_name: str
-) -> str:
-    if not isinstance(value, str) or not value.strip():
-        raise ValueError(f"{field_name} must be a non-empty string.")
 
     return value
 

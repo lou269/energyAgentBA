@@ -11,8 +11,8 @@ LLMMode = Literal["off", "rule", "real"]
 ''' PREPROCESSING '''
 @dataclass(frozen=True)
 class PreprocessingConfig:
-    train_share: float = 0.8
-    validation_share: float = 0.1
+    train_share: float = 0.7
+    validation_share: float = 0.15
 
     gap_treatment_method: ProductionGapMethod = "ffill"
     max_imputation_gap_15min: int = 4
@@ -46,7 +46,7 @@ class NumericalAnalysisConfig:
     unusual_threshold: float = 2.0
     strong_anomaly_threshold: float = 3.0
 
-    multi_scale_minimum: int = 2
+    multi_scale_minimum_ratio: float = 0.5
 
     # run_cycle rechnet die Anomalieerkennung auf Tagesmittelwerten statt Einzelstunden
     sample_period_hours_daily: float = 24.0
@@ -54,15 +54,21 @@ class NumericalAnalysisConfig:
     long_term_window_days: int = 30
     weekly_window_days: int = 7  # eigenständig von trend_window_days, auch wenn aktuell derselbe Wert
 
+    # Mindestabdeckung für weekly_mean/long_term_window_mean (rolling): ein einzelner NaN-Tag (z.B. measurement_error)
+    # soll die Skala nicht gleich für die ganze Fensterlänge lahmlegen, siehe anomalieerkennung_neu.md
+    rolling_window_min_coverage: float = 0.8
+
     # wie viele Tage reference_window_end nach einem Reset noch mitwachsen darf, bevor es einfriert
     max_reference_window_growth_days: int = 60
 
     min_weekly_reference_samples: int = 1
     min_longterm_reference_samples: int = 1
 
-    # Tage am Stück, die eine Skala mindestens auffällig sein muss, um absence/new_pattern statt peak zu ergeben (rule_based_classifier.py)
-    # unkalibriert, erster Schätzwert
-    sustained_anomaly_streak_days: int = 7
+    # Fenstergröße für scale_anomaly_streak_days: wie viele Tage zurück gezählt wird
+    streak_tolerance_window_days: int = 7
+
+    # Mindest-Treffer innerhalb von streak_tolerance_window_days, damit eine Skala als sustained gilt und new_pattern statt peak ergibt (rule_based_classifier.py)  (unkalibriert)
+    sustained_anomaly_streak_days: int = 6
 
 
 ''' PROPHET '''

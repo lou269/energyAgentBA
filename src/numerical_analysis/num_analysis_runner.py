@@ -94,6 +94,8 @@ def run_numerical_analysis(
         unusual_threshold=config.unusual_threshold,
         strong_anomaly_threshold=config.strong_anomaly_threshold,
         sample_period_hours=config.sample_period_hours_15min,
+        streak_tolerance_window_days=config.streak_tolerance_window_days,
+        rolling_window_min_coverage=config.rolling_window_min_coverage,
         local_timezone=local_timezone,
     )
 
@@ -121,6 +123,8 @@ def run_numerical_analysis(
         unusual_threshold=config.unusual_threshold,
         strong_anomaly_threshold=config.strong_anomaly_threshold,
         sample_period_hours=config.sample_period_hours_hourly,
+        streak_tolerance_window_days=config.streak_tolerance_window_days,
+        rolling_window_min_coverage=config.rolling_window_min_coverage,
         local_timezone=local_timezone,
     )
 

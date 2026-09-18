@@ -5,7 +5,9 @@ from typing import TypeVar, cast
 import numpy as np
 import pandas as pd
 
+from src.common.forecast_summary import mean_and_peak, mean_interval_width
 from src.common.timestamps import parse_utc_timestamp
+from src.common.validation import require_non_empty_string
 from src.context.calendar_schema import CalendarContext
 from src.pipeline.schema_validation import is_real_number
 from src.structured_state.structured_state_schema import (
@@ -41,6 +43,7 @@ ANALYSIS_FIELDS = frozenset(
         "trend_slope_w_per_hour",
         "trend_change",
         "trend",
+        "weekday_deviation",
         "daily_score",
         "weekday_score",
         "weekly_score",
@@ -154,6 +157,7 @@ def build_structured_state(
             "trend_slope_w_per_hour": _nullable_float( analysis_row["trend_slope_w_per_hour"], "analysis.trend_slope_w_per_hour"),
             "trend_change": _nullable_float(analysis_row["trend_change"], "analysis.trend_change"),
             "trend": _nullable_text(analysis_row["trend"], "analysis.trend", TREND_NAMES),
+            "weekday_deviation": _nullable_float(analysis_row["weekday_deviation"], "analysis.weekday_deviation"),
         },
         "anomaly": {
             "score": _nullable_float(analysis_row["anomaly_score"], "analysis.anomaly_score"),
@@ -227,7 +231,7 @@ def _build_forecast_state(
             }
         )
 
-    peak_w = max(predictions)
+    mean_w, peak_w = mean_and_peak(predictions)
     peak_index = predictions.index(peak_w)
 
     return {
@@ -238,10 +242,10 @@ def _build_forecast_state(
         "horizon_hours": FORECAST_HORIZON_HOURS,
         "points": forecast_points,
         "summary": {
-            "mean_w": sum(predictions) / len(predictions),
+            "mean_w": mean_w,
             "peak_w": peak_w,
             "peak_timestamp": forecast_points[peak_index]["timestamp"],
-            "mean_interval_width_w": sum(interval_widths) / len(interval_widths) if interval_widths else None
+            "mean_interval_width_w": mean_interval_width(interval_widths),
         },
     }
 
@@ -263,15 +267,15 @@ def _single_value(
 
 
 def _single_text(
-    frame: pd.DataFrame, 
+    frame: pd.DataFrame,
     column: str
 ) -> str:
     value = _single_value(frame, column)
 
-    if not isinstance(value, str) or not value.strip():
+    if not isinstance(value, str):
         raise ValueError(f"Forecast column {column} must contain a non-empty string.")
 
-    return value
+    return require_non_empty_string(value, f"Forecast column {column}")
 
 
 def _nullable_float(

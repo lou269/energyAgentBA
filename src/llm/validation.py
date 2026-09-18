@@ -2,7 +2,7 @@ from collections.abc import Collection, Mapping
 from typing import cast
 
 from src.llm.llm_schema import EvidenceReference, EvidenceValue, LLMOutput, RawLLMOutput, validate_llm_output
-from src.structured_state.structured_state_schema import StructuredState, validate_structured_state
+from src.structured_state.structured_state_schema import StructuredState
 
 
 EvidenceScalar = str | int | float | bool | None
@@ -23,6 +23,7 @@ ALLOWED_EVIDENCE_PATHS = frozenset(
         "analysis.trend_slope_w_per_hour",
         "analysis.trend_change",
         "analysis.trend",
+        "analysis.weekday_deviation",
         "anomaly.score",
         "anomaly.level",
         "anomaly.direction",
@@ -67,7 +68,6 @@ def _is_allowed_evidence_path(
 def collect_scalar_evidence_paths(
     state: StructuredState
 ) -> tuple[str, ...]:
-    validate_structured_state(state)
 
     paths: set[str] = set()
     _collect_scalar_paths(value=state, prefix="", paths=paths)

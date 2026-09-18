@@ -1,4 +1,5 @@
 import logging
+from typing import Literal
 
 import numpy as np
 import pandas as pd
@@ -115,3 +116,88 @@ def _prepare_prophet_data(history: pd.Series, local_timezone: str, log_transform
     return pd.DataFrame(
         {"ds": timestamps.tz_convert(local_timezone).tz_localize(None), "y": values}
     )
+
+
+def select_prophet_history(
+    fixed_history: pd.Series,
+    available_history: pd.Series,
+    *,
+    forecast_origin: pd.Timestamp,
+    history_mode: Literal["fixed_train", "expanding", "rolling"],
+    rolling_window_hours: int | None,
+) -> pd.Series:
+    if history_mode == "fixed_train":
+        return fixed_history
+
+    if history_mode == "expanding":
+        return available_history
+
+    if rolling_window_hours is None:
+        raise ValueError("rolling_window_hours is required for rolling history.")
+
+    history_start = forecast_origin - pd.Timedelta(hours=rolling_window_hours)
+    return available_history.loc[available_history.index >= history_start]
+
+
+def refit_and_forecast(
+    history: pd.Series,
+    *,
+    decision_time: pd.Timestamp,
+    history_mode: Literal["fixed_train", "expanding", "rolling"],
+    rolling_window_hours: int | None,
+    growth: str,
+    daily_seasonality: bool,
+    weekly_seasonality: bool,
+    yearly_seasonality: bool,
+    country_holidays: str | None,
+    local_timezone: str,
+    log_transform: bool,
+    interval_width: float,
+    uncertainty_samples: int,
+    horizon_hours: int,
+    frequency: str,
+    clip_negative_forecasts: bool,
+    model_id: str,
+    config_version: str,
+) -> tuple[Prophet, pd.Series, pd.DataFrame]:
+    model_history = select_prophet_history(
+        history,
+        history,
+        forecast_origin=decision_time,
+        history_mode=history_mode,
+        rolling_window_hours=rolling_window_hours,
+    )
+
+    model = fit_prophet_model(
+        model_history,
+        growth=growth,
+        daily_seasonality=daily_seasonality,
+        weekly_seasonality=weekly_seasonality,
+        yearly_seasonality=yearly_seasonality,
+        country_holidays=country_holidays,
+        local_timezone=local_timezone,
+        log_transform=log_transform,
+        interval_width=interval_width,
+        uncertainty_samples=uncertainty_samples,
+    )
+
+    target_index = pd.date_range(start=decision_time, periods=horizon_hours, freq=frequency)
+
+    raw_forecast = build_prophet_forecast(
+        model,
+        target_index,
+        clip_negative_forecasts=clip_negative_forecasts,
+        history_end=model_history.index[-1],
+        local_timezone=local_timezone,
+        log_transform=log_transform,
+    )
+
+    forecast = raw_forecast.reset_index()[["target_timestamp", "y_pred", "y_lower", "y_upper"]].copy()
+    forecast["run_id"] = f"cycle_{decision_time.strftime('%Y%m%dT%H%M')}"
+    # "split" hier nur ein Platzhalter für den Abgleich mit analysis_row in daily_cycle.py, keine echte Train/Val/Test-Bedeutung wie im Walk-Forward-Backtest
+    forecast["split"] = "test"
+    forecast["model_id"] = model_id
+    forecast["config_version"] = config_version
+    forecast["forecast_origin"] = decision_time
+
+    return model, model_history, forecast

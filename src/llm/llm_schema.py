@@ -1,6 +1,7 @@
 from collections.abc import Collection, Mapping
 from typing import Literal, TypedDict, get_args
 
+from src.common.validation import require_non_empty_string
 from src.pipeline.schema_validation import validate_fields
 
 
@@ -139,7 +140,7 @@ def validate_llm_output(
         raise ValueError("classification contains an unsupported value.")
 
     for field in ("explanation", "user_recommendation", "uncertainty"):
-        _validate_non_empty_string(output[field], field)
+        require_non_empty_string(output[field], field)
 
     evidence_references = output["evidence_references"]
 
@@ -175,19 +176,6 @@ def _validate_evidence_path(
 
     if any(not part for part in value.split(".")):
         raise ValueError(f"{field_name} must be a valid dot-separated path.")
-
-    return value
-
-
-def _validate_non_empty_string(
-    value: object, 
-    field_name: str
-) -> str:
-    if not isinstance(value, str):
-        raise TypeError(f"{field_name} must be a string.")
-
-    if not value.strip():
-        raise ValueError(f"{field_name} must not be empty.")
 
     return value
 

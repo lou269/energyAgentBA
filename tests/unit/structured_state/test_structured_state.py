@@ -34,6 +34,7 @@ def _analysis_row() -> pd.Series:
             "trend_slope_w_per_hour": 1.5,
             "trend_change": 0.2,
             "trend": "increasing",
+            "weekday_deviation": (120.0 - 105.0) / 105.0,
             "daily_score": 2.0,
             "weekday_score": 1.8,
             "weekly_score": None,

@@ -1,3 +1,4 @@
+import math
 from collections.abc import Mapping
 
 import numpy as np
@@ -37,6 +38,8 @@ def build_anomaly_detection(
     unusual_threshold: float,
     strong_anomaly_threshold: float,
     sample_period_hours: float,
+    streak_tolerance_window_days: int,
+    rolling_window_min_coverage: float,
     local_timezone: str,
     reference_columns: Mapping[str, tuple[str, str]] | None = None,
     direction_override_columns: Mapping[str, tuple[str, str]] | None = None,
@@ -47,12 +50,12 @@ def build_anomaly_detection(
     direction_override_columns = direction_override_columns or {}
 
     train_mask = result["split"] == "train"
-    day_key = local_day_index(result.index, local_timezone)
+    #day_key = local_day_index(result.index, local_timezone)
 
     for scale, (observed_column, expected_column) in reference_columns.items():
         residual_column = f"{scale}_residual"
         score_column = f"{scale}_score"
-        elevated_hours_column = f"{scale}_elevated_hours"
+        #elevated_hours_column = f"{scale}_elevated_hours"
         streak_days_column = f"{scale}_anomaly_streak_days"
 
         result[residual_column] = result[observed_column] - result[expected_column]
@@ -68,7 +71,7 @@ def build_anomaly_detection(
 
         if len(train_residuals) < scale_min_reference_samples:
             result[score_column] = np.nan
-            result[elevated_hours_column] = np.nan
+            #result[elevated_hours_column] = np.nan
             result[streak_days_column] = np.nan
             continue
 
@@ -77,20 +80,18 @@ def build_anomaly_detection(
 
         if pd.isna(residual_std) or residual_std < min_residual_std_w:
             result[score_column] = np.nan
-            result[elevated_hours_column] = np.nan
+            #result[elevated_hours_column] = np.nan
             result[streak_days_column] = np.nan
             continue
 
         result[score_column] = (result[residual_column] - residual_mean) / residual_std
 
-        elevated = result[score_column].abs() >= unusual_threshold
+        elevated = (result[score_column].abs() >= unusual_threshold).where(result[score_column].notna())
 
-        # Anzahl auffälliger Stunden seit Mitternacht bis zur jeweiligen Zeile
-        result[elevated_hours_column] = (elevated.groupby(day_key).cumsum() * sample_period_hours).where(result[score_column].notna())
+        streak_min_periods = math.ceil(streak_tolerance_window_days * rolling_window_min_coverage)
+        streak_raw = elevated.rolling(window=streak_tolerance_window_days, min_periods=streak_min_periods).sum()
 
-        # Tage am Stück, an denen diese Skala ununterbrochen auffällig war (für Tagesgranularität - eine
-        # Unterbrechung durch einen unauffälligen Tag setzt den Zähler zurück auf 0)
-        result[streak_days_column] = elevated.groupby((~elevated).cumsum()).cumsum().where(result[score_column].notna())
+        result[streak_days_column] = streak_raw.where(elevated.isna(), streak_raw.fillna(0))
 
     score_columns = [f"{scale}_score" for scale in reference_columns]
 

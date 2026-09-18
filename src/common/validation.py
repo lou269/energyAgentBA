@@ -7,3 +7,10 @@ def require_columns(df: pd.DataFrame, columns, name: str) -> None:
 
     if missing:
         raise ValueError(f"{name} is missing columns: " + ", ".join(sorted(missing)))
+
+
+def require_non_empty_string(value: object, field_name: str) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"{field_name} must be a non-empty string.")
+
+    return value

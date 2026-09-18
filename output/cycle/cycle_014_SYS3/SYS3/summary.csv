@@ -1,0 +1,5 @@
+decision_time,config,classification,explanation,adaption_action,adaption_reason,retrained,reference_reset,mae_w,error
+2013-06-01 23:00:00+00:00,SYS3,new_pattern,"The current reading shows a strong low anomaly supported by evidence at multiple scales (daily, weekday, weekly, and long_term). The deviation has persisted for multiple days as indicated by non-zero scale_anomaly_streak_days values (6.0 for weekly and 5.0 for long_term), satisfying the criteria for new_pattern.",advance_history_start,"new_pattern, cutting back 7 days to 2013-05-25T23:00:00+00:00",True,True,212.09096762642594,
+2013-06-02 23:00:00+00:00,SYS3,unknown,,none,unknown: no action,True,False,109.49928280379477,
+2013-06-03 23:00:00+00:00,SYS3,unknown,,none,unknown: no action,True,False,110.60497307880405,
+2013-06-04 23:00:00+00:00,SYS3,unknown,,none,unknown: no action,True,False,142.46195034387793,

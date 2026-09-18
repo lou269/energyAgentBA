@@ -1,10 +1,9 @@
+import math
 from dataclasses import dataclass
-
-import pandas as pd
 
 from src.common.timestamps import parse_utc_timestamp
 from src.llm.llm_schema import Classification
-from src.structured_state.structured_state_schema import ContextState, StructuredState
+from src.structured_state.structured_state_schema import StructuredState
 
 
 @dataclass(frozen=True)
@@ -17,13 +16,12 @@ def rule_based_classify(
     state: StructuredState,
     *,
     sustained_anomaly_streak_days: int,
-    multi_scale_minimum: int,
+    multi_scale_minimum_ratio: float,
     local_timezone: str,
 )-> RuleClassificationResult:
     # run_cycle ruft das nur bei anomaly.level != "normal" auf (Z-Score-Gate) -> "normal" kommt hier garnicht mehr vor
     observation = state["observation"]
     anomaly = state["anomaly"]
-    context = state["context"]
 
     assert anomaly["level"] != "normal"
 
@@ -37,13 +35,8 @@ def rule_based_classify(
             reasoning=f"observation.value_implausible is set ({day_label}).",
         )
 
-    if _has_absence_event(context, decision_time):
-        return RuleClassificationResult(
-            classification="absence",
-            reasoning=f"calendar event confirms absence covering {decision_time.isoformat()} ({day_label}).",
-        )
-
     scale_streak_days = anomaly["scale_anomaly_streak_days"]
+    num_available_scales = len(anomaly["available_scales"])
 
     sustained_scales = [
         scale
@@ -51,7 +44,8 @@ def rule_based_classify(
         if (streak_days := scale_streak_days[scale]) is not None and streak_days >= sustained_anomaly_streak_days
     ]
 
-    if len(sustained_scales) >= multi_scale_minimum:
+    
+    if num_available_scales > 0 and len(sustained_scales) >= math.ceil(num_available_scales * multi_scale_minimum_ratio):
         return RuleClassificationResult(
             classification="new_pattern",
             reasoning=f"sustained deviation across multiple scales at once ({', '.join(sustained_scales)}), on a {day_label}.",
@@ -59,23 +53,6 @@ def rule_based_classify(
 
     return RuleClassificationResult(
         classification="peak",
-        reasoning=f"unusual ({anomaly['level']}), but no sustained absence or multi-scale signature ({day_label}).",
+        reasoning=f"unusual ({anomaly['level']}), but no sustained multi-scale signature ({day_label}).",
     )
-
-
-def _has_absence_event(context: ContextState, decision_time: pd.Timestamp) -> bool:
-    if not context["source_available"]:
-        return False
-
-    for event in context["events"]:
-        if event["event_type"] != "absence":
-            continue
-
-        start = parse_utc_timestamp(event["start"], "event.start")
-        end = parse_utc_timestamp(event["end"], "event.end")
-
-        if start <= decision_time < end:
-            return True
-
-    return False
 

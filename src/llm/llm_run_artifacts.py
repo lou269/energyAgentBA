@@ -7,7 +7,7 @@ from typing import Any, cast
 from src.llm.inference import LLMAttemptRecord, LLMInferenceError, LLMInferenceResult
 from src.llm.llm_run_manifest import LLMRunStatus, build_llm_run_manifest
 from src.pipeline.io import find_run_directory, save_json, write_text_atomic
-from src.structured_state.structured_state_schema import StructuredState
+from src.structured_state.structured_state_schema import StructuredState, validate_structured_state
 
 from src.llm.client import ModelMetadata
 
@@ -27,6 +27,8 @@ def load_structured_state(state_file: Path) -> StructuredState:
 
     if not isinstance(loaded_state, dict):
         raise TypeError("Structured State file must contain a JSON object.")
+
+    validate_structured_state(loaded_state)
 
     return cast(StructuredState, loaded_state)
 
