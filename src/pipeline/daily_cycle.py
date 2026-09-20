@@ -14,7 +14,7 @@ from src.llm.inference import infer_llm_output
 from src.llm.llm_schema import Classification, LLMOutput
 from src.llm.rule_based_classifier import RuleClassificationResult, rule_based_classify
 from src.numerical_analysis.anomaly_detection import build_anomaly_detection
-from src.numerical_analysis.multi_scale_analysis import build_daily_cycle_analysis
+from src.numerical_analysis.multi_scale_analysis import build_multi_scale_analysis
 from src.structured_state.builder import build_structured_state
 from src.structured_state.structured_state_schema import StructuredState, validate_structured_state
 
@@ -343,7 +343,7 @@ def _compute_analysis_row(
 ) -> pd.Series:
     target_day = target_timestamp.tz_convert(local_timezone).normalize()
 
-    analysis = build_daily_cycle_analysis(
+    analysis = build_multi_scale_analysis(
         history,
         reference_window_end=reference_window_end,
         short_term_window=config.trend_window_days,

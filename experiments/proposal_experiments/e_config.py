@@ -13,11 +13,10 @@ SCENARIOS_DIR = Path(__file__).resolve().parents[1] / "scenarios"
 @dataclass(frozen=True)
 class E1Config:
     device_meter_key: str = "H1_M9"  # HTPC, siehe channel_registry.csv appliances
-    coldstart_hours: int = 168
 
     cutover_time: str | None = "2014-04-15T00:00:00+00:00"
 
-    # so viel Historie vor dem Cutover, dass long_term_window_hourly (720h=30 Tage) + Coldstart (168h) beim Cutover-Tag einen validen Referenzwert liefern
+    # so viel Historie vor dem Cutover, dass long_term_window_hourly (720h=30 Tage) + Coldstart beim Cutover-Tag einen validen Referenzwert liefern
     margin_before_days: int = 45
     # bis kurz vor Datenende des Kandidaten (2014-07-21, letzter voller Tag 2014-07-20) statt nur 28 Tage -
     # mehr Beobachtungstage nach dem Cutover, kostet nichts (gleicher Datensatz, ungenutzt)
@@ -34,10 +33,6 @@ class E2Config:
     decision_time_margin_before_days: int = 7
     decision_time_margin_after_days: int = 4
 
-    # länger als die 7 Tage im Proposal ->  Tages-Anomalieerkennung braucht genug Wochentag-Wiederholungen im Training 
-    # (min_weekly_reference_samples braucht mind. 4 desselben Wochentags)
-    coldstart_hours: int = 60 * 24
-
     min_coverage_share_for_subtraction: float = 0.9
 
 
@@ -47,8 +42,6 @@ class E3Config:
     # Übergang Herbst -> Winter, liegt im produktiven Kandidaten (H1-M54-S2, 2013-04-01..2014-07-21)
     observation_window_start: str = "2013-09-01T00:00:00+00:00"
     observation_window_end: str = "2013-12-15T00:00:00+00:00"
-
-    coldstart_hours: int = 60 * 24  # wie E2, reicht für long_term_window (30 Tage) + genug Wochentag-Wiederholungen
 
     margin_before_days: int = 7
     margin_after_days: int = 0

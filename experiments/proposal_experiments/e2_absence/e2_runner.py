@@ -17,7 +17,7 @@ from src.config.project_config import ProjectConfig, ensure_project_directories
 from src.llm.llm_run_artifacts import load_prompt
 from src.llm.llm_runner import PROMPT_DIRECTORY
 from src.pipeline.comparison_harness import run_comparison
-from src.config.config_forecasting import ComparisonConfig, SYS_VARIANTS
+from src.config.config_forecasting import ComparisonConfig, ForecastingConfig, SYS_VARIANTS
 from src.pipeline.io import next_sequential_number
 
 logger = logging.getLogger(__name__)
@@ -30,9 +30,11 @@ class E2Runner:
         self,
         project_config: ProjectConfig | None = None,
         e2_config: E2Config | None = None,
+        forecast_cofig: ForecastingConfig | None = None
     ) -> None:
         self.project_config = project_config or ProjectConfig()
         self.e2_config = e2_config or E2Config()
+        self.forecast_config = forecast_cofig or ForecastingConfig()
 
     def _read_absence_channel_selection(self) -> tuple[pd.DataFrame, pd.DataFrame]:
         ranking_file = OUTPUT_DIR / "absence_channel_ranking.csv"
@@ -55,6 +57,7 @@ class E2Runner:
             window_end,
             margin_before_days=self.e2_config.decision_time_margin_before_days,
             margin_after_days=self.e2_config.decision_time_margin_after_days,
+            local_timezone=self.project_config.timezone,
         )
 
         ranking, appliance_data_hourly = self._read_absence_channel_selection()
@@ -72,7 +75,7 @@ class E2Runner:
 
         ctx0_scenario, ctx1_scenario = build_ctx_scenarios(
             absence_adjusted_series,
-            coldstart_hours=self.e2_config.coldstart_hours,
+            coldstart_hours=self.forecast_config.cycle_coldstart_hours,
             decision_times=decision_times,
             calendar_events=calendar_events,
             target_imputed=target_imputed,

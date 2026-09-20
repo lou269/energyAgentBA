@@ -13,7 +13,7 @@ from src.config.project_config import ProjectConfig
 from src.llm.llm_run_artifacts import load_prompt
 from src.llm.llm_runner import PROMPT_DIRECTORY
 from src.pipeline.comparison_harness import ScenarioData, run_comparison
-from src.config.config_forecasting import ComparisonConfig, SYS_VARIANTS
+from src.config.config_forecasting import ComparisonConfig, ForecastingConfig, SYS_VARIANTS
 from src.pipeline.io import next_sequential_number
 
 logger = logging.getLogger(__name__)
@@ -25,6 +25,7 @@ def run() -> None:
     project_config = ProjectConfig()
     e3_config = E3Config()
     comparison_config = ComparisonConfig()
+    forecast_config = ForecastingConfig()
 
     window_start = parse_utc_timestamp(e3_config.observation_window_start, "observation_window_start")
     window_end = parse_utc_timestamp(e3_config.observation_window_end, "observation_window_end")
@@ -34,11 +35,12 @@ def run() -> None:
     decision_times = build_decision_times(
         window_start, window_end,
         margin_before_days=e3_config.margin_before_days, margin_after_days=e3_config.margin_after_days,
+        local_timezone=project_config.timezone,
     )
 
     scenario = ScenarioData(
         target_series=target_series,
-        coldstart_hours=e3_config.coldstart_hours,
+        coldstart_hours=forecast_config.cycle_coldstart_hours,
         decision_times=decision_times,
         calendar_events=(),
         calendar_source_available=False,

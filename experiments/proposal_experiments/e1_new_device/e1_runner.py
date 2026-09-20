@@ -18,7 +18,7 @@ from src.config.project_config import ProjectConfig, ensure_project_directories
 from src.llm.llm_run_artifacts import load_prompt
 from src.llm.llm_runner import PROMPT_DIRECTORY
 from src.pipeline.comparison_harness import run_comparison
-from src.config.config_forecasting import ComparisonConfig, SYS_VARIANTS
+from src.config.config_forecasting import ComparisonConfig, ForecastingConfig, SYS_VARIANTS
 from src.pipeline.io import next_sequential_number
 
 logger = logging.getLogger(__name__)
@@ -31,9 +31,11 @@ class E1Runner:
         self,
         project_config: ProjectConfig | None = None,
         e1_config: E1Config | None = None,
+        forecast_config: ForecastingConfig | None = None
     ) -> None:
         self.project_config = project_config or ProjectConfig()
         self.e1_config = e1_config or E1Config()
+        self.forecast_config = forecast_config or ForecastingConfig()
 
     def _read_device_hourly(self) -> pd.Series:
         device_data = pd.read_csv(OUTPUT_DIR / "e1_device_hourly.csv", parse_dates=["timestamp"], index_col="timestamp")
@@ -49,12 +51,13 @@ class E1Runner:
 
         decision_times = build_decision_times(
             cutover_time, cutover_time,
-            margin_before_days=self.e1_config.margin_before_days, margin_after_days=self.e1_config.margin_after_days
+            margin_before_days=self.e1_config.margin_before_days, margin_after_days=self.e1_config.margin_after_days,
+            local_timezone=self.project_config.timezone,
         )
 
         scenario = build_device_scenario(
             mains_series, device_hourly, self.e1_config.device_meter_key,
-            cutover_time=cutover_time, coldstart_hours=self.e1_config.coldstart_hours,
+            cutover_time=cutover_time, coldstart_hours=self.forecast_config.cycle_coldstart_hours,
             decision_times=decision_times, target_imputed=target_imputed
         )
 

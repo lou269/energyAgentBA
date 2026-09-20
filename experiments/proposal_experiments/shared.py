@@ -3,7 +3,8 @@ from collections.abc import Sequence
 import pandas as pd
 
 from src.common.column_naming import imputation_column, treated_column
-from src.config.config_forecasting import PreprocessingConfig
+from src.common.timestamps import local_calendar_range
+from src.config.config_forecasting import NumericalAnalysisConfig, PreprocessingConfig
 from src.config.project_config import ProjectConfig
 from src.pipeline.io import read_canonical_frame, read_target_meter_key
 from src.preprocessing.preprocessing_runner import run_preprocessing
@@ -20,7 +21,10 @@ def load_target_series(project_config: ProjectConfig) -> tuple[pd.Series, pd.Ser
         read_canonical_frame(project_config, "canonical_quality_15min"),
         read_canonical_frame(project_config, "canonical_data_hourly"),
         read_canonical_frame(project_config, "canonical_quality_hourly"),
-        PreprocessingConfig()
+        PreprocessingConfig(),
+        project_config.timezone,
+        sample_period_hours_15min=NumericalAnalysisConfig().sample_period_hours_15min,
+        sample_period_hours_hourly=NumericalAnalysisConfig().sample_period_hours_hourly,
     )
 
     target_series = preprocessing_result.treated_hourly[target_column]
@@ -36,11 +40,12 @@ def build_decision_times(
     *,
     margin_before_days: int,
     margin_after_days: int,
+    local_timezone: str,
 ) -> tuple[pd.Timestamp, ...]:
     start = window_start - pd.Timedelta(days=margin_before_days)
     end = window_end + pd.Timedelta(days=margin_after_days)
 
-    return tuple(pd.date_range(start, end, freq="24h", tz="UTC"))
+    return tuple(local_calendar_range(start, 24, end, local_timezone))
 
 
 def subtract_channels_in_window(

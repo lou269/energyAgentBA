@@ -1,0 +1,10 @@
+decision_time,config,classification,explanation,adaption_action,adaption_reason,retrained,reference_reset,mae_w,error
+2014-03-01 00:00:00+00:00,SYS3,,,none,,False,False,,LLM returned no valid output after 2 attempt(s).
+2014-03-02 00:00:00+00:00,SYS3,,,none,,False,False,,LLM returned no valid output after 2 attempt(s).
+2014-03-03 00:00:00+00:00,SYS3,,,none,,False,False,,LLM returned no valid output after 2 attempt(s).
+2014-03-04 00:00:00+00:00,SYS3,measurement_error,,none,measurement_error: no action,True,False,62.353141211932844,
+2014-03-05 00:00:00+00:00,SYS3,,,none,,False,False,,LLM returned no valid output after 2 attempt(s).
+2014-03-06 00:00:00+00:00,SYS3,,,none,,False,False,,LLM returned no valid output after 2 attempt(s).
+2014-03-07 00:00:00+00:00,SYS3,,,none,,False,False,,LLM returned no valid output after 2 attempt(s).
+2014-03-08 00:00:00+00:00,SYS3,,,none,,False,False,,LLM returned no valid output after 2 attempt(s).
+2014-03-09 00:00:00+00:00,SYS3,,,none,,False,False,,LLM returned no valid output after 2 attempt(s).

@@ -5,118 +5,17 @@
 import pandas as pd
 import pytest
 
-from src.numerical_analysis.multi_scale_analysis import build_daily_cycle_analysis, build_multi_scale_analysis
+from src.numerical_analysis.multi_scale_analysis import build_multi_scale_analysis
 
 
-def test_daily_expected_is_causal_and_excludes_current_row() -> None:
-    train_index = pd.date_range("2020-01-01", periods=5, freq="1D", tz="UTC")
-    train = pd.DataFrame({"p": [10.0, 10.0, 10.0, 10.0, 100.0]}, index=train_index)
-    validation = pd.DataFrame({"p": [10.0]}, index=pd.date_range("2020-01-06", periods=1, freq="1D", tz="UTC"))
-    test = pd.DataFrame({"p": [10.0]}, index=pd.date_range("2020-01-07", periods=1, freq="1D", tz="UTC"))
-
-    result = build_multi_scale_analysis(
-        train, validation, test, "p",
-        short_term_window=1, sample_period_hours=24.0, long_term_window=1,
-        min_daily_reference_samples=2, min_weekly_reference_samples=2,
-        trend_threshold=0.1, min_reference_power_w=0.0,
-        local_timezone="UTC",
-    )
-
-    # letzter Trainingstag hat einen Ausreisser (100 statt 10) - der kausale Referenzwert
-    # für diese Zeile darf ihn nicht selbst enthalten, sonst würde er sich selbst verdecken
-    assert result.loc[train_index[-1], "daily_expected"] == pytest.approx(10.0)
-    # Validation liegt komplett nach dem Training -> darf den vollen Trainingsdurchschnitt nutzen
-    assert result.loc[pd.Timestamp("2020-01-06", tz="UTC"), "daily_expected"] == pytest.approx(28.0)
-
-
-def test_trend_slope_matches_known_linear_ramp() -> None:
-    idx = pd.date_range("2020-01-01", periods=10, freq="1h", tz="UTC")
-    train = pd.DataFrame({"p": [float(i) * 10.0 for i in range(10)]}, index=idx)
-    validation = pd.DataFrame({"p": [90.0]}, index=pd.date_range(idx[-1] + pd.Timedelta(hours=1), periods=1, freq="1h"))
-    test = pd.DataFrame({"p": [100.0]}, index=pd.date_range(idx[-1] + pd.Timedelta(hours=2), periods=1, freq="1h"))
-
-    result = build_multi_scale_analysis(
-        train, validation, test, "p",
-        short_term_window=5, sample_period_hours=1.0, long_term_window=5,
-        min_daily_reference_samples=1, min_weekly_reference_samples=1,
-        trend_threshold=0.1, min_reference_power_w=0.0,
-        local_timezone="UTC",
-    )
-
-    slope = result["trend_slope_w_per_hour"].dropna()
-    # Rampe steigt exakt 10 W pro Stunde -> die Regressionssteigung muss das treffen
-    assert slope.iloc[0] == pytest.approx(10.0)
-    assert result.loc[slope.index[0], "trend"] == "increasing"
-
-
-def test_trend_change_is_nan_when_reference_below_floor() -> None:
-    idx = pd.date_range("2020-01-01", periods=6, freq="1h", tz="UTC")
-    train = pd.DataFrame({"p": [5.0] * 6}, index=idx)
-    validation = pd.DataFrame({"p": [5.0]}, index=pd.date_range(idx[-1] + pd.Timedelta(hours=1), periods=1, freq="1h"))
-    test = pd.DataFrame({"p": [5.0]}, index=pd.date_range(idx[-1] + pd.Timedelta(hours=2), periods=1, freq="1h"))
-
-    with_floor = build_multi_scale_analysis(
-        train, validation, test, "p",
-        short_term_window=2, sample_period_hours=1.0, long_term_window=2,
-        min_daily_reference_samples=1, min_weekly_reference_samples=1,
-        trend_threshold=0.1, min_reference_power_w=10.0,
-        local_timezone="UTC",
-    )
-    without_floor = build_multi_scale_analysis(
-        train, validation, test, "p",
-        short_term_window=2, sample_period_hours=1.0, long_term_window=2,
-        min_daily_reference_samples=1, min_weekly_reference_samples=1,
-        trend_threshold=0.1, min_reference_power_w=0.0,
-        local_timezone="UTC",
-    )
-
-    # Referenzwert liegt konstant bei 5 W -> unter der 10-W-Schwelle ist trend_change nicht auswertbar
-    assert with_floor["trend_change"].notna().sum() == 0
-    assert without_floor["trend_change"].notna().sum() > 0
-
-
-def test_daily_profile_groups_by_local_hour_across_a_dst_transition() -> None:
-    # 09:00 UTC an sechs Tagen rund um die britische Sommerzeit-Umstellung (29.03.2020)
-    train_index = pd.DatetimeIndex(
-        [
-            "2020-03-26 09:00:00+00:00",
-            "2020-03-27 09:00:00+00:00",
-            "2020-03-28 09:00:00+00:00",
-            "2020-03-30 09:00:00+00:00",
-            "2020-03-31 09:00:00+00:00",
-            "2020-04-01 09:00:00+00:00",
-        ],
-        tz="UTC",
-    )
-    # vor der Umstellung (lokal 09:00) konstant 10 W, danach (lokal 10:00) konstant 50 W
-    train = pd.DataFrame({"p": [10.0, 10.0, 10.0, 50.0, 50.0, 50.0]}, index=train_index)
-    validation = pd.DataFrame(
-        {"p": [50.0]}, index=pd.date_range("2020-04-02 09:00:00+00:00", periods=1, freq="1D")
-    )
-    test = pd.DataFrame(
-        {"p": [50.0]}, index=pd.date_range("2020-04-03 09:00:00+00:00", periods=1, freq="1D")
-    )
-
-    result = build_multi_scale_analysis(
-        train, validation, test, "p",
-        short_term_window=1, sample_period_hours=24.0, long_term_window=1,
-        min_daily_reference_samples=2, min_weekly_reference_samples=2,
-        trend_threshold=0.1, min_reference_power_w=0.0,
-        local_timezone="Europe/London",
-    )
-
-
-    assert result.loc[validation.index[0], "daily_expected"] == pytest.approx(50.0)
-
-
-def test_build_daily_cycle_analysis_resamples_hourly_history_and_splits_on_reference_window_end() -> None:
+def test_build_multi_scale_analysis_resamples_hourly_history_and_splits_on_reference_window_end() -> None:
     index = pd.date_range("2020-01-01", periods=24 * 7, freq="1h", tz="UTC")
     history = pd.Series(100.0, index=index, name="p")
 
     # 2020-01-05 nur bis 12:00 beobachtet -> Tag gilt als nicht abgeschlossen, fällt ganz aus dem Training
     reference_window_end = pd.Timestamp("2020-01-05T12:00:00Z")
 
-    result = build_daily_cycle_analysis(
+    result = build_multi_scale_analysis(
         history,
         reference_window_end=reference_window_end,
         short_term_window=2, sample_period_hours=24.0, long_term_window=2,
@@ -135,7 +34,7 @@ def test_build_daily_cycle_analysis_resamples_hourly_history_and_splits_on_refer
     assert result.loc[pd.Timestamp("2020-01-04", tz="UTC"), "today_mean"] == pytest.approx(100.0)
 
 
-def test_build_daily_cycle_analysis_daily_std_expected_is_causal_and_frozen_after_train() -> None:
+def test_build_multi_scale_analysis_daily_std_expected_is_causal_and_frozen_after_train() -> None:
     index = pd.date_range("2020-01-01", periods=24 * 7, freq="1h", tz="UTC")
     # Tage 5-7 (validation/test) haben absichtlich eine viel höhere Streuung als das Training
     day_amplitudes = [1.0, 2.0, 3.0, 4.0, 40.0, 40.0, 40.0]
@@ -148,7 +47,7 @@ def test_build_daily_cycle_analysis_daily_std_expected_is_causal_and_frozen_afte
 
     reference_window_end = pd.Timestamp("2020-01-05T12:00:00Z")
 
-    result = build_daily_cycle_analysis(
+    result = build_multi_scale_analysis(
         history,
         reference_window_end=reference_window_end,
         short_term_window=2, sample_period_hours=24.0, long_term_window=2,
@@ -183,7 +82,7 @@ def test_build_daily_cycle_analysis_daily_std_expected_is_causal_and_frozen_afte
     assert result.loc[pd.Timestamp("2020-01-07", tz="UTC"), "daily_std"] == pytest.approx(daily_std.loc[pd.Timestamp("2020-01-07", tz="UTC")])
 
 
-def test_build_daily_cycle_analysis_today_mean_expected_is_causal_and_frozen_after_train() -> None:
+def test_build_multi_scale_analysis_today_mean_expected_is_causal_and_frozen_after_train() -> None:
     index = pd.date_range("2020-01-01", periods=24 * 7, freq="1h", tz="UTC")
     day_levels = [100.0, 102.0, 98.0, 101.0, 500.0, 500.0, 500.0]
     values = [level for level in day_levels for _ in range(24)]
@@ -191,7 +90,7 @@ def test_build_daily_cycle_analysis_today_mean_expected_is_causal_and_frozen_aft
 
     reference_window_end = pd.Timestamp("2020-01-05T12:00:00Z")
 
-    result = build_daily_cycle_analysis(
+    result = build_multi_scale_analysis(
         history,
         reference_window_end=reference_window_end,
         short_term_window=2, sample_period_hours=24.0, long_term_window=2,
@@ -216,7 +115,7 @@ def test_build_daily_cycle_analysis_today_mean_expected_is_causal_and_frozen_aft
     assert result.loc[pd.Timestamp("2020-01-07", tz="UTC"), "today_mean_expected"] == pytest.approx(expected_frozen)
 
 
-def test_build_daily_cycle_analysis_weekly_mean_is_a_contemporary_rolling_window_over_today_mean() -> None:
+def test_build_multi_scale_analysis_weekly_mean_is_a_contemporary_rolling_window_over_today_mean() -> None:
     index = pd.date_range("2020-01-01", periods=24 * 10, freq="1h", tz="UTC")
     day_levels = [100.0, 110.0, 120.0, 130.0, 140.0, 150.0, 160.0, 170.0, 180.0, 190.0]
     values = [level for level in day_levels for _ in range(24)]
@@ -224,7 +123,7 @@ def test_build_daily_cycle_analysis_weekly_mean_is_a_contemporary_rolling_window
 
     reference_window_end = pd.Timestamp("2020-01-08T12:00:00Z")
 
-    result = build_daily_cycle_analysis(
+    result = build_multi_scale_analysis(
         history,
         reference_window_end=reference_window_end,
         short_term_window=2, sample_period_hours=24.0, long_term_window=3,
@@ -256,7 +155,7 @@ def test_build_daily_cycle_analysis_weekly_mean_is_a_contemporary_rolling_window
     assert result.loc[pd.Timestamp("2020-01-10", tz="UTC"), "weekly_mean_expected"] == pytest.approx(expected_frozen)
 
 
-def test_build_daily_cycle_analysis_long_term_window_mean_gets_its_own_frozen_reference() -> None:
+def test_build_multi_scale_analysis_long_term_window_mean_gets_its_own_frozen_reference() -> None:
     index = pd.date_range("2020-01-01", periods=24 * 10, freq="1h", tz="UTC")
     day_levels = [100.0, 110.0, 120.0, 130.0, 140.0, 150.0, 160.0, 170.0, 180.0, 190.0]
     values = [level for level in day_levels for _ in range(24)]
@@ -264,7 +163,7 @@ def test_build_daily_cycle_analysis_long_term_window_mean_gets_its_own_frozen_re
 
     reference_window_end = pd.Timestamp("2020-01-08T12:00:00Z")
 
-    result = build_daily_cycle_analysis(
+    result = build_multi_scale_analysis(
         history,
         reference_window_end=reference_window_end,
         short_term_window=2, sample_period_hours=24.0, long_term_window=4,
@@ -299,7 +198,7 @@ def test_weekly_mean_tolerates_a_single_missing_day_within_the_window() -> None:
 
     reference_window_end = pd.Timestamp("2020-01-08T12:00:00Z")
 
-    result = build_daily_cycle_analysis(
+    result = build_multi_scale_analysis(
         history,
         reference_window_end=reference_window_end,
         short_term_window=2, sample_period_hours=24.0, long_term_window=5,
@@ -314,7 +213,7 @@ def test_weekly_mean_tolerates_a_single_missing_day_within_the_window() -> None:
     assert result.loc[pd.Timestamp("2020-01-08", tz="UTC"), "weekly_mean"] == pytest.approx((130.0 + 150.0 + 160.0 + 170.0) / 4)
 
     # Kontrollprobe: mit voller Abdeckung (altes Verhalten) reißt derselbe eine NaN-Tag das ganze Fenster
-    strict = build_daily_cycle_analysis(
+    strict = build_multi_scale_analysis(
         history,
         reference_window_end=reference_window_end,
         short_term_window=2, sample_period_hours=24.0, long_term_window=5,
