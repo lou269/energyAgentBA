@@ -1,0 +1,285 @@
+{
+  "llm_outputs": [
+    {
+      "classification": "new_pattern",
+      "config": "SYS3",
+      "decision_time": "2013-06-01T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.scale_scores.weekly",
+          "value": -3.2237381941343113
+        },
+        {
+          "path": "anomaly.scale_scores.long_term",
+          "value": -3.6795214706904686
+        },
+        {
+          "path": "anomaly.scale_anomaly_streak_days.weekly",
+          "value": 6.0
+        },
+        {
+          "path": "anomaly.scale_anomaly_streak_days.long_term",
+          "value": 5.0
+        }
+      ],
+      "explanation": "The current reading shows a strong anomaly with low consumption (score -3.68 on long_term scale). This deviation is supported by evidence at multiple scales: the weekly scale score is -3.22 and the daily/weekday scores are also negative (-0.82, -0.84). Crucially, the persistence check confirms this is not a single-day spike: the 'scale_anomaly_streak_days' shows 6 days for the weekly scale and 5 days for the long_term scale. Since the deviation persists across multiple scales (weekly and long_term) and has lasted multiple days, it meets the criteria for 'new_pattern' rather than 'peak'.",
+      "schema_version": "1.2",
+      "uncertainty": "The classification relies on the persistence of the anomaly across multiple scales and days, which distinguishes it from a transient peak.",
+      "user_recommendation": "No specific action is recommended at this time. The system has detected a persistent change in consumption pattern that requires further observation to determine the physical cause."
+    },
+    {
+      "classification": "peak",
+      "config": "SYS3",
+      "decision_time": "2013-06-05T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.current_power_w",
+          "value": 319.295889
+        },
+        {
+          "path": "analysis.daily_std_expected",
+          "value": 91.13411400622996
+        },
+        {
+          "path": "analysis.today_mean_expected_w",
+          "value": 184.62965271875
+        },
+        {
+          "path": "anomaly.score",
+          "value": 2.783965569690171
+        },
+        {
+          "path": "anomaly.level",
+          "value": "unusual"
+        },
+        {
+          "path": "anomaly.scale_scores.weekly",
+          "value": 2.783965569690171
+        },
+        {
+          "path": "anomaly.scale_anomaly_streak_days.daily",
+          "value": 0.0
+        },
+        {
+          "path": "anomaly.scale_anomaly_streak_days.weekly",
+          "value": 0.0
+        }
+      ],
+      "explanation": "The current power consumption (319.3 W) is significantly higher than the expected daily mean (184.6 W), resulting in an anomaly score of 2.78 and a level of 'unusual'. The deviation is supported by evidence at the weekly scale. However, the persistence check shows zero streak days for all available scales (daily: 0.0, weekly: 0.0), indicating this is a recent spike rather than a persistent new pattern.",
+      "schema_version": "1.2",
+      "uncertainty": "The classification relies on the current reading being plausible and the anomaly metrics indicating a significant but non-persistent deviation.",
+      "user_recommendation": "No specific action is recommended. The high consumption appears to be a temporary spike rather than a sustained change in behavior."
+    },
+    {
+      "classification": "peak",
+      "config": "SYS3",
+      "decision_time": "2013-06-06T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.current_power_w",
+          "value": 302.0627606666667
+        },
+        {
+          "path": "analysis.daily_std_expected",
+          "value": 95.21609154106282
+        },
+        {
+          "path": "analysis.weekly_mean_w",
+          "value": 265.3426965178572
+        },
+        {
+          "path": "anomaly.score",
+          "value": 4.100551879358452
+        },
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "anomaly.dominant_scale",
+          "value": "weekly"
+        },
+        {
+          "path": "anomaly.scale_scores.weekly",
+          "value": 4.100551879358452
+        },
+        {
+          "path": "anomaly.scale_anomaly_streak_days.weekly",
+          "value": 2.0
+        }
+      ],
+      "explanation": "The current power reading of approximately 302 W is significantly higher than the expected daily mean of 186 W and the weekly mean of 265 W, resulting in a strong anomaly score of 4.10 at the weekly scale. The deviation is supported by evidence at the weekly scale. Although the anomaly streak for the weekly scale is 2 days, this does not meet the persistence threshold required to classify as 'new_pattern' (which requires evidence at more than one scale and sustained deviation). Therefore, the classification is 'peak'.",
+      "schema_version": "1.2",
+      "uncertainty": "The classification relies on the weekly scale anomaly evidence. The daily scale score is low, indicating the deviation is primarily captured at the weekly level.",
+      "user_recommendation": "No specific action is recommended."
+    },
+    {
+      "classification": "peak",
+      "config": "SYS3",
+      "decision_time": "2013-06-07T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.current_power_w",
+          "value": 287.0987475
+        },
+        {
+          "path": "analysis.daily_std_expected",
+          "value": 106.26699693086519
+        },
+        {
+          "path": "analysis.today_mean_expected_w",
+          "value": 193.73277769583333
+        },
+        {
+          "path": "anomaly.score",
+          "value": 3.59855978948623
+        },
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "anomaly.scale_scores.weekly",
+          "value": 3.59855978948623
+        },
+        {
+          "path": "anomaly.scale_anomaly_streak_days.weekly",
+          "value": 2.0
+        },
+        {
+          "path": "anomaly.scale_scores.daily",
+          "value": -0.26667057490687707
+        },
+        {
+          "path": "anomaly.scale_scores.long_term",
+          "value": null
+        }
+      ],
+      "explanation": "The current power reading of approximately 287 W is significantly higher than the expected daily mean of roughly 194 W, resulting in a strong anomaly score of 3.60 at the weekly scale. Although there is some persistence (streak of 2 days) at the weekly scale, the deviation has not yet manifested across multiple distinct scales (daily and long_term scores are null or low), which is required for a 'new_pattern' classification. Therefore, this represents a temporary high consumption event rather than a new persistent pattern.",
+      "schema_version": "1.2",
+      "uncertainty": "The classification relies on the weekly scale anomaly evidence; however, daily and long-term scale data are unavailable (null), which limits the ability to confirm if this is an isolated event or the start of a new pattern.",
+      "user_recommendation": "No specific action is recommended at this time as the high consumption appears to be a temporary spike rather than a sustained change in behavior."
+    },
+    {
+      "classification": "peak",
+      "config": "SYS3",
+      "decision_time": "2013-06-08T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.current_power_w",
+          "value": 345.50574916666665
+        },
+        {
+          "path": "analysis.daily_std_expected",
+          "value": 118.77156017149069
+        },
+        {
+          "path": "analysis.today_mean_expected_w",
+          "value": 205.14760599621212
+        },
+        {
+          "path": "anomaly.score",
+          "value": 3.322631904673838
+        },
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "anomaly.dominant_scale",
+          "value": "weekly"
+        },
+        {
+          "path": "anomaly.scale_scores.weekly",
+          "value": 3.322631904673838
+        },
+        {
+          "path": "anomaly.scale_anomaly_streak_days.weekly",
+          "value": 2.0
+        },
+        {
+          "path": "context.source_available",
+          "value": false
+        }
+      ],
+      "explanation": "The current power reading of 345.5 W is significantly higher than the expected daily mean of approximately 205 W, resulting in a strong anomaly score of 3.32 at the weekly scale. The deviation has persisted for 2 days at the weekly scale (scale_anomaly_streak_days: 2.0), but this persistence is insufficient to meet the 'new_pattern' criteria which requires evidence at more than one scale and typically implies a longer-term structural change rather than a single-day spike relative to a baseline. Since no relevant calendar events are available in context.events (source_available is false) and the deviation does not show multi-scale persistence, the classification remains 'peak'.",
+      "schema_version": "1.2",
+      "uncertainty": "The classification relies on the weekly scale anomaly evidence; daily scale scores are not available or show low values, limiting the ability to confirm multi-scale persistence required for 'new_pattern'.",
+      "user_recommendation": "No specific action is recommended at this time. The high consumption appears to be a temporary spike rather than a sustained new pattern."
+    },
+    {
+      "classification": "peak",
+      "config": "SYS3",
+      "decision_time": "2013-06-17T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.current_power_w",
+          "value": 222.99480816666664
+        },
+        {
+          "path": "analysis.daily_std_expected",
+          "value": 136.04339477897798
+        },
+        {
+          "path": "analysis.today_mean_expected_w",
+          "value": 247.46607397291663
+        },
+        {
+          "path": "anomaly.score",
+          "value": 3.063956209869789
+        },
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "anomaly.scale_scores.weekly",
+          "value": -3.063956209869789
+        },
+        {
+          "path": "anomaly.scale_anomaly_streak_days.daily",
+          "value": 1.0
+        },
+        {
+          "path": "anomaly.scale_anomaly_streak_days.weekly",
+          "value": 2.0
+        },
+        {
+          "path": "context.source_available",
+          "value": false
+        }
+      ],
+      "explanation": "The current power consumption (222.99 W) is lower than the expected daily mean (247.47 W), indicating a deviation. The anomaly analysis confirms this with a 'strong_anomaly' level and a score of 3.06 on the weekly scale. However, the persistence check shows a streak of only 2 days for the weekly scale and 1 day for the daily scale. Since the deviation has not persisted for multiple days at more than one scale (specifically, it does not meet the 'new_pattern' criteria requiring evidence at more than one scale with multi-day persistence), the classification remains 'peak'. The low consumption is not attributed to an absence event as no relevant calendar events are available in the context.",
+      "schema_version": "1.2",
+      "uncertainty": "The classification relies on the current reading being plausible and the anomaly scores indicating a strong but non-persistent deviation across available scales.",
+      "user_recommendation": "No specific action is recommended. The low consumption appears to be a temporary deviation rather than a sustained new pattern or an absence event."
+    },
+    {
+      "classification": "peak",
+      "config": "SYS3",
+      "decision_time": "2013-06-19T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.score",
+          "value": 2.0945965526586003
+        },
+        {
+          "path": "anomaly.scale_scores.daily",
+          "value": 2.0945965526586003
+        },
+        {
+          "path": "anomaly.scale_anomaly_streak_days.daily",
+          "value": 1.0
+        },
+        {
+          "path": "observation.current_power_w",
+          "value": 388.03883729166665
+        }
+      ],
+      "explanation": "The current power reading is unusually high compared to expected values, supported by an anomaly score of approximately 2.09 at the daily scale. The deviation has not persisted across multiple scales or days (streak is 1 day), so it does not meet the criteria for new_pattern.",
+      "schema_version": "1.2",
+      "uncertainty": "The classification relies on a single-day anomaly; further observations are needed to determine if this represents a temporary peak or the start of a new pattern.",
+      "user_recommendation": "No specific action is recommended at this time as the high consumption appears to be a short-term deviation rather than a sustained new pattern."
+    }
+  ]
+}
