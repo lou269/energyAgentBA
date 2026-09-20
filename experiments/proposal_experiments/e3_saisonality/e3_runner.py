@@ -7,11 +7,12 @@ from pathlib import Path
 from time import perf_counter
 from typing import cast
 
+import numpy as np
 import pandas as pd
 
 from src.common.timestamps import parse_utc_timestamp
 from src.config.project_config import ProjectConfig
-from src.forecasting.evaluation import evaluate_forecasts, select_primary_naive_reference
+from src.forecasting.evaluation import evaluate_forecasts
 from src.forecasting.forecast_run_manifest import build_forecast_run_manifest
 from src.forecasting.walk_forward import ProphetVariantParameters, build_walk_forward_forecasts
 from src.pipeline.io import df_to_csv, save_json
@@ -36,11 +37,12 @@ def run() -> None:
 
     project_config = ProjectConfig()
     e3_config = SeasonalityExperimentConfig()
+    np.random.seed(e3_config.seed)
 
     test_window_start = parse_utc_timestamp(e3_config.data.test_window_start, "test_window_start")
     test_window_end = parse_utc_timestamp(e3_config.data.test_window_end, "test_window_end")
 
-    target_series, target_imputed, _meter_key = load_target_series(project_config)
+    target_series, target_imputed, _target_value_implausible, _meter_key = load_target_series(project_config)
     canonical_manifest = pd.read_csv(project_config.canonical_output_dir / "canonical_manifest.csv")
     candidate_id = str(canonical_manifest.iloc[0]["candidate_id"])
 
@@ -85,10 +87,6 @@ def run() -> None:
         reference_model_ids=e3_config.baseline_model_ids,
         nominal_interval_level=e3_config.interval_width,
         mape_min_eligible_watts=e3_config.mape_min_eligible_watts,
-    )
-
-    primary_naive_reference = select_primary_naive_reference(
-        evaluation_results["overall_metrics"], e3_config.baseline_model_ids, split=e3_config.split,
     )
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -146,7 +144,7 @@ def run() -> None:
         history_rules={"retraining_interval_hours": e3_config.prophet_variants[0].retraining_interval_hours},
         metric_definitions={"metrics": ["mae", "rmse", "mape"], "primary_metric": "mae", "mape_positive_targets_only": True},
         exclusion_rules={"exclude_imputed_targets": True, "complete_horizons_only": True},
-        primary_naive_reference=primary_naive_reference,
+        primary_naive_reference=None,
         seed=e3_config.seed,
         uncertainty_samples=e3_config.uncertainty_samples,
         runtime_seconds=perf_counter() - run_started,

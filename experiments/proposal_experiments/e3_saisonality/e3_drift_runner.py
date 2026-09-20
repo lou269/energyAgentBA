@@ -30,7 +30,7 @@ def run() -> None:
     window_start = parse_utc_timestamp(e3_config.observation_window_start, "observation_window_start")
     window_end = parse_utc_timestamp(e3_config.observation_window_end, "observation_window_end")
 
-    target_series, target_imputed, _meter_key = load_target_series(project_config)
+    target_series, target_imputed, target_value_implausible, _meter_key = load_target_series(project_config)
 
     decision_times = build_decision_times(
         window_start, window_end,
@@ -46,6 +46,7 @@ def run() -> None:
         calendar_source_available=False,
         calendar_source="none",
         target_imputed=target_imputed,
+        value_implausible=target_value_implausible,
     )
 
     sys3_config = SYS_VARIANTS["SYS3"]

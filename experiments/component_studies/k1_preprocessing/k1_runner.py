@@ -8,6 +8,7 @@ import logging
 from time import perf_counter
 from typing import cast
 
+import numpy as np
 import pandas as pd
 
 from src.common.column_naming import imputation_column, treated_column
@@ -40,6 +41,7 @@ def run() -> None:
     project_config = ProjectConfig()
     preprocessing_config = PreprocessingConfig()
     forecasting_config = ForecastingConfig()
+    np.random.seed(forecasting_config.seed)
 
     # C2 wie in K2, für direkte Vergleichbarkeit; weekly_seasonality wird pro Szenario überschrieben, Rest bleibt fix
     base_prophet_variant = forecasting_config.selected_prophet_variant

@@ -16,11 +16,8 @@ class E1Config:
 
     cutover_time: str | None = "2014-04-15T00:00:00+00:00"
 
-    # so viel Historie vor dem Cutover, dass long_term_window_hourly (720h=30 Tage) + Coldstart beim Cutover-Tag einen validen Referenzwert liefern
-    margin_before_days: int = 45
-    # bis kurz vor Datenende des Kandidaten (2014-07-21, letzter voller Tag 2014-07-20) statt nur 28 Tage -
-    # mehr Beobachtungstage nach dem Cutover, kostet nichts (gleicher Datensatz, ungenutzt)
-    margin_after_days: int = 96
+    margin_before_days: int = 14
+    margin_after_days: int = 14
 
 
 ''' E2 - ABWESENHEIT '''

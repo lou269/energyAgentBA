@@ -34,7 +34,7 @@ class AbsenceReductionCheckRunner:
         self.e2_config = e2_config or E2Config()
 
     def run(self) -> None:
-        mains_series, _target_imputed, _meter_key = load_target_series(self.project_config)
+        mains_series, _target_imputed, _target_value_implausible, _meter_key = load_target_series(self.project_config)
 
         calendar_events = load_calendar_events(self.e2_config.calendar_events_file)
         window_start, window_end = resolve_absence_window(calendar_events, self.e2_config.active_absence_event_id)

@@ -2,7 +2,7 @@ from collections.abc import Sequence
 
 import pandas as pd
 
-from src.common.column_naming import imputation_column, treated_column
+from src.common.column_naming import imputation_column, plausibility_column, treated_column
 from src.common.timestamps import local_calendar_range
 from src.config.config_forecasting import NumericalAnalysisConfig, PreprocessingConfig
 from src.config.project_config import ProjectConfig
@@ -10,11 +10,11 @@ from src.pipeline.io import read_canonical_frame, read_target_meter_key
 from src.preprocessing.preprocessing_runner import run_preprocessing
 
 
-def load_target_series(project_config: ProjectConfig) -> tuple[pd.Series, pd.Series, str]:
-    """Lädt die kanonische Mains-Zielreihe auf Stundenbasis nach Gap-Treatment, plus Imputation-Maske und meter_key"""
+def load_target_series(project_config: ProjectConfig) -> tuple[pd.Series, pd.Series, pd.Series, str]:
     meter_key = read_target_meter_key(project_config)
     target_column = treated_column(meter_key)
     mask_column = imputation_column(meter_key)
+    plausibility_col = plausibility_column(meter_key)
 
     preprocessing_result = run_preprocessing(
         read_canonical_frame(project_config, "canonical_data_15min"),
@@ -29,8 +29,9 @@ def load_target_series(project_config: ProjectConfig) -> tuple[pd.Series, pd.Ser
 
     target_series = preprocessing_result.treated_hourly[target_column]
     target_imputed = preprocessing_result.imputation_mask_hourly[mask_column]
+    target_value_implausible = preprocessing_result.plausibility_hourly[plausibility_col]
 
-    return target_series, target_imputed, meter_key
+    return target_series, target_imputed, target_value_implausible, meter_key
 
 
 

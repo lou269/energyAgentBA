@@ -63,6 +63,7 @@ def run_cycle(
     llm_client: LLMClient | None = None,
     llm_prompt: str | None = None,
     calendar_context: CalendarContext | None = None,
+    new_value_implausible: pd.Series | None = None,
 ) -> tuple[CycleResult, CycleState]:
     if config.event_adaptation and config.llm_mode == "off":
         raise ValueError("event_adaptation requires llm_mode to be 'rule' or 'real'.")
@@ -126,6 +127,7 @@ def run_cycle(
             target_timestamp=decision_time - pd.Timedelta(hours=1),
             config=config.numerical_analysis_config,
             local_timezone=local_timezone,
+            raw_value_implausible=new_value_implausible,
         )
 
     structured_state: StructuredState | None = None
@@ -340,6 +342,7 @@ def _compute_analysis_row(
     target_timestamp: pd.Timestamp,
     config: NumericalAnalysisConfig,
     local_timezone: str,
+    raw_value_implausible: pd.Series | None = None,
 ) -> pd.Series:
     target_day = target_timestamp.tz_convert(local_timezone).normalize()
 
@@ -378,9 +381,13 @@ def _compute_analysis_row(
 
     row = cast(pd.Series, anomaly.loc[target_day]).copy()
     row["timestamp"] = target_day
-    # exclude_incomplete_days() setzt einen kompletten Tag auf NaN, wenn Lücken/Missing-Share über den Schwellen
-    # liegen (siehe day_quality.py) -> today_mean ist dann NaN, das ist der einzige Fall für value_implausible hier
-    row["value_implausible"] = pd.isna(row["today_mean"])
+
+    day_implausible = False
+    if raw_value_implausible is not None:
+        day_implausible = bool(
+            raw_value_implausible[local_day_index(raw_value_implausible.index, local_timezone) == target_day].any()
+        )
+    row["value_implausible"] = bool(pd.isna(row["today_mean"])) or day_implausible
     row["anomaly_peak_timestamp"] = target_day if pd.notna(row["anomaly_score"]) else pd.NaT
 
     return row

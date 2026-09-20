@@ -6,6 +6,7 @@ from pathlib import Path
 from time import perf_counter
 from typing import cast
 
+import numpy as np
 import pandas as pd
 
 from src.common.timestamps import local_calendar_range
@@ -34,6 +35,8 @@ class ScenarioData:
     # bisher berechnet, mit Maske werden ffill-imputierte Zielstunden ausgeschlossen (siehe evaluation.py's
     # target_eligible, dieselbe Regel)
     target_imputed: pd.Series | None = None
+    # optional: rohe Plausibilitäts-Flags (plausibility_check.py), fehlt es, bleibt value_implausibl wie bisher nur über NaN in today_mean bestimmt
+    value_implausible: pd.Series | None = None
 
 
 def build_scenario_from_split_manifest(
@@ -44,6 +47,7 @@ def build_scenario_from_split_manifest(
     coldstart_hours: int,
     local_timezone: str,
     target_imputed: pd.Series | None = None,
+    value_implausible: pd.Series | None = None,
 ) -> ScenarioData:
 
     hourly_splits = split_manifest.loc[split_manifest["frequency"].eq("hourly")].set_index("split")
@@ -66,6 +70,7 @@ def build_scenario_from_split_manifest(
         calendar_source_available=False,
         calendar_source="none",
         target_imputed=target_imputed.loc[:cycle_end] if target_imputed is not None else None,
+        value_implausible=value_implausible.loc[:cycle_end] if value_implausible is not None else None,
     )
 
 
@@ -98,6 +103,8 @@ def run_comparison(
     for config_label, config in configs.items():
         config_directory = run_directory / config_label
         config_directory.mkdir(parents=True, exist_ok=True)
+
+        np.random.seed(config.forecasting_config.seed)
 
         state = CycleState(
             history=scenario.target_series.iloc[: scenario.coldstart_hours],
@@ -132,6 +139,12 @@ def run_comparison(
                         state.history.index[-1] + pd.Timedelta(hours=1) : decision_time - pd.Timedelta(hours=1)
                     ]
 
+                    new_value_implausible = (
+                        scenario.value_implausible.loc[new_observations.index[0] : new_observations.index[-1]]
+                        if scenario.value_implausible is not None
+                        else None
+                    )
+
                     calendar_context = (
                         _build_calendar_context(
                             scenario,
@@ -153,6 +166,7 @@ def run_comparison(
                             llm_client=active_llm_client,
                             llm_prompt=llm_prompt,
                             calendar_context=calendar_context,
+                            new_value_implausible=new_value_implausible,
                         )
                     except LLMInferenceError as error:
                         # Ollama liefert gelegentlich ungültige/inkonsistente Ausgaben -> ein einzelner

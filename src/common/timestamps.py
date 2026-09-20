@@ -41,6 +41,9 @@ def snap_to_local_midnight_range(
     end: pd.Timestamp,
     local_timezone: str,
 ) -> tuple[pd.Timestamp, pd.Timestamp]:
+    """start (inklusiv) und end (exklusiv) auf volle lokale Kalendertage einschränken.
+    Aufrufer, die end inklusiv weiterreichen (z.B. .loc-Slicing), ziehen selbst die passende
+    sample_period ab, siehe auxiliary_appliance_selection.py"""
     local_start = start.tz_convert(local_timezone)
     local_end = end.tz_convert(local_timezone)
 
@@ -49,10 +52,8 @@ def snap_to_local_midnight_range(
         snapped_start = snapped_start + pd.DateOffset(days=1)
 
     snapped_end = local_end.normalize()
-    if snapped_end > local_end:
-        snapped_end = snapped_end - pd.DateOffset(days=1)
 
-    if snapped_start > snapped_end:
+    if snapped_start >= snapped_end:
         raise ValueError("start and end do not span a full local day.")
 
     return snapped_start.tz_convert("UTC"), snapped_end.tz_convert("UTC")

@@ -1,9 +1,11 @@
 # open -a Ollama
 # conda run -n forecasting-env python -m experiments.proposal_experiments.e1_new_device.e1_runner
+# conda run -n forecasting-env python -m experiments.proposal_experiments.e1_new_device.e1_runner --control
 
 
 # 3 Läufe derselben Zeitreihe: SYS1 (Referenz, adaptionsfrei), SYS2 (Regel), SYS3 (LLM)
 
+import argparse
 import logging
 from pathlib import Path
 
@@ -42,11 +44,11 @@ class E1Runner:
 
         return device_data[channel_data_column(self.e1_config.device_meter_key, "hourly")]
 
-    def run(self) -> None:
+    def run(self, apply_device_injection: bool = True) -> None:
         cutover_time = parse_utc_timestamp(self.e1_config.cutover_time, "E1Config.cutover_time")
         ensure_project_directories(self.project_config)
 
-        mains_series, target_imputed, _meter_key = load_target_series(self.project_config)
+        mains_series, target_imputed, target_value_implausible, _meter_key = load_target_series(self.project_config)
         device_hourly = self._read_device_hourly()
 
         decision_times = build_decision_times(
@@ -58,16 +60,20 @@ class E1Runner:
         scenario = build_device_scenario(
             mains_series, device_hourly, self.e1_config.device_meter_key,
             cutover_time=cutover_time, coldstart_hours=self.forecast_config.cycle_coldstart_hours,
-            decision_times=decision_times, target_imputed=target_imputed
+            decision_times=decision_times, target_imputed=target_imputed,
+            value_implausible=target_value_implausible,
+            apply_device_injection=apply_device_injection,
         )
 
         sys3_config = SYS_VARIANTS["SYS3"]
         assert sys3_config.llm_config is not None
-        
+
         llm_prompt = load_prompt(PROMPT_DIRECTORY / f"prompt_{sys3_config.llm_config.prompt_version}.txt")
 
-        e1_run_number = next_sequential_number(OUTPUT_DIR, prefix="e1")
-        e1_run_directory = OUTPUT_DIR / f"e1_{e1_run_number:03d}"
+
+        run_prefix = "e1" if apply_device_injection else "e1_control"
+        e1_run_number = next_sequential_number(OUTPUT_DIR, prefix=run_prefix)
+        e1_run_directory = OUTPUT_DIR / f"{run_prefix}_{e1_run_number:03d}"
         e1_run_directory.mkdir(parents=True, exist_ok=False)
 
         configs = {
@@ -79,7 +85,9 @@ class E1Runner:
 
         comparison_config = ComparisonConfig()
 
-        logger.info("Running E1 (cutover=%s) over %d decision times...", cutover_time, len(decision_times))
+        logger.info(
+            "Running E1 (cutover=%s, apply_device_injection=%s) over %d decision times...", cutover_time, apply_device_injection, len(decision_times),
+        )
         run_comparison(
             scenario, configs, e1_run_directory, self.project_config.project_root,
             local_timezone=self.project_config.timezone,
@@ -94,8 +102,15 @@ class E1Runner:
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--control", action="store_true",
+        help="Kontrolllauf: unveränderte Mains-Reihe statt der Geräte-Injektion, identische decision_times",
+    )
+    args = parser.parse_args()
+
     logging.basicConfig(level=logging.INFO)
-    E1Runner().run()
+    E1Runner().run(apply_device_injection=not args.control)
 
 
 if __name__ == "__main__":

@@ -79,14 +79,17 @@ def build_canonical_data(
         f"{meter_key}_coverage_mask",
     ]
 
-    canonical_data_15min = data_15min.loc[window_start:window_end, [meter_key]].rename(
+    window_end_15min = window_end - pd.Timedelta(minutes=15)
+    window_end_hourly = window_end - pd.Timedelta(hours=1)
+
+    canonical_data_15min = data_15min.loc[window_start:window_end_15min, [meter_key]].rename(
         columns={meter_key: channel_data_column(meter_key, "15min")}
     )
-    canonical_data_hourly = data_hourly.loc[window_start:window_end, [meter_key]].rename(
+    canonical_data_hourly = data_hourly.loc[window_start:window_end_hourly, [meter_key]].rename(
         columns={meter_key: channel_data_column(meter_key, "hourly")}
     )
-    canonical_quality_15min = quality_15min.loc[window_start:window_end, quality_columns]
-    canonical_quality_hourly = quality_hourly.loc[window_start:window_end, quality_columns]
+    canonical_quality_15min = quality_15min.loc[window_start:window_end_15min, quality_columns]
+    canonical_quality_hourly = quality_hourly.loc[window_start:window_end_hourly, quality_columns]
 
     return (
         window_start,

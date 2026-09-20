@@ -13,20 +13,24 @@ def build_device_scenario(
     coldstart_hours: int,
     decision_times: tuple[pd.Timestamp, ...],
     target_imputed: pd.Series | None = None,
+    value_implausible: pd.Series | None = None,
+    apply_device_injection: bool = True,
 ) -> ScenarioData:
-    """Baut die E1-Zielreihe: vor cutover_time ist das echte Gerätesignal aus Mains herausgerechnet (Haushalt ohne das Gerät), 
-    ab cutover_time bleibt Mains unverändert (Gerät real vorhanden)"""
-    if cutover_time <= mains_series.index[0] or cutover_time >= mains_series.index[-1]:
-        raise ValueError("cutover_time must lie strictly inside mains_series.")
+    """Baut die E1-Zielreihe: vor cutover_time ist das echte Gerätesignal aus Mains herausgerechnet (Haushalt ohne das Gerät),
+    ab cutover_time bleibt Mains unverändert (Gerät real vorhanden), apply_device_injection=False: Mains-Reihe als Kontrolllauf"""
+    if apply_device_injection:
+        if cutover_time <= mains_series.index[0] or cutover_time >= mains_series.index[-1]:
+            raise ValueError("cutover_time must lie strictly inside mains_series.")
 
-    target_series = subtract_channels_in_window(
-        mains_series,
-        device_hourly.to_frame(name=device_meter_key),
-        [device_meter_key],
-        window_start=mains_series.index[0],
-        window_end=cutover_time,
-    )
-
+        target_series = subtract_channels_in_window(
+            mains_series,
+            device_hourly.to_frame(name=device_meter_key),
+            [device_meter_key],
+            window_start=mains_series.index[0],
+            window_end=cutover_time,
+        )
+    else:
+        target_series = mains_series
 
     return ScenarioData(
         target_series=target_series,
@@ -36,6 +40,7 @@ def build_device_scenario(
         calendar_source_available=False,
         calendar_source="none",
         target_imputed=target_imputed,
+        value_implausible=value_implausible,
     )
 
 

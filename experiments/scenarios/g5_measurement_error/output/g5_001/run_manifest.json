@@ -1,0 +1,107 @@
+{
+  "code_version": {
+    "git_commit": "1d08c0e65145309ef04e75e53bb07a71ffac1709",
+    "git_dirty": true
+  },
+  "configs": {
+    "labels": [
+      "SYS2"
+    ],
+    "sha256": "89f07022e4d72dccf143050d9d666be5d4f459ff61213920d1bfc59249b43d0a",
+    "values": {
+      "SYS2": {
+        "event_adaptation": true,
+        "forecasting_config": {
+          "baseline_model_ids": [
+            "B1",
+            "B2",
+            "B3"
+          ],
+          "config_version": "0.5",
+          "country_holidays": "UK",
+          "cycle_coldstart_hours": 1440,
+          "daily_seasonality": true,
+          "experiment_id": "forecasting",
+          "forecast_origin_step_hours": 24,
+          "frequency": "1h",
+          "growth": "linear",
+          "horizon_hours": 24,
+          "interval_width": 0.8,
+          "log_transform": true,
+          "mape_min_eligible_watts": 10.0,
+          "negative_forecast_handling": "raw",
+          "primary_naive_reference": null,
+          "seed": 42,
+          "selected_prophet_variant": {
+            "history_mode": "expanding",
+            "model_id": "C2",
+            "retraining_interval_hours": 24,
+            "rolling_window_hours": null,
+            "weekly_seasonality": false,
+            "yearly_seasonality": false
+          },
+          "uncertainty_samples": 1000
+        },
+        "llm_config": null,
+        "llm_mode": "rule",
+        "numerical_analysis_config": {
+          "long_term_window_15min": 2880,
+          "long_term_window_days": 30,
+          "long_term_window_hourly": 720,
+          "max_reference_window_growth_days": 60,
+          "min_daily_reference_samples": 7,
+          "min_longterm_reference_samples": 1,
+          "min_reference_power_w": 10.0,
+          "min_reference_samples": 100,
+          "min_residual_std_w": 1.0,
+          "min_weekday_reference_samples": 4,
+          "min_weekly_reference_samples": 1,
+          "multi_scale_minimum_ratio": 0.5,
+          "rolling_window_min_coverage": 0.8,
+          "sample_period_hours_15min": 0.25,
+          "sample_period_hours_daily": 24.0,
+          "sample_period_hours_hourly": 1.0,
+          "short_term_window_15min": 96,
+          "short_term_window_hourly": 24,
+          "streak_tolerance_window_days": 7,
+          "strong_anomaly_threshold": 3.0,
+          "sustained_anomaly_streak_days": 6,
+          "trend_threshold": 0.3,
+          "trend_window_days": 7,
+          "unusual_threshold": 2.0,
+          "weekly_window_days": 7
+        }
+      }
+    }
+  },
+  "created_at_utc": "2026-09-20T19:29:25.977919+00:00",
+  "environment": {
+    "file": "environment-forecasting.yml",
+    "sha256": "00cd8649e33135385246495241a8a4708564d2426ab7e2337cb2fe2517f850dd"
+  },
+  "llm_failures": {
+    "count": 0,
+    "file": null
+  },
+  "outputs": {
+    "comparison_summary": {
+      "path": "experiments/scenarios/g5_measurement_error/output/g5_001/comparison_summary.csv",
+      "sha256": "94916ef38f13bed269bbaf8a4184df168fe3828caed6b0335af8a664642eb7b6",
+      "size_bytes": 399
+    },
+    "forecasts": {
+      "path": "experiments/scenarios/g5_measurement_error/output/g5_001/forecasts.csv",
+      "sha256": "ae2ebb30127089c8ba2f989cc66a9d608bf5fddeefef7448c45e4aa0e8971836",
+      "size_bytes": 5587
+    }
+  },
+  "row_count": 2,
+  "run_id": "g5_001",
+  "runtime_seconds": 3.2283779999997932,
+  "scenario": {
+    "coldstart_hours": 1440,
+    "decision_time_count": 2,
+    "decision_time_end": "2014-09-25T23:00:00+00:00",
+    "decision_time_start": "2014-09-24T23:00:00+00:00"
+  }
+}

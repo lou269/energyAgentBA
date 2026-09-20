@@ -11,7 +11,7 @@ import argparse
 import logging
 import subprocess
 
-from src.common.column_naming import imputation_column, treated_column
+from src.common.column_naming import imputation_column, plausibility_column, treated_column
 from src.config.config_forecasting import ComparisonConfig, CycleConfig, ForecastingConfig, NumericalAnalysisConfig, PreprocessingConfig, SYS_VARIANTS
 from src.config.project_config import ProjectConfig, ensure_project_directories
 from src.llm.llm_run_artifacts import load_prompt
@@ -109,6 +109,7 @@ def main() -> None:
         coldstart_hours=ForecastingConfig().cycle_coldstart_hours,
         local_timezone=project_config.timezone,
         target_imputed=preprocessing_result.imputation_mask_hourly[imputation_column(target_meter_key)],
+        value_implausible=preprocessing_result.plausibility_hourly[plausibility_column(target_meter_key)],
     )
 
     logger.info("Running daily cycle for configs %s over %d decision times...", ", ".join(configs), len(scenario.decision_times))

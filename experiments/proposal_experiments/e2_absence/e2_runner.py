@@ -48,7 +48,7 @@ class E2Runner:
     def run(self) -> None:
         ensure_project_directories(self.project_config)
 
-        mains_series, target_imputed, _meter_key = load_target_series(self.project_config)
+        mains_series, target_imputed, target_value_implausible, _meter_key = load_target_series(self.project_config)
 
         calendar_events = load_calendar_events(self.e2_config.calendar_events_file)
         window_start, window_end = resolve_absence_window(calendar_events, self.e2_config.active_absence_event_id)
@@ -79,6 +79,7 @@ class E2Runner:
             decision_times=decision_times,
             calendar_events=calendar_events,
             target_imputed=target_imputed,
+            value_implausible=target_value_implausible,
         )
 
         sys3_config = SYS_VARIANTS["SYS3"]
