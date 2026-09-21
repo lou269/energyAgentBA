@@ -1,5 +1,5 @@
 # conda activate forecasting-env
-# python -m experiments.component_studies.k4_llm_classification.k4_1_llm_model.llm_model_runner
+# caffeinate -i python -m experiments.component_studies.k4_llm_classification.k4_1_llm_model.llm_model_runner
 
 import logging
 from dataclasses import asdict
@@ -144,7 +144,7 @@ class LLMModelRunner:
         base_row = {
             "model_id": variant.model_id,
             "model": variant.model,
-            "model_digest": model_metadata["digest"],
+            # "model_digest": model_metadata["digest"],
             "case_id": case.case_id,
             "expected_classification": case.expected_classification,
             "repetition": repetition,
