@@ -44,6 +44,7 @@ def infer_llm_output(
     prompt: str,
     model: str,
     temperature: float,
+    presence_penalty: float,
     seed: int | None,
     max_attempts: int,
     num_predict: int,
@@ -55,6 +56,7 @@ def infer_llm_output(
         prompt=prompt,
         model=model,
         temperature=temperature,
+        presence_penalty=presence_penalty,
         seed=seed,
         max_attempts=max_attempts,
     )
@@ -81,6 +83,7 @@ def infer_llm_output(
                 messages=messages,
                 output_schema=output_schema,
                 temperature=float(temperature),
+                presence_penalty=float(presence_penalty),
                 seed=seed,
                 num_predict=num_predict,
                 num_ctx=num_ctx,
@@ -180,11 +183,12 @@ def _append_correction_messages(
 
 
 def _validate_inference_parameters(
-    *, 
-    prompt: str, 
-    model: str, 
-    temperature: float, 
-    seed: int | None, 
+    *,
+    prompt: str,
+    model: str,
+    temperature: float,
+    presence_penalty: float,
+    seed: int | None,
     max_attempts: int
 ) -> None:
     if not isinstance(prompt, str) or not prompt.strip():
@@ -203,6 +207,9 @@ def _validate_inference_parameters(
         or temperature < 0
     ):
         raise ValueError("temperature must be a finite non-negative number.")
+
+    if not is_real_number(presence_penalty) or not math.isfinite(float(presence_penalty)):
+        raise ValueError("presence_penalty must be a finite number.")
 
     if seed is not None and (isinstance(seed, bool) or not isinstance(seed, int)):
         raise TypeError("seed must be an integer or None.")

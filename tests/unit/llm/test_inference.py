@@ -29,6 +29,7 @@ class ScriptedClient:
         messages: list[dict[str, str]],
         output_schema: dict[str, object],
         temperature: float,
+        presence_penalty: float,
         seed: int | None,
         num_predict: int,
         num_ctx: int,
@@ -40,6 +41,7 @@ class ScriptedClient:
                 "model": model,
                 "messages": [dict(message) for message in messages],
                 "temperature": temperature,
+                "presence_penalty": presence_penalty,
                 "seed": seed,
                 "num_predict": num_predict,
                 "num_ctx": num_ctx,
@@ -74,6 +76,7 @@ def _run(
         prompt="system prompt",
         model="qwen3.5:9b",
         temperature=0.0,
+        presence_penalty=LLM_CONFIG.presence_penalty,
         seed=42,
         max_attempts=max_attempts,
         num_predict=LLM_CONFIG.num_predict,
@@ -93,6 +96,7 @@ def test_valid_first_attempt_succeeds() -> None:
     assert len(result.attempts) == 1
     assert result.attempts[0].valid is True
     assert len(client.calls) == 1
+    assert client.calls[0]["presence_penalty"] == LLM_CONFIG.presence_penalty
     assert client.calls[0]["num_predict"] == LLM_CONFIG.num_predict
     assert client.calls[0]["num_ctx"] == LLM_CONFIG.num_ctx
     assert client.calls[0]["think"] == LLM_CONFIG.think
@@ -181,6 +185,7 @@ def test_client_exception_recovers_on_later_attempt() -> None:
     [
         {"prompt": ""},
         {"temperature": -1.0},
+        {"presence_penalty": float("nan")},
         {"seed": 1.5},
         {"max_attempts": 0},
     ],
@@ -194,6 +199,7 @@ def test_invalid_parameters_are_rejected_before_calling_client(
         "prompt": "system prompt",
         "model": "qwen3.5:9b",
         "temperature": 0.0,
+        "presence_penalty": LLM_CONFIG.presence_penalty,
         "seed": 42,
         "max_attempts": 2,
         "num_predict": LLM_CONFIG.num_predict,

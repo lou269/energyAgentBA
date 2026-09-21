@@ -157,6 +157,7 @@ def run_cycle(
                 prompt=llm_prompt,
                 model=config.llm_config.model,
                 temperature=config.llm_config.temperature,
+                presence_penalty=config.llm_config.presence_penalty,
                 seed=config.llm_config.seed,
                 max_attempts=config.llm_config.max_attempts,
                 num_predict=config.llm_config.num_predict,

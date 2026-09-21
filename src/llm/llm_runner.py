@@ -92,6 +92,7 @@ class LLMRunner:
                 prompt=prompt,
                 model=self.llm_config.model,
                 temperature=self.llm_config.temperature,
+                presence_penalty=self.llm_config.presence_penalty,
                 seed=self.llm_config.seed,
                 max_attempts=self.llm_config.max_attempts,
                 num_predict=self.llm_config.num_predict,

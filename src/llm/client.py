@@ -22,6 +22,7 @@ class LLMClient(Protocol):
         messages: list[dict[str, str]],
         output_schema: dict[str, object],
         temperature: float,
+        presence_penalty: float,
         seed: int | None,
         num_predict: int,
         num_ctx: int,
@@ -52,6 +53,7 @@ class OllamaClient:
         messages: list[dict[str, str]],
         output_schema: dict[str, object],
         temperature: float,
+        presence_penalty: float,
         seed: int | None,
         num_predict: int,
         num_ctx: int,
@@ -60,6 +62,7 @@ class OllamaClient:
     ) -> str:
         options: dict[str, float | int] = {
             "temperature": temperature,
+            "presence_penalty": presence_penalty,
             "num_predict": num_predict,
             "num_ctx": num_ctx,
         }

@@ -37,6 +37,7 @@ class _AlwaysEmptyClient:
         messages: list[dict[str, str]],
         output_schema: dict[str, object],
         temperature: float,
+        presence_penalty: float,
         seed: int | None,
         num_predict: int,
         num_ctx: int,

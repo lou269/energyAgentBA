@@ -24,10 +24,10 @@ class ProjectConfig:
     validation_output_dir: Path = output_dir / "validation"
     canonical_output_dir: Path = output_dir / "canonical"
     preprocessing_output_dir: Path = output_dir / "preprocessing"
-    numerical_analysis_output_dir: Path = output_dir / "numerical_analysis"
-    forecasting_output_dir: Path = output_dir / "forecasting"
-    structured_state_output_dir: Path = output_dir / "structured_state"
-    llm_output_dir: Path = output_dir / "llm"
+    # numerical_analysis_output_dir: Path = output_dir / "numerical_analysis"
+    # forecasting_output_dir: Path = output_dir / "forecasting"
+    # structured_state_output_dir: Path = output_dir / "structured_state"
+    #llm_output_dir: Path = output_dir / "llm"
     cycle_output_dir: Path = output_dir / "cycle"
 
     timezone: str = "Europe/London"
@@ -61,10 +61,10 @@ def ensure_project_directories(config: ProjectConfig) -> None:
         config.validation_output_dir,
         config.canonical_output_dir,
         config.preprocessing_output_dir,
-        config.numerical_analysis_output_dir,
-        config.forecasting_output_dir,
-        config.structured_state_output_dir,
-        config.llm_output_dir,
+        # config.numerical_analysis_output_dir,
+        # config.forecasting_output_dir,
+        # config.structured_state_output_dir,
+        # config.llm_output_dir,
         config.cycle_output_dir,
     ]
 
