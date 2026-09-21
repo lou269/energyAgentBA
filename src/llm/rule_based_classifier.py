@@ -48,8 +48,15 @@ def rule_based_classify(
             reasoning=f"sustained deviation across multiple scales at once ({', '.join(sustained_scales)}), on a {day_label}.",
         )
 
+    # peak/low sind per Definition richtungsgebunden ("unusually high"/"unusually low" consumption), ohne sustained Mehrskalen-Signatur bleibt nur die Richtung, um zwischen beiden zu unterscheiden
+    if anomaly["direction"] == "high":
+        return RuleClassificationResult(
+            classification="peak",
+            reasoning=f"unusual ({anomaly['level']}), but no sustained multi-scale signature ({day_label}).",
+        )
+
     return RuleClassificationResult(
-        classification="peak",
-        reasoning=f"unusual ({anomaly['level']}), but no sustained multi-scale signature ({day_label}).",
+        classification="low",
+        reasoning=f"unusual ({anomaly['level']}) low reading, but no sustained multi-scale signature ({day_label}).",
     )
 

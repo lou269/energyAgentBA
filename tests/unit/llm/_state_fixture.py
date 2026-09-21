@@ -8,9 +8,9 @@ __all__ = ["valid_structured_state", "valid_llm_output"]
 
 # rohe Modellantwort, nur path, kein value
 _BASE_OUTPUT = {
-    "schema_version": "1.2",
+    "schema_version": "1.3",
     "classification": "peak",
-    "explanation": "Der aktuelle Verbrauch liegt deutlich über dem taeglichen Erwartungswert.",
+    "explanation": "Der aktuelle Verbrauch liegt deutlich über dem täglichen Erwartungswert.",
     "evidence_references": [
         {"path": "observation.current_power_w"},
         {"path": "analysis.daily_std_expected"},

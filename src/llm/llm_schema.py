@@ -5,10 +5,10 @@ from src.common.validation import require_non_empty_string
 from src.pipeline.schema_validation import validate_fields
 
 
-SCHEMA_VERSION = "1.2"
+SCHEMA_VERSION = "1.3"
 
 
-Classification = Literal["normal", "absence", "peak", "new_pattern", "measurement_error", "unknown"]
+Classification = Literal["normal", "absence", "peak", "low", "new_pattern", "measurement_error", "unknown"]
 
 CLASSIFICATIONS: frozenset[str] = frozenset(get_args(Classification))
 

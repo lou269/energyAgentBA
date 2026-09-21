@@ -146,11 +146,10 @@ def build_evaluation_cases() -> tuple[LLMEvaluationCase, ...]:
             context=_context_block(source_available=True, with_event=False),
         ),
         _case(
-            case_id="unknown",
-            expected="unknown",
+            case_id="low_single_scale",
+            expected="low",
             reasoning=(
-                "Nur eine Skala verfügbar, Abweichung nach unten aber Kalender nicht verfügbar (absence nicht belegbar), "
-                "Streak zu kurz für new_pattern, direction low passt nicht zu peak -> keine der anderen Klassen ist durch die Regeln gedeckt."
+                "Nur eine Skala verfügbar, Abweichung nach unten, Streak zu kurz für new_pattern, Kalender nicht verfügbar (absence nicht belegbar) -> low."
             ),
             current_power_w=180.0,
             value_implausible=False,
@@ -160,6 +159,22 @@ def build_evaluation_cases() -> tuple[LLMEvaluationCase, ...]:
                 streak_days={"daily": 1.0},
             ),
             context=_context_block(source_available=False, with_event=False),
+        ),
+        _case(
+            case_id="unknown_conflicting_scales",
+            expected="unknown",
+            reasoning=(
+                "Zwei verfügbare Skalen widersprechen sich in der Richtung (daily stark positiv, weekly stark negativ), keine sustained "
+                "-> keine der Regeln greift eindeutig, echte widersprüchliche Evidenz."
+            ),
+            current_power_w=700.0,
+            value_implausible=False,
+            anomaly=_anomaly_block(
+                scores={"daily": 3.0, "weekly": -3.2},
+                level="strong_anomaly",
+                streak_days={"daily": 1.0, "weekly": 1.0},
+            ),
+            context=_context_block(source_available=True, with_event=False),
         ),
 
         _case(
@@ -196,11 +211,10 @@ def build_evaluation_cases() -> tuple[LLMEvaluationCase, ...]:
         ),
         _case(
             case_id="absence_without_event",
-            expected="unknown",
+            expected="low",
             reasoning=(
-                "Absence-artige Signatur (starker, anhaltender Rückgang auf der dominanten Skala), Kalender ist "
-                "verfügbar aber ohne passendes Event - ohne Beleg keine absence, direction low passt auch nicht "
-                "zu peak/new_pattern, also unknown."
+                "Absence-artige Signatur (starker Rückgang auf der dominanten Skala, aber nicht sustained genug für new_pattern), "
+                "Kalender ist verfügbar aber ohne passendes Event - ohne Beleg keine absence -> low"
             ),
             current_power_w=48.0,
             value_implausible=False,
@@ -236,7 +250,8 @@ EXPECTED_EVIDENCE_PATHS: dict[str, frozenset[str]] = {
     "absence": frozenset({"anomaly.direction", "context.events.0.event_type"}),
     "new_pattern": frozenset({"anomaly.scale_anomaly_streak_days.daily", "anomaly.scale_anomaly_streak_days.weekly"}),
     "measurement_error": frozenset({"observation.value_implausible"}),
-    "unknown": frozenset({"context.source_available"}),
+    "low_single_scale": frozenset({"anomaly.scale_scores.daily"}),
+    "unknown_conflicting_scales": frozenset({"anomaly.scale_scores.daily", "anomaly.scale_scores.weekly"}),
     "peak_single_sustained_scale": frozenset({"anomaly.scale_scores.daily", "anomaly.scale_anomaly_streak_days.daily"}),
     "new_pattern_at_min_scales_boundary": frozenset({"anomaly.scale_anomaly_streak_days.daily", "anomaly.scale_anomaly_streak_days.weekly"}),
     "absence_without_event": frozenset({"context.source_available", "anomaly.direction"}),

@@ -23,7 +23,7 @@ def test_measurement_error_takes_priority_over_the_anomaly_pattern() -> None:
 
 def test_single_sustained_scale_falls_back_to_peak() -> None:
     state = _state(
-        direction="low",
+        direction="high",
         dominant_scale="daily",
         scale_anomaly_streak_days={"daily": 5.0, "weekday": 1.0, "long_term": 1.0},
     )
@@ -31,6 +31,18 @@ def test_single_sustained_scale_falls_back_to_peak() -> None:
     result = rule_based_classify(state, sustained_anomaly_streak_days=3, min_sustained_scales=2, local_timezone="UTC")
 
     assert result.classification == "peak"
+
+
+def test_single_sustained_scale_with_low_direction_falls_back_to_low() -> None:
+    state = _state(
+        direction="low",
+        dominant_scale="daily",
+        scale_anomaly_streak_days={"daily": 5.0, "weekday": 1.0, "long_term": 1.0},
+    )
+
+    result = rule_based_classify(state, sustained_anomaly_streak_days=3, min_sustained_scales=2, local_timezone="UTC")
+
+    assert result.classification == "low"
 
 
 def test_sustained_deviation_across_two_scales_is_a_new_pattern() -> None:
