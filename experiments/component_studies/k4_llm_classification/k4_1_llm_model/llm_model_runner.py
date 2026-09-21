@@ -85,12 +85,15 @@ class LLMModelRunner:
 
                     # request_failed = Verbindungsfehler -> Rest der Variante wird übersprungen, invalid_output betrifft nur diesen Versuch
                     if row["error_kind"] == "request_failed":
-                        logger.error(
-                            "Aborting remaining cases for %s (%s) after a request failure.",
-                            variant.model_id, variant.model,
-                        )
+                        logger.error("Aborting remaining cases for %s (%s) after a request failure.", variant.model_id, variant.model)
                         return
         finally:
+            # Modell explizit entladen, bevor die naechste Variante drankommt
+            try:
+                client.unload_model(variant.model)
+            except Exception as error:
+                logger.warning("Could not unload %s (%s) from Ollama: %s", variant.model_id, variant.model, error)
+
             client.close()
 
     def _run_baseline(
@@ -105,7 +108,7 @@ class LLMModelRunner:
             classification = baseline_classify(
                 case.state,
                 sustained_anomaly_streak_days=numerical_analysis_config.sustained_anomaly_streak_days,
-                multi_scale_minimum_ratio=numerical_analysis_config.multi_scale_minimum_ratio,
+                min_sustained_scales=numerical_analysis_config.min_sustained_scales,
                 local_timezone=local_timezone,
             )
 

@@ -7,7 +7,7 @@ def baseline_classify(
     state: StructuredState,
     *,
     sustained_anomaly_streak_days: int,
-    multi_scale_minimum_ratio: float,
+    min_sustained_scales: int,
     local_timezone: str,
 ) -> Classification:
 
@@ -18,7 +18,7 @@ def baseline_classify(
     return rule_based_classify(
         state,
         sustained_anomaly_streak_days=sustained_anomaly_streak_days,
-        multi_scale_minimum_ratio=multi_scale_minimum_ratio,
+        min_sustained_scales=min_sustained_scales,
         local_timezone=local_timezone,
     ).classification
 

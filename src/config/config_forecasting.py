@@ -46,7 +46,9 @@ class NumericalAnalysisConfig:
     unusual_threshold: float = 2.0
     strong_anomaly_threshold: float = 3.0
 
-    multi_scale_minimum_ratio: float = 0.5
+    # mindestens 2, sonst waere bei nur 1 verfuegbarer Skala schon diese eine ausreichend - keine echte
+    # Mehrskalen-Bestaetigung mehr, nur ein laenger andauernder peak (siehe rule_based_classifier.py)
+    min_sustained_scales: int = 2
 
     # run_cycle rechnet die Anomalieerkennung auf Tagesmittelwerten statt Einzelstunden
     sample_period_hours_daily: float = 24.0

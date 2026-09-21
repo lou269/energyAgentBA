@@ -32,6 +32,8 @@ class LLMClient(Protocol):
 
     def get_model_metadata(self, model: str) -> ModelMetadata: ...
 
+    def unload_model(self, model: str) -> None: ...
+
     def close(self) -> None: ...
 
 
@@ -102,6 +104,12 @@ class OllamaClient:
 
         return {"name": model, "digest": None}
 
+    def unload_model(self, model: str) -> None:
+        if not isinstance(model, str) or not model.strip():
+            raise ValueError("model must be a non-empty string.")
+
+        # leerer Prompt + keep_alive=0 ist der von Ollama dokumentierte Weg, ein Modell sofort aus dem Speicher zu entladen
+        self._client.generate(model=model, prompt="", keep_alive=0)
 
     def close(self) -> None:
         self._client.close()

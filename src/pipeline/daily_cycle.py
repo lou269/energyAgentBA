@@ -172,7 +172,7 @@ def run_cycle(
             rule_output = rule_based_classify(
                 structured_state,
                 sustained_anomaly_streak_days=config.numerical_analysis_config.sustained_anomaly_streak_days,
-                multi_scale_minimum_ratio=config.numerical_analysis_config.multi_scale_minimum_ratio,
+                min_sustained_scales=config.numerical_analysis_config.min_sustained_scales,
                 local_timezone=local_timezone,
             )
             classification = rule_output.classification

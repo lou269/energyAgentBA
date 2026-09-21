@@ -80,7 +80,7 @@ def build_evaluation_cases() -> tuple[LLMEvaluationCase, ...]:
         _case(
             case_id="normal",
             expected="normal",
-            reasoning="Alle Skalen nur leicht erhöht, level normal, kein Event - kein Grund für eine Auffälligkeit.",
+            reasoning="Alle Skalen nur leicht erhöht, level normal, kein Event -> kein Grund für eine Auffälligkeit.",
             current_power_w=360.0,
             value_implausible=False,
             anomaly=_anomaly_block(
@@ -93,7 +93,7 @@ def build_evaluation_cases() -> tuple[LLMEvaluationCase, ...]:
         _case(
             case_id="peak",
             expected="peak",
-            reasoning="Starke, einzelne Abweichung nach oben, aber Streak nur 1 Tag - nicht sustained, also kein new_pattern.",
+            reasoning="Starke, einzelne Abweichung nach oben, aber Streak nur 1 Tag -> nicht sustained, also kein new_pattern.",
             current_power_w=1319.9,
             value_implausible=False,
             anomaly=_anomaly_block(
@@ -119,20 +119,23 @@ def build_evaluation_cases() -> tuple[LLMEvaluationCase, ...]:
         _case(
             case_id="new_pattern",
             expected="new_pattern",
-            reasoning="Abweichung nach oben, seit mehreren Tagen anhaltend auf einem Großteil der verfügbaren Skalen zugleich (multi_scale_minimum_ratio=0.5).",
+            reasoning=(
+                "Abweichung nach oben, auf 2 von 3 verfügbaren Skalen seit mehr als sustained_anomaly_streak_days=6 Tagen anhaltend"
+                "(min_sustained_scales=2) -> new_pattern."
+            ),
             current_power_w=980.0,
             value_implausible=False,
             anomaly=_anomaly_block(
                 scores={"daily": 3.5, "weekly": 3.1, "long_term": 1.1},
                 level="strong_anomaly",
-                streak_days={"daily": 5.0, "weekly": 4.0, "long_term": 1.0},
+                streak_days={"daily": 8.0, "weekly": 7.0, "long_term": 1.0},
             ),
             context=_context_block(source_available=True, with_event=False),
         ),
         _case(
             case_id="measurement_error",
             expected="measurement_error",
-            reasoning="value_implausible=true bei sonst peak-artiger Signatur - Prompt verlangt measurement_error statt peak.",
+            reasoning="value_implausible=true bei sonst peak-artiger Signatur -> Prompt verlangt measurement_error statt peak.",
             current_power_w=1319.9,
             value_implausible=True,
             anomaly=_anomaly_block(
@@ -146,9 +149,8 @@ def build_evaluation_cases() -> tuple[LLMEvaluationCase, ...]:
             case_id="unknown",
             expected="unknown",
             reasoning=(
-                "Nur eine Skala verfügbar, Abweichung nach unten aber Kalender nicht verfügbar (absence nicht "
-                "belegbar), Streak zu kurz für new_pattern, direction low passt nicht zu peak - keine der "
-                "anderen Klassen ist durch die Regeln gedeckt."
+                "Nur eine Skala verfügbar, Abweichung nach unten aber Kalender nicht verfügbar (absence nicht belegbar), "
+                "Streak zu kurz für new_pattern, direction low passt nicht zu peak -> keine der anderen Klassen ist durch die Regeln gedeckt."
             ),
             current_power_w=180.0,
             value_implausible=False,
@@ -165,7 +167,7 @@ def build_evaluation_cases() -> tuple[LLMEvaluationCase, ...]:
             expected="peak",
             reasoning=(
                 "Nur eine von drei verfügbaren Skalen ist sustained (Streak=6 auf daily), "
-                "multi_scale_minimum_ratio=0.5 verlangt aber 2 von 3 - bleibt peak trotz langer Einzel-Skalen-Streak."
+                "min_sustained_scales=2 verlangt aber mindestens zwei - bleibt peak trotz langer Einzel-Skalen-Streak."
             ),
             current_power_w=1150.0,
             value_implausible=False,
@@ -177,11 +179,11 @@ def build_evaluation_cases() -> tuple[LLMEvaluationCase, ...]:
             context=_context_block(source_available=True, with_event=False),
         ),
         _case(
-            case_id="new_pattern_at_ratio_boundary",
+            case_id="new_pattern_at_min_scales_boundary",
             expected="new_pattern",
             reasoning=(
-                "Exakt an der multi_scale_minimum_ratio-Schwelle: 2 von 3 Skalen sustained "
-                "(ceil(3*0.5)=2, daily+weekly), long_term nicht - reicht für new_pattern."
+                "Exakt an der min_sustained_scales-Schwelle: genau 2 von 3 Skalen sustained "
+                "(daily+weekly), long_term nicht - reicht für new_pattern."
             ),
             current_power_w=950.0,
             value_implausible=False,
@@ -213,8 +215,7 @@ def build_evaluation_cases() -> tuple[LLMEvaluationCase, ...]:
             case_id="measurement_error_weak_anomaly",
             expected="measurement_error",
             reasoning=(
-                "value_implausible bei nur unusual (nicht strong_anomaly) Signatur - value_implausible muss auch "
-                "bei schwacher Anomalie Vorrang vor der Anomalie-Stärke haben."
+                "value_implausible bei nur unusual (nicht strong_anomaly) Signatur, value_implausible muss auch bei schwacher Anomalie Vorrang vor der Anomalie-Stärke haben."
             ),
             current_power_w=620.0,
             value_implausible=True,
@@ -237,7 +238,7 @@ EXPECTED_EVIDENCE_PATHS: dict[str, frozenset[str]] = {
     "measurement_error": frozenset({"observation.value_implausible"}),
     "unknown": frozenset({"context.source_available"}),
     "peak_single_sustained_scale": frozenset({"anomaly.scale_scores.daily", "anomaly.scale_anomaly_streak_days.daily"}),
-    "new_pattern_at_ratio_boundary": frozenset({"anomaly.scale_anomaly_streak_days.daily", "anomaly.scale_anomaly_streak_days.weekly"}),
+    "new_pattern_at_min_scales_boundary": frozenset({"anomaly.scale_anomaly_streak_days.daily", "anomaly.scale_anomaly_streak_days.weekly"}),
     "absence_without_event": frozenset({"context.source_available", "anomaly.direction"}),
     "measurement_error_weak_anomaly": frozenset({"observation.value_implausible"}),
 }

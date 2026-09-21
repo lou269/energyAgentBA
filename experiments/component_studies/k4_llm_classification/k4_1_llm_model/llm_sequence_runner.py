@@ -67,14 +67,12 @@ class LLMSequenceRunner:
             value_implausible=target_value_implausible,
         )
         
-        configs = build_sequence_configs(self.experiment_config.model_variants)
-        
+        configs = build_sequence_configs(self.experiment_config.model_variants, self.experiment_config.base_llm_config)
+
         if self.experiment_config.include_rule_based_baseline:
             configs["BASELINE"] = SYS_VARIANTS["SYS2"]
 
-        sys3_config = SYS_VARIANTS["SYS3"]
-        assert sys3_config.llm_config is not None
-        llm_prompt = load_prompt(PROMPT_DIRECTORY / f"prompt_{sys3_config.llm_config.prompt_version}.txt")
+        llm_prompt = load_prompt(PROMPT_DIRECTORY / f"prompt_{self.experiment_config.base_llm_config.prompt_version}.txt")
 
         run_number = next_sequential_number(K4_SEQUENCE_OUTPUT_ROOT, prefix="k4_seq")
         run_directory = K4_SEQUENCE_OUTPUT_ROOT / f"k4_seq_{run_number:03d}"

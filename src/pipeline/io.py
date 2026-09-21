@@ -101,6 +101,7 @@ def save_json(
             indent=2,
             sort_keys=True,
             ensure_ascii=False,
+            default=str,
         ),
         output_file,
     )

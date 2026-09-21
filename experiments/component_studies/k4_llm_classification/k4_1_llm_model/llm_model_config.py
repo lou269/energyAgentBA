@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 from src.config.config_forecasting import SYS_VARIANTS, CycleConfig, LLMConfig, NumericalAnalysisConfig
@@ -22,7 +22,7 @@ LLM_MODEL_VARIANTS: tuple[LLMModelVariant, ...] = (
     LLMModelVariant(model_id="MDL7", model="ministral-3:8b")
 )
 
-_BASE_LLM_CONFIG = LLMConfig(model="", temperature=0.0)
+_BASE_LLM_CONFIG = LLMConfig(model="", temperature=0.0, prompt_version="v10")
 
 
 @dataclass(frozen=True)
@@ -47,6 +47,7 @@ K4_SEQUENCE_OUTPUT_ROOT: Path = Path(__file__).resolve().parent / "output_sequen
 
 def build_sequence_configs(
     model_variants: tuple[LLMModelVariant, ...] = LLM_MODEL_VARIANTS,
+    base_llm_config: LLMConfig = _BASE_LLM_CONFIG,
 ) -> dict[str, CycleConfig]:
 
     sys3_config = SYS_VARIANTS["SYS3"]
@@ -57,7 +58,7 @@ def build_sequence_configs(
             numerical_analysis_config=sys3_config.numerical_analysis_config,
             event_adaptation=sys3_config.event_adaptation,
             llm_mode=sys3_config.llm_mode,
-            llm_config=LLMConfig(model=variant.model),
+            llm_config=replace(base_llm_config, model=variant.model),
         )
         for variant in model_variants
     }

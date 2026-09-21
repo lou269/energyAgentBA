@@ -1,4 +1,3 @@
-import math
 from dataclasses import dataclass
 
 from src.common.timestamps import parse_utc_timestamp
@@ -16,7 +15,7 @@ def rule_based_classify(
     state: StructuredState,
     *,
     sustained_anomaly_streak_days: int,
-    multi_scale_minimum_ratio: float,
+    min_sustained_scales: int,
     local_timezone: str,
 )-> RuleClassificationResult:
     # run_cycle ruft das nur bei anomaly.level != "normal" auf (Z-Score-Gate) -> "normal" kommt hier garnicht mehr vor
@@ -36,7 +35,6 @@ def rule_based_classify(
         )
 
     scale_streak_days = anomaly["scale_anomaly_streak_days"]
-    num_available_scales = len(anomaly["available_scales"])
 
     sustained_scales = [
         scale
@@ -44,8 +42,7 @@ def rule_based_classify(
         if (streak_days := scale_streak_days[scale]) is not None and streak_days >= sustained_anomaly_streak_days
     ]
 
-    
-    if num_available_scales > 0 and len(sustained_scales) >= math.ceil(num_available_scales * multi_scale_minimum_ratio):
+    if len(sustained_scales) >= min_sustained_scales:
         return RuleClassificationResult(
             classification="new_pattern",
             reasoning=f"sustained deviation across multiple scales at once ({', '.join(sustained_scales)}), on a {day_label}.",
