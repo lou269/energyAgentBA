@@ -15,7 +15,7 @@ from src.llm.client import LLMClient, ModelMetadata, OllamaClient
 from src.llm.inference import LLMAttemptRecord, LLMInferenceError, infer_llm_output
 from src.llm.llm_run_artifacts import load_prompt
 from src.llm.llm_runner import PROMPT_DIRECTORY
-from src.pipeline.io import append_csv, next_sequential_number, save_json
+from src.pipeline.io import append_csv, append_jsonl, next_sequential_number, save_json
 
 logger = logging.getLogger(__name__)
 
@@ -227,7 +227,7 @@ class LLMModelRunner:
         error: str | None,
     ) -> None:
         # nicht Teil von results.csv, für manuelle Durchsicht von explanation/evidence_references (Schema prüft keine inhaltliche Qualität)
-        save_json(
+        append_jsonl(
             {
                 "model": variant.model,
                 "case_id": case.case_id,
@@ -237,7 +237,7 @@ class LLMModelRunner:
                 "output": output,
                 "error": error,
             },
-            raw_dir / f"{variant.model_id}_{case.case_id}_rep{repetition}.json",
+            raw_dir / f"{variant.model_id}.jsonl",
         )
 
 

@@ -110,21 +110,22 @@ def export_explanations_for_rating(run_dir: Path) -> Path:
 
     rows = []
 
-    for raw_file in sorted((run_dir / "raw").glob("*.json")):
-        record = json.loads(raw_file.read_text())
+    for raw_file in sorted((run_dir / "raw").glob("*.jsonl")):
+        for line in raw_file.read_text().splitlines():
+            record = json.loads(line)
 
-        if record["output"] is None:
-            continue
+            if record["output"] is None:
+                continue
 
-        rows.append({
-            "model": record["model"],
-            "case_id": record["case_id"],
-            "repetition": record["repetition"],
-            "expected_classification": record["expected_classification"],
-            "classification": record["output"]["classification"],
-            "explanation": record["output"]["explanation"],
-            "rubric_score": "",
-        })
+            rows.append({
+                "model": record["model"],
+                "case_id": record["case_id"],
+                "repetition": record["repetition"],
+                "expected_classification": record["expected_classification"],
+                "classification": record["output"]["classification"],
+                "explanation": record["output"]["explanation"],
+                "rubric_score": "",
+            })
 
     df_to_csv(pd.DataFrame(rows), run_dir, "explanation_ratings_template")
 
