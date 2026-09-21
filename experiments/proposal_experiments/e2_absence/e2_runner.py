@@ -12,7 +12,7 @@ import pandas as pd
 from experiments.proposal_experiments.e_config import E2Config
 from experiments.proposal_experiments.e2_absence.e2_scenarios import build_ctx_scenarios
 from experiments.proposal_experiments.e2_absence.e2_selection import load_calendar_events, resolve_absence_window, select_channels_for_subtraction
-from experiments.proposal_experiments.shared import build_decision_times, load_target_series, subtract_channels_in_window
+from experiments.proposal_experiments.shared import build_decision_times, crop_history_for_coldstart, load_target_series, subtract_channels_in_window
 from src.config.project_config import ProjectConfig, ensure_project_directories
 from src.llm.llm_run_artifacts import load_prompt
 from src.llm.llm_runner import PROMPT_DIRECTORY
@@ -58,6 +58,10 @@ class E2Runner:
             margin_before_days=self.e2_config.decision_time_margin_before_days,
             margin_after_days=self.e2_config.decision_time_margin_after_days,
             local_timezone=self.project_config.timezone,
+        )
+
+        mains_series = crop_history_for_coldstart(
+            mains_series, coldstart_hours=self.forecast_config.cycle_coldstart_hours, first_decision_time=decision_times[0],
         )
 
         ranking, appliance_data_hourly = self._read_absence_channel_selection()

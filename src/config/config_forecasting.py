@@ -61,6 +61,9 @@ class NumericalAnalysisConfig:
     # wie viele Tage reference_window_end nach einem Reset noch mitwachsen darf, bevor es einfriert
     max_reference_window_growth_days: int = 60
 
+    # 3-Tage-Fenster ab reference_window_end: train bis reference_window_end-1, Rest validation+test
+    reference_window_hours: int = 72
+
     min_weekly_reference_samples: int = 1
     min_longterm_reference_samples: int = 1
 
@@ -148,7 +151,7 @@ class LLMConfig:
     num_predict: int = 1024
     num_ctx: int = 8192
     think: bool = False
-    keep_alive: int | str = 0
+    keep_alive: int | str = "5m"
 
 
 @dataclass(frozen=True)

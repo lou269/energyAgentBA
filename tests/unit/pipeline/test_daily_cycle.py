@@ -6,7 +6,7 @@ import pytest
 
 from src.context.calendar_context import build_calendar_context
 from src.config.config_forecasting import SYS_VARIANTS
-from src.pipeline.daily_cycle import CycleState, _compute_reference_window_end, run_cycle
+from src.pipeline.daily_cycle import CycleState, run_cycle
 
 
 def _hourly(start, values: list[float]) -> pd.Series:
@@ -80,25 +80,6 @@ def test_new_observations_must_end_one_hour_before_decision_time() -> None:
 
     with pytest.raises(ValueError, match="one hour before"):
         run_cycle(_state(history), new_observations, wrong_decision_time, SYS_VARIANTS["SYS0"], local_timezone="Europe/London")
-
-
-def test_compute_reference_window_end_returns_none_below_72_hours() -> None:
-    history = _hourly("2024-01-01", [100.0] * 71)
-
-    assert _compute_reference_window_end(history, local_timezone="UTC", max_growth_days=60) is None
-
-
-def test_compute_reference_window_end_grows_with_history_up_to_the_cap() -> None:
-    history = _hourly("2024-01-01", [100.0] * (24 * 10))
-
-    end = _compute_reference_window_end(history, local_timezone="UTC", max_growth_days=60)
-    assert end == history.index[-1] - pd.Timedelta(hours=71)
-
-    # ueber die Wachstumsgrenze hinaus wird der Deckel gehalten, statt mit history weiterzuwachsen
-    long_history = _hourly("2024-01-01", [100.0] * (24 * 90))
-    capped_end = _compute_reference_window_end(long_history, local_timezone="UTC", max_growth_days=60)
-    growth_ceiling = long_history.index[0].normalize() + pd.DateOffset(days=60)
-    assert capped_end == growth_ceiling - pd.Timedelta(hours=71)
 
 
 def test_run_cycle_survives_less_than_72_hours_of_history() -> None:

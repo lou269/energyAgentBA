@@ -7,7 +7,7 @@ import logging
 from pathlib import Path
 
 from experiments.proposal_experiments.e_config import E3Config
-from experiments.proposal_experiments.shared import build_decision_times, load_target_series
+from experiments.proposal_experiments.shared import build_decision_times, crop_history_for_coldstart, load_target_series
 from src.common.timestamps import parse_utc_timestamp
 from src.config.project_config import ProjectConfig
 from src.llm.llm_run_artifacts import load_prompt
@@ -36,6 +36,10 @@ def run() -> None:
         window_start, window_end,
         margin_before_days=e3_config.margin_before_days, margin_after_days=e3_config.margin_after_days,
         local_timezone=project_config.timezone,
+    )
+
+    target_series = crop_history_for_coldstart(
+        target_series, coldstart_hours=forecast_config.cycle_coldstart_hours, first_decision_time=decision_times[0],
     )
 
     scenario = ScenarioData(

@@ -13,7 +13,7 @@ import pandas as pd
 
 from experiments.proposal_experiments.e_config import E1Config
 from experiments.proposal_experiments.e1_new_device.e1_scenarios import build_device_scenario
-from experiments.proposal_experiments.shared import build_decision_times, load_target_series
+from experiments.proposal_experiments.shared import build_decision_times, crop_history_for_coldstart, load_target_series
 from src.common.column_naming import channel_data_column
 from src.common.timestamps import parse_utc_timestamp
 from src.config.project_config import ProjectConfig, ensure_project_directories
@@ -55,6 +55,10 @@ class E1Runner:
             cutover_time, cutover_time,
             margin_before_days=self.e1_config.margin_before_days, margin_after_days=self.e1_config.margin_after_days,
             local_timezone=self.project_config.timezone,
+        )
+
+        mains_series = crop_history_for_coldstart(
+            mains_series, coldstart_hours=self.forecast_config.cycle_coldstart_hours, first_decision_time=decision_times[0],
         )
 
         scenario = build_device_scenario(

@@ -13,7 +13,7 @@ from src.pipeline.comparison_harness import ScenarioData, run_comparison
 from src.pipeline.io import next_sequential_number
 from src.preprocessing.plausibility_check import build_plausibility_flags
 
-from experiments.proposal_experiments.shared import build_decision_times, load_target_series
+from experiments.proposal_experiments.shared import build_decision_times, crop_history_for_coldstart, load_target_series
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +58,10 @@ def run() -> None:
         fault_day_start, fault_day_start,
         margin_before_days=0, margin_after_days=1,
         local_timezone=project_config.timezone,
+    )
+
+    corrupted_series = crop_history_for_coldstart(
+        corrupted_series, coldstart_hours=coldstart_hours, first_decision_time=decision_times[0],
     )
 
     scenario = ScenarioData(
