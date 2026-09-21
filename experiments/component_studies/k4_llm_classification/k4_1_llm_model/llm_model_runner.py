@@ -8,6 +8,7 @@ from time import perf_counter
 
 import pandas as pd
 
+from experiments.component_studies.k4_llm_classification.k4_1_llm_model.baseline_classifier import baseline_classify
 from experiments.component_studies.k4_llm_classification.k4_1_llm_model.evaluation_cases import LLMEvaluationCase, build_evaluation_cases
 from experiments.component_studies.k4_llm_classification.k4_1_llm_model.llm_model_config import K4_OUTPUT_ROOT, LLMModelExperimentConfig, LLMModelVariant
 from src.llm.client import LLMClient, ModelMetadata, OllamaClient
@@ -44,6 +45,9 @@ class LLMModelRunner:
 
         for variant in self.experiment_config.model_variants:
             self._run_variant(variant, cases, prompt, results_file, raw_dir)
+
+        if self.experiment_config.include_rule_based_baseline:
+            self._run_baseline(cases, results_file)
 
         save_json(
             {
@@ -89,6 +93,41 @@ class LLMModelRunner:
         finally:
             client.close()
 
+    def _run_baseline(
+        self,
+        cases: tuple[LLMEvaluationCase, ...],
+        results_file: Path,
+    ) -> None:
+        numerical_analysis_config = self.experiment_config.numerical_analysis_config
+        local_timezone = self.experiment_config.project_config.timezone
+
+        for case in cases:
+            classification = baseline_classify(
+                case.state,
+                sustained_anomaly_streak_days=numerical_analysis_config.sustained_anomaly_streak_days,
+                multi_scale_minimum_ratio=numerical_analysis_config.multi_scale_minimum_ratio,
+                local_timezone=local_timezone,
+            )
+
+            row = {
+                "model_id": "BASELINE",
+                "model": "rule_based",
+                "model_digest": None,
+                "case_id": case.case_id,
+                "expected_classification": case.expected_classification,
+                "repetition": 1,
+                "valid": True,
+                "classification": classification,
+                "correct": classification == case.expected_classification,
+                "attempt_count": 1,
+                "evidence_reference_count": None,
+                "evidence_paths": None,
+                "generation_seconds": 0.0,
+                "error_kind": None,
+                "error": None,
+            }
+            append_csv(pd.DataFrame([row]), results_file)
+
     def _run_attempt(
         self,
         client: LLMClient,
@@ -109,8 +148,10 @@ class LLMModelRunner:
         }
 
         base_seed = self.experiment_config.base_llm_config.seed
-        # pro Repetition eigener Seed, sonst liefert temperature>0 bei gleichem Seed trotzdem identische Antworten
+
         seed = base_seed if base_seed is None else base_seed + (repetition - 1)
+
+        base_llm_config = self.experiment_config.base_llm_config
 
         try:
             result = infer_llm_output(
@@ -118,9 +159,14 @@ class LLMModelRunner:
                 client=client,
                 prompt=prompt,
                 model=variant.model,
-                temperature=self.experiment_config.base_llm_config.temperature,
+                temperature=base_llm_config.temperature,
+                presence_penalty=base_llm_config.presence_penalty,
                 seed=seed,
-                max_attempts=self.experiment_config.base_llm_config.max_attempts,
+                max_attempts=base_llm_config.max_attempts,
+                num_predict=base_llm_config.num_predict,
+                num_ctx=base_llm_config.num_ctx,
+                think=base_llm_config.think,
+                keep_alive=base_llm_config.keep_alive,
             )
         except LLMInferenceError as error:
             self._save_raw_attempt(raw_dir, variant, case, repetition, attempts=error.attempts, output=None, error=str(error))
@@ -131,6 +177,7 @@ class LLMModelRunner:
                 "correct": False,
                 "attempt_count": len(error.attempts),
                 "evidence_reference_count": None,
+                "evidence_paths": None,
                 "generation_seconds": sum(attempt.generation_seconds for attempt in error.attempts),
                 "error_kind": "invalid_output",
                 "error": str(error),
@@ -144,12 +191,14 @@ class LLMModelRunner:
                 "correct": False,
                 "attempt_count": 0,
                 "evidence_reference_count": None,
+                "evidence_paths": None,
                 "generation_seconds": 0.0,
                 "error_kind": "request_failed",
                 "error": str(error),
             }
 
         classification = result.output["classification"]
+        evidence_paths = [reference["path"] for reference in result.output["evidence_references"]]
 
         self._save_raw_attempt(raw_dir, variant, case, repetition, attempts=result.attempts, output=dict(result.output), error=None)
 
@@ -159,7 +208,8 @@ class LLMModelRunner:
             "classification": classification,
             "correct": classification == case.expected_classification,
             "attempt_count": len(result.attempts),
-            "evidence_reference_count": len(result.output["evidence_references"]),
+            "evidence_reference_count": len(evidence_paths),
+            "evidence_paths": ";".join(evidence_paths),
             "generation_seconds": sum(attempt.generation_seconds for attempt in result.attempts),
             "error_kind": None,
             "error": None,

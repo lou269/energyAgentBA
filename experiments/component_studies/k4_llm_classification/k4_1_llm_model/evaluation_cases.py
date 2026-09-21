@@ -159,4 +159,85 @@ def build_evaluation_cases() -> tuple[LLMEvaluationCase, ...]:
             ),
             context=_context_block(source_available=False, with_event=False),
         ),
+
+        _case(
+            case_id="peak_single_sustained_scale",
+            expected="peak",
+            reasoning=(
+                "Nur eine von drei verfügbaren Skalen ist sustained (Streak=6 auf daily), "
+                "multi_scale_minimum_ratio=0.5 verlangt aber 2 von 3 - bleibt peak trotz langer Einzel-Skalen-Streak."
+            ),
+            current_power_w=1150.0,
+            value_implausible=False,
+            anomaly=_anomaly_block(
+                scores={"daily": 3.5, "weekly": 1.5, "long_term": 1.0},
+                level="strong_anomaly",
+                streak_days={"daily": 6.0, "weekly": 1.0, "long_term": 1.0},
+            ),
+            context=_context_block(source_available=True, with_event=False),
+        ),
+        _case(
+            case_id="new_pattern_at_ratio_boundary",
+            expected="new_pattern",
+            reasoning=(
+                "Exakt an der multi_scale_minimum_ratio-Schwelle: 2 von 3 Skalen sustained "
+                "(ceil(3*0.5)=2, daily+weekly), long_term nicht - reicht für new_pattern."
+            ),
+            current_power_w=950.0,
+            value_implausible=False,
+            anomaly=_anomaly_block(
+                scores={"daily": 3.2, "weekly": 3.0, "long_term": 1.2},
+                level="strong_anomaly",
+                streak_days={"daily": 6.0, "weekly": 6.0, "long_term": 1.0},
+            ),
+            context=_context_block(source_available=True, with_event=False),
+        ),
+        _case(
+            case_id="absence_without_event",
+            expected="unknown",
+            reasoning=(
+                "Absence-artige Signatur (starker, anhaltender Rückgang auf der dominanten Skala), Kalender ist "
+                "verfügbar aber ohne passendes Event - ohne Beleg keine absence, direction low passt auch nicht "
+                "zu peak/new_pattern, also unknown."
+            ),
+            current_power_w=48.0,
+            value_implausible=False,
+            anomaly=_anomaly_block(
+                scores={"daily": -3.7, "weekly": -1.2, "long_term": -1.0},
+                level="strong_anomaly",
+                streak_days={"daily": 5.0, "weekly": 1.0, "long_term": 1.0},
+            ),
+            context=_context_block(source_available=True, with_event=False),
+        ),
+        _case(
+            case_id="measurement_error_weak_anomaly",
+            expected="measurement_error",
+            reasoning=(
+                "value_implausible bei nur unusual (nicht strong_anomaly) Signatur - value_implausible muss auch "
+                "bei schwacher Anomalie Vorrang vor der Anomalie-Stärke haben."
+            ),
+            current_power_w=620.0,
+            value_implausible=True,
+            anomaly=_anomaly_block(
+                scores={"daily": 2.1, "weekly": 1.8, "long_term": 1.5},
+                level="unusual",
+                streak_days={"daily": 1.0, "weekly": 1.0, "long_term": 1.0},
+            ),
+            context=_context_block(source_available=True, with_event=False),
+        ),
     )
+
+
+
+EXPECTED_EVIDENCE_PATHS: dict[str, frozenset[str]] = {
+    "normal": frozenset({"anomaly.level"}),
+    "peak": frozenset({"anomaly.scale_scores.daily", "anomaly.scale_anomaly_streak_days.daily"}),
+    "absence": frozenset({"anomaly.direction", "context.events.0.event_type"}),
+    "new_pattern": frozenset({"anomaly.scale_anomaly_streak_days.daily", "anomaly.scale_anomaly_streak_days.weekly"}),
+    "measurement_error": frozenset({"observation.value_implausible"}),
+    "unknown": frozenset({"context.source_available"}),
+    "peak_single_sustained_scale": frozenset({"anomaly.scale_scores.daily", "anomaly.scale_anomaly_streak_days.daily"}),
+    "new_pattern_at_ratio_boundary": frozenset({"anomaly.scale_anomaly_streak_days.daily", "anomaly.scale_anomaly_streak_days.weekly"}),
+    "absence_without_event": frozenset({"context.source_available", "anomaly.direction"}),
+    "measurement_error_weak_anomaly": frozenset({"observation.value_implausible"}),
+}
