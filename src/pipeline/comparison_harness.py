@@ -283,6 +283,12 @@ def run_comparison(
                 raise
         finally:
             if owns_llm_client and active_llm_client is not None:
+                if config.llm_config is not None:
+                    try:
+                        active_llm_client.unload_model(config.llm_config.model)
+                    except Exception as error:
+                        logger.warning("Could not unload %s (%s) from Ollama: %s", config_label, config.llm_config.model, error)
+
                 active_llm_client.close()
 
             save_json(

@@ -22,7 +22,7 @@ LLM_MODEL_VARIANTS: tuple[LLMModelVariant, ...] = (
     LLMModelVariant(model_id="MDL7", model="ministral-3:8b")
 )
 
-_BASE_LLM_CONFIG = LLMConfig(model="", temperature=0.0, prompt_version="v11")
+_BASE_LLM_CONFIG = LLMConfig(model="")
 
 
 @dataclass(frozen=True)

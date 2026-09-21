@@ -60,6 +60,9 @@ class ScriptedClient:
     def get_model_metadata(self, model: str) -> ModelMetadata:
         return {"name": model, "digest": None}
 
+    def unload_model(self, model: str) -> None:
+        pass
+
     def close(self) -> None:
         pass
 

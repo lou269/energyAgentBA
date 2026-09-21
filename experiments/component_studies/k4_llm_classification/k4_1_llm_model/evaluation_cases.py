@@ -12,6 +12,7 @@ class LLMEvaluationCase:
     expected_classification: Classification
     reasoning: str
     state: StructuredState
+    reaches_llm: bool
 
 
 _BASE_EVENT = {
@@ -72,7 +73,9 @@ def _case(
     state["anomaly"] = anomaly  # type: ignore[typeddict-item]
     state["context"] = context  # type: ignore[typeddict-item]
 
-    return LLMEvaluationCase(case_id=case_id, expected_classification=expected, reasoning=reasoning, state=state)
+    reaches_llm = not value_implausible and anomaly["level"] is not None and anomaly["level"] != "normal"
+
+    return LLMEvaluationCase(case_id=case_id, expected_classification=expected, reasoning=reasoning, state=state, reaches_llm=reaches_llm)
 
 
 def build_evaluation_cases() -> tuple[LLMEvaluationCase, ...]:
@@ -242,6 +245,9 @@ def build_evaluation_cases() -> tuple[LLMEvaluationCase, ...]:
         ),
     )
 
+
+def llm_relevant_cases() -> tuple[LLMEvaluationCase, ...]:
+    return tuple(case for case in build_evaluation_cases() if case.reaches_llm)
 
 
 EXPECTED_EVIDENCE_PATHS: dict[str, frozenset[str]] = {

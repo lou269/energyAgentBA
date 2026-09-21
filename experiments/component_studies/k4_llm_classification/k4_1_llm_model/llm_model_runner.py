@@ -9,7 +9,7 @@ from time import perf_counter
 import pandas as pd
 
 from experiments.component_studies.k4_llm_classification.k4_1_llm_model.baseline_classifier import baseline_classify
-from experiments.component_studies.k4_llm_classification.k4_1_llm_model.evaluation_cases import LLMEvaluationCase, build_evaluation_cases
+from experiments.component_studies.k4_llm_classification.k4_1_llm_model.evaluation_cases import LLMEvaluationCase, llm_relevant_cases
 from experiments.component_studies.k4_llm_classification.k4_1_llm_model.llm_model_config import K4_OUTPUT_ROOT, LLMModelExperimentConfig, LLMModelVariant
 from src.llm.client import LLMClient, ModelMetadata, OllamaClient
 from src.llm.inference import LLMAttemptRecord, LLMInferenceError, infer_llm_output
@@ -28,7 +28,7 @@ class LLMModelRunner:
     def run(self) -> None:
         run_started = perf_counter()
 
-        cases = build_evaluation_cases()
+        cases = llm_relevant_cases()
         prompt = load_prompt(PROMPT_DIRECTORY / f"prompt_{self.experiment_config.base_llm_config.prompt_version}.txt")
 
         run_number = next_sequential_number(K4_OUTPUT_ROOT, prefix="k4")
@@ -115,7 +115,6 @@ class LLMModelRunner:
             row = {
                 "model_id": "BASELINE",
                 "model": "rule_based",
-                "model_digest": None,
                 "case_id": case.case_id,
                 "expected_classification": case.expected_classification,
                 "repetition": 1,
@@ -144,7 +143,6 @@ class LLMModelRunner:
         base_row = {
             "model_id": variant.model_id,
             "model": variant.model,
-            # "model_digest": model_metadata["digest"],
             "case_id": case.case_id,
             "expected_classification": case.expected_classification,
             "repetition": repetition,
