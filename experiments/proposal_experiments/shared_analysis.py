@@ -31,6 +31,19 @@ def summarize_classification_detection(
 
 
 
+def summarize_classification_rate(comparison: pd.DataFrame, event_time: pd.Timestamp) -> pd.DataFrame:
+    """Anteil jeder classification an den Tagen nach event_time, je config"""
+    post_event = comparison.loc[comparison["decision_time"] >= event_time]
+
+    counts = post_event.groupby(["config", "classification"]).size().rename("days").reset_index()
+    totals = post_event.groupby("config").size().rename("post_event_days")
+
+    rates = counts.merge(totals, on="config")
+    rates["rate"] = rates["days"] / rates["post_event_days"]
+
+    return rates.sort_values(["config", "classification"]).reset_index(drop=True)
+
+
 def summarize_mae_before_after(comparison: pd.DataFrame, event_time: pd.Timestamp) -> pd.DataFrame:
     """Mittlerer/Median mae_w vor vs. nach event_time"""
     comparison = comparison.dropna(subset=["mae_w"]).copy()
@@ -44,3 +57,18 @@ def summarize_mae_before_after(comparison: pd.DataFrame, event_time: pd.Timestam
         .sort_values(["config", "period"])
         .reset_index(drop=True)
     )
+
+
+def compare_mae_before_after_effect(treatment: pd.DataFrame, control: pd.DataFrame) -> pd.DataFrame:
+    """Diff-in-diff: wie viel vom MAE-Anstieg nach dem Event bleibt übrig, wenn man den Anstieg im Kontrolllauf (ohne Event) abzieht"""
+    def _after_minus_before(mae_before_after: pd.DataFrame) -> pd.Series:
+        pivot = mae_before_after.pivot(index="config", columns="period", values="mean_mae_w")
+        return pivot["after_event"] - pivot["before_event"]
+
+    result = pd.concat(
+        [_after_minus_before(treatment).rename("mae_delta_treatment_w"), _after_minus_before(control).rename("mae_delta_control_w")],
+        axis=1,
+    )
+    result["device_effect_mae_w"] = result["mae_delta_treatment_w"] - result["mae_delta_control_w"]
+
+    return result.reset_index().sort_values("config").reset_index(drop=True)
