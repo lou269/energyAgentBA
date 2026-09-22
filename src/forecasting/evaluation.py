@@ -26,7 +26,6 @@ def evaluate_forecasts(
         forecasts,
         comparison_model_ids=comparison_model_ids,
         reference_model_ids=reference_model_ids,
-        nominal_interval_level=nominal_interval_level,
     )
 
     overall_metrics = _calculate_grouped_metrics(forecasts, BASE_GROUP_COLUMNS, mape_min_eligible_watts)
@@ -98,7 +97,6 @@ def _validate_evaluation_input(
     *,
     comparison_model_ids: tuple[str, ...],
     reference_model_ids: tuple[str, ...],
-    nominal_interval_level: float,
 ) -> None:
     if not reference_model_ids:
         raise ValueError("reference_model_ids must not be empty.")
@@ -108,9 +106,6 @@ def _validate_evaluation_input(
 
     if len(reference_model_ids) != len(set(reference_model_ids)):
         raise ValueError("reference_model_ids must be unique.")
-
-    if not np.isfinite(nominal_interval_level) or not 0 < nominal_interval_level < 1:
-        raise ValueError("nominal_interval_level must be finite and between zero and one.")
 
     required_model_ids = set(comparison_model_ids) | set(reference_model_ids)
 
@@ -142,15 +137,6 @@ def _validate_evaluation_input(
     if unequal_target_sets.any():
         raise ValueError("Models must use identical forecast origins and target timestamps.")
 
-    origin_metadata = (
-        forecasts.groupby(ORIGIN_GROUP_COLUMNS)[["retrained", "refit_runtime_seconds"]]
-        .nunique(dropna=False)
-        .gt(1)
-    )
-
-    if origin_metadata.any().any():
-        raise ValueError("Retraining metadata must be constant within each forecast origin.")
-
     finite_values = forecasts[
         ["y_pred", "y_pred_raw", "refit_runtime_seconds"]
     ].to_numpy(dtype="float64")
@@ -171,9 +157,6 @@ def _validate_evaluation_input(
 
     if not np.isfinite(interval_values).all():
         raise ValueError("Available prediction intervals must be finite.")
-
-    if (forecasts["refit_runtime_seconds"] < 0).any():
-        raise ValueError("refit_runtime_seconds must not be negative.")
 
 
 def _calculate_grouped_metrics(
@@ -206,6 +189,16 @@ def calculate_mae(y_true: np.ndarray, y_pred: np.ndarray, eligible: np.ndarray) 
     return float(np.mean(np.abs(errors)))
 
 
+def calculate_mape(y_true: np.ndarray, y_pred: np.ndarray, eligible: np.ndarray, mape_min_eligible_watts: float) -> float:
+    mape_eligible = eligible & (y_true > mape_min_eligible_watts)
+
+    if not mape_eligible.any():
+        return float("nan")
+
+    absolute_percentage_errors = np.abs((y_pred[mape_eligible] - y_true[mape_eligible]) / y_true[mape_eligible])
+    return float(np.mean(absolute_percentage_errors) * 100)
+
+
 def _calculate_error_metrics(
     forecasts: pd.DataFrame,
     mape_min_eligible_watts: float,
@@ -230,17 +223,14 @@ def _calculate_error_metrics(
         rmse = float(np.sqrt(np.mean(np.square(errors))))
 
     mape_eligible = eligible & forecasts["y_true"].gt(mape_min_eligible_watts)
-    mape_data = forecasts.loc[mape_eligible]
-    mape_count = len(mape_data)
+    mape_count = int(mape_eligible.sum())
 
-    if mape_data.empty:
-        mape = np.nan
-    else:
-        absolute_percentage_errors = np.abs(
-            (mape_data["y_pred"].to_numpy(dtype="float64") - mape_data["y_true"].to_numpy(dtype="float64"))
-            / mape_data["y_true"].to_numpy(dtype="float64")
-        )
-        mape = float(np.mean(absolute_percentage_errors) * 100)
+    mape = calculate_mape(
+        forecasts["y_true"].to_numpy(dtype="float64"),
+        forecasts["y_pred"].to_numpy(dtype="float64"),
+        eligible.to_numpy(),
+        mape_min_eligible_watts,
+    )
 
     negative_count = int(forecasts["y_pred_raw"].lt(0).sum())
 

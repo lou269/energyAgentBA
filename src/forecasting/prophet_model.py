@@ -139,65 +139,27 @@ def select_prophet_history(
     return available_history.loc[available_history.index >= history_start]
 
 
-def refit_and_forecast(
-    history: pd.Series,
+def is_refit_required(
+    had_fitted_model: bool,
     *,
-    decision_time: pd.Timestamp,
     history_mode: Literal["fixed_train", "expanding", "rolling"],
-    rolling_window_hours: int | None,
-    growth: str,
-    daily_seasonality: bool,
-    weekly_seasonality: bool,
-    yearly_seasonality: bool,
-    country_holidays: str | None,
-    local_timezone: str,
-    log_transform: bool,
-    interval_width: float,
-    uncertainty_samples: int,
-    horizon_hours: int,
-    frequency: str,
-    clip_negative_forecasts: bool,
-    model_id: str,
-    config_version: str,
-) -> tuple[Prophet, pd.Series, pd.DataFrame]:
-    model_history = select_prophet_history(
-        history,
-        history,
-        forecast_origin=decision_time,
-        history_mode=history_mode,
-        rolling_window_hours=rolling_window_hours,
-    )
+    fitted_at: pd.Timestamp | None,
+    current_time: pd.Timestamp,
+    retraining_interval_hours: int | None,
+) -> bool:
+    if not had_fitted_model:
+        return True
 
-    model = fit_prophet_model(
-        model_history,
-        growth=growth,
-        daily_seasonality=daily_seasonality,
-        weekly_seasonality=weekly_seasonality,
-        yearly_seasonality=yearly_seasonality,
-        country_holidays=country_holidays,
-        local_timezone=local_timezone,
-        log_transform=log_transform,
-        interval_width=interval_width,
-        uncertainty_samples=uncertainty_samples,
-    )
+    if history_mode == "fixed_train":
+        return False
 
-    target_index = pd.date_range(start=decision_time, periods=horizon_hours, freq=frequency)
+    if retraining_interval_hours is None:
+        raise RuntimeError("retraining_interval_hours is required outside of fixed_train.")
 
-    raw_forecast = build_prophet_forecast(
-        model,
-        target_index,
-        clip_negative_forecasts=clip_negative_forecasts,
-        history_end=model_history.index[-1],
-        local_timezone=local_timezone,
-        log_transform=log_transform,
-    )
+    assert fitted_at is not None
 
-    forecast = raw_forecast.reset_index()[["target_timestamp", "y_pred", "y_lower", "y_upper"]].copy()
-    forecast["run_id"] = f"cycle_{decision_time.strftime('%Y%m%dT%H%M')}"
-    # "split" hier nur ein Platzhalter für den Abgleich mit analysis_row in daily_cycle.py, keine echte Train/Val/Test-Bedeutung wie im Walk-Forward-Backtest
-    forecast["split"] = "test"
-    forecast["model_id"] = model_id
-    forecast["config_version"] = config_version
-    forecast["forecast_origin"] = decision_time
+    elapsed_hours = (current_time - fitted_at) / pd.Timedelta(hours=1)
 
-    return model, model_history, forecast
+    return elapsed_hours >= retraining_interval_hours
+
+

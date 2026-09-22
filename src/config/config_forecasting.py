@@ -101,13 +101,43 @@ C2_EXPANDING = ProphetVariantConfig(
     retraining_interval_hours=24,
 )
 
+C3_ROLLING_7 = ProphetVariantConfig(
+    model_id="C3_7",
+    history_mode="rolling",
+    rolling_window_hours=7 * 24,
+    retraining_interval_hours=24,
+)
+
+C3_ROLLING_30 = ProphetVariantConfig(
+    model_id="C3_30",
+    history_mode="rolling",
+    rolling_window_hours=30 * 24,
+    retraining_interval_hours=24,
+)
+
+C3_ROLLING_60 = ProphetVariantConfig(
+    model_id="C3_60",
+    history_mode="rolling",
+    rolling_window_hours=60 * 24,
+    retraining_interval_hours=24,
+)
+
+FORECAST_MODEL_PROPHET_VARIANTS: tuple[ProphetVariantConfig, ...] = (
+    C1_STATIC,
+    C2_EXPANDING,
+    C3_ROLLING_7,
+    C3_ROLLING_30,
+    C3_ROLLING_60
+)
+
+selected_prophet_model = C3_ROLLING_30
 
 ''' FORECASTING '''
 @dataclass(frozen=True)
 class ForecastingConfig:
     config_version: str = "0.5"
 
-    selected_prophet_variant: ProphetVariantConfig = C2_EXPANDING
+    selected_prophet_variant: ProphetVariantConfig = selected_prophet_model
 
     experiment_id: str = "forecasting"
 
@@ -182,19 +212,19 @@ SYS_VARIANTS: dict[str, CycleConfig] = {
         llm_mode="off",
     ),
     "SYS1": CycleConfig(
-        forecasting_config=ForecastingConfig(selected_prophet_variant=C2_EXPANDING),
+        forecasting_config=ForecastingConfig(selected_prophet_variant=selected_prophet_model),
         numerical_analysis_config=NumericalAnalysisConfig(),
         event_adaptation=False,
         llm_mode="off",
     ),
     "SYS2": CycleConfig(
-        forecasting_config=ForecastingConfig(selected_prophet_variant=C2_EXPANDING),
+        forecasting_config=ForecastingConfig(selected_prophet_variant=selected_prophet_model),
         numerical_analysis_config=NumericalAnalysisConfig(),
         event_adaptation=True,
         llm_mode="rule",
     ),
     "SYS3": CycleConfig(
-        forecasting_config=ForecastingConfig(selected_prophet_variant=C2_EXPANDING),
+        forecasting_config=ForecastingConfig(selected_prophet_variant=selected_prophet_model),
         numerical_analysis_config=NumericalAnalysisConfig(),
         event_adaptation=True,
         llm_mode="real",

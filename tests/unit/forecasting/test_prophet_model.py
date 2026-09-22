@@ -8,6 +8,7 @@ from src.forecasting.prophet_model import (
     _prepare_prophet_data,
     build_prophet_forecast,
     fit_prophet_model,
+    is_refit_required,
 )
 
 
@@ -126,3 +127,60 @@ def test_log_transform_forecast_stays_positive_and_matches_scale() -> None:
     assert (forecast["y_lower"] >= 0).all()
     # Rücktransformation muss in der Größenordnung der Eingabewerte liegen, nicht im Log-Raum stecken bleiben
     assert forecast["y_pred"].between(10, 1000).all()
+
+
+def test_first_call_always_refits_regardless_of_history_mode() -> None:
+    assert is_refit_required(
+        False,
+        history_mode="fixed_train",
+        fitted_at=None,
+        current_time=pd.Timestamp("2020-01-02", tz="UTC"),
+        retraining_interval_hours=24,
+    )
+    assert is_refit_required(
+        False,
+        history_mode="expanding",
+        fitted_at=None,
+        current_time=pd.Timestamp("2020-01-02", tz="UTC"),
+        retraining_interval_hours=24,
+    )
+
+
+def test_fixed_train_never_refits_again_once_a_model_exists() -> None:
+    assert not is_refit_required(
+        True,
+        history_mode="fixed_train",
+        fitted_at=pd.Timestamp("2020-01-01", tz="UTC"),
+        current_time=pd.Timestamp("2021-01-01", tz="UTC"),
+        retraining_interval_hours=None,
+    )
+
+
+def test_expanding_refits_only_once_the_interval_has_elapsed() -> None:
+    fitted_at = pd.Timestamp("2020-01-01T00:00:00", tz="UTC")
+
+    assert not is_refit_required(
+        True,
+        history_mode="expanding",
+        fitted_at=fitted_at,
+        current_time=fitted_at + pd.Timedelta(hours=23),
+        retraining_interval_hours=24,
+    )
+    assert is_refit_required(
+        True,
+        history_mode="expanding",
+        fitted_at=fitted_at,
+        current_time=fitted_at + pd.Timedelta(hours=24),
+        retraining_interval_hours=24,
+    )
+
+
+def test_expanding_without_a_retraining_interval_raises() -> None:
+    with pytest.raises(RuntimeError, match="retraining_interval_hours"):
+        is_refit_required(
+            True,
+            history_mode="expanding",
+            fitted_at=pd.Timestamp("2020-01-01", tz="UTC"),
+            current_time=pd.Timestamp("2020-01-02", tz="UTC"),
+            retraining_interval_hours=None,
+        )

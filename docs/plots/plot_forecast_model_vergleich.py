@@ -1,4 +1,4 @@
-# python docs/plots/plot_cold_start_vergleich.py
+# python docs/plots/plot_forecast_model_vergleich.py
 from pathlib import Path
 
 import matplotlib.dates as mdates
@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-FORECASTING_DIR = PROJECT_ROOT / "output" / "forecasting"
+K2_OUTPUT_DIR = PROJECT_ROOT / "experiments" / "component_studies" / "k2_forecast_model" / "output"
 FIGURE_DIR = PROJECT_ROOT / "docs" / "diagrams" / "generated"
 
 BASELINE_COLORS = {
@@ -23,12 +23,16 @@ BASELINE_LABELS = {
 VARIANT_COLORS = {
     "C1": "#F2CF5B",
     "C2": "#E45756",
-    "C3": "#54A24B",
+    "C3_7": "#54A24B",
+    "C3_30": "#3F7A38",
+    "C3_60": "#2A5225",
 }
 VARIANT_LABELS = {
     "C1": "C1: Statisch\n(kein Retraining)",
     "C2": "C2: Expanding\n+ Retraining",
-    "C3": "C3: Rolling 7-Tage\n+ Retraining",
+    "C3_7": "C3: Rolling 7-Tage\n+ Retraining",
+    "C3_30": "C3: Rolling 30-Tage\n+ Retraining",
+    "C3_60": "C3: Rolling 60-Tage\n+ Retraining",
 }
 
 
@@ -48,11 +52,12 @@ def add_bar_labels(axis, fmt: str = "{:.0f}") -> None:
             )
 
 
-def build_cold_start_plot(
+def build_forecast_model_plot(
     run_directory: Path,
     output_directory: Path,
     *,
     split: str,
+    comparison_mode: str,
     baseline_model_ids: tuple[str, ...],
     variant_model_ids: tuple[str, ...],
     reference_baseline: str,
@@ -81,7 +86,7 @@ def build_cold_start_plot(
     skill_axis = figure.add_subplot(grid[1, 1])
     cost_axis = figure.add_subplot(grid[2, :])
 
-    # A: MAE je Forecast-Origin über die Zeit (Cold-Start-Verlauf)
+    # A: MAE je Forecast-Origin über die Zeit
     for model_id in variant_model_ids:
         model_origins = origin_metrics.loc[origin_metrics["model_id"].eq(model_id)].sort_values("forecast_origin")
 
@@ -192,15 +197,15 @@ def build_cold_start_plot(
     cost_axis.legend(lines_1 + lines_2, labels_1 + labels_2, fontsize=8, loc="upper left")
 
     figure.suptitle(
-        f"K2: Cold Start und Retraining – Prophet-Varianten im Vergleich ({split.capitalize()})",
+        f"K2: Retraining-Varianten im Vergleich ({comparison_mode.capitalize()}, {split.capitalize()})",
         fontsize=15,
         fontweight="bold",
     )
 
     output_directory.mkdir(parents=True, exist_ok=True)
 
-    figure.savefig(str(output_directory / "cold_start_vergleich.svg"), bbox_inches="tight")
-    figure.savefig(str(output_directory / "cold_start_vergleich.png"), dpi=300, bbox_inches="tight")
+    figure.savefig(str(output_directory / "forecast_model_vergleich.svg"), bbox_inches="tight")
+    figure.savefig(str(output_directory / "forecast_model_vergleich.png"), dpi=300, bbox_inches="tight")
 
     plt.close(figure)
 
@@ -209,23 +214,30 @@ def main() -> None:
     from src.pipeline.io import latest_sequential_number
 
     split = "validation"
-    study_dir = FORECASTING_DIR / "cold_start"
 
-    run_number = latest_sequential_number(study_dir, prefix="cs_val")
+    run_number = latest_sequential_number(K2_OUTPUT_DIR, prefix="k2")
     if run_number is None:
-        raise FileNotFoundError(f"No cold-start run found in {study_dir}.")
+        raise FileNotFoundError(f"No k2_forecast_model run found in {K2_OUTPUT_DIR}.")
 
-    run_directory = study_dir / f"cs_val_{run_number:03d}"
-    primary_naive_reference = pd.read_csv(run_directory / "primary_naive_reference.csv")["model_id"].iloc[0]
+    run_root = K2_OUTPUT_DIR / f"k2_{run_number:03d}"
 
-    build_cold_start_plot(
-        run_directory,
-        FIGURE_DIR,
-        split=split,
-        baseline_model_ids=("B1", "B2", "B3"),
-        variant_model_ids=("C1", "C2", "C3"),
-        reference_baseline=primary_naive_reference,
-    )
+    for mode in ("rolling", "macro"):
+        run_directory = run_root / f"{mode}_val"
+
+        if not run_directory.exists():
+            continue
+
+        primary_naive_reference = pd.read_csv(run_directory / "primary_naive_reference.csv")["model_id"].iloc[0]
+
+        build_forecast_model_plot(
+            run_directory,
+            FIGURE_DIR / mode,
+            split=split,
+            comparison_mode=mode,
+            baseline_model_ids=("B1", "B2", "B3"),
+            variant_model_ids=("C1", "C2", "C3_7", "C3_30", "C3_60"),
+            reference_baseline=primary_naive_reference,
+        )
 
 
 if __name__ == "__main__":

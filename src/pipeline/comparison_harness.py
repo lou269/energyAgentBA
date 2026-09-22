@@ -12,7 +12,7 @@ import pandas as pd
 from src.common.timestamps import local_calendar_range
 from src.context.calendar_context import build_calendar_context
 from src.context.calendar_schema import CalendarContext
-from src.forecasting.evaluation import calculate_mae
+from src.forecasting.evaluation import calculate_mae, calculate_mape
 from src.llm.client import LLMClient, OllamaClient
 from src.llm.inference import LLMAttemptRecord, LLMInferenceError
 from src.pipeline.cycle_run_manifest import build_cycle_run_manifest
@@ -193,6 +193,7 @@ def run_comparison(
                             "retrained": False,
                             "reference_reset": False,
                             "mae_w": float("nan"),
+                            "mape_pct": float("nan"),
                             "error": str(error),
                         }
                         rows.append(error_row)
@@ -225,6 +226,9 @@ def run_comparison(
                         eligible = eligible & ~imputed
 
                     mae_w = calculate_mae(actual.to_numpy(), predicted, eligible)
+                    mape_pct = calculate_mape(
+                        actual.to_numpy(), predicted, eligible, config.forecasting_config.mape_min_eligible_watts
+                    )
 
                     forecast_slice = result.forecast[FORECAST_COLUMNS].copy()
                     forecast_slice.insert(0, "config", config_label)
@@ -261,6 +265,7 @@ def run_comparison(
                         "retrained": result.retrained,
                         "reference_reset": result.reference_reset,
                         "mae_w": mae_w,
+                        "mape_pct": mape_pct,
                         "error": "",
                     }
                     rows.append(summary_row)
@@ -311,6 +316,18 @@ def run_comparison(
     df_to_csv(comparison, run_directory, "comparison_summary")
 
     output_paths = {"comparison_summary": run_directory / "comparison_summary.csv"}
+
+    # aggregiert die pro Tag schon berechneten mae_w/mape_pct je Config
+    evaluated = comparison.loc[comparison["error"].eq("")]
+
+    if not evaluated.empty:
+        evaluation_summary = evaluated.groupby("config", as_index=False).agg(
+            evaluated_days=("mae_w", "count"),
+            mae_w=("mae_w", "mean"),
+            mape_pct=("mape_pct", "mean"),
+        )
+        df_to_csv(evaluation_summary, run_directory, "evaluation_summary")
+        output_paths["evaluation_summary"] = run_directory / "evaluation_summary.csv"
 
     if forecast_frames:
         forecasts = pd.concat(forecast_frames, ignore_index=True)

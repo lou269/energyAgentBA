@@ -208,3 +208,29 @@ def test_sustained_level_shift_triggers_new_pattern_with_baseline_reset() -> Non
     new_history_start = second_result.adaption_action.new_history_start
     assert new_history_start is not None
     assert second_state.history.index[0] == new_history_start
+
+
+
+def test_fixed_train_keeps_the_same_frozen_history_across_multiple_cycles() -> None:
+    series = _calm_series(24 * 10)
+    coldstart_hours = 24 * 5
+    config = SYS_VARIANTS["SYS0"]
+    state = _state(series.iloc[:coldstart_hours])
+
+    first_result, state = _advance_one_day(series, state, config)
+    assert first_result.retrained
+    assert state.fixed_history is not None
+    assert state.model_history is not None
+
+    frozen_fixed_history = state.fixed_history
+    frozen_model_history = state.model_history
+
+    for _ in range(3):
+        result, state = _advance_one_day(series, state, config)
+        assert not result.retrained
+        assert state.model_history is not None
+        assert state.model_history.equals(frozen_model_history)
+        assert state.fixed_history is not None
+        assert state.fixed_history.equals(frozen_fixed_history)
+        # state.history wächst weiter, obwohl das Modell auf der eingefrorenen Historie bleibt
+        assert len(state.history) > len(state.model_history)

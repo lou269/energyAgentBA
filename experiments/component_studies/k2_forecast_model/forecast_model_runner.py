@@ -1,37 +1,43 @@
 # conda activate forecasting-env
-# python -m experiments.component_studies.k2_cold_start.cold_start_runner
+# python -m experiments.component_studies.k2_forecast_model.forecast_model_runner
 
 import logging
 from dataclasses import asdict
+from pathlib import Path
 from time import perf_counter
-from typing import cast
+from typing import Literal, cast
 
 import numpy as np
 import pandas as pd
 
-from experiments.component_studies.k2_cold_start.cold_start_config import ColdStartExperimentConfig
+from experiments.component_studies.k2_forecast_model.forecast_model_config import ForecastModelExperimentConfig
 from src.common.column_naming import imputation_column, treated_column
 from src.config.project_config import ProjectConfig, ensure_project_directories
-from src.forecasting.evaluation import evaluate_forecasts, select_primary_naive_reference
+from src.forecasting.evaluation import select_primary_naive_reference
 from src.forecasting.forecast_run_manifest import build_forecast_run_manifest
-from src.forecasting.walk_forward import ProphetVariantParameters, build_walk_forward_forecasts
+from src.forecasting.forecasting import run_forecast_comparison
+from src.forecasting.walk_forward import ProphetVariantParameters
 from src.pipeline.io import df_to_csv, next_sequential_number, save_json
-from docs.plots.plot_cold_start_vergleich import build_cold_start_plot
+from docs.plots.plot_forecast_model_vergleich import build_forecast_model_plot
 
 logger = logging.getLogger(__name__)
 
+OUTPUT_DIR = Path(__file__).parent / "output"
 
-class ColdStartRunner:
+ComparisonMode = Literal["rolling", "macro"]
+
+
+class ForecastModelRunner:
 
     def __init__(
         self,
         project_config: ProjectConfig | None = None,
-        experiment_config: ColdStartExperimentConfig | None = None,
+        experiment_config: ForecastModelExperimentConfig | None = None,
     ) -> None:
         self.project_config = project_config or ProjectConfig()
-        self.experiment_config = experiment_config or ColdStartExperimentConfig()
+        self.experiment_config = experiment_config or ForecastModelExperimentConfig()
 
-    def run(self) -> None:
+    def run(self, modes: tuple[ComparisonMode, ...] = ("rolling", "macro")) -> None:
         np.random.seed(self.experiment_config.seed)
         ensure_project_directories(self.project_config)
 
@@ -44,9 +50,6 @@ class ColdStartRunner:
         ):
             raise ValueError("primary_naive_reference must be one of the configured naive baselines before running the test split.")
 
-        logger.info("Starting cold-start experiment: split=%s", split)
-        run_started = perf_counter()
-
         treated_path = self.project_config.preprocessing_output_dir / "treated_hourly.csv"
         mask_path = self.project_config.preprocessing_output_dir / "imputation_mask_hourly.csv"
         split_manifest_path = self.project_config.preprocessing_output_dir / "split_manifest.csv"
@@ -57,17 +60,12 @@ class ColdStartRunner:
         split_manifest = pd.read_csv(split_manifest_path, parse_dates=["start", "end"])
         canonical_manifest = pd.read_csv(canonical_manifest_path)
 
-        if len(canonical_manifest) != 1:
-            raise ValueError("Canonical manifest must contain exactly one mains target.")
-
         candidate_id = str(canonical_manifest.iloc[0]["candidate_id"])
         meter_key = str(canonical_manifest.iloc[0]["meter_key"])
         target_column = treated_column(meter_key)
         mask_column = imputation_column(meter_key)
 
-        hourly_splits = split_manifest.loc[
-            split_manifest["frequency"].eq("hourly")
-        ].set_index("split")
+        hourly_splits = split_manifest.loc[split_manifest["frequency"].eq("hourly")].set_index("split")
 
         split_start = hourly_splits.at[split, "start"]
         split_end = hourly_splits.at[split, "end"]
@@ -75,87 +73,109 @@ class ColdStartRunner:
         if not isinstance(split_start, pd.Timestamp) or not isinstance(split_end, pd.Timestamp):
             raise TypeError("Split boundaries must be timestamps.")
 
-        # Standardfall: sieben Tage direkt vor dem Evaluation-Split.
-        initial_start = (
-            pd.Timestamp(self.experiment_config.data_start)
-            if self.experiment_config.data_start is not None
-            else split_start - pd.Timedelta(hours=self.experiment_config.initial_history_hours)
+        fixed_history = treated_hourly.loc[treated_hourly.index < split_start, target_column]
+        evaluation_targets = treated_hourly.loc[split_start:split_end, target_column]
+        evaluation_imputation_mask = imputation_mask.loc[split_start:split_end, mask_column]
+
+        candidates: tuple[str | ProphetVariantParameters, ...] = (
+            *self.experiment_config.baseline_model_ids,
+            *(
+                cast(ProphetVariantParameters, asdict(variant))
+                for variant in self.experiment_config.prophet_variants
+            ),
         )
+        prophet_model_ids = tuple(variant.model_id for variant in self.experiment_config.prophet_variants)
+        reference_model_ids = self.experiment_config.baseline_model_ids
+        if "C1" in prophet_model_ids and "C1" not in reference_model_ids:
+            reference_model_ids = (*reference_model_ids, "C1")
 
-        first_origin = initial_start + pd.Timedelta(hours=self.experiment_config.initial_history_hours)
+        run_number = next_sequential_number(OUTPUT_DIR, prefix="k2")
+        run_root = OUTPUT_DIR / f"k2_{run_number:03d}"
 
-        evaluation_end = (
-            pd.Timestamp(self.experiment_config.data_end)
-            if self.experiment_config.data_end is not None
-            else split_end
-        )
+        for mode in modes:
+            self._run_mode(
+                mode,
+                split=split,
+                candidate_id=candidate_id,
+                treated_path=treated_path,
+                mask_path=mask_path,
+                split_manifest_path=split_manifest_path,
+                canonical_manifest_path=canonical_manifest_path,
+                split_start=split_start,
+                split_end=split_end,
+                fixed_history=fixed_history,
+                evaluation_targets=evaluation_targets,
+                evaluation_imputation_mask=evaluation_imputation_mask,
+                candidates=candidates,
+                prophet_model_ids=prophet_model_ids,
+                reference_model_ids=reference_model_ids,
+                run_number=run_number,
+                run_root=run_root,
+            )
 
-        if first_origin < split_start or evaluation_end > split_end:
-            raise ValueError("Cold-start evaluation must remain inside the selected split.")
+    def _run_mode(
+        self,
+        mode: ComparisonMode,
+        *,
+        split: str,
+        candidate_id: str,
+        treated_path: Path,
+        mask_path: Path,
+        split_manifest_path: Path,
+        canonical_manifest_path: Path,
+        split_start: pd.Timestamp,
+        split_end: pd.Timestamp,
+        fixed_history: pd.Series,
+        evaluation_targets: pd.Series,
+        evaluation_imputation_mask: pd.Series,
+        candidates: tuple[str | ProphetVariantParameters, ...],
+        prophet_model_ids: tuple[str, ...],
+        reference_model_ids: tuple[str, ...],
+        run_number: int,
+        run_root: Path,
+    ) -> None:
+        run_started = perf_counter()
 
-        expected_initial_index = pd.date_range(
-            start=initial_start,
-            periods=self.experiment_config.initial_history_hours,
-            freq=self.experiment_config.frequency,
-        )
-
-        fixed_history = treated_hourly[target_column].reindex(expected_initial_index)
-
-        if not fixed_history.index.equals(expected_initial_index):
-            raise ValueError("Initial history does not use the expected hourly index.")
-
-        evaluation_targets = treated_hourly.loc[first_origin:evaluation_end, target_column]
-        evaluation_imputation_mask = imputation_mask.loc[first_origin:evaluation_end, mask_column]
-
-        prophet_variants = tuple(
-            cast(ProphetVariantParameters, asdict(variant))
-            for variant in self.experiment_config.prophet_variants
+        initial_history_start = (
+            split_start - pd.Timedelta(hours=self.experiment_config.cycle_coldstart_hours)
+            if mode == "rolling"
+            else None
         )
 
         split_abbreviation = "val" if split == "validation" else split
-        study_output_dir = self.project_config.forecasting_output_dir / self.experiment_config.output_subdir
-        run_number = next_sequential_number(study_output_dir, prefix=f"cs_{split_abbreviation}")
-        run_id = f"{split}_{run_number:03d}"
-        run_dir = study_output_dir / f"cs_{split_abbreviation}_{run_number:03d}"
+        run_id = f"{mode}_{split}_{run_number:03d}"
+        run_dir = run_root / f"{mode}_{split_abbreviation}"
 
         if run_dir.exists():
-            raise FileExistsError(f"Cold-start run directory already exists: {run_dir}")
+            raise FileExistsError(f"Forecast-model run directory already exists: {run_dir}")
 
         run_dir.mkdir(parents=True, exist_ok=False)
 
-        forecasts = build_walk_forward_forecasts(
-            fixed_history=fixed_history,
-            evaluation_targets=evaluation_targets,
-            evaluation_imputation_mask=evaluation_imputation_mask,
+        forecasts, evaluation_results = run_forecast_comparison(
+            candidates,
+            fixed_history,
+            evaluation_targets,
+            evaluation_imputation_mask,
             run_id=run_id,
             experiment_id=self.experiment_config.experiment_id,
             split=split,
             horizon_hours=self.experiment_config.horizon_hours,
             forecast_origin_step_hours=self.experiment_config.forecast_origin_step_hours,
             frequency=self.experiment_config.frequency,
-            baseline_model_ids=self.experiment_config.baseline_model_ids,
-            prophet_variants=prophet_variants,
+            local_timezone=self.project_config.timezone,
+            clip_negative_forecasts=self.experiment_config.negative_forecast_handling == "clip_zero",
+            config_version=self.experiment_config.config_version,
             growth=self.experiment_config.growth,
             daily_seasonality=self.experiment_config.daily_seasonality,
             country_holidays=self.experiment_config.country_holidays,
-            local_timezone=self.project_config.timezone,
             log_transform=self.experiment_config.log_transform,
             interval_width=self.experiment_config.interval_width,
             uncertainty_samples=self.experiment_config.uncertainty_samples,
-            clip_negative_forecasts=(self.experiment_config.negative_forecast_handling == "clip_zero"),
-            config_version=self.experiment_config.config_version,
-            initial_history_hours=self.experiment_config.initial_history_hours,
-        )
-
-        prophet_model_ids = tuple(variant["model_id"] for variant in prophet_variants)
-
-        evaluation_results = evaluate_forecasts(
-            forecasts,
-            horizon_hours=self.experiment_config.horizon_hours,
             comparison_model_ids=prophet_model_ids,
-            reference_model_ids=(*self.experiment_config.baseline_model_ids, "C1"),
+            reference_model_ids=reference_model_ids,
             nominal_interval_level=self.experiment_config.interval_width,
             mape_min_eligible_watts=self.experiment_config.mape_min_eligible_watts,
+            initial_history_start=initial_history_start,
         )
 
         if split == "validation":
@@ -187,7 +207,7 @@ class ColdStartRunner:
             experiment_id=self.experiment_config.experiment_id,
             split=split,
             candidate_id=candidate_id,
-            config_values=asdict(self.experiment_config),
+            config_values={**asdict(self.experiment_config), "comparison_mode": mode},
             input_paths={
                 "treated_hourly": treated_path,
                 "imputation_mask_hourly": mask_path,
@@ -198,13 +218,14 @@ class ColdStartRunner:
             split_boundaries={
                 "split_start": split_start,
                 "split_end": split_end,
-                "initial_history_start": fixed_history.index[0],
-                "initial_history_end": fixed_history.index[-1],
+                "fixed_history_start": fixed_history.index[0] if initial_history_start is None else initial_history_start,
+                "fixed_history_end": fixed_history.index[-1],
                 "first_forecast_origin": forecasts["forecast_origin"].min(),
-                "evaluation_end": evaluation_end,
+                "evaluation_end": split_end,
             },
             forecast_origins=tuple(forecasts["forecast_origin"].drop_duplicates().sort_values()),
             model_parameters={
+                "comparison_mode": mode,
                 "growth": self.experiment_config.growth,
                 "daily_seasonality": self.experiment_config.daily_seasonality,
                 "country_holidays": self.experiment_config.country_holidays,
@@ -225,8 +246,11 @@ class ColdStartRunner:
                 for variant in self.experiment_config.prophet_variants
             },
             history_rules={
-                "initial_history_hours": self.experiment_config.initial_history_hours,
-                "first_forecast_after_initial_history": True,
+                "fixed_history": (
+                    f"last {self.experiment_config.cycle_coldstart_hours}h before the window (matches daily_cycle.py)"
+                    if mode == "rolling"
+                    else "entire available history before split_start (70/15/15 macro split)"
+                ),
                 "variants": {
                     variant.model_id: {
                         "history_mode": variant.history_mode,
@@ -253,17 +277,19 @@ class ColdStartRunner:
 
         save_json(manifest, run_dir / "run_manifest.json")
 
-        build_cold_start_plot(
+        build_forecast_model_plot(
             run_dir,
             run_dir,
             split=split,
+            comparison_mode=mode,
             baseline_model_ids=self.experiment_config.baseline_model_ids,
             variant_model_ids=prophet_model_ids,
             reference_baseline=cast(str, primary_naive_reference),
         )
 
         logger.info(
-            "Cold-start experiment completed: run=%s, origins=%d, primary naive reference=%s",
+            "Forecast-model experiment completed: mode=%s, run=%s, origins=%d, primary naive reference=%s",
+            mode,
             run_id,
             forecasts["forecast_origin"].nunique(),
             primary_naive_reference,
@@ -272,7 +298,7 @@ class ColdStartRunner:
 
 def main() -> None:
     logging.basicConfig(level=logging.INFO)
-    ColdStartRunner().run()
+    ForecastModelRunner().run()
 
 
 if __name__ == "__main__":

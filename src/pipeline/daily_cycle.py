@@ -6,7 +6,7 @@ from prophet import Prophet
 from src.adaption.adaption_policy import AdaptionAction, adaption_policy
 from src.config.config_forecasting import CycleConfig, ProphetVariantConfig
 from src.context.calendar_schema import CalendarContext
-from src.forecasting.prophet_model import build_prophet_forecast, refit_and_forecast
+from src.forecasting.prophet_model import build_prophet_forecast, fit_prophet_model, is_refit_required, select_prophet_history
 from src.llm.client import LLMClient
 from src.llm.inference import infer_llm_output
 from src.llm.llm_schema import Classification, LLMOutput
@@ -22,6 +22,7 @@ class CycleState:
     prophet_model: Prophet | None
     model_history: pd.Series | None
     model_fitted_at: pd.Timestamp | None
+    fixed_history: pd.Series | None = None
 
 
 @dataclass(frozen=True)
@@ -73,21 +74,18 @@ def run_cycle(
 
     variant = config.forecasting_config.selected_prophet_variant
 
-    fit_required = state.prophet_model is None or state.model_fitted_at is None
+    fixed_history = state.fixed_history if state.fixed_history is not None else history
 
-    if not fit_required and variant.history_mode != "fixed_train":
-        assert state.model_fitted_at is not None
-
-        if variant.retraining_interval_hours is None:
-            raise RuntimeError(f"{variant.model_id} has no retraining interval.")
-
-        elapsed_hours = (decision_time - state.model_fitted_at) / pd.Timedelta(hours=1)
-        fit_required = elapsed_hours >= variant.retraining_interval_hours
+    fit_required = is_refit_required(
+        state.prophet_model is not None,
+        history_mode=variant.history_mode,
+        fitted_at=state.model_fitted_at,
+        current_time=decision_time,
+        retraining_interval_hours=variant.retraining_interval_hours,
+    )
 
     if fit_required:
-        # fixed_train würde hier an der aktuellen history einfrieren statt an der ursprünglichen Coldstart-Historie
-        # -> betrifft nur C1, expanding/rolling sind davon nicht berührt
-        prophet_model, model_history, forecast = _refit_and_forecast(history, decision_time, config, variant, local_timezone)
+        prophet_model, model_history = _fit_variant(fixed_history, history, decision_time, config, variant, local_timezone)
         model_fitted_at = decision_time
     else:
         assert state.prophet_model is not None
@@ -95,7 +93,8 @@ def run_cycle(
         prophet_model = state.prophet_model
         model_history = state.model_history
         model_fitted_at = state.model_fitted_at
-        forecast = _build_forecast(prophet_model, model_history, decision_time, config, variant, local_timezone)
+
+    forecast = _build_forecast(prophet_model, model_history, decision_time, config, variant, local_timezone)
 
     reference_window_end = compute_reference_window_end(
         history,
@@ -188,8 +187,9 @@ def run_cycle(
     if adaption_action is not None and adaption_action.kind != "none":
         history = _apply_adaption(history, adaption_action)
 
-        prophet_model, model_history, forecast = _refit_and_forecast(history, decision_time, config, variant, local_timezone)
+        prophet_model, model_history = _fit_variant(fixed_history, history, decision_time, config, variant, local_timezone)
         model_fitted_at = decision_time
+        forecast = _build_forecast(prophet_model, model_history, decision_time, config, variant, local_timezone)
 
         fit_required = True
 
@@ -202,6 +202,7 @@ def run_cycle(
         prophet_model=prophet_model,
         model_history=model_history,
         model_fitted_at=model_fitted_at,
+        fixed_history=fixed_history,
     )
 
     result = CycleResult(
@@ -254,19 +255,26 @@ def _build_forecast(
     return forecast
 
 
-def _refit_and_forecast(
-    history: pd.Series,
+def _fit_variant(
+    fixed_history: pd.Series,
+    available_history: pd.Series,
     decision_time: pd.Timestamp,
     config: CycleConfig,
     variant: ProphetVariantConfig,
     local_timezone: str,
-) -> tuple[Prophet, pd.Series, pd.DataFrame]:
+) -> tuple[Prophet, pd.Series]:
     forecasting_config = config.forecasting_config
-    return refit_and_forecast(
-        history,
-        decision_time=decision_time,
+
+    model_history = select_prophet_history(
+        fixed_history,
+        available_history,
+        forecast_origin=decision_time,
         history_mode=variant.history_mode,
         rolling_window_hours=variant.rolling_window_hours,
+    )
+
+    model = fit_prophet_model(
+        model_history,
         growth=forecasting_config.growth,
         daily_seasonality=forecasting_config.daily_seasonality,
         weekly_seasonality=variant.weekly_seasonality,
@@ -276,12 +284,9 @@ def _refit_and_forecast(
         log_transform=forecasting_config.log_transform,
         interval_width=forecasting_config.interval_width,
         uncertainty_samples=forecasting_config.uncertainty_samples,
-        horizon_hours=forecasting_config.horizon_hours,
-        frequency=forecasting_config.frequency,
-        clip_negative_forecasts=forecasting_config.negative_forecast_handling == "clip_zero",
-        model_id=variant.model_id,
-        config_version=forecasting_config.config_version,
     )
+
+    return model, model_history
 
 
 def _apply_adaption(

@@ -6,7 +6,7 @@ from prophet import Prophet
 
 from src.common.timestamps import local_calendar_range
 from src.forecasting.baselines import build_daily_naive_forecast, build_last_value_forecast,build_weekly_naive_forecast
-from src.forecasting.prophet_model import build_prophet_forecast, fit_prophet_model, select_prophet_history
+from src.forecasting.prophet_model import build_prophet_forecast, fit_prophet_model, is_refit_required, select_prophet_history
 from src.forecasting.forecast_schema import FORECAST_OUTPUT_COLUMNS, validate_forecast_output
 
 
@@ -37,32 +37,30 @@ def build_walk_forward_forecasts(
     horizon_hours: int,
     forecast_origin_step_hours: int,
     frequency: str,
-    baseline_model_ids: tuple[str, ...],
-    prophet_variants: tuple[ProphetVariantParameters, ...],
-    growth: str,
-    daily_seasonality: bool,
-    country_holidays: str | None,
     local_timezone: str,
-    log_transform: bool,
-    interval_width: float,
     clip_negative_forecasts: bool,
-    uncertainty_samples: int,
     config_version: str,
+    baseline_model_id: str | None = None,
+    prophet_variant: ProphetVariantParameters | None = None,
+    growth: str = "linear",
+    daily_seasonality: bool = True,
+    country_holidays: str | None = None,
+    log_transform: bool = True,
+    interval_width: float = 0.80,
+    uncertainty_samples: int = 1000,
     initial_history_start: pd.Timestamp | None = None,
-    initial_history_hours: int | None = None,
     scenario_id: str | None = None,
 ) -> pd.DataFrame:
+    if (baseline_model_id is None) == (prophet_variant is None):
+        raise ValueError("Exactly one of baseline_model_id or prophet_variant must be given.")
+
+    if baseline_model_id is not None and baseline_model_id not in _BASELINE_BUILDERS:
+        raise ValueError(f"Unsupported baseline model ID: {baseline_model_id}")
+
     if initial_history_start is not None:
         if str(initial_history_start.tz) != "UTC":
             raise ValueError("initial_history_start must use UTC.")
         fixed_history = fixed_history.loc[fixed_history.index >= initial_history_start]
-
-    if initial_history_hours is not None:
-        if initial_history_hours < 1:
-            raise ValueError("initial_history_hours must be at least 1.")
-        fixed_history = fixed_history.iloc[:initial_history_hours]
-        if len(fixed_history) != initial_history_hours:
-            raise ValueError(f"Initial history must contain exactly {initial_history_hours} hours, got {len(fixed_history)}.")
 
     _validate_walk_forward_data(fixed_history, evaluation_targets, evaluation_imputation_mask, frequency)
 
@@ -82,46 +80,7 @@ def build_walk_forward_forecasts(
     if not 0.0 < interval_width < 1.0:
         raise ValueError("interval_width must be between 0 and 1.")
 
-    unknown_baselines = set(baseline_model_ids).difference(_BASELINE_BUILDERS)
-
-    if unknown_baselines:
-        raise ValueError("Unsupported baseline model IDs: " + ", ".join(sorted(unknown_baselines)))
-
-    model_ids = [
-        *baseline_model_ids,
-        *(variant["model_id"] for variant in prophet_variants),
-    ]
-
-    if not model_ids:
-        raise ValueError("At least one forecast model must be configured.")
-    if len(model_ids) != len(set(model_ids)):
-        raise ValueError("Forecast model IDs must be unique.")
-
-    for variant in prophet_variants:
-        history_mode = variant["history_mode"]
-        rolling_window_hours = variant["rolling_window_hours"]
-        retraining_interval_hours = variant["retraining_interval_hours"]
-
-        if history_mode == "fixed_train":
-            if rolling_window_hours is not None or retraining_interval_hours is not None:
-                raise ValueError(f"{variant['model_id']}: fixed_train must not define a rolling window or retraining interval.")
-
-        elif history_mode == "expanding":
-            if rolling_window_hours is not None:
-                raise ValueError(f"{variant['model_id']}: expanding must not define a rolling window.")
-
-            if retraining_interval_hours is None or retraining_interval_hours < 1:
-                raise ValueError(f"{variant['model_id']}: retraining_interval_hours must be at least 1.")
-
-        elif history_mode == "rolling":
-            if rolling_window_hours is None or rolling_window_hours < 1:
-                raise ValueError(f"{variant['model_id']}: rolling_window_hours must be at least 1.")
-
-            if retraining_interval_hours is None or retraining_interval_hours < 1:
-                raise ValueError(f"{variant['model_id']}: retraining_interval_hours must be at least 1.")
-
-        else:
-            raise ValueError(f"Unsupported history mode: {history_mode}.")
+    model_id = baseline_model_id if baseline_model_id is not None else prophet_variant["model_id"]  # type: ignore[index]
 
     first_origin = evaluation_targets.index[0]
     last_origin = evaluation_targets.index[-1] - pd.Timedelta(hours=horizon_hours - 1)
@@ -132,7 +91,7 @@ def build_walk_forward_forecasts(
     forecast_origins = local_calendar_range(first_origin, forecast_origin_step_hours, last_origin, local_timezone)
 
     complete_history = pd.concat([fixed_history, evaluation_targets])
-    prophet_states: dict[str, tuple[Prophet, pd.Timestamp, pd.Series]] = {}
+    prophet_state: tuple[Prophet, pd.Timestamp, pd.Series] | None = None
     forecast_outputs: list[pd.DataFrame] = []
 
     for forecast_origin in forecast_origins:
@@ -147,8 +106,8 @@ def build_walk_forward_forecasts(
         target_exclusion_reason.loc[target_imputed] = "target_imputed"
         target_exclusion_reason.loc[target_values.isna()] = "missing_target"
 
-        for model_id in baseline_model_ids:
-            raw_predictions = _BASELINE_BUILDERS[model_id](available_history, target_index)
+        if baseline_model_id is not None:
+            raw_predictions = _BASELINE_BUILDERS[baseline_model_id](available_history, target_index)
 
             predictions = (
                 raw_predictions.clip(lower=0.0)
@@ -188,24 +147,20 @@ def build_walk_forward_forecasts(
                 )
             )
 
-        for variant in prophet_variants:
-            model_id = variant["model_id"]
-            history_mode = variant["history_mode"]
-            retraining_interval_hours = variant["retraining_interval_hours"]
+        else:
+            assert prophet_variant is not None
+            history_mode = prophet_variant["history_mode"]
+            retraining_interval_hours = prophet_variant["retraining_interval_hours"]
 
-            state = prophet_states.get(model_id)
-            had_fitted_model = state is not None
-            fit_required = not had_fitted_model
+            had_fitted_model = prophet_state is not None
 
-            if state is not None and history_mode != "fixed_train":
-                _, fitted_at_origin, _ = state
-
-                if retraining_interval_hours is None:
-                    raise RuntimeError(f"{model_id} has no retraining interval.")
-
-                elapsed_hours = (forecast_origin - fitted_at_origin) / pd.Timedelta(hours=1)
-
-                fit_required = elapsed_hours >= retraining_interval_hours
+            fit_required = is_refit_required(
+                had_fitted_model,
+                history_mode=history_mode,
+                fitted_at=prophet_state[1] if prophet_state is not None else None,
+                current_time=forecast_origin,
+                retraining_interval_hours=retraining_interval_hours,
+            )
 
             refit_runtime_seconds = 0.0
 
@@ -215,7 +170,7 @@ def build_walk_forward_forecasts(
                     available_history,
                     forecast_origin=forecast_origin,
                     history_mode=history_mode,
-                    rolling_window_hours=variant["rolling_window_hours"],
+                    rolling_window_hours=prophet_variant["rolling_window_hours"],
                 )
 
                 fit_start = pd.Timestamp.now()
@@ -224,8 +179,8 @@ def build_walk_forward_forecasts(
                     model_history,
                     growth=growth,
                     daily_seasonality=daily_seasonality,
-                    weekly_seasonality=variant["weekly_seasonality"],
-                    yearly_seasonality=variant["yearly_seasonality"],
+                    weekly_seasonality=prophet_variant["weekly_seasonality"],
+                    yearly_seasonality=prophet_variant["yearly_seasonality"],
                     country_holidays=country_holidays,
                     local_timezone=local_timezone,
                     log_transform=log_transform,
@@ -235,13 +190,11 @@ def build_walk_forward_forecasts(
 
                 refit_runtime_seconds = (pd.Timestamp.now() - fit_start).total_seconds()
 
-                state = (model, forecast_origin, model_history)
-                prophet_states[model_id] = state
+                prophet_state = (model, forecast_origin, model_history)
 
-            if state is None:
-                raise RuntimeError(f"No fitted model exists for {model_id}.")
+            assert prophet_state is not None
 
-            model, _, model_history = state
+            model, _, model_history = prophet_state
 
             model_forecast = build_prophet_forecast(
                 model,
@@ -254,8 +207,8 @@ def build_walk_forward_forecasts(
 
             seasonality_config = (
                 f"daily={daily_seasonality};"
-                f"weekly={variant['weekly_seasonality']};"
-                f"yearly={variant['yearly_seasonality']};"
+                f"weekly={prophet_variant['weekly_seasonality']};"
+                f"yearly={prophet_variant['yearly_seasonality']};"
                 f"holidays={country_holidays};"
                 f"tz={local_timezone};"
                 f"log={log_transform}"
@@ -287,14 +240,6 @@ def build_walk_forward_forecasts(
     forecasts = forecasts[FORECAST_OUTPUT_COLUMNS]
 
     validate_forecast_output(forecasts, horizon_hours=horizon_hours)
-
-    expected_model_count = len(model_ids)
-    models_per_target = forecasts.groupby(
-        ["forecast_origin", "target_timestamp"]
-    )["model_id"].nunique()
-
-    if not models_per_target.eq(expected_model_count).all():
-        raise ValueError("Forecast variants do not use identical forecast origins and targets.")
 
     return forecasts
 
@@ -413,4 +358,3 @@ def _validate_walk_forward_data(
 
     if not pd.api.types.is_bool_dtype(evaluation_imputation_mask.dtype):
         raise TypeError("evaluation_imputation_mask must contain booleans.")
-

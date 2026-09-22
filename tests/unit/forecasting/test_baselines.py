@@ -49,11 +49,40 @@ def test_weekly_naive_uses_value_exactly_168h_before_each_target() -> None:
 
 def test_daily_naive_raises_when_reference_hour_is_missing() -> None:
     # Historie beginnt erst 10h vor dem Ziel -> die für den 24h-Versatz nötige Stunde fehlt
+    # komplett (nicht nur NaN, sondern gar nicht im Index) -> auch das Zurückgehen findet nichts
     history = _history([1.0] * 10)
     target_index = pd.date_range(history.index[-1] + pd.Timedelta(hours=1), periods=1, freq="1h", tz="UTC")
 
-    with pytest.raises(ValueError, match="24 hours"):
+    with pytest.raises(ValueError, match="24h lag"):
         build_daily_naive_forecast(history, target_index)
+
+
+def test_daily_naive_skips_an_excluded_day_and_uses_the_same_hour_further_back() -> None:
+    # Tag 4 (Stunden 72-95) komplett als NaN ausgeschlossen, wie ein von der Preprocessing-Stufe verworfener Kalendertag
+    values = [float(h) for h in range(96)]
+    for h in range(72, 96):
+        values[h] = float("nan")
+    history = _history(values)
+    target_index = pd.date_range(history.index[-1] + pd.Timedelta(hours=1), periods=1, freq="1h", tz="UTC")
+
+    forecast = build_daily_naive_forecast(history, target_index)
+
+    # Ziel = Stunde 96, 24h davor (Stunde 72) ist NaN -> fällt auf Stunde 48 zurück (48h davor)
+    assert list(forecast.to_numpy()) == [48.0]
+
+
+def test_weekly_naive_skips_an_excluded_week_and_uses_the_same_weekday_hour_further_back() -> None:
+    # Woche 3 (Stunden 336-503) komplett ausgeschlossen -> der direkte 168h-Referenzwert liegt darin
+    values = [float(h) for h in range(504)]
+    for h in range(336, 504):
+        values[h] = float("nan")
+    history = _history(values)
+    target_index = pd.date_range(history.index[-1] + pd.Timedelta(hours=1), periods=1, freq="1h", tz="UTC")
+
+    forecast = build_weekly_naive_forecast(history, target_index)
+
+    # Ziel = Stunde 504, 168h davor (Stunde 336) ist NaN -> fällt auf Stunde 168 zurück (336h davor)
+    assert list(forecast.to_numpy()) == [168.0]
 
 
 def test_baseline_rejects_history_overlapping_the_forecast_target() -> None:

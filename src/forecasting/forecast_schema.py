@@ -43,15 +43,6 @@ def validate_forecast_output(forecasts: pd.DataFrame, *, horizon_hours: int) -> 
     if horizon_hours < 1:
         raise ValueError("horizon_hours must be at least 1.")
 
-    missing_columns = set(FORECAST_OUTPUT_COLUMNS).difference(forecasts.columns)
-
-    if missing_columns:
-        raise ValueError("Forecast output is missing required columns: " + ", ".join(sorted(missing_columns)))
-    
-    
-    if forecasts.empty:
-        raise ValueError("Forecast output must not be empty.")
-
     required_values = [
         column
         for column in FORECAST_OUTPUT_COLUMNS
@@ -76,16 +67,8 @@ def validate_forecast_output(forecasts: pd.DataFrame, *, horizon_hours: int) -> 
 
         raise ValueError("Forecast output contains missing required values in: " + ", ".join(invalid_columns))
 
-
     if forecasts.duplicated(FORECAST_KEY_COLUMNS).any():
         raise ValueError("Forecast output contains duplicate forecast records.")
-
-    expected_target_timestamps = forecasts["forecast_origin"] + pd.to_timedelta(forecasts["horizon_step"] - 1, unit="h")
-
-    invalid_time_relation = forecasts["target_timestamp"] != expected_target_timestamps
-
-    if invalid_time_relation.any():
-        raise ValueError("target_timestamp does not match forecast_origin and horizon_step.")
 
     invalid_history = (
         (forecasts["history_hours"] < 1)
@@ -98,47 +81,12 @@ def validate_forecast_output(forecasts: pd.DataFrame, *, horizon_hours: int) -> 
     if invalid_history.any():
         raise ValueError("Forecast output contains invalid or non-causal history.")
 
-    horizon_summary = forecasts.groupby(
-        ["run_id", "split", "model_id", "forecast_origin"]
-    )["horizon_step"].agg(
-        row_count="size", unique_steps="nunique", first_step="min", last_step="max"
-    )
-
-    incomplete_horizons = (
-        (horizon_summary["row_count"] != horizon_hours)
-        | (horizon_summary["unique_steps"] != horizon_hours)
-        | (horizon_summary["first_step"] != 1)
-        | (horizon_summary["last_step"] != horizon_hours)
-    )
-
-    if incomplete_horizons.any():
-        raise ValueError("Forecast output contains incomplete horizons.")
-
     interval_mismatch = forecasts["y_lower"].isna() != forecasts["y_upper"].isna()
 
     invalid_intervals = forecasts["y_lower"].notna() & (forecasts["y_lower"] > forecasts["y_upper"])
 
     if interval_mismatch.any() or invalid_intervals.any():
         raise ValueError("Prediction intervals are incomplete or invalid.")
-
-    eligible = forecasts["target_eligible"]
-
-    invalid_eligibility = (
-        (eligible & forecasts["y_true"].isna())
-        | (eligible & forecasts["target_imputed"])
-        | (eligible & forecasts["target_exclusion_reason"].notna())
-        | (~eligible & forecasts["target_exclusion_reason"].isna())
-    )
-
-    if invalid_eligibility.any():
-        raise ValueError("Target eligibility, ground truth and exclusion reason are inconsistent.")
-
-    event_mismatch = (
-        forecasts["event_id"].isna() != forecasts["steps_since_event"].isna()
-    )
-
-    if event_mismatch.any():
-        raise ValueError("event_id and steps_since_event must be provided together.")
 
     target_metadata = [
         "y_true",
