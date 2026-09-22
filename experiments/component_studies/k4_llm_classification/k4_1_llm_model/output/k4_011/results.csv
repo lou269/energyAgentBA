@@ -1,0 +1,9 @@
+model_id,model,case_id,expected_classification,repetition,valid,classification,correct,attempt_count,evidence_reference_count,evidence_paths,generation_seconds,error_kind,error
+BASELINE,rule_based,peak,peak,1,True,peak,True,1,,,0.0,,
+BASELINE,rule_based,absence,absence,1,True,low,False,1,,,0.0,,
+BASELINE,rule_based,new_pattern,new_pattern,1,True,new_pattern,True,1,,,0.0,,
+BASELINE,rule_based,low_single_scale,low,1,True,low,True,1,,,0.0,,
+BASELINE,rule_based,unknown_conflicting_scales,unknown,1,True,low,False,1,,,0.0,,
+BASELINE,rule_based,peak_single_sustained_scale,peak,1,True,peak,True,1,,,0.0,,
+BASELINE,rule_based,new_pattern_at_min_scales_boundary,new_pattern,1,True,new_pattern,True,1,,,0.0,,
+BASELINE,rule_based,absence_without_event,low,1,True,low,True,1,,,0.0,,

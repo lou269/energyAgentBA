@@ -22,7 +22,7 @@ LLM_MODEL_VARIANTS: tuple[LLMModelVariant, ...] = (
     LLMModelVariant(model_id="MDL7", model="ministral-3:8b")
 )
 
-_BASE_LLM_CONFIG = LLMConfig(model="")
+_BASE_LLM_CONFIG = LLMConfig(model="", keep_alive=-1)
 
 
 @dataclass(frozen=True)
@@ -32,7 +32,7 @@ class LLMModelExperimentConfig:
 
     base_llm_config: LLMConfig = _BASE_LLM_CONFIG
   
-    repetitions: int = 1
+    repetitions: int = 2
 
     model_variants: tuple[LLMModelVariant, ...] = LLM_MODEL_VARIANTS
 

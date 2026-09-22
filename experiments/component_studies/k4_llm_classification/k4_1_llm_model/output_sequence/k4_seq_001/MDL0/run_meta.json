@@ -1,0 +1,12 @@
+{
+  "adaption_count": 0,
+  "config": "MDL0",
+  "consecutive_llm_failures": 0,
+  "days_completed": 29,
+  "decision_time_planned": 29,
+  "interrupted": false,
+  "llm_mode": "real",
+  "retrain_count": 29,
+  "runtime_seconds": 930.2226086250002,
+  "total_llm_failures": 0
+}

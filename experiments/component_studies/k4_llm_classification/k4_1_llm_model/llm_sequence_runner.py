@@ -1,5 +1,5 @@
 # open -a Ollama
-# conda run -n forecasting-env python -m experiments.component_studies.k4_llm_classification.k4_1_llm_model.llm_sequence_runner
+# caffeinate -i python -m experiments.component_studies.k4_llm_classification.k4_1_llm_model.llm_sequence_runner
 
 import logging
 
