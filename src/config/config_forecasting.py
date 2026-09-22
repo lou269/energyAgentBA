@@ -198,6 +198,6 @@ SYS_VARIANTS: dict[str, CycleConfig] = {
         numerical_analysis_config=NumericalAnalysisConfig(),
         event_adaptation=True,
         llm_mode="real",
-        llm_config=LLMConfig(model="qwen3.5:9b"),
+        llm_config=LLMConfig(model="qwen3:8b"),
     ),
 }
