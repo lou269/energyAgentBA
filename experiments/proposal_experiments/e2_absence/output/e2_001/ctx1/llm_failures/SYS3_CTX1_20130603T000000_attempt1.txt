@@ -1,6 +1,0 @@
-{
-  "schema_version": "1.2",
-  "classification": "peak",
-  "explanation": "The current observation shows a strong anomaly with high consumption (144.73 W) compared to expected levels across multiple scales (daily, weekly, long_term). The anomaly score is elevated and the direction is 'high'. However, the deviation has not persisted for multiple hours at the relevant scale (scale_elevated_hours is 4.0 but this represents a count of hours since the start of the window or similar metric; given the decision time is 2013-06-03T00:00:00 and the observation covers 2013-06-02T23:00:00 to 2013-06-03T00:00:00, the high consumption is recent and not persistent enough for 'new_pattern'. There are no relevant calendar events in context.events to support 'absence'. The evidence supports a short-term peak.",
-  "evidence_references": [
-    {

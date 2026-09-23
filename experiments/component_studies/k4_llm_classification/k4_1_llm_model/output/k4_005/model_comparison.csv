@@ -1,2 +1,0 @@
-model_id,model,n_attempts,valid_rate,accuracy,mean_attempt_count,mean_generation_seconds,stability_rate
-MDL7,gemma4:12b,18,1.0,0.5,1.8333333333333333,49.29581979166667,1.0

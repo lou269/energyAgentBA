@@ -1,5 +1,0 @@
-run_id,split,model_id,possible_target_count,evaluated_target_count,excluded_target_count,target_exclusion_share,mae_w,rmse_w,mape_pct,mape_target_count,mape_excluded_target_count,mape_non_positive_target_count,mape_below_floor_target_count,negative_forecast_count,negative_forecast_share,negative_interval_lower_count,negative_interval_lower_share,forecast_origin_count,retraining_count,total_refit_runtime_seconds
-k1_V3_24h,validation,B1,3792,3790,2,0.0005274261603375527,221.08475450712402,351.48043102323146,84.48905404103671,3790,2,0,0,0,0.0,0,,158,0,0.0
-k1_V3_24h,validation,B2,3792,3790,2,0.0005274261603375527,174.36030984327178,315.80882232150844,55.415220532329414,3790,2,0,0,0,0.0,0,,158,0,0.0
-k1_V3_24h,validation,B3,3792,3790,2,0.0005274261603375527,185.64908182664908,321.3758125222812,61.484744035268456,3790,2,0,0,0,0.0,0,,158,0,0.0
-k1_V3_24h,validation,C2,3792,3790,2,0.0005274261603375527,131.83209979503604,242.72319724429332,37.23585957299555,3790,2,0,0,0,0.0,0,0.0,158,157,508.472714

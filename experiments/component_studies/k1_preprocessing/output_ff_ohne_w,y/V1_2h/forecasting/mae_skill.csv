@@ -1,2 +1,0 @@
-run_id,split,model_id,reference_model_id,mae_w,reference_mae_w,mae_skill
-k1_V1_2h,validation,C2,B1,162.06872411482146,313.39898633246526,0.48286774628271145
