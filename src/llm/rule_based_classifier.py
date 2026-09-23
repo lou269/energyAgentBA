@@ -14,15 +14,10 @@ class RuleClassificationResult:
 def rule_based_classify(
     state: StructuredState,
     *,
-    sustained_anomaly_streak_days: int,
-    min_sustained_scales: int,
     local_timezone: str,
 )-> RuleClassificationResult:
-    # run_cycle ruft das nur bei anomaly.level != "normal" auf (Z-Score-Gate) -> "normal" kommt hier garnicht mehr vor
     observation = state["observation"]
     anomaly = state["anomaly"]
-
-    assert anomaly["level"] != "normal"
 
     decision_time = parse_utc_timestamp(state["decision_time"], "decision_time")
     # nur für die reasoning-Texte gedacht (Nachvollziehbarkeit), fließt in keine Entscheidung ein
@@ -34,18 +29,10 @@ def rule_based_classify(
             reasoning=f"observation.value_implausible is set ({day_label}).",
         )
 
-    scale_streak_days = anomaly["scale_anomaly_streak_days"]
-
-    sustained_scales = [
-        scale
-        for scale in anomaly["available_scales"]
-        if (streak_days := scale_streak_days[scale]) is not None and streak_days >= sustained_anomaly_streak_days
-    ]
-
-    if len(sustained_scales) >= min_sustained_scales:
+    if anomaly["sustained_drift"]:
         return RuleClassificationResult(
             classification="new_pattern",
-            reasoning=f"sustained deviation across multiple scales at once ({', '.join(sustained_scales)}), on a {day_label}.",
+            reasoning=f"sustained deviation across multiple scales at once ({', '.join(anomaly['sustained_scales'])}), on a {day_label}.",
         )
 
     # peak/low sind per Definition richtungsgebunden ("unusually high"/"unusually low" consumption), ohne sustained Mehrskalen-Signatur bleibt nur die Richtung, um zwischen beiden zu unterscheiden

@@ -30,7 +30,6 @@ from src.structured_state.structured_state_schema import (
 ANALYSIS_FIELDS = frozenset(
     {
         "timestamp",
-        "split",
         "today_mean",
         "daily_std",
         "daily_std_expected",
@@ -52,6 +51,11 @@ ANALYSIS_FIELDS = frozenset(
         "weekday_anomaly_streak_days",
         "weekly_anomaly_streak_days",
         "long_term_anomaly_streak_days",
+        "daily_sustained",
+        "weekday_sustained",
+        "weekly_sustained",
+        "long_term_sustained",
+        "sustained_drift",
         "anomaly_score",
         "dominant_scale",
         "anomaly_direction",
@@ -64,7 +68,6 @@ ANALYSIS_FIELDS = frozenset(
 FORECAST_COLUMNS = frozenset(
     {
         "run_id",
-        "split",
         "model_id",
         "config_version",
         "forecast_origin",
@@ -121,10 +124,13 @@ def build_structured_state(
 
     available_scales: list[ScaleName] = [scale for scale in SCALE_NAMES if scale_scores[scale] is not None]
 
+    sustained_scales: list[ScaleName] = [
+        scale for scale in SCALE_NAMES if _bool(analysis_row[f"{scale}_sustained"], f"analysis.{scale}_sustained")
+    ]
+
     forecast_state = _build_forecast_state(
         forecast_rows=forecast_rows,
         decision_time=decision_time,
-        analysis_split=analysis_row["split"],
     )
 
     context: ContextState = {
@@ -167,6 +173,8 @@ def build_structured_state(
             "peak_timestamp": _nullable_timestamp(analysis_row["anomaly_peak_timestamp"], "analysis.anomaly_peak_timestamp"),
             "scale_scores": scale_scores,
             "scale_anomaly_streak_days": scale_streak_days,
+            "sustained_scales": sustained_scales,
+            "sustained_drift": _bool(analysis_row["sustained_drift"], "analysis.sustained_drift"),
             "available_scales": available_scales,
         },
         "forecast": forecast_state,
@@ -178,9 +186,8 @@ def build_structured_state(
 
 def _build_forecast_state(
     *, 
-    forecast_rows: pd.DataFrame, 
-    decision_time: pd.Timestamp, 
-    analysis_split: object
+    forecast_rows: pd.DataFrame,
+    decision_time: pd.Timestamp,
 ) -> ForecastState:
     if forecast_rows.empty:
         raise ValueError("Forecast rows must not be empty.")
@@ -193,10 +200,6 @@ def _build_forecast_state(
     run_id = _single_text(forecast, "run_id")
     model_id = _single_text(forecast, "model_id")
     config_version = str(_single_value(forecast, "config_version"))
-    forecast_split = _single_text(forecast, "split")
-
-    if _is_missing(analysis_split) or str(analysis_split) != forecast_split:
-        raise ValueError("Analysis and forecast must belong to the same split.")
 
     forecast_origin = parse_utc_timestamp(_single_value(forecast, "forecast_origin"), "forecast.forecast_origin")
 

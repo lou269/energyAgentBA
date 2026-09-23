@@ -19,16 +19,6 @@ from src.pipeline.io import df_to_csv, find_run_directory
 
 ''' EBENE 1 - billiger Einzelfall-Vergleich (synthetische Fälle, isoliert) '''
 
-def load_results(run_number: int | None = None) -> pd.DataFrame:
-    found = find_run_directory(K4_OUTPUT_ROOT, prefix="k4", number=run_number)
-
-    if found is None:
-        raise FileNotFoundError(f"No K4.1 run found in {K4_OUTPUT_ROOT} (requested number: {run_number}).")
-
-    _, run_dir = found
-    return pd.read_csv(run_dir / "results.csv")
-
-
 def _grounding_coverage(row: pd.Series) -> float | None:
     if not row["valid"]:
         return None
@@ -133,16 +123,6 @@ def export_explanations_for_rating(run_dir: Path) -> Path:
 
 
 ''' EBENE 2 - echter Sequenzvergleich (E1-Geräteszenario, Tag für Tag mit Adaption) '''
-
-def load_sequence_results(run_number: int | None = None) -> pd.DataFrame:
-    found = find_run_directory(K4_SEQUENCE_OUTPUT_ROOT, prefix="k4_seq", number=run_number)
-
-    if found is None:
-        raise FileNotFoundError(f"No K4 sequence run found in {K4_SEQUENCE_OUTPUT_ROOT} (requested number: {run_number}).")
-
-    _, run_dir = found
-    return pd.read_csv(run_dir / "comparison_summary.csv", parse_dates=["decision_time"])
-
 
 def summarize_sequence(comparison: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     cutover_time = parse_utc_timestamp(E1Config().cutover_time, "E1Config.cutover_time")

@@ -15,11 +15,26 @@ class K3Config:
     step_injection_w: float = 100.0
 
 
-# Deckel 90, Kaltstart 30 und Rolling 35 sind mit k3_001 beantwortet und laufen nicht mehr mit
+# Stufe 3: Schwellen und Referenzfenster zusammen kalibrieren, rein offline auf den isolated-Läufen eines K3-Laufs
+@dataclass(frozen=True)
+class K3CalibrationConfig:
+    slow_scales: tuple[str, ...] = ("weekly", "long_term")
+
+    # bis 4,0, weil Rolling 35 nur 5 Referenztage je Wochentag hat und weekday dort deutlich breiter streut
+    gate_thresholds: tuple[float, ...] = (
+        2.0, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3.0, 3.2, 3.4, 3.6, 3.8, 4.0,
+    )
+    # darf unter 2 liegen, die eigentliche Hürde ist die Streak mit 6 von 7 Tagen
+    slow_scale_thresholds: tuple[float, ...] = (1.0, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0)
+
+    target_alarm_rate: float = 0.05
+    max_false_new_pattern: float = 1.0
+
 REFERENCE_WINDOWS: dict[str, dict[str, int | None]] = {
-    "REF_STATIC": {},
-    "REF_EXPANDING": {"max_reference_window_growth_days": None},
+    "REF_STATIC": {"max_reference_window_growth_days": 60, "reference_window_rolling_days": None},
+    "REF_EXPANDING": {"max_reference_window_growth_days": None, "reference_window_rolling_days": None},
     "REF_ROLL60": {"max_reference_window_growth_days": None, "reference_window_rolling_days": 60},
+    "REF_ROLL35": {"max_reference_window_growth_days": None, "reference_window_rolling_days": 35},
 }
 
 

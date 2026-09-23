@@ -16,71 +16,43 @@ def test_measurement_error_takes_priority_over_the_anomaly_pattern() -> None:
     state = valid_structured_state()
     state["observation"]["value_implausible"] = True
 
-    result = rule_based_classify(state, sustained_anomaly_streak_days=3, min_sustained_scales=2, local_timezone="UTC")
+    result = rule_based_classify(state, local_timezone="UTC")
 
     assert result.classification == "measurement_error"
 
 
-def test_single_sustained_scale_falls_back_to_peak() -> None:
-    state = _state(
-        direction="high",
-        dominant_scale="daily",
-        scale_anomaly_streak_days={"daily": 5.0, "weekday": 1.0, "long_term": 1.0},
-    )
+def test_without_drift_the_direction_decides_between_peak_and_low() -> None:
+    # eine einzelne sustained Skala ist noch keine Drift
+    for direction, expected in (("high", "peak"), ("low", "low")):
+        state = _state(direction=direction, sustained_scales=["daily"], sustained_drift=False)
 
-    result = rule_based_classify(state, sustained_anomaly_streak_days=3, min_sustained_scales=2, local_timezone="UTC")
+        result = rule_based_classify(state, local_timezone="UTC")
 
-    assert result.classification == "peak"
+        assert result.classification == expected
 
 
-def test_single_sustained_scale_with_low_direction_falls_back_to_low() -> None:
-    state = _state(
-        direction="low",
-        dominant_scale="daily",
-        scale_anomaly_streak_days={"daily": 5.0, "weekday": 1.0, "long_term": 1.0},
-    )
+def test_sustained_drift_is_a_new_pattern_in_both_directions() -> None:
+    for direction in ("high", "low"):
+        state = _state(direction=direction, sustained_scales=["daily", "weekday"], sustained_drift=True)
 
-    result = rule_based_classify(state, sustained_anomaly_streak_days=3, min_sustained_scales=2, local_timezone="UTC")
+        result = rule_based_classify(state, local_timezone="UTC")
 
-    assert result.classification == "low"
+        assert result.classification == "new_pattern"
 
 
-def test_sustained_deviation_across_two_scales_is_a_new_pattern() -> None:
-    state = _state(
-        dominant_scale="daily",
-        scale_anomaly_streak_days={"daily": 5.0, "weekday": 4.0, "long_term": 1.0},
-    )
+def test_drift_is_a_new_pattern_even_if_today_is_unremarkable() -> None:
+    state = _state(level="normal", sustained_scales=["weekly", "long_term"], sustained_drift=True)
 
-    result = rule_based_classify(state, sustained_anomaly_streak_days=3, min_sustained_scales=2, local_timezone="UTC")
+    result = rule_based_classify(state, local_timezone="UTC")
 
     assert result.classification == "new_pattern"
-
-
-def test_low_direction_sustained_across_two_scales_is_also_a_new_pattern() -> None:
-    state = _state(
-        direction="low",
-        dominant_scale="daily",
-        scale_anomaly_streak_days={"daily": 5.0, "weekday": 4.0, "long_term": 1.0},
-    )
-
-    result = rule_based_classify(state, sustained_anomaly_streak_days=3, min_sustained_scales=2, local_timezone="UTC")
-
-    assert result.classification == "new_pattern"
-
-
-def test_unsustained_anomaly_falls_back_to_peak() -> None:
-    state = valid_structured_state()
-
-    result = rule_based_classify(state, sustained_anomaly_streak_days=3, min_sustained_scales=2, local_timezone="UTC")
-
-    assert result.classification == "peak"
 
 
 def test_reasoning_mentions_weekend_on_a_saturday() -> None:
     state = valid_structured_state()
     state["decision_time"] = "2015-12-19T11:00:00+00:00"  # Samstag
 
-    result = rule_based_classify(state, sustained_anomaly_streak_days=3, min_sustained_scales=2, local_timezone="UTC")
+    result = rule_based_classify(state, local_timezone="UTC")
 
     assert "weekend" in result.reasoning
 
@@ -88,6 +60,6 @@ def test_reasoning_mentions_weekend_on_a_saturday() -> None:
 def test_reasoning_mentions_weekday_on_a_tuesday() -> None:
     state = valid_structured_state()
 
-    result = rule_based_classify(state, sustained_anomaly_streak_days=3, min_sustained_scales=2, local_timezone="UTC")
+    result = rule_based_classify(state, local_timezone="UTC")
 
     assert "weekday" in result.reasoning

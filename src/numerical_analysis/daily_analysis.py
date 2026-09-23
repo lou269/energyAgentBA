@@ -45,12 +45,20 @@ def compute_reference_window_end(
 def compute_analysis_row(
     history: pd.Series,
     *,
-    reference_window_end: pd.Timestamp,
     target_timestamp: pd.Timestamp,
     config: NumericalAnalysisConfig,
     local_timezone: str,
     raw_value_implausible: pd.Series | None = None,
-) -> pd.Series:
+) -> pd.Series | None:
+    reference_window_end = compute_reference_window_end(
+        history,
+        local_timezone=local_timezone,
+        max_growth_days=config.max_reference_window_growth_days,
+        reference_window_hours=config.reference_window_hours,
+    )
+    if reference_window_end is None:
+        return None
+
     target_day = target_timestamp.tz_convert(local_timezone).normalize()
 
     analysis = build_multi_scale_analysis(
@@ -69,7 +77,9 @@ def compute_analysis_row(
     )
 
     anomaly = build_anomaly_detection(
-        analysis_results=analysis,
+        analysis,
+        reference_columns=DAILY_ANOMALY_SCALES,
+        direction_override_columns=DAILY_DIRECTION_OVERRIDE_COLUMNS,
         min_reference_samples={
             "daily": config.min_daily_reference_samples,
             "weekday": config.min_weekday_reference_samples,
@@ -79,12 +89,15 @@ def compute_analysis_row(
         min_residual_std_w=config.min_residual_std_w,
         unusual_threshold=config.unusual_threshold,
         strong_anomaly_threshold=config.strong_anomaly_threshold,
-        sample_period_hours=config.sample_period_hours_daily,
+        gate_scales=config.gate_scales,
+        streak_thresholds={
+            "weekly": config.weekly_streak_threshold,
+            "long_term": config.long_term_streak_threshold,
+        },
+        sustained_anomaly_streak_days=config.sustained_anomaly_streak_days,
+        min_sustained_scales=config.min_sustained_scales,
         streak_tolerance_window_days=config.streak_tolerance_window_days,
         rolling_window_min_coverage=config.rolling_window_min_coverage,
-        local_timezone=local_timezone,
-        reference_columns=DAILY_ANOMALY_SCALES,
-        direction_override_columns=DAILY_DIRECTION_OVERRIDE_COLUMNS,
     )
 
     row = cast(pd.Series, anomaly.loc[target_day]).copy()

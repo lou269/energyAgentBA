@@ -23,6 +23,7 @@ def _results(kind: str, scores: list[float], classifications: list[str], *, mode
         }
     )
     frame["alarm"] = frame["anomaly_score"].ge(2.0)
+    frame["gate_open"] = frame["alarm"]
     frame["new_pattern"] = frame["classification"].eq("new_pattern")
     frame["reference_reset"] = frame["new_pattern"] & frame["mode"].eq("adaption")
     return frame

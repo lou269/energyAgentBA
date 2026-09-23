@@ -30,25 +30,24 @@ class NumericalAnalysisConfig:
     sample_period_hours_15min: float = 0.25
     sample_period_hours_hourly: float = 1.0
 
-    short_term_window_15min: int = 96
-    short_term_window_hourly: int = 24
-
-    long_term_window_15min: int = 2880
-    long_term_window_hourly: int = 720
-
     min_daily_reference_samples: int = 7
-    min_weekday_reference_samples: int = 4  # umbenannt von min_weekly_reference_samples (war Wochentags-Groupby in build_daily_cycle_analysis)
+    min_weekday_reference_samples: int = 4
 
     trend_threshold: float = 0.30
     min_reference_power_w: float = 10.0
 
-    min_reference_samples: int = 100
     min_residual_std_w: float = 1.0
-    unusual_threshold: float = 2.0
+
+    # weekly/long_term sind Rollmittel und bleiben nach einer Verschiebung wochenlang erhöht -> zählen nur über ihre Streaks
+    gate_scales: tuple[str, ...] = ("daily", "weekday")
+
     strong_anomaly_threshold: float = 3.0
 
-    # mindestens 2, sonst waere bei nur 1 verfuegbarer Skala schon diese eine ausreichend - keine echte
-    # Mehrskalen-Bestaetigung mehr, nur ein laenger andauernder peak (siehe rule_based_classifier.py)
+    # kalibriert in K3 Stufe 3
+    unusual_threshold: float = 2.6
+    weekly_streak_threshold: float = 1.25
+    long_term_streak_threshold: float = 1.0
+
     min_sustained_scales: int = 2
 
     # run_cycle rechnet die Anomalieerkennung auf Tagesmittelwerten statt Einzelstunden
@@ -61,8 +60,9 @@ class NumericalAnalysisConfig:
     # soll die Skala nicht gleich für die ganze Fensterlänge lahmlegen, siehe anomalieerkennung_neu.md
     rolling_window_min_coverage: float = 0.8
     
-    max_reference_window_growth_days: int | None = 60
-    reference_window_rolling_days: int | None = None
+    # Rolling 60 statt eingefroren nach 60 Tagen (K3 Stufe 3/4), Statisch veraltet saisonal
+    max_reference_window_growth_days: int | None = None
+    reference_window_rolling_days: int | None = 60
 
     # 3-Tage-Fenster ab reference_window_end: train bis reference_window_end-1, Rest validation+test
     reference_window_hours: int = 72
@@ -73,7 +73,7 @@ class NumericalAnalysisConfig:
     # Fenstergröße für scale_anomaly_streak_days: wie viele Tage zurück gezählt wird
     streak_tolerance_window_days: int = 7
 
-    # Mindest-Treffer innerhalb von streak_tolerance_window_days, damit eine Skala als sustained gilt und new_pattern statt peak ergibt (rule_based_classifier.py)  (unkalibriert)
+    # Mindest-Treffer innerhalb von streak_tolerance_window_days, damit eine Skala als sustained gilt (anomaly_detection.py)  (unkalibriert)
     sustained_anomaly_streak_days: int = 6
 
 

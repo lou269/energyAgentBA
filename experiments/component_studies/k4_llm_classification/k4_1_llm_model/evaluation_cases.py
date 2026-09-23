@@ -1,8 +1,10 @@
+from collections.abc import Sequence
 from dataclasses import dataclass
+from functools import partial
 
 from src.common.sample_structured_state import valid_structured_state
+from src.llm.gate import gate_classification
 from src.llm.llm_schema import Classification
-from src.numerical_analysis.anomaly_detection import resolve_dominant_scale
 from src.structured_state.structured_state_schema import AnomalyLevel, SCALE_NAMES, StructuredState
 
 
@@ -31,17 +33,29 @@ def _anomaly_block(
     scores: dict[str, float],
     level: AnomalyLevel,
     streak_days: dict[str, float],
+    gate_scales: Sequence[str],
+    sustained_anomaly_streak_days: int,
+    min_sustained_scales: int,
 ) -> dict[str, object]:
-    dominant_scale, score, direction = resolve_dominant_scale(scores)
+    # wie in build_anomaly_detection: Score und Richtung nur aus den Gate-Skalen
+    gate_scores = {scale: value for scale, value in scores.items() if scale in gate_scales}
+    dominant_scale = max(gate_scores, key=lambda scale: abs(gate_scores[scale]))
+    signed_score = gate_scores[dominant_scale]
+
+    sustained_scales = [
+        scale for scale in SCALE_NAMES if scale in scores and streak_days.get(scale, 0.0) >= sustained_anomaly_streak_days
+    ]
 
     return {
-        "score": score,
+        "score": abs(signed_score),
         "level": level,
-        "direction": direction,
+        "direction": "high" if signed_score > 0 else "low" if signed_score < 0 else None,
         "dominant_scale": dominant_scale,
         "peak_timestamp": _PEAK_TIMESTAMP,
         "scale_scores": {scale: scores.get(scale) for scale in SCALE_NAMES},
         "scale_anomaly_streak_days": {scale: streak_days.get(scale) if scale in scores else None for scale in SCALE_NAMES},
+        "sustained_scales": sustained_scales,
+        "sustained_drift": len(sustained_scales) >= min_sustained_scales,
         "available_scales": [scale for scale in SCALE_NAMES if scale in scores],
     }
 
@@ -73,12 +87,24 @@ def _case(
     state["anomaly"] = anomaly  # type: ignore[typeddict-item]
     state["context"] = context  # type: ignore[typeddict-item]
 
-    reaches_llm = not value_implausible and anomaly["level"] is not None and anomaly["level"] != "normal"
+    reaches_llm = gate_classification(state) is None
 
     return LLMEvaluationCase(case_id=case_id, expected_classification=expected, reasoning=reasoning, state=state, reaches_llm=reaches_llm)
 
 
-def build_evaluation_cases() -> tuple[LLMEvaluationCase, ...]:
+def build_evaluation_cases(
+    *,
+    gate_scales: Sequence[str],
+    sustained_anomaly_streak_days: int,
+    min_sustained_scales: int,
+) -> tuple[LLMEvaluationCase, ...]:
+    anomaly_block = partial(
+        _anomaly_block,
+        gate_scales=gate_scales,
+        sustained_anomaly_streak_days=sustained_anomaly_streak_days,
+        min_sustained_scales=min_sustained_scales,
+    )
+
     return (
         _case(
             case_id="normal",
@@ -86,7 +112,7 @@ def build_evaluation_cases() -> tuple[LLMEvaluationCase, ...]:
             reasoning="Alle Skalen nur leicht erhöht, level normal, kein Event -> kein Grund für eine Auffälligkeit.",
             current_power_w=360.0,
             value_implausible=False,
-            anomaly=_anomaly_block(
+            anomaly=anomaly_block(
                 scores={"daily": 0.4, "weekly": 0.3, "long_term": 0.2},
                 level="normal",
                 streak_days={"daily": 1.0, "weekly": 1.0, "long_term": 1.0},
@@ -99,7 +125,7 @@ def build_evaluation_cases() -> tuple[LLMEvaluationCase, ...]:
             reasoning="Starke, einzelne Abweichung nach oben, aber Streak nur 1 Tag -> nicht sustained, also kein new_pattern.",
             current_power_w=1319.9,
             value_implausible=False,
-            anomaly=_anomaly_block(
+            anomaly=anomaly_block(
                 scores={"daily": 3.77, "weekly": 3.73, "long_term": 3.26},
                 level="strong_anomaly",
                 streak_days={"daily": 1.0, "weekly": 1.0, "long_term": 1.0},
@@ -112,7 +138,7 @@ def build_evaluation_cases() -> tuple[LLMEvaluationCase, ...]:
             reasoning="Starke, anhaltende Abweichung nach unten auf der dominanten Skala plus passendes Kalender-Event.",
             current_power_w=45.0,
             value_implausible=False,
-            anomaly=_anomaly_block(
+            anomaly=anomaly_block(
                 scores={"daily": -3.7, "weekly": -1.2, "long_term": -1.0},
                 level="strong_anomaly",
                 streak_days={"daily": 5.0, "weekly": 1.0, "long_term": 1.0},
@@ -128,7 +154,7 @@ def build_evaluation_cases() -> tuple[LLMEvaluationCase, ...]:
             ),
             current_power_w=980.0,
             value_implausible=False,
-            anomaly=_anomaly_block(
+            anomaly=anomaly_block(
                 scores={"daily": 3.5, "weekly": 3.1, "long_term": 1.1},
                 level="strong_anomaly",
                 streak_days={"daily": 8.0, "weekly": 7.0, "long_term": 1.0},
@@ -141,7 +167,7 @@ def build_evaluation_cases() -> tuple[LLMEvaluationCase, ...]:
             reasoning="value_implausible=true bei sonst peak-artiger Signatur -> Prompt verlangt measurement_error statt peak.",
             current_power_w=1319.9,
             value_implausible=True,
-            anomaly=_anomaly_block(
+            anomaly=anomaly_block(
                 scores={"daily": 3.77, "weekly": 3.73, "long_term": 3.26},
                 level="strong_anomaly",
                 streak_days={"daily": 1.0, "weekly": 1.0, "long_term": 1.0},
@@ -156,7 +182,7 @@ def build_evaluation_cases() -> tuple[LLMEvaluationCase, ...]:
             ),
             current_power_w=180.0,
             value_implausible=False,
-            anomaly=_anomaly_block(
+            anomaly=anomaly_block(
                 scores={"daily": -2.2},
                 level="unusual",
                 streak_days={"daily": 1.0},
@@ -172,7 +198,7 @@ def build_evaluation_cases() -> tuple[LLMEvaluationCase, ...]:
             ),
             current_power_w=700.0,
             value_implausible=False,
-            anomaly=_anomaly_block(
+            anomaly=anomaly_block(
                 scores={"daily": 3.0, "weekly": -3.2},
                 level="strong_anomaly",
                 streak_days={"daily": 1.0, "weekly": 1.0},
@@ -189,7 +215,7 @@ def build_evaluation_cases() -> tuple[LLMEvaluationCase, ...]:
             ),
             current_power_w=1150.0,
             value_implausible=False,
-            anomaly=_anomaly_block(
+            anomaly=anomaly_block(
                 scores={"daily": 3.5, "weekly": 1.5, "long_term": 1.0},
                 level="strong_anomaly",
                 streak_days={"daily": 6.0, "weekly": 1.0, "long_term": 1.0},
@@ -205,7 +231,7 @@ def build_evaluation_cases() -> tuple[LLMEvaluationCase, ...]:
             ),
             current_power_w=950.0,
             value_implausible=False,
-            anomaly=_anomaly_block(
+            anomaly=anomaly_block(
                 scores={"daily": 3.2, "weekly": 3.0, "long_term": 1.2},
                 level="strong_anomaly",
                 streak_days={"daily": 6.0, "weekly": 6.0, "long_term": 1.0},
@@ -221,7 +247,7 @@ def build_evaluation_cases() -> tuple[LLMEvaluationCase, ...]:
             ),
             current_power_w=48.0,
             value_implausible=False,
-            anomaly=_anomaly_block(
+            anomaly=anomaly_block(
                 scores={"daily": -3.7, "weekly": -1.2, "long_term": -1.0},
                 level="strong_anomaly",
                 streak_days={"daily": 5.0, "weekly": 1.0, "long_term": 1.0},
@@ -236,7 +262,7 @@ def build_evaluation_cases() -> tuple[LLMEvaluationCase, ...]:
             ),
             current_power_w=620.0,
             value_implausible=True,
-            anomaly=_anomaly_block(
+            anomaly=anomaly_block(
                 scores={"daily": 2.1, "weekly": 1.8, "long_term": 1.5},
                 level="unusual",
                 streak_days={"daily": 1.0, "weekly": 1.0, "long_term": 1.0},
@@ -246,8 +272,18 @@ def build_evaluation_cases() -> tuple[LLMEvaluationCase, ...]:
     )
 
 
-def llm_relevant_cases() -> tuple[LLMEvaluationCase, ...]:
-    return tuple(case for case in build_evaluation_cases() if case.reaches_llm)
+def llm_relevant_cases(
+    *,
+    gate_scales: Sequence[str],
+    sustained_anomaly_streak_days: int,
+    min_sustained_scales: int,
+) -> tuple[LLMEvaluationCase, ...]:
+    cases = build_evaluation_cases(
+        gate_scales=gate_scales,
+        sustained_anomaly_streak_days=sustained_anomaly_streak_days,
+        min_sustained_scales=min_sustained_scales,
+    )
+    return tuple(case for case in cases if case.reaches_llm)
 
 
 EXPECTED_EVIDENCE_PATHS: dict[str, frozenset[str]] = {

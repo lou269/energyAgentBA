@@ -37,6 +37,7 @@ ALLOWED_EVIDENCE_PATHS = frozenset(
         "anomaly.scale_anomaly_streak_days.weekday",
         "anomaly.scale_anomaly_streak_days.weekly",
         "anomaly.scale_anomaly_streak_days.long_term",
+        "anomaly.sustained_drift",
         "forecast.summary.mean_w",
         "forecast.summary.peak_w",
         "forecast.summary.peak_timestamp",

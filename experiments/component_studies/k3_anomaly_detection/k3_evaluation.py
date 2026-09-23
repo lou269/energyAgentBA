@@ -9,7 +9,8 @@ SCALE_SCORE_COLUMNS = tuple(f"{scale}_score" for scale in DAILY_ANOMALY_SCALES)
 
 RESULT_COLUMNS = [
     "mode", "kind", "cutover_date", "variant", "decision_time", "days_since_cutover",
-    "anomaly_level", "anomaly_score", *SCALE_SCORE_COLUMNS, "classification", "alarm", "new_pattern", "reference_reset", "mae_w",
+    "anomaly_level", "anomaly_score", *SCALE_SCORE_COLUMNS, "sustained_drift", "classification",
+    "alarm", "gate_open", "new_pattern", "reference_reset", "mae_w",
 ]
 
 
@@ -34,6 +35,7 @@ def read_scenario_results(
     results["cutover_date"] = cutover_date
     results["days_since_cutover"] = (target_day - pd.Timestamp(cutover_date)).days
     results["alarm"] = results["anomaly_level"].notna() & results["anomaly_level"].ne("normal")
+    results["gate_open"] = results["alarm"] | results["sustained_drift"].eq(True)
     results["new_pattern"] = results["classification"].eq("new_pattern")
 
     return results[RESULT_COLUMNS]
@@ -50,6 +52,7 @@ def summarize_control(results: pd.DataFrame) -> pd.DataFrame:
     return control.groupby(["variant", "cutover_date", "phase"]).agg(
         days=("alarm", "size"),
         alarm_rate=("alarm", "mean"),
+        gate_open_rate=("gate_open", "mean"),
         new_pattern_days=("new_pattern", "sum"),
         **{f"{column}_available_share": (column, "mean") for column in score_columns},
     ).reset_index()
@@ -111,6 +114,7 @@ def summarize_closed_loop(results: pd.DataFrame) -> pd.DataFrame:
         {
             "control_resets": loop_control["reference_reset"].sum(),
             "control_alarm_rate": loop_control["alarm"].mean(),
+            "control_gate_open_rate": loop_control["gate_open"].mean(),
             "step_resets_after_cutover": loop_step.groupby(keys)["reference_reset"].sum(),
             "step_first_reset_day": step_resets.groupby(keys)["days_since_cutover"].min(),
         }

@@ -20,7 +20,6 @@ def _analysis_row() -> pd.Series:
     return pd.Series(
         {
             "timestamp": DECISION_TIME - pd.Timedelta(hours=1),
-            "split": "validation",
             "today_mean": 120.0,
             "value_implausible": False,
             "daily_std": 12.0,
@@ -43,6 +42,11 @@ def _analysis_row() -> pd.Series:
             "weekday_anomaly_streak_days": 2.0,
             "weekly_anomaly_streak_days": None,
             "long_term_anomaly_streak_days": 0.0,
+            "daily_sustained": False,
+            "weekday_sustained": False,
+            "weekly_sustained": False,
+            "long_term_sustained": False,
+            "sustained_drift": False,
             "anomaly_score": 2.0,
             "dominant_scale": "daily",
             "anomaly_direction": "high",
@@ -108,6 +112,7 @@ def test_complete_structured_state_is_valid() -> None:
     assert state["observation"]["observation_start"]== (DECISION_TIME - pd.Timedelta(hours=1)).isoformat()
     assert len(state["forecast"]["points"]) == 24
     assert state["anomaly"]["available_scales"] == ["daily", "weekday", "long_term"]
+    assert state["anomaly"]["sustained_scales"] == []
 
     serialized = json.dumps(state)
     assert "y_true" not in serialized
@@ -129,14 +134,6 @@ def test_analysis_timestamp_must_precede_decision_time() -> None:
 
     with pytest.raises(ValueError, match="before decision_time"):
         _build_state(analysis_row=analysis_row)
-
-
-def test_analysis_and_forecast_split_must_match() -> None:
-    forecast_rows = _forecast_rows()
-    forecast_rows["split"] = "test"
-
-    with pytest.raises(ValueError, match="same split"):
-        _build_state(forecast_rows=forecast_rows)
 
 
 def test_forecast_requires_exactly_24_consecutive_points() -> None:
@@ -163,18 +160,6 @@ def test_forecast_summary_must_match_points() -> None:
     state["forecast"]["summary"]["mean_w"] = 0.0
 
     with pytest.raises(ValueError, match="mean_w must match"):
-        validate_structured_state(state)
-
-
-@pytest.mark.parametrize(("field", "value"), [("score", 1.0), ("dominant_scale", "long_term"), ("direction", "low")])
-def test_aggregate_anomaly_fields_must_match_scale_scores(
-    field: str, 
-    value: object
-) -> None:
-    state = _build_state()
-    state["anomaly"][field] = value  # type: ignore[literal-required]
-
-    with pytest.raises(ValueError):
         validate_structured_state(state)
 
 

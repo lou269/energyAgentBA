@@ -43,6 +43,8 @@ _BASE_STATE_JSON = """
       "weekly": null,
       "long_term": 1.0
     },
+    "sustained_scales": [],
+    "sustained_drift": false,
     "score": 3.7674342117758495
   },
   "context": {
@@ -227,7 +229,7 @@ _BASE_STATE_JSON = """
     "observation_start": "2015-12-15T10:00:00+00:00",
     "value_implausible": false
   },
-  "schema_version": "1.5"
+  "schema_version": "1.6"
 }
 """
 

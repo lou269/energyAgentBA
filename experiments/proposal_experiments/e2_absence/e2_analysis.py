@@ -1,4 +1,4 @@
-# conda run -n forecasting-env python -m experiments.proposal_experiments.e2_absence.e2_analysis <run_directory>
+# conda run -n forecasting-env python -m experiments.proposal_experiments.e2_absence.e2_analysis [run_directory]
 
 import sys
 from pathlib import Path
@@ -8,14 +8,13 @@ import pandas as pd
 from experiments.proposal_experiments.e_config import E2Config
 from experiments.proposal_experiments.e2_absence.e2_selection import load_calendar_events, resolve_absence_window
 from experiments.proposal_experiments.shared_analysis import summarize_classification_detection, summarize_mae_before_after
-from src.pipeline.io import df_to_csv
+from src.pipeline.io import df_to_csv, resolve_run_directory
+
+OUTPUT_DIR = Path(__file__).parent / "output"
 
 
 def main() -> None:
-    if len(sys.argv) != 2:
-        raise SystemExit("usage: e2_analysis.py <run_directory>")
-
-    run_directory = Path(sys.argv[1])
+    run_directory = resolve_run_directory(OUTPUT_DIR, "e2", sys.argv[1] if len(sys.argv) > 1 else None)
     e2_config = E2Config()
 
     calendar_events = load_calendar_events(e2_config.calendar_events_file)

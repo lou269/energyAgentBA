@@ -106,38 +106,30 @@ def build_multi_scale_analysis(
 
     result.loc[result["trend_change"].isna(), "trend"] = pd.NA
 
-    # expandierender Mittelwert von daily_std, nur über train gebildet (walk-forward, kein Blick nach vorn) und danach für validation/test eingefroren
     result["daily_std"] = daily_std
+    result["daily_std_expected"] = _walk_forward_expectation(daily_std, train_index, remaining_index)
 
-    train_daily_std_expected = daily_std.loc[train_index].shift(1).expanding(min_periods=1).mean()
-    result["daily_std_expected"] = np.nan
-    result.loc[train_index, "daily_std_expected"] = train_daily_std_expected
-
-    result.loc[remaining_index, "daily_std_expected"] = daily_std.loc[train_index].mean()
-
-    # gleiche Referenz auch für Tagesmittelwert, daily_std_expected sagt nur, ob Tag ungewöhnlich volatil war, today_mean_expected gibt der Anomalie eine Verbrauchsrichtung
-    train_today_mean_expected = daily_mean.loc[train_index].shift(1).expanding(min_periods=1).mean()
-    result["today_mean_expected"] = np.nan
-    result.loc[train_index, "today_mean_expected"] = train_today_mean_expected
-
-    result.loc[remaining_index, "today_mean_expected"] = daily_mean.loc[train_index].mean()
+    result["today_mean_expected"] = _walk_forward_expectation(daily_mean, train_index, remaining_index)
 
     weekly_min_periods = math.ceil(weekly_window_days * rolling_window_min_coverage)
     result["weekly_mean"] = result["today_mean"].rolling(window=weekly_window_days, min_periods=weekly_min_periods).mean()
+    result["weekly_mean_expected"] = _walk_forward_expectation(result["weekly_mean"], train_index, remaining_index)
 
-    train_weekly_mean_expected = result["weekly_mean"].loc[train_index].shift(1).expanding(min_periods=1).mean()
-    result["weekly_mean_expected"] = np.nan
-    result.loc[train_index, "weekly_mean_expected"] = train_weekly_mean_expected
-
-    result.loc[remaining_index, "weekly_mean_expected"] = result["weekly_mean"].loc[train_index].mean()
-
-    # long_term_window_mean war bisher selbst schon "die Referenz", jetzt analog zu weekly_mean nur noch die beobachtete Seite, long_term_expected liefert die eingefrorene Erwartung dazu
-    train_long_term_expected = result["long_term_window_mean"].loc[train_index].shift(1).expanding(min_periods=1).mean()
-    result["long_term_expected"] = np.nan
-    result.loc[train_index, "long_term_expected"] = train_long_term_expected
-
-    result.loc[remaining_index, "long_term_expected"] = result["long_term_window_mean"].loc[train_index].mean()
+    result["long_term_expected"] = _walk_forward_expectation(result["long_term_window_mean"], train_index, remaining_index)
 
     result.index.name = "timestamp"
 
     return result
+
+
+def _walk_forward_expectation(
+    values: pd.Series,
+    train_index: pd.Index,
+    remaining_index: pd.Index,
+) -> pd.Series:
+    # in train expandierend nur über frühere Tage (kein Blick nach vorn), für validation/test auf den train-Mittelwert eingefroren
+    expected = pd.Series(np.nan, index=values.index)
+    expected.loc[train_index] = values.loc[train_index].shift(1).expanding(min_periods=1).mean()
+    expected.loc[remaining_index] = values.loc[train_index].mean()
+
+    return expected

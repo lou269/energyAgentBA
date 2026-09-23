@@ -1,6 +1,6 @@
 import math
 from collections.abc import Mapping
-from typing import Literal, TypedDict, cast
+from typing import Literal, TypedDict
 
 import pandas as pd
 
@@ -9,11 +9,10 @@ from src.common.timestamps import parse_utc_timestamp_field
 from src.common.validation import require_non_empty_string
 from src.config.config_forecasting import ForecastingConfig
 from src.context.calendar_schema import CALENDAR_CONTEXT_FIELDS, CalendarEvent, validate_calendar_context
-from src.numerical_analysis.anomaly_detection import resolve_dominant_scale
 from src.pipeline.schema_validation import is_real_number, validate_fields
 
 
-SCHEMA_VERSION = "1.5"
+SCHEMA_VERSION = "1.6"
 FORECAST_HORIZON_HOURS = ForecastingConfig().horizon_hours
 
 FLOAT_COMPARISON_REL_TOL = 1e-9
@@ -62,6 +61,8 @@ ANOMALY_FIELDS = frozenset(
         "peak_timestamp",
         "scale_scores",
         "scale_anomaly_streak_days",
+        "sustained_scales",
+        "sustained_drift",
         "available_scales",
     }
 )
@@ -145,6 +146,8 @@ class AnomalyState(TypedDict):
     peak_timestamp: str | None
     scale_scores: ScaleScores
     scale_anomaly_streak_days: ScaleAnomalyStreakDays
+    sustained_scales: list[ScaleName]
+    sustained_drift: bool
     available_scales: list[ScaleName]
 
 
@@ -293,18 +296,12 @@ def validate_structured_state(
     if available_scales != expected_scales:
         raise ValueError("anomaly.available_scales must match available scale_scores.")
 
-    if not available_scales:
-        if any(
-            anomaly[field] is not None
-            for field in ("score", "level", "direction", "dominant_scale", "peak_timestamp")
-        ):
-            raise ValueError("Aggregate anomaly fields must be null when no scale scores are available.")
+    if score is None:
+        if any(anomaly[field] is not None for field in ("level", "direction", "dominant_scale", "peak_timestamp")):
+            raise ValueError("Aggregate anomaly fields must be null when anomaly.score is null.")
     else:
-        if anomaly["score"] is None or anomaly["level"] is None:
-            raise ValueError("anomaly.score and anomaly.level are required when scale scores are available.")
-
-        if anomaly["peak_timestamp"] is None:
-            raise ValueError("anomaly.peak_timestamp is required when scale scores are available.")
+        if anomaly["level"] is None or anomaly["peak_timestamp"] is None:
+            raise ValueError("anomaly.level and anomaly.peak_timestamp are required when anomaly.score is set.")
 
         peak_timestamp = parse_utc_timestamp_field(anomaly["peak_timestamp"], "anomaly.peak_timestamp")
 
@@ -313,28 +310,6 @@ def validate_structured_state(
 
         if anomaly["dominant_scale"] not in available_scales:
             raise ValueError("anomaly.dominant_scale must be an available scale.")
-
-        today_mean = _number(observation["current_power_w"], "observation.current_power_w", nullable=True)
-        today_mean_expected = _number(analysis["today_mean_expected_w"], "analysis.today_mean_expected_w", nullable=True)
-
-        direction_overrides: dict[str, float] = {}
-        if today_mean is not None and today_mean_expected is not None:
-            direction_overrides["daily"] = today_mean - today_mean_expected
-
-        # Mapping ist im Key-Typ invariant - ScaleName ist ein str-Literal, aber nicht "str" selbst
-        expected_dominant_scale, expected_score, expected_direction = resolve_dominant_scale(
-            cast(Mapping[str, float], validated_scale_scores),
-            direction_overrides=direction_overrides,
-        )
-
-        if score is None or not _float_matches(float(score), expected_score):
-            raise ValueError("anomaly.score must match the largest absolute available scale score.")
-
-        if anomaly["dominant_scale"] != expected_dominant_scale:
-            raise ValueError("anomaly.dominant_scale must reference the scale with the largest absolute scale score.")
-
-        if anomaly["direction"] != expected_direction:
-            raise ValueError("anomaly.direction must match the sign of the dominant scale score.")
 
     forecast = _mapping(state["forecast"], "forecast")
     validate_fields(forecast, FORECAST_FIELDS, "forecast")

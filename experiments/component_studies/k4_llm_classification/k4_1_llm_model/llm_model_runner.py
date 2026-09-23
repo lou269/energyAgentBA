@@ -28,7 +28,12 @@ class LLMModelRunner:
     def run(self) -> None:
         run_started = perf_counter()
 
-        cases = llm_relevant_cases()
+        numerical_analysis_config = self.experiment_config.numerical_analysis_config
+        cases = llm_relevant_cases(
+            gate_scales=numerical_analysis_config.gate_scales,
+            sustained_anomaly_streak_days=numerical_analysis_config.sustained_anomaly_streak_days,
+            min_sustained_scales=numerical_analysis_config.min_sustained_scales,
+        )
         prompt = load_prompt(PROMPT_DIRECTORY / f"prompt_{self.experiment_config.base_llm_config.prompt_version}.txt")
 
         run_number = next_sequential_number(K4_OUTPUT_ROOT, prefix="k4")
@@ -101,16 +106,10 @@ class LLMModelRunner:
         cases: tuple[LLMEvaluationCase, ...],
         results_file: Path,
     ) -> None:
-        numerical_analysis_config = self.experiment_config.numerical_analysis_config
         local_timezone = self.experiment_config.project_config.timezone
 
         for case in cases:
-            classification = baseline_classify(
-                case.state,
-                sustained_anomaly_streak_days=numerical_analysis_config.sustained_anomaly_streak_days,
-                min_sustained_scales=numerical_analysis_config.min_sustained_scales,
-                local_timezone=local_timezone,
-            )
+            classification = baseline_classify(case.state, local_timezone=local_timezone)
 
             row = {
                 "model_id": "BASELINE",
