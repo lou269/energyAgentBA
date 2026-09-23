@@ -26,3 +26,10 @@ def test_compute_reference_window_end_grows_with_history_up_to_the_cap() -> None
     capped_end = compute_reference_window_end(long_history, local_timezone="UTC", max_growth_days=60, reference_window_hours=72)
     growth_ceiling = long_history.index[0].normalize() + pd.DateOffset(days=60)
     assert capped_end == growth_ceiling - pd.Timedelta(hours=71)
+
+
+def test_compute_reference_window_end_without_cap_keeps_growing() -> None:
+    long_history = _hourly("2024-01-01", 24 * 90)
+
+    end = compute_reference_window_end(long_history, local_timezone="UTC", max_growth_days=None, reference_window_hours=72)
+    assert end == long_history.index[-1] - pd.Timedelta(hours=71)

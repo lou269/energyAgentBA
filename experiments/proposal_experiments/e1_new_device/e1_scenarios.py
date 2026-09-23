@@ -1,7 +1,18 @@
+from pathlib import Path
+
 import pandas as pd
 
 from experiments.proposal_experiments.shared import subtract_channels_in_window
+from src.common.column_naming import channel_data_column
 from src.pipeline.comparison_harness import ScenarioData
+
+DEVICE_HOURLY_FILE = Path(__file__).parent / "output" / "e1_device_hourly.csv"
+
+
+def load_device_hourly(device_meter_key: str) -> pd.Series:
+    device_data = pd.read_csv(DEVICE_HOURLY_FILE, parse_dates=["timestamp"], index_col="timestamp")
+
+    return device_data[channel_data_column(device_meter_key, "hourly")]
 
 
 def build_device_scenario(

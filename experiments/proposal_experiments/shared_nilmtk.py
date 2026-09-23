@@ -8,6 +8,7 @@ from nilmtk import DataSet
 from src.common.channel_tables import load_channel_tables
 from src.common.column_naming import treated_column
 from src.config.project_config import ProjectConfig
+from src.pipeline.io import read_preprocessing_frame
 
 
 @dataclass(frozen=True)
@@ -42,6 +43,4 @@ def load_nilmtk_context(project_config: ProjectConfig) -> NilmtkContext:
 
 
 def load_treated_mains_series(project_config: ProjectConfig, mains_meter_key: str) -> pd.Series:
-    treated_hourly = pd.read_csv(project_config.preprocessing_output_dir / "treated_hourly.csv", parse_dates=["timestamp"], index_col="timestamp")
-
-    return treated_hourly[treated_column(mains_meter_key)]
+    return read_preprocessing_frame(project_config, "treated_hourly")[treated_column(mains_meter_key)]

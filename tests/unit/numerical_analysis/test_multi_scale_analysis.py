@@ -18,6 +18,7 @@ def test_build_multi_scale_analysis_resamples_hourly_history_and_splits_on_refer
     result = build_multi_scale_analysis(
         history,
         reference_window_end=reference_window_end,
+        reference_window_rolling_days=None,
         short_term_window=2, sample_period_hours=24.0, long_term_window=2,
         weekly_window_days=2,
         min_weekday_reference_samples=1,
@@ -50,6 +51,7 @@ def test_build_multi_scale_analysis_daily_std_expected_is_causal_and_frozen_afte
     result = build_multi_scale_analysis(
         history,
         reference_window_end=reference_window_end,
+        reference_window_rolling_days=None,
         short_term_window=2, sample_period_hours=24.0, long_term_window=2,
         weekly_window_days=2,
         min_weekday_reference_samples=1,
@@ -93,6 +95,7 @@ def test_build_multi_scale_analysis_today_mean_expected_is_causal_and_frozen_aft
     result = build_multi_scale_analysis(
         history,
         reference_window_end=reference_window_end,
+        reference_window_rolling_days=None,
         short_term_window=2, sample_period_hours=24.0, long_term_window=2,
         weekly_window_days=2,
         min_weekday_reference_samples=1,
@@ -126,6 +129,7 @@ def test_build_multi_scale_analysis_weekly_mean_is_a_contemporary_rolling_window
     result = build_multi_scale_analysis(
         history,
         reference_window_end=reference_window_end,
+        reference_window_rolling_days=None,
         short_term_window=2, sample_period_hours=24.0, long_term_window=3,
         weekly_window_days=3,
         min_weekday_reference_samples=1,
@@ -166,6 +170,7 @@ def test_build_multi_scale_analysis_long_term_window_mean_gets_its_own_frozen_re
     result = build_multi_scale_analysis(
         history,
         reference_window_end=reference_window_end,
+        reference_window_rolling_days=None,
         short_term_window=2, sample_period_hours=24.0, long_term_window=4,
         weekly_window_days=2,
         min_weekday_reference_samples=1,
@@ -201,6 +206,7 @@ def test_weekly_mean_tolerates_a_single_missing_day_within_the_window() -> None:
     result = build_multi_scale_analysis(
         history,
         reference_window_end=reference_window_end,
+        reference_window_rolling_days=None,
         short_term_window=2, sample_period_hours=24.0, long_term_window=5,
         weekly_window_days=5,
         min_weekday_reference_samples=1,
@@ -216,6 +222,7 @@ def test_weekly_mean_tolerates_a_single_missing_day_within_the_window() -> None:
     strict = build_multi_scale_analysis(
         history,
         reference_window_end=reference_window_end,
+        reference_window_rolling_days=None,
         short_term_window=2, sample_period_hours=24.0, long_term_window=5,
         weekly_window_days=5,
         min_weekday_reference_samples=1,
@@ -225,3 +232,55 @@ def test_weekly_mean_tolerates_a_single_missing_day_within_the_window() -> None:
     )
 
     assert pd.isna(strict.loc[pd.Timestamp("2020-01-08", tz="UTC"), "weekly_mean"])
+
+
+def test_rolling_reference_window_only_uses_the_last_days_before_the_cutoff() -> None:
+    index = pd.date_range("2020-01-01", periods=24 * 10, freq="1h", tz="UTC")
+    day_levels = [100.0, 110.0, 120.0, 130.0, 140.0, 150.0, 160.0, 170.0, 180.0, 190.0]
+    values = [level for level in day_levels for _ in range(24)]
+    history = pd.Series(values, index=index, name="p")
+
+    reference_window_end = pd.Timestamp("2020-01-08T12:00:00Z")
+
+    result = build_multi_scale_analysis(
+        history,
+        reference_window_end=reference_window_end,
+        reference_window_rolling_days=3,
+        short_term_window=2, sample_period_hours=24.0, long_term_window=2,
+        weekly_window_days=2,
+        min_weekday_reference_samples=1,
+        trend_threshold=0.1, min_reference_power_w=0.0,
+        rolling_window_min_coverage=1.0,
+        local_timezone="UTC",
+    )
+
+    train_days = [pd.Timestamp(d, tz="UTC") for d in ("2020-01-05", "2020-01-06", "2020-01-07")]
+
+    assert list(result.index[result["split"] == "train"]) == train_days
+    assert result.loc[pd.Timestamp("2020-01-04", tz="UTC"), "split"] is pd.NA
+    # eingefrorene Referenz nur aus den 3 Fenstertagen, die älteren Tage (100-130 W) ziehen sie nicht mehr runter
+    assert result.loc[pd.Timestamp("2020-01-10", tz="UTC"), "today_mean_expected"] == pytest.approx(150.0)
+    # beobachtete Seite rechnet weiter über die volle Historie
+    assert result.loc[pd.Timestamp("2020-01-05", tz="UTC"), "weekly_mean"] == pytest.approx(135.0)
+
+
+def test_rolling_reference_window_keeps_its_length_across_a_dst_change() -> None:
+    # 30.03.2014: Europe/London springt auf Sommerzeit, das Fenster liegt genau darüber
+    index = pd.date_range("2014-03-01", "2014-04-20", freq="1h", tz="UTC")
+    history = pd.Series(100.0, index=index, name="p")
+
+    result = build_multi_scale_analysis(
+        history,
+        reference_window_end=pd.Timestamp("2014-04-15T12:00:00Z"),
+        reference_window_rolling_days=30,
+        short_term_window=2, sample_period_hours=24.0, long_term_window=2,
+        weekly_window_days=2,
+        min_weekday_reference_samples=1,
+        trend_threshold=0.1, min_reference_power_w=0.0,
+        rolling_window_min_coverage=1.0,
+        local_timezone="Europe/London",
+    )
+
+    train_days = result.index[result["split"] == "train"]
+    assert len(train_days) == 30
+    assert train_days[-1].strftime("%Y-%m-%d") == "2014-04-14"

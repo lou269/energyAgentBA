@@ -3,11 +3,14 @@ import math
 import numpy as np
 import pandas as pd
 
+from src.common.timestamps import local_day_index
+
 
 def build_multi_scale_analysis(
     history: pd.Series,
     *,
     reference_window_end: pd.Timestamp,
+    reference_window_rolling_days: int | None,
     short_term_window: int,
     sample_period_hours: float,
     long_term_window: int,
@@ -24,10 +27,14 @@ def build_multi_scale_analysis(
     daily_std = local_history.resample("D").std(ddof=0)
 
     # der Tag von reference_window_end ist evtl. nur teilweise beobachtet -> ganz raus aus dem Training, fällt stattdessen unter validation
-    daily_cutoff = reference_window_end.tz_convert(local_timezone).normalize() - pd.Timedelta(days=1)
+    reference_day = local_day_index(pd.DatetimeIndex([reference_window_end]), local_timezone)[0]
 
-    train_index = daily_mean.index[daily_mean.index <= daily_cutoff]
-    remaining_index = daily_mean.index[daily_mean.index > daily_cutoff]
+    train_index = daily_mean.index[daily_mean.index < reference_day]
+    remaining_index = daily_mean.index[daily_mean.index >= reference_day]
+
+    if reference_window_rolling_days is not None:
+        # n Kalendertage, auch über eine Zeitumstellung, ältere Tage zählen nur noch für weekly_mean/long_term_window_mean
+        train_index = train_index[-reference_window_rolling_days:]
 
     if len(remaining_index) < 2:
         raise ValueError("Not enough observed days after the reference window to score validation and test.")

@@ -6,27 +6,13 @@ from pathlib import Path
 
 import pandas as pd
 
-from src.pipeline.io import df_to_csv, find_run_directory
+from src.pipeline.io import df_to_csv, resolve_run_directory
 
 OUTPUT_DIR = Path(__file__).parent / "output"
 
 
-def _resolve_run_directory() -> Path:
-    if len(sys.argv) == 2:
-        return Path(sys.argv[1])
-
-    if len(sys.argv) > 2:
-        raise SystemExit("usage: e3_drift_analysis.py [run_directory]")
-
-    latest_run = find_run_directory(OUTPUT_DIR, prefix="e3_drift")
-    if latest_run is None:
-        raise SystemExit(f"no e3_drift_XXX run found under {OUTPUT_DIR} - pass a run_directory explicitly.")
-
-    return latest_run[1]
-
-
 def main() -> None:
-    run_directory = _resolve_run_directory()
+    run_directory = resolve_run_directory(OUTPUT_DIR, "e3_drift", sys.argv[1] if len(sys.argv) > 1 else None)
 
     comparison = pd.read_csv(run_directory / "comparison_summary.csv", parse_dates=["decision_time"])
     anomaly = pd.read_csv(run_directory / "SYS3" / "anomaly.csv", parse_dates=["decision_time"])

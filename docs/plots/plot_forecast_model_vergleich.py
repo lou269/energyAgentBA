@@ -1,10 +1,16 @@
-# python docs/plots/plot_forecast_model_vergleich.py
+# python -m docs.plots.plot_forecast_model_vergleich
 from pathlib import Path
 
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+
+from experiments.component_studies.k2_forecast_model.k2_config import (
+    SPLIT_DIRECTORY_SUFFIX,
+    ForecastModelExperimentConfig,
+)
+from src.pipeline.io import latest_sequential_number
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 K2_OUTPUT_DIR = PROJECT_ROOT / "experiments" / "component_studies" / "k2_forecast_model" / "output"
@@ -146,7 +152,7 @@ def build_forecast_model_plot(
 
     skill_plot["mae_skill_pct"] = skill_plot["mae_skill"] * 100
 
-    bars = skill_axis.bar(
+    skill_axis.bar(
         variant_model_ids,
         skill_plot["mae_skill_pct"],
         color=[model_colors[m] for m in variant_model_ids],
@@ -157,21 +163,17 @@ def build_forecast_model_plot(
     skill_axis.set_ylabel(f"Verbesserung ggü. {reference_baseline} (%)")
     skill_axis.set_ylim(0, skill_plot["mae_skill_pct"].max() * 1.3)
     skill_axis.grid(axis="y", alpha=0.25)
-
-    for bar, value in zip(bars, skill_plot["mae_skill_pct"]):
-        skill_axis.annotate(
-            f"{value:.1f}%",
-            xy=(bar.get_x() + bar.get_width() / 2, value),
-            xytext=(0, 3),
-            textcoords="offset points",
-            ha="center",
-            va="bottom",
-            fontsize=8,
-        )
+    add_bar_labels(skill_axis, "{:.1f}%")
 
     # D: Retraining-Aufwand je Modell
     retrain_positions = np.arange(len(all_model_order))
 
+    cost_axis.bar(
+        retrain_positions,
+        overall_metrics["retraining_count"],
+        color=[model_colors[m] for m in all_model_order],
+        label="Retraining-Vorgänge",
+    )
     cost_axis.set_xticks(retrain_positions)
     cost_axis.set_xticklabels(all_model_order)
     cost_axis.set_ylabel("Retraining-Vorgänge (n)")
@@ -211,9 +213,8 @@ def build_forecast_model_plot(
 
 
 def main() -> None:
-    from src.pipeline.io import latest_sequential_number
-
-    split = "validation"
+    experiment_config = ForecastModelExperimentConfig()
+    split = experiment_config.split
 
     run_number = latest_sequential_number(K2_OUTPUT_DIR, prefix="k2")
     if run_number is None:
@@ -221,8 +222,8 @@ def main() -> None:
 
     run_root = K2_OUTPUT_DIR / f"k2_{run_number:03d}"
 
-    for mode in ("rolling", "macro"):
-        run_directory = run_root / f"{mode}_val"
+    for mode in experiment_config.comparison_modes:
+        run_directory = run_root / f"{mode}_{SPLIT_DIRECTORY_SUFFIX[split]}"
 
         if not run_directory.exists():
             continue
@@ -234,8 +235,8 @@ def main() -> None:
             FIGURE_DIR / mode,
             split=split,
             comparison_mode=mode,
-            baseline_model_ids=("B1", "B2", "B3"),
-            variant_model_ids=("C1", "C2", "C3_7", "C3_30", "C3_60"),
+            baseline_model_ids=experiment_config.baseline_model_ids,
+            variant_model_ids=tuple(variant.model_id for variant in experiment_config.prophet_variants),
             reference_baseline=primary_naive_reference,
         )
 

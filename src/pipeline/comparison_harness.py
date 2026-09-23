@@ -18,7 +18,7 @@ from src.llm.inference import LLMAttemptRecord, LLMInferenceError
 from src.pipeline.cycle_run_manifest import build_cycle_run_manifest
 from src.config.config_forecasting import CycleConfig
 from src.pipeline.daily_cycle import CycleResult, CycleState, run_cycle
-from src.pipeline.io import append_csv, append_jsonl, df_to_csv, find_run_directory, save_json
+from src.pipeline.io import append_csv, append_jsonl, df_to_csv, find_run_directory, hourly_split_bounds, save_json
 
 logger = logging.getLogger(__name__)
 
@@ -50,8 +50,7 @@ def build_scenario_from_split_manifest(
     value_implausible: pd.Series | None = None,
 ) -> ScenarioData:
 
-    hourly_splits = split_manifest.loc[split_manifest["frequency"].eq("hourly")].set_index("split")
-    cycle_end = cast(pd.Timestamp, hourly_splits.loc["test", "end"])
+    _test_start, cycle_end = hourly_split_bounds(split_manifest, "test")
 
     target_series = treated_hourly.loc[:cycle_end, target_column]
 

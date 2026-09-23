@@ -18,6 +18,26 @@ def read_canonical_frame(project_config: ProjectConfig, name: str) -> pd.DataFra
     )
 
 
+def read_preprocessing_frame(project_config: ProjectConfig, name: str) -> pd.DataFrame:
+    return pd.read_csv(
+        project_config.preprocessing_output_dir / f"{name}.csv",
+        parse_dates=["timestamp"],
+        index_col="timestamp",
+    )
+
+
+def hourly_split_bounds(split_manifest: pd.DataFrame, split: str) -> tuple[pd.Timestamp, pd.Timestamp]:
+    hourly_splits = split_manifest.loc[split_manifest["frequency"].eq("hourly")].set_index("split")
+
+    return pd.Timestamp(hourly_splits.at[split, "start"]), pd.Timestamp(hourly_splits.at[split, "end"])
+
+
+def read_split_bounds(project_config: ProjectConfig, split: str) -> tuple[pd.Timestamp, pd.Timestamp]:
+    split_manifest = pd.read_csv(project_config.preprocessing_output_dir / "split_manifest.csv", parse_dates=["start", "end"])
+
+    return hourly_split_bounds(split_manifest, split)
+
+
 def read_target_meter_key(project_config: ProjectConfig) -> str:
     canonical_manifest = pd.read_csv(project_config.canonical_output_dir / "canonical_manifest.csv")
 
@@ -59,6 +79,16 @@ def latest_sequential_number(directory: Path, prefix: str) -> int | None:
 
 def next_sequential_number(directory: Path, prefix: str) -> int:
     return (latest_sequential_number(directory, prefix) or 0) + 1
+
+
+def resolve_run_directory(directory: Path, prefix: str, explicit: str | None) -> Path:
+    if explicit is not None:
+        return Path(explicit)
+
+    latest_run = find_run_directory(directory, prefix)
+    if latest_run is None:
+        raise SystemExit(f"no {prefix}_XXX run found under {directory} - pass a run_directory explicitly.")
+    return latest_run[1]
 
 
 def find_run_directory(directory: Path, prefix: str, number: int | None = None) -> tuple[int, Path] | None:

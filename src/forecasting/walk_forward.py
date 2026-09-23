@@ -1,22 +1,12 @@
-from typing import Literal, TypedDict
-
 import numpy as np
 import pandas as pd
 from prophet import Prophet
 
 from src.common.timestamps import local_calendar_range
+from src.config.config_forecasting import ProphetVariantConfig
 from src.forecasting.baselines import build_daily_naive_forecast, build_last_value_forecast,build_weekly_naive_forecast
 from src.forecasting.prophet_model import build_prophet_forecast, fit_prophet_model, is_refit_required, select_prophet_history
 from src.forecasting.forecast_schema import FORECAST_OUTPUT_COLUMNS, validate_forecast_output
-
-
-class ProphetVariantParameters(TypedDict):
-    model_id: str
-    history_mode: Literal["fixed_train", "expanding", "rolling"]
-    rolling_window_hours: int | None
-    retraining_interval_hours: int | None
-    weekly_seasonality: bool
-    yearly_seasonality: bool
 
 
 _BASELINE_BUILDERS = {
@@ -41,14 +31,13 @@ def build_walk_forward_forecasts(
     clip_negative_forecasts: bool,
     config_version: str,
     baseline_model_id: str | None = None,
-    prophet_variant: ProphetVariantParameters | None = None,
+    prophet_variant: ProphetVariantConfig | None = None,
     growth: str = "linear",
     daily_seasonality: bool = True,
     country_holidays: str | None = None,
     log_transform: bool = True,
     interval_width: float = 0.80,
     uncertainty_samples: int = 1000,
-    initial_history_start: pd.Timestamp | None = None,
     scenario_id: str | None = None,
 ) -> pd.DataFrame:
     if (baseline_model_id is None) == (prophet_variant is None):
@@ -56,11 +45,6 @@ def build_walk_forward_forecasts(
 
     if baseline_model_id is not None and baseline_model_id not in _BASELINE_BUILDERS:
         raise ValueError(f"Unsupported baseline model ID: {baseline_model_id}")
-
-    if initial_history_start is not None:
-        if str(initial_history_start.tz) != "UTC":
-            raise ValueError("initial_history_start must use UTC.")
-        fixed_history = fixed_history.loc[fixed_history.index >= initial_history_start]
 
     _validate_walk_forward_data(fixed_history, evaluation_targets, evaluation_imputation_mask, frequency)
 
@@ -80,7 +64,7 @@ def build_walk_forward_forecasts(
     if not 0.0 < interval_width < 1.0:
         raise ValueError("interval_width must be between 0 and 1.")
 
-    model_id = baseline_model_id if baseline_model_id is not None else prophet_variant["model_id"]  # type: ignore[index]
+    model_id = baseline_model_id if baseline_model_id is not None else prophet_variant.model_id  # type: ignore[union-attr]
 
     first_origin = evaluation_targets.index[0]
     last_origin = evaluation_targets.index[-1] - pd.Timedelta(hours=horizon_hours - 1)
@@ -149,8 +133,8 @@ def build_walk_forward_forecasts(
 
         else:
             assert prophet_variant is not None
-            history_mode = prophet_variant["history_mode"]
-            retraining_interval_hours = prophet_variant["retraining_interval_hours"]
+            history_mode = prophet_variant.history_mode
+            retraining_interval_hours = prophet_variant.retraining_interval_hours
 
             had_fitted_model = prophet_state is not None
 
@@ -170,7 +154,7 @@ def build_walk_forward_forecasts(
                     available_history,
                     forecast_origin=forecast_origin,
                     history_mode=history_mode,
-                    rolling_window_hours=prophet_variant["rolling_window_hours"],
+                    rolling_window_hours=prophet_variant.rolling_window_hours,
                 )
 
                 fit_start = pd.Timestamp.now()
@@ -179,8 +163,8 @@ def build_walk_forward_forecasts(
                     model_history,
                     growth=growth,
                     daily_seasonality=daily_seasonality,
-                    weekly_seasonality=prophet_variant["weekly_seasonality"],
-                    yearly_seasonality=prophet_variant["yearly_seasonality"],
+                    weekly_seasonality=prophet_variant.weekly_seasonality,
+                    yearly_seasonality=prophet_variant.yearly_seasonality,
                     country_holidays=country_holidays,
                     local_timezone=local_timezone,
                     log_transform=log_transform,
@@ -207,8 +191,8 @@ def build_walk_forward_forecasts(
 
             seasonality_config = (
                 f"daily={daily_seasonality};"
-                f"weekly={prophet_variant['weekly_seasonality']};"
-                f"yearly={prophet_variant['yearly_seasonality']};"
+                f"weekly={prophet_variant.weekly_seasonality};"
+                f"yearly={prophet_variant.yearly_seasonality};"
                 f"holidays={country_holidays};"
                 f"tz={local_timezone};"
                 f"log={log_transform}"

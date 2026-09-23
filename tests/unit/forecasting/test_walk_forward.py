@@ -2,7 +2,8 @@
 
 import pandas as pd
 
-from src.forecasting.walk_forward import ProphetVariantParameters, build_walk_forward_forecasts
+from src.config.config_forecasting import ProphetVariantConfig
+from src.forecasting.walk_forward import build_walk_forward_forecasts
 
 
 def _hourly(
@@ -134,14 +135,12 @@ def test_prophet_expanding_history_grows_and_retrains_on_schedule() -> None:
     evaluation_targets = _hourly(fixed_history.index[-1] + pd.Timedelta(hours=1), [float(h % 24) for h in range(48)])
     mask = _no_imputation(evaluation_targets.index)
 
-    variant: ProphetVariantParameters = {
-        "model_id": "C2test",
-        "history_mode": "expanding",
-        "rolling_window_hours": None,
-        "retraining_interval_hours": 24,
-        "weekly_seasonality": False,
-        "yearly_seasonality": False,
-    }
+    variant = ProphetVariantConfig(
+        model_id="C2test",
+        history_mode="expanding",
+        rolling_window_hours=None,
+        retraining_interval_hours=24,
+    )
 
     forecasts = build_walk_forward_forecasts(
         fixed_history,
@@ -183,14 +182,12 @@ def test_prophet_fixed_train_reuses_the_same_model_and_history() -> None:
     evaluation_targets = _hourly(fixed_history.index[-1] + pd.Timedelta(hours=1), [float(h % 24) for h in range(48)])
     mask = _no_imputation(evaluation_targets.index)
 
-    variant: ProphetVariantParameters = {
-        "model_id": "C1test",
-        "history_mode": "fixed_train",
-        "rolling_window_hours": None,
-        "retraining_interval_hours": None,
-        "weekly_seasonality": False,
-        "yearly_seasonality": False,
-    }
+    variant = ProphetVariantConfig(
+        model_id="C1test",
+        history_mode="fixed_train",
+        rolling_window_hours=None,
+        retraining_interval_hours=None,
+    )
 
     forecasts = build_walk_forward_forecasts(
         fixed_history,

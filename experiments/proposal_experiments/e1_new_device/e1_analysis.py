@@ -14,28 +14,18 @@ from experiments.proposal_experiments.shared_analysis import (
     summarize_mae_before_after,
 )
 from src.common.timestamps import parse_utc_timestamp
-from src.pipeline.io import df_to_csv, find_run_directory
+from src.pipeline.io import df_to_csv, find_run_directory, resolve_run_directory
 
 OUTPUT_DIR = Path(__file__).parent / "output"
 
 
-def _resolve_run_directory() -> tuple[Path, Path | None]:
-    if len(sys.argv) > 3:
-        raise SystemExit("usage: e1_analysis.py [run_directory] [control_run_directory]")
-
-    if len(sys.argv) >= 2:
-        run_directory = Path(sys.argv[1])
-    else:
-        latest_run = find_run_directory(OUTPUT_DIR, prefix="e1")
-        if latest_run is None:
-            raise SystemExit(f"no e1_XXX run found under {OUTPUT_DIR} - pass a run_directory explicitly.")
-        run_directory = latest_run[1]
-
-    if len(sys.argv) == 3:
-        return run_directory, Path(sys.argv[2])
+def _resolve_control_run_directory() -> Path | None:
+    # anders als der Hauptlauf optional, ohne Kontrolllauf fällt nur der Treatment/Control-Vergleich weg
+    if len(sys.argv) > 2:
+        return Path(sys.argv[2])
 
     latest_control_run = find_run_directory(OUTPUT_DIR, prefix="e1_control")
-    return run_directory, latest_control_run[1] if latest_control_run is not None else None
+    return latest_control_run[1] if latest_control_run is not None else None
 
 
 def _compare_classification_rates(treatment: pd.DataFrame, control: pd.DataFrame) -> pd.DataFrame:
@@ -50,7 +40,8 @@ def _compare_classification_rates(treatment: pd.DataFrame, control: pd.DataFrame
 
 
 def main() -> None:
-    run_directory, control_run_directory = _resolve_run_directory()
+    run_directory = resolve_run_directory(OUTPUT_DIR, "e1", sys.argv[1] if len(sys.argv) > 1 else None)
+    control_run_directory = _resolve_control_run_directory()
     e1_config = E1Config()
     cutover_time = parse_utc_timestamp(e1_config.cutover_time, "E1Config.cutover_time")
 

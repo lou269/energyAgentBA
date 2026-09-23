@@ -59,6 +59,11 @@ def snap_to_local_midnight_range(
     return snapped_start.tz_convert("UTC"), snapped_end.tz_convert("UTC")
 
 
+def local_midnight_utc(date: str, local_timezone: str, days_offset: int = 0) -> pd.Timestamp:
+    # Versatz in Kalendertagen, über eine Zeitumstellung hat ein Tag also 23 oder 25 Stunden
+    return (pd.Timestamp(date, tz=local_timezone) + pd.DateOffset(days=days_offset)).tz_convert("UTC")
+
+
 def local_day_index(index: pd.Index, local_timezone: str) -> pd.DatetimeIndex:
     return pd.DatetimeIndex(index).tz_convert(local_timezone).normalize()
 

@@ -60,3 +60,10 @@ def subtract_channels_in_window(
     adjusted.loc[window_index] = (adjusted.loc[window_index] - combined_load).clip(lower=0.0)
 
     return adjusted
+
+def add_constant_step(series: pd.Series, start: pd.Timestamp, watts: float) -> pd.Series:
+    stepped = series.copy()
+    stepped.loc[stepped.index >= start] += watts
+
+    return stepped
+

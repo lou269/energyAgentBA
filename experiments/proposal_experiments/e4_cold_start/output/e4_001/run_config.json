@@ -1,0 +1,34 @@
+{
+  "e4_config": {
+    "coldstart_days": [
+      7,
+      14,
+      30
+    ],
+    "evaluation_days": 56,
+    "smoothing_days": 7,
+    "start_dates": [
+      "2013-10-15",
+      "2014-02-15",
+      "2014-04-15",
+      "2014-07-15"
+    ],
+    "window_edges_days": [
+      7,
+      14,
+      28,
+      56
+    ]
+  },
+  "forecasting_config_version": "0.5",
+  "prophet_variant": {
+    "history_mode": "rolling",
+    "model_id": "C3_30",
+    "retraining_interval_hours": 24,
+    "rolling_window_hours": 720,
+    "weekly_seasonality": false,
+    "yearly_seasonality": false
+  },
+  "reference_baseline": "B2",
+  "seed": 42
+}

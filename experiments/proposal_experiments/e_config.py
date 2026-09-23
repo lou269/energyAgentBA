@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal
 
-from src.config.config_forecasting import ForecastingConfig, ProphetVariantConfig
+from src.config.config_forecasting import ExperimentSplit, ForecastingConfig, ProphetVariantConfig
 
 SCENARIOS_DIR = Path(__file__).resolve().parents[1] / "scenarios"
 
@@ -53,7 +52,22 @@ class E3DataConfig:
     test_window_end: str = "2014-07-20T00:00:00+00:00"
 
 
-ExperimentSplit = Literal["validation", "test"]
+''' E4 - KALTSTART (Teil a, Prognose) '''
+@dataclass(frozen=True)
+class E4Config:
+    # je eine Jahreszeit im Train-Split, wie K3, nur Winter einen Monat später: ab 15.01. läge Weihnachten in der CS30-Historie, nicht aber in CS7
+    start_dates: tuple[str, ...] = ("2013-10-15", "2014-02-15", "2014-04-15", "2014-07-15")
+
+    # C3_30 sieht nie mehr als 30 Tage, CS30 ist damit schon der eingeschwungene Zustand
+    coldstart_days: tuple[int, ...] = (7, 14, 30)
+
+    evaluation_days: int = 56
+
+    # Tages-MAEs schwanken stark, die Lernkurve wird kausal über so viele Tage gemittelt
+    smoothing_days: int = 7
+
+    window_edges_days: tuple[int, ...] = (7, 14, 28, 56)
+
 
 # weekly fix auf True (wie produktives C2), nur yearly wird zwischen S0/S1 verglichen
 _S0 = ProphetVariantConfig(

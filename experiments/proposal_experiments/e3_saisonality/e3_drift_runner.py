@@ -7,7 +7,8 @@ import logging
 from pathlib import Path
 
 from experiments.proposal_experiments.e_config import E3Config
-from experiments.proposal_experiments.shared import build_decision_times, crop_history_for_coldstart, load_target_series
+from experiments.proposal_experiments.shared import build_decision_times, crop_history_for_coldstart
+from src.common.target_series import read_preprocessed_target
 from src.common.timestamps import parse_utc_timestamp
 from src.config.project_config import ProjectConfig
 from src.llm.llm_run_artifacts import load_prompt
@@ -30,7 +31,7 @@ def run() -> None:
     window_start = parse_utc_timestamp(e3_config.observation_window_start, "observation_window_start")
     window_end = parse_utc_timestamp(e3_config.observation_window_end, "observation_window_end")
 
-    target_series, target_imputed, target_value_implausible, _meter_key = load_target_series(project_config)
+    target_series, target_imputed, target_value_implausible = read_preprocessed_target(project_config)
 
     decision_times = build_decision_times(
         window_start, window_end,

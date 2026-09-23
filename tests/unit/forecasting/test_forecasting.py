@@ -2,8 +2,8 @@
 
 import pandas as pd
 
+from src.config.config_forecasting import ProphetVariantConfig
 from src.forecasting.forecasting import run_forecast_comparison
-from src.forecasting.walk_forward import ProphetVariantParameters
 
 
 def _hourly(start, values: list[float]) -> pd.Series:
@@ -17,14 +17,12 @@ def test_combines_baselines_and_a_prophet_variant_into_one_evaluated_comparison(
     evaluation_targets = _hourly(fixed_history.index[-1] + pd.Timedelta(hours=1), [float(h % 24) for h in range(48)])
     mask = pd.Series(False, index=evaluation_targets.index)
 
-    variant: ProphetVariantParameters = {
-        "model_id": "C2test",
-        "history_mode": "expanding",
-        "rolling_window_hours": None,
-        "retraining_interval_hours": 24,
-        "weekly_seasonality": False,
-        "yearly_seasonality": False,
-    }
+    variant = ProphetVariantConfig(
+        model_id="C2test",
+        history_mode="expanding",
+        rolling_window_hours=None,
+        retraining_interval_hours=24,
+    )
 
     forecasts, evaluation_results = run_forecast_comparison(
         ("B1", variant),

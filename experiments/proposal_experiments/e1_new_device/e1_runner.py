@@ -9,12 +9,9 @@ import argparse
 import logging
 from pathlib import Path
 
-import pandas as pd
-
 from experiments.proposal_experiments.e_config import E1Config
-from experiments.proposal_experiments.e1_new_device.e1_scenarios import build_device_scenario
+from experiments.proposal_experiments.e1_new_device.e1_scenarios import build_device_scenario, load_device_hourly
 from experiments.proposal_experiments.shared import build_decision_times, crop_history_for_coldstart, load_target_series
-from src.common.column_naming import channel_data_column
 from src.common.timestamps import parse_utc_timestamp
 from src.config.project_config import ProjectConfig, ensure_project_directories
 from src.llm.llm_run_artifacts import load_prompt
@@ -39,17 +36,12 @@ class E1Runner:
         self.e1_config = e1_config or E1Config()
         self.forecast_config = forecast_config or ForecastingConfig()
 
-    def _read_device_hourly(self) -> pd.Series:
-        device_data = pd.read_csv(OUTPUT_DIR / "e1_device_hourly.csv", parse_dates=["timestamp"], index_col="timestamp")
-
-        return device_data[channel_data_column(self.e1_config.device_meter_key, "hourly")]
-
     def run(self, apply_device_injection: bool = True) -> None:
         cutover_time = parse_utc_timestamp(self.e1_config.cutover_time, "E1Config.cutover_time")
         ensure_project_directories(self.project_config)
 
         mains_series, target_imputed, target_value_implausible, _meter_key = load_target_series(self.project_config)
-        device_hourly = self._read_device_hourly()
+        device_hourly = load_device_hourly(self.e1_config.device_meter_key)
 
         decision_times = build_decision_times(
             cutover_time, cutover_time,

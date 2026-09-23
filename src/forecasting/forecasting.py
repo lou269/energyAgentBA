@@ -1,11 +1,12 @@
 import pandas as pd
 
+from src.config.config_forecasting import ProphetVariantConfig
 from src.forecasting.evaluation import evaluate_forecasts
-from src.forecasting.walk_forward import ProphetVariantParameters, build_walk_forward_forecasts
+from src.forecasting.walk_forward import build_walk_forward_forecasts
 
 
 def run_forecast_comparison(
-    candidates: tuple[str | ProphetVariantParameters, ...],
+    candidates: tuple[str | ProphetVariantConfig, ...],
     fixed_history: pd.Series,
     evaluation_targets: pd.Series,
     evaluation_imputation_mask: pd.Series,
@@ -29,7 +30,6 @@ def run_forecast_comparison(
     reference_model_ids: tuple[str, ...],
     nominal_interval_level: float,
     mape_min_eligible_watts: float,
-    initial_history_start: pd.Timestamp | None = None,
     scenario_id: str | None = None,
 ) -> tuple[pd.DataFrame, dict[str, pd.DataFrame]]:
     if not candidates:
@@ -58,7 +58,6 @@ def run_forecast_comparison(
             log_transform=log_transform,
             interval_width=interval_width,
             uncertainty_samples=uncertainty_samples,
-            initial_history_start=initial_history_start,
             scenario_id=scenario_id,
         )
         for candidate in candidates

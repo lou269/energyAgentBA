@@ -24,7 +24,7 @@ def compute_reference_window_end(
     history: pd.Series,
     *,
     local_timezone: str,
-    max_growth_days: int,
+    max_growth_days: int | None,
     reference_window_hours: int,
 ) -> pd.Timestamp | None:
     if len(history) < reference_window_hours:
@@ -32,10 +32,12 @@ def compute_reference_window_end(
         # -> Analyse für diesen einen Zyklus auslassen statt abzubrechen
         return None
 
-    window_start = local_day_index(history.index, local_timezone).min()
-    # DateOffset statt Timedelta, damit ein DST-Wechsel innerhalb von max_growth_days die Grenze nicht um eine Stunde verschiebt 
-    growth_ceiling = window_start + pd.DateOffset(days=max_growth_days)
-    effective_now = min(history.index[-1], growth_ceiling)
+    effective_now = history.index[-1]
+    if max_growth_days is not None:
+        window_start = local_day_index(history.index, local_timezone).min()
+        # DateOffset statt Timedelta, damit ein DST-Wechsel innerhalb von max_growth_days die Grenze nicht um eine Stunde verschiebt
+        growth_ceiling = window_start + pd.DateOffset(days=max_growth_days)
+        effective_now = min(effective_now, growth_ceiling)
 
     return effective_now - pd.Timedelta(hours=reference_window_hours - 1)
 
@@ -54,6 +56,7 @@ def compute_analysis_row(
     analysis = build_multi_scale_analysis(
         history,
         reference_window_end=reference_window_end,
+        reference_window_rolling_days=config.reference_window_rolling_days,
         short_term_window=config.trend_window_days,
         sample_period_hours=config.sample_period_hours_daily,
         long_term_window=config.long_term_window_days,

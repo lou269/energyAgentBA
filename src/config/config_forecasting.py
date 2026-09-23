@@ -7,6 +7,7 @@ ProductionGapMethod = Literal["ffill", "none"]
 HistoryMode = Literal["fixed_train", "expanding", "rolling"]
 NegativeForecastHandling = Literal["raw", "clip_zero"]
 LLMMode = Literal["off", "rule", "real"]
+ExperimentSplit = Literal["validation", "test"]
 
 ''' PREPROCESSING '''
 @dataclass(frozen=True)
@@ -59,9 +60,9 @@ class NumericalAnalysisConfig:
     # Mindestabdeckung für weekly_mean/long_term_window_mean (rolling): ein einzelner NaN-Tag (z.B. measurement_error)
     # soll die Skala nicht gleich für die ganze Fensterlänge lahmlegen, siehe anomalieerkennung_neu.md
     rolling_window_min_coverage: float = 0.8
-
-    # wie viele Tage reference_window_end nach einem Reset noch mitwachsen darf, bevor es einfriert
-    max_reference_window_growth_days: int = 60
+    
+    max_reference_window_growth_days: int | None = 60
+    reference_window_rolling_days: int | None = None
 
     # 3-Tage-Fenster ab reference_window_end: train bis reference_window_end-1, Rest validation+test
     reference_window_hours: int = 72
@@ -164,7 +165,8 @@ class ForecastingConfig:
     uncertainty_samples: int = 1000
     seed: int = 42
 
-    primary_naive_reference: str | None = None
+    # aus dem K2-Validierungslauf übertragen, gilt für Test-Split und E4
+    primary_naive_reference: str | None = "B2"
     negative_forecast_handling: NegativeForecastHandling = "raw"
 
     # unter diesem Wert bläht MAPE durch Division nahe 0 unkontrolliert auf

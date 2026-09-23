@@ -1,24 +1,22 @@
 # conda activate forecasting-env
 # python -m experiments.proposal_experiments.e3_saisonality.e3_runner
 
-from dataclasses import asdict
 import logging
 from pathlib import Path
 from time import perf_counter
-from typing import cast
 
 import numpy as np
 import pandas as pd
 
+from src.common.target_series import read_preprocessed_target
 from src.common.timestamps import parse_utc_timestamp
 from src.config.project_config import ProjectConfig
 from src.forecasting.evaluation import evaluate_forecasts
 from src.forecasting.forecast_run_manifest import build_forecast_run_manifest
-from src.forecasting.walk_forward import ProphetVariantParameters, build_walk_forward_forecasts
+from src.forecasting.walk_forward import build_walk_forward_forecasts
 from src.pipeline.io import df_to_csv, save_json
 
 from experiments.proposal_experiments.e_config import SeasonalityExperimentConfig
-from experiments.proposal_experiments.shared import load_target_series
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +40,7 @@ def run() -> None:
     test_window_start = parse_utc_timestamp(e3_config.data.test_window_start, "test_window_start")
     test_window_end = parse_utc_timestamp(e3_config.data.test_window_end, "test_window_end")
 
-    target_series, target_imputed, _target_value_implausible, _meter_key = load_target_series(project_config)
+    target_series, target_imputed, _target_value_implausible = read_preprocessed_target(project_config)
     canonical_manifest = pd.read_csv(project_config.canonical_output_dir / "canonical_manifest.csv")
     candidate_id = str(canonical_manifest.iloc[0]["candidate_id"])
 
@@ -50,9 +48,7 @@ def run() -> None:
     evaluation_targets = target_series.loc[test_window_start:test_window_end]
     evaluation_imputation_mask = target_imputed.loc[test_window_start:test_window_end]
 
-    prophet_variants = tuple(
-        cast(ProphetVariantParameters, asdict(variant)) for variant in e3_config.prophet_variants
-    )
+    prophet_variants = e3_config.prophet_variants
     variant_ids = tuple(variant.model_id for variant in e3_config.prophet_variants)
 
     run_id = "e3_seasonality"
