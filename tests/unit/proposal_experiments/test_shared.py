@@ -9,11 +9,25 @@ def test_build_decision_times_applies_margins_on_both_sides() -> None:
     window_start = pd.Timestamp("2020-06-06T00:00:00+00:00")
     window_end = pd.Timestamp("2020-06-13T00:00:00+00:00")
 
-    decision_times = build_decision_times(window_start, window_end, margin_before_days=7, margin_after_days=4)
+    decision_times = build_decision_times(
+        window_start, window_end, margin_before_days=7, margin_after_days=4, local_timezone="UTC"
+    )
 
     assert decision_times[0] == window_start - pd.Timedelta(days=7)
     assert decision_times[-1] == window_end + pd.Timedelta(days=4)
     assert all(second - first == pd.Timedelta(hours=24) for first, second in zip(decision_times, decision_times[1:]))
+
+
+def test_build_decision_times_stay_on_local_midnight_across_dst() -> None:
+    # Mitternacht BST, 60 Tage davor ist noch GMT
+    cutover = pd.Timestamp("2014-04-15", tz="Europe/London").tz_convert("UTC")
+
+    decision_times = build_decision_times(
+        cutover, cutover, margin_before_days=60, margin_after_days=0, local_timezone="Europe/London"
+    )
+
+    assert {time.tz_convert("Europe/London").hour for time in decision_times} == {0}
+    assert cutover in decision_times
 
 
 def _mains(hours: int, value: float = 300.0) -> pd.Series:

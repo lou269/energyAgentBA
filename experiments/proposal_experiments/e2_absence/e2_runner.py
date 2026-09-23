@@ -5,6 +5,7 @@
 # Fünf Läufe: SYS1 (Referenz, adaptionsfrei) + SYS2 (Regel) und SYS3 (LLM) je einmal ohne (CTX0) und mit (CTX1) Kalenderkontext.
 
 import logging
+from dataclasses import asdict
 from pathlib import Path
 
 import pandas as pd
@@ -18,10 +19,11 @@ from src.llm.llm_run_artifacts import load_prompt
 from src.llm.llm_runner import PROMPT_DIRECTORY
 from src.pipeline.comparison_harness import run_comparison
 from src.config.config_forecasting import ComparisonConfig, ForecastingConfig, SYS_VARIANTS
-from src.pipeline.io import next_sequential_number
+from src.pipeline.io import create_experiment_run
 
 logger = logging.getLogger(__name__)
 
+# Kanalauswahl aus e2_select_absence_channels.py, Eingabe für das Szenario
 OUTPUT_DIR = Path(__file__).parent / "output"
 
 
@@ -50,7 +52,7 @@ class E2Runner:
 
         mains_series, target_imputed, target_value_implausible, _meter_key = load_target_series(self.project_config)
 
-        calendar_events = load_calendar_events(self.e2_config.calendar_events_file)
+        calendar_events = load_calendar_events(self.e2_config.calendar_events_file, self.project_config.timezone)
         window_start, window_end = resolve_absence_window(calendar_events, self.e2_config.active_absence_event_id)
         decision_times = build_decision_times(
             window_start,
@@ -61,7 +63,8 @@ class E2Runner:
         )
 
         mains_series = crop_history_for_coldstart(
-            mains_series, coldstart_hours=self.forecast_config.cycle_coldstart_hours, first_decision_time=decision_times[0],
+            mains_series, coldstart_days=self.forecast_config.cycle_coldstart_days, first_decision_time=decision_times[0],
+            local_timezone=self.project_config.timezone,
         )
 
         ranking, appliance_data_hourly = self._read_absence_channel_selection()
@@ -79,7 +82,7 @@ class E2Runner:
 
         ctx0_scenario, ctx1_scenario = build_ctx_scenarios(
             absence_adjusted_series,
-            coldstart_hours=self.forecast_config.cycle_coldstart_hours,
+            coldstart_days=self.forecast_config.cycle_coldstart_days,
             decision_times=decision_times,
             calendar_events=calendar_events,
             target_imputed=target_imputed,
@@ -90,12 +93,12 @@ class E2Runner:
         assert sys3_config.llm_config is not None
         llm_prompt = load_prompt(PROMPT_DIRECTORY / f"prompt_{sys3_config.llm_config.prompt_version}.txt")
 
-        e2_run_number = next_sequential_number(OUTPUT_DIR, prefix="e2")
-        e2_run_directory = OUTPUT_DIR / f"e2_{e2_run_number:03d}"
-        e2_run_directory.mkdir(parents=True, exist_ok=False)
+        e2_run_directory, raw_directory = create_experiment_run(
+            self.project_config.e2_output_dir, "e2", {"e2_config": asdict(self.e2_config)},
+        )
 
-        ctx0_dir = e2_run_directory / "ctx0"
-        ctx1_dir = e2_run_directory / "ctx1"
+        ctx0_dir = raw_directory / "ctx0"
+        ctx1_dir = raw_directory / "ctx1"
 
         ctx0_configs = {
             "SYS1": SYS_VARIANTS["SYS1"],
@@ -116,8 +119,8 @@ class E2Runner:
             run_id=f"{e2_run_directory.name}_ctx0", llm_prompt=llm_prompt,
             max_consecutive_llm_failures=comparison_config.max_consecutive_llm_failures,
             max_total_llm_failures=comparison_config.max_total_llm_failures,
-            calendar_lookback_hours=comparison_config.calendar_lookback_hours,
-            calendar_lookahead_hours=comparison_config.calendar_lookahead_hours,
+            calendar_lookback_days=comparison_config.calendar_lookback_days,
+            calendar_lookahead_days=comparison_config.calendar_lookahead_days,
         )
 
         logger.info("Running E2/CTX1 (with calendar context) over %d decision times...", len(decision_times))
@@ -127,12 +130,12 @@ class E2Runner:
             run_id=f"{e2_run_directory.name}_ctx1", llm_prompt=llm_prompt,
             max_consecutive_llm_failures=comparison_config.max_consecutive_llm_failures,
             max_total_llm_failures=comparison_config.max_total_llm_failures,
-            calendar_lookback_hours=comparison_config.calendar_lookback_hours,
-            calendar_lookahead_hours=comparison_config.calendar_lookahead_hours,
+            calendar_lookback_days=comparison_config.calendar_lookback_days,
+            calendar_lookahead_days=comparison_config.calendar_lookahead_days,
         )
 
         combined = pd.concat([ctx0_result, ctx1_result], ignore_index=True)
-        combined_output_file = e2_run_directory / "e2_comparison_summary.csv"
+        combined_output_file = raw_directory / "e2_comparison_summary.csv"
         combined.to_csv(combined_output_file, index=False)
 
 

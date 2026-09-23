@@ -7,13 +7,11 @@ import pandas as pd
 from src.common.forecast_summary import mean_and_peak, mean_interval_width
 from src.common.timestamps import parse_utc_timestamp_field
 from src.common.validation import require_non_empty_string
-from src.config.config_forecasting import ForecastingConfig
 from src.context.calendar_schema import CALENDAR_CONTEXT_FIELDS, CalendarEvent, validate_calendar_context
 from src.pipeline.schema_validation import is_real_number, validate_fields
 
 
-SCHEMA_VERSION = "1.6"
-FORECAST_HORIZON_HOURS = ForecastingConfig().horizon_hours
+SCHEMA_VERSION = "1.7"
 
 FLOAT_COMPARISON_REL_TOL = 1e-9
 FLOAT_COMPARISON_ABS_TOL = 1e-9
@@ -322,20 +320,18 @@ def validate_structured_state(
     if forecast_origin != decision_time:
         raise ValueError("forecast.origin must equal decision_time.")
 
-    if (
-        isinstance(forecast["horizon_hours"], bool)
-        or not isinstance(forecast["horizon_hours"], int)
-        or forecast["horizon_hours"] != FORECAST_HORIZON_HOURS
-    ):
-        raise ValueError(f"forecast.horizon_hours must be {FORECAST_HORIZON_HOURS}.")
-
     points = forecast["points"]
 
     if not isinstance(points, list):
         raise TypeError("forecast.points must be a list.")
 
-    if len(points) != FORECAST_HORIZON_HOURS:
-        raise ValueError(f"forecast.points must contain exactly {FORECAST_HORIZON_HOURS} points.")
+    # keine feste 24, am Tag der Zeitumstellung hat die Prognose eine Stunde mehr oder weniger
+    if (
+        isinstance(forecast["horizon_hours"], bool)
+        or not isinstance(forecast["horizon_hours"], int)
+        or forecast["horizon_hours"] != len(points)
+    ):
+        raise ValueError("forecast.horizon_hours must equal the number of forecast.points.")
 
     interval_states: list[bool] = []
     point_timestamps: list[pd.Timestamp] = []

@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from src.common.timestamps import local_day_index
+from src.common.timestamps import analyzed_day_index
 from src.numerical_analysis.daily_analysis import DAILY_ANOMALY_SCALES
 
 SCALE_SCORE_COLUMNS = tuple(f"{scale}_score" for scale in DAILY_ANOMALY_SCALES)
@@ -28,7 +28,7 @@ def read_scenario_results(
     results = summary.merge(anomaly, on=["decision_time", "config"], how="left").rename(columns={"config": "variant"})
 
     decision_time = pd.DatetimeIndex(pd.to_datetime(results["decision_time"], utc=True))
-    target_day = local_day_index(decision_time - pd.Timedelta(hours=1), local_timezone).tz_localize(None)
+    target_day = analyzed_day_index(decision_time, local_timezone).tz_localize(None)
 
     results["mode"] = mode
     results["kind"] = kind
@@ -133,10 +133,3 @@ def score_shift_by_week(paired: pd.DataFrame) -> pd.DataFrame:
     weekly = paired.assign(week_since_cutover=paired["days_since_cutover"] // 7)
 
     return weekly.groupby(["variant", "week_since_cutover"], as_index=False)[["score_shift"]].mean()
-
-
-def with_mean_over_cutovers(summary: pd.DataFrame, keys: list[str]) -> pd.DataFrame:
-    means = summary.drop(columns="cutover_date").groupby(keys, as_index=False).mean(numeric_only=True)
-    means["cutover_date"] = "mean"
-
-    return pd.concat([summary, means], ignore_index=True)

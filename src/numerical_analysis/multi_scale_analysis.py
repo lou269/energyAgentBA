@@ -3,7 +3,7 @@ import math
 import numpy as np
 import pandas as pd
 
-from src.common.timestamps import local_day_index
+from src.common.timestamps import local_day
 
 
 def build_multi_scale_analysis(
@@ -27,7 +27,7 @@ def build_multi_scale_analysis(
     daily_std = local_history.resample("D").std(ddof=0)
 
     # der Tag von reference_window_end ist evtl. nur teilweise beobachtet -> ganz raus aus dem Training, fällt stattdessen unter validation
-    reference_day = local_day_index(pd.DatetimeIndex([reference_window_end]), local_timezone)[0]
+    reference_day = local_day(reference_window_end, local_timezone)
 
     train_index = daily_mean.index[daily_mean.index < reference_day]
     remaining_index = daily_mean.index[daily_mean.index >= reference_day]

@@ -1,5 +1,7 @@
 import pandas as pd
 
+from src.common.timestamps import reindex_at_local_lag
+
 
 def build_last_value_forecast(
     history: pd.Series,
@@ -28,42 +30,43 @@ def build_last_value_forecast(
 def build_daily_naive_forecast(
     history: pd.Series,
     target_index: pd.DatetimeIndex,
+    local_timezone: str,
 ) -> pd.Series:
 
     _validate_inputs(history, target_index)
 
-    history_index = pd.DatetimeIndex(history.index)
-    filled_history = history.groupby(history_index.hour).ffill()
+    local_index = pd.DatetimeIndex(history.index).tz_convert(local_timezone)
+    filled_history = history.groupby(local_index.hour).ffill()
 
-    return _reindex_at_lag(filled_history, target_index, lag_hours=24)
+    return _reindex_at_lag(filled_history, target_index, lag_days=1, local_timezone=local_timezone)
 
 
 def build_weekly_naive_forecast(
     history: pd.Series,
     target_index: pd.DatetimeIndex,
+    local_timezone: str,
 ) -> pd.Series:
 
     _validate_inputs(history, target_index)
 
-    history_index = pd.DatetimeIndex(history.index)
-    filled_history = history.groupby([history_index.dayofweek, history_index.hour]).ffill()
+    local_index = pd.DatetimeIndex(history.index).tz_convert(local_timezone)
+    filled_history = history.groupby([local_index.dayofweek, local_index.hour]).ffill()
 
-    return _reindex_at_lag(filled_history, target_index, lag_hours=168)
+    return _reindex_at_lag(filled_history, target_index, lag_days=7, local_timezone=local_timezone)
 
 
 def _reindex_at_lag(
     filled_history: pd.Series,
     target_index: pd.DatetimeIndex,
     *,
-    lag_hours: int,
+    lag_days: int,
+    local_timezone: str,
 ) -> pd.Series:
-    reference_index = target_index - pd.Timedelta(hours=lag_hours)
-    forecast = filled_history.reindex(reference_index)
+    forecast = reindex_at_local_lag(filled_history, target_index, lag_days, local_timezone)
 
     if forecast.isna().any():
-        raise ValueError(f"No observed value at the same time of day/week found within the available history ({lag_hours}h lag).")
+        raise ValueError(f"No observed value at the same local time of day/week found within the available history ({lag_days}-day lag).")
 
-    forecast.index = target_index.copy()
     forecast.index.name = "target_timestamp"
 
     return forecast.astype("float64").rename("y_pred")

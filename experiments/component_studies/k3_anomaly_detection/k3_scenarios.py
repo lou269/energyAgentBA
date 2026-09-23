@@ -11,7 +11,7 @@ def build_k3_scenarios(
     mains_series: pd.Series,
     *,
     cutover_date: str,
-    coldstart_hours: int,
+    coldstart_days: int,
     monitoring_before_cutover_days: int,
     margin_after_days: int,
     step_injection_w: float,
@@ -30,13 +30,14 @@ def build_k3_scenarios(
     )
     history = crop_history_for_coldstart(
         mains_series, 
-        coldstart_hours=coldstart_hours, 
-        first_decision_time=decision_times[0]
+        coldstart_days=coldstart_days,
+        first_decision_time=decision_times[0],
+        local_timezone=local_timezone,
     )
 
     control = ScenarioData(
         target_series=history,
-        coldstart_hours=coldstart_hours,
+        coldstart_days=coldstart_days,
         decision_times=decision_times,
         calendar_events=(),
         calendar_source_available=False,

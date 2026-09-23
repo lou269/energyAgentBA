@@ -6,12 +6,19 @@ from pathlib import Path
 
 import pandas as pd
 
+from src.common.timestamps import local_isoformat, local_midnight_utc, parse_utc_timestamp
 
-def load_calendar_events(path: Path) -> tuple[Mapping[str, object], ...]:
+
+def load_calendar_events(path: Path, local_timezone: str) -> tuple[Mapping[str, object], ...]:
     events = json.loads(path.read_text(encoding="utf-8"))
 
     if not isinstance(events, list):
         raise TypeError(f"{path} must contain a JSON array of calendar events.")
+
+    # in der Datei steht Ortszeit ohne Offset, Sommer- oder Winterzeit ergibt sich erst hier
+    for event in events:
+        for field in ("start", "end", "known_at"):
+            event[field] = local_isoformat(local_midnight_utc(event[field], local_timezone), local_timezone)
 
     return tuple(events)
 
@@ -26,7 +33,7 @@ def resolve_absence_window(
         raise ValueError(f"No calendar event with event_id={event_id!r} found.")
 
     event = matches[0]
-    return pd.Timestamp(str(event["start"])), pd.Timestamp(str(event["end"]))
+    return parse_utc_timestamp(str(event["start"]), "start"), parse_utc_timestamp(str(event["end"]), "end")
 
 
 def channels_meeting_thresholds(

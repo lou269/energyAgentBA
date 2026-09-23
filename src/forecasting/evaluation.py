@@ -5,23 +5,19 @@ from src.forecasting.forecast_schema import validate_forecast_output
 
 
 BASE_GROUP_COLUMNS = ["run_id", "split", "model_id"]
-ORIGIN_GROUP_COLUMNS = ["run_id", "split", "model_id", "forecast_origin"]
+ORIGIN_GROUP_COLUMNS = ["run_id", "split", "model_id", "forecast_origin", "forecast_day"]
 ERROR_METRIC_COLUMNS = ["mae_w", "rmse_w", "mape_pct"]
 
 
 def evaluate_forecasts(
     forecasts: pd.DataFrame,
     *,
-    horizon_hours: int,
     comparison_model_ids: tuple[str, ...],
     reference_model_ids: tuple[str, ...],
     nominal_interval_level: float,
     mape_min_eligible_watts: float,
 ) -> dict[str, pd.DataFrame]:
-    validate_forecast_output(
-        forecasts,
-        horizon_hours=horizon_hours,
-    )
+    validate_forecast_output(forecasts)
     _validate_evaluation_input(
         forecasts,
         comparison_model_ids=comparison_model_ids,
@@ -181,6 +177,27 @@ def _calculate_grouped_metrics(
     return pd.DataFrame(rows)
 
 
+def score_cycle_forecast(
+    forecast: pd.DataFrame,
+    target_series: pd.Series,
+    target_imputed: pd.Series | None,
+    mape_min_eligible_watts: float,
+) -> tuple[float, float]:
+    actual = target_series.reindex(forecast["target_timestamp"])
+    predicted = forecast["y_pred"].to_numpy()
+
+    # ffill-imputierte Zielstunden zählen nicht, gleiche Regel wie target_eligible
+    eligible = actual.notna().to_numpy()
+    if target_imputed is not None:
+        imputed = target_imputed.reindex(actual.index).fillna(False).to_numpy(dtype=bool)
+        eligible = eligible & ~imputed
+
+    mae_w = calculate_mae(actual.to_numpy(), predicted, eligible)
+    mape_pct = calculate_mape(actual.to_numpy(), predicted, eligible, mape_min_eligible_watts)
+
+    return mae_w, mape_pct
+
+
 def calculate_mae(y_true: np.ndarray, y_pred: np.ndarray, eligible: np.ndarray) -> float:
     if not eligible.any():
         return float("nan")
@@ -319,7 +336,7 @@ def _calculate_paired_origin_differences(
     comparison_model_ids: tuple[str, ...],
     reference_model_ids: tuple[str, ...],
 ) -> pd.DataFrame:
-    key_columns = ["run_id", "split", "forecast_origin"]
+    key_columns = ["run_id", "split", "forecast_origin", "forecast_day"]
     difference_columns = [f"{metric}_difference" for metric in ERROR_METRIC_COLUMNS]
     
     output_columns = [

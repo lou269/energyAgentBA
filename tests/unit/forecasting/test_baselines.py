@@ -32,7 +32,7 @@ def test_daily_naive_uses_value_exactly_24h_before_each_target() -> None:
     history = _history([float(h) for h in range(48)])
     target_index = pd.date_range(history.index[-1] + pd.Timedelta(hours=1), periods=3, freq="1h", tz="UTC")
 
-    forecast = build_daily_naive_forecast(history, target_index)
+    forecast = build_daily_naive_forecast(history, target_index, "UTC")
 
     # Ziel = Stunde 48/49/50 -> 24h davor sind Stunde 24/25/26
     assert list(forecast.to_numpy()) == [24.0, 25.0, 26.0]
@@ -42,7 +42,7 @@ def test_weekly_naive_uses_value_exactly_168h_before_each_target() -> None:
     history = _history([float(h) for h in range(168)])
     target_index = pd.date_range(history.index[-1] + pd.Timedelta(hours=1), periods=2, freq="1h", tz="UTC")
 
-    forecast = build_weekly_naive_forecast(history, target_index)
+    forecast = build_weekly_naive_forecast(history, target_index, "UTC")
 
     assert list(forecast.to_numpy()) == [0.0, 1.0]
 
@@ -53,8 +53,8 @@ def test_daily_naive_raises_when_reference_hour_is_missing() -> None:
     history = _history([1.0] * 10)
     target_index = pd.date_range(history.index[-1] + pd.Timedelta(hours=1), periods=1, freq="1h", tz="UTC")
 
-    with pytest.raises(ValueError, match="24h lag"):
-        build_daily_naive_forecast(history, target_index)
+    with pytest.raises(ValueError, match="1-day lag"):
+        build_daily_naive_forecast(history, target_index, "UTC")
 
 
 def test_daily_naive_skips_an_excluded_day_and_uses_the_same_hour_further_back() -> None:
@@ -65,7 +65,7 @@ def test_daily_naive_skips_an_excluded_day_and_uses_the_same_hour_further_back()
     history = _history(values)
     target_index = pd.date_range(history.index[-1] + pd.Timedelta(hours=1), periods=1, freq="1h", tz="UTC")
 
-    forecast = build_daily_naive_forecast(history, target_index)
+    forecast = build_daily_naive_forecast(history, target_index, "UTC")
 
     # Ziel = Stunde 96, 24h davor (Stunde 72) ist NaN -> fällt auf Stunde 48 zurück (48h davor)
     assert list(forecast.to_numpy()) == [48.0]
@@ -79,7 +79,7 @@ def test_weekly_naive_skips_an_excluded_week_and_uses_the_same_weekday_hour_furt
     history = _history(values)
     target_index = pd.date_range(history.index[-1] + pd.Timedelta(hours=1), periods=1, freq="1h", tz="UTC")
 
-    forecast = build_weekly_naive_forecast(history, target_index)
+    forecast = build_weekly_naive_forecast(history, target_index, "UTC")
 
     # Ziel = Stunde 504, 168h davor (Stunde 336) ist NaN -> fällt auf Stunde 168 zurück (336h davor)
     assert list(forecast.to_numpy()) == [168.0]

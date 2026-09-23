@@ -24,11 +24,9 @@ from src.common.target_series import read_preprocessed_target
 from src.config.config_forecasting import ForecastingConfig
 from src.config.project_config import ProjectConfig
 from src.forecasting.forecasting import run_forecast_comparison
-from src.pipeline.io import df_to_csv, next_sequential_number, save_json
+from src.pipeline.io import create_experiment_run, df_to_csv
 
 logger = logging.getLogger(__name__)
-
-OUTPUT_DIR = Path(__file__).parent / "output"
 
 
 class E4Runner:
@@ -52,8 +50,16 @@ class E4Runner:
         reference_baseline = cast(str, self.forecast_config.primary_naive_reference)
         candidates = (*baselines, variant)
 
-        run_directory = OUTPUT_DIR / f"e4_{next_sequential_number(OUTPUT_DIR, prefix='e4'):03d}"
-        run_directory.mkdir(parents=True, exist_ok=False)
+        run_directory, raw_directory = create_experiment_run(
+            self.project_config.e4_output_dir, "e4",
+            {
+                "e4_config": asdict(self.e4_config),
+                "prophet_variant": asdict(variant),
+                "reference_baseline": reference_baseline,
+                "forecasting_config_version": self.forecast_config.config_version,
+                "seed": self.forecast_config.seed,
+            },
+        )
 
         forecast_frames: list[pd.DataFrame] = []
         origin_frames: list[pd.DataFrame] = []
@@ -75,8 +81,8 @@ class E4Runner:
                     run_id=f"{run_directory.name}_{start_date}_CS{coldstart_days}",
                     experiment_id="E4",
                     split="train",
-                    horizon_hours=self.forecast_config.horizon_hours,
-                    forecast_origin_step_hours=self.forecast_config.forecast_origin_step_hours,
+                    horizon_days=self.forecast_config.horizon_days,
+                    forecast_origin_step_days=self.forecast_config.forecast_origin_step_days,
                     frequency=self.forecast_config.frequency,
                     local_timezone=self.project_config.timezone,
                     clip_negative_forecasts=self.forecast_config.negative_forecast_handling == "clip_zero",
@@ -109,21 +115,11 @@ class E4Runner:
             window_edges_days=self.e4_config.window_edges_days,
         )
 
-        df_to_csv(pd.concat(forecast_frames, ignore_index=True), run_directory, "forecasts")
-        df_to_csv(daily, run_directory, "origin_metrics")
+        df_to_csv(pd.concat(forecast_frames, ignore_index=True), raw_directory, "forecasts")
+        df_to_csv(daily, raw_directory, "origin_metrics")
         df_to_csv(curve, run_directory, "learning_curve")
         df_to_csv(break_even, run_directory, "break_even")
         df_to_csv(windows, run_directory, "window_summary")
-        save_json(
-            {
-                "e4_config": asdict(self.e4_config),
-                "prophet_variant": asdict(variant),
-                "reference_baseline": reference_baseline,
-                "forecasting_config_version": self.forecast_config.config_version,
-                "seed": self.forecast_config.seed,
-            },
-            run_directory / "run_config.json",
-        )
 
         build_e4_plot(
             curve, run_directory, variant_id=variant.model_id, reference_model_id=reference_baseline,

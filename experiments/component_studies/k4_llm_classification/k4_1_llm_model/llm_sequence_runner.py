@@ -2,24 +2,21 @@
 # caffeinate -i python -m experiments.component_studies.k4_llm_classification.k4_1_llm_model.llm_sequence_runner
 
 import logging
-
-import pandas as pd
+from dataclasses import asdict
 
 from experiments.component_studies.k4_llm_classification.k4_1_llm_model.llm_model_config import (
-    K4_SEQUENCE_OUTPUT_ROOT, LLMModelExperimentConfig, build_sequence_configs,
+    LLMModelExperimentConfig, build_sequence_configs,
 )
-from experiments.proposal_experiments.e1_new_device.e1_runner import OUTPUT_DIR as E1_OUTPUT_DIR
-from experiments.proposal_experiments.e1_new_device.e1_scenarios import build_device_scenario
+from experiments.proposal_experiments.e1_new_device.e1_scenarios import build_device_scenario, load_device_hourly
 from experiments.proposal_experiments.e_config import E1Config
 from experiments.proposal_experiments.shared import build_decision_times, crop_history_for_coldstart, load_target_series
-from src.common.column_naming import channel_data_column
-from src.common.timestamps import parse_utc_timestamp
+from src.common.timestamps import local_midnight_utc
 from src.config.config_forecasting import ComparisonConfig, ForecastingConfig, SYS_VARIANTS
 from src.config.project_config import ProjectConfig, ensure_project_directories
 from src.llm.llm_run_artifacts import load_prompt
 from src.llm.llm_runner import PROMPT_DIRECTORY
 from src.pipeline.comparison_harness import run_comparison
-from src.pipeline.io import next_sequential_number
+from src.pipeline.io import create_experiment_run
 
 logger = logging.getLogger(__name__)
 
@@ -38,17 +35,12 @@ class LLMSequenceRunner:
         self.forecast_config = forecast_config or ForecastingConfig()
         self.experiment_config = experiment_config or LLMModelExperimentConfig()
 
-    def _read_device_hourly(self) -> pd.Series:
-        device_data = pd.read_csv(E1_OUTPUT_DIR / "e1_device_hourly.csv", parse_dates=["timestamp"], index_col="timestamp")
-
-        return device_data[channel_data_column(self.e1_config.device_meter_key, "hourly")]
-
     def run(self) -> None:
-        cutover_time = parse_utc_timestamp(self.e1_config.cutover_time, "E1Config.cutover_time")
+        cutover_time = local_midnight_utc(self.e1_config.cutover_date, self.project_config.timezone)
         ensure_project_directories(self.project_config)
 
         mains_series, target_imputed, target_value_implausible, _meter_key = load_target_series(self.project_config)
-        device_hourly = self._read_device_hourly()
+        device_hourly = load_device_hourly(self.e1_config.device_meter_key)
 
         decision_times = build_decision_times(
             cutover_time, cutover_time,
@@ -57,12 +49,13 @@ class LLMSequenceRunner:
         )
 
         mains_series = crop_history_for_coldstart(
-            mains_series, coldstart_hours=self.forecast_config.cycle_coldstart_hours, first_decision_time=decision_times[0],
+            mains_series, coldstart_days=self.forecast_config.cycle_coldstart_days, first_decision_time=decision_times[0],
+            local_timezone=self.project_config.timezone,
         )
 
         scenario = build_device_scenario(
             mains_series, device_hourly, self.e1_config.device_meter_key,
-            cutover_time=cutover_time, coldstart_hours=self.forecast_config.cycle_coldstart_hours,
+            cutover_time=cutover_time, coldstart_days=self.forecast_config.cycle_coldstart_days,
             decision_times=decision_times, target_imputed=target_imputed,
             value_implausible=target_value_implausible,
         )
@@ -74,9 +67,9 @@ class LLMSequenceRunner:
 
         llm_prompt = load_prompt(PROMPT_DIRECTORY / f"prompt_{self.experiment_config.base_llm_config.prompt_version}.txt")
 
-        run_number = next_sequential_number(K4_SEQUENCE_OUTPUT_ROOT, prefix="k4_seq")
-        run_directory = K4_SEQUENCE_OUTPUT_ROOT / f"k4_seq_{run_number:03d}"
-        run_directory.mkdir(parents=True, exist_ok=False)
+        run_directory, raw_directory = create_experiment_run(
+            self.project_config.k4_output_dir, "k4_seq", {"experiment_config": asdict(self.experiment_config), "e1_config": asdict(self.e1_config)},
+        )
 
         comparison_config = ComparisonConfig()
 
@@ -85,13 +78,13 @@ class LLMSequenceRunner:
         )
 
         run_comparison(
-            scenario, configs, run_directory, self.project_config.project_root,
+            scenario, configs, raw_directory, self.project_config.project_root,
             local_timezone=self.project_config.timezone,
             run_id=run_directory.name, llm_prompt=llm_prompt,
             max_consecutive_llm_failures=comparison_config.max_consecutive_llm_failures,
             max_total_llm_failures=comparison_config.max_total_llm_failures,
-            calendar_lookback_hours=comparison_config.calendar_lookback_hours,
-            calendar_lookahead_hours=comparison_config.calendar_lookahead_hours,
+            calendar_lookback_days=comparison_config.calendar_lookback_days,
+            calendar_lookahead_days=comparison_config.calendar_lookahead_days,
         )
 
         logger.info("K4 model-sequence comparison completed, see %s.", run_directory)

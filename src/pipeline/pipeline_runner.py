@@ -106,7 +106,7 @@ def main() -> None:
         preprocessing_result.treated_hourly,
         preprocessing_result.split_manifest,
         target_column,
-        coldstart_hours=ForecastingConfig().cycle_coldstart_hours,
+        coldstart_days=ForecastingConfig().cycle_coldstart_days,
         local_timezone=project_config.timezone,
         target_imputed=preprocessing_result.imputation_mask_hourly[imputation_column(target_meter_key)],
         value_implausible=preprocessing_result.plausibility_hourly[plausibility_column(target_meter_key)],
@@ -127,8 +127,8 @@ def main() -> None:
         llm_prompt=llm_prompt,
         max_consecutive_llm_failures=comparison_config.max_consecutive_llm_failures,
         max_total_llm_failures=comparison_config.max_total_llm_failures,
-        calendar_lookback_hours=comparison_config.calendar_lookback_hours,
-        calendar_lookahead_hours=comparison_config.calendar_lookahead_hours,
+        calendar_lookback_days=comparison_config.calendar_lookback_days,
+        calendar_lookahead_days=comparison_config.calendar_lookahead_days,
     )
 
     logger.info("Pipeline completed successfully: %d cycle rows across %d configs.", len(comparison), len(configs))

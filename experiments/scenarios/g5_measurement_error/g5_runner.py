@@ -7,7 +7,8 @@ from pathlib import Path
 import pandas as pd
 
 from src.common.column_naming import channel_data_column, plausibility_column, quality_column
-from src.config.config_forecasting import ForecastingConfig, NumericalAnalysisConfig, PreprocessingConfig, SYS_VARIANTS
+from src.common.timestamps import local_day, shift_local_days
+from src.config.config_forecasting import ComparisonConfig, ForecastingConfig, NumericalAnalysisConfig, PreprocessingConfig, SYS_VARIANTS
 from src.config.project_config import ProjectConfig, ensure_project_directories
 from src.pipeline.comparison_harness import ScenarioData, run_comparison
 from src.pipeline.io import next_sequential_number
@@ -28,9 +29,11 @@ def run() -> None:
 
     mains_series, target_imputed, target_value_implausible, meter_key = load_target_series(project_config)
 
-    coldstart_hours = ForecastingConfig().cycle_coldstart_hours
-    anchor_time = mains_series.index[max(coldstart_hours, len(mains_series) // 2)]
-    fault_day_start = anchor_time.tz_convert(project_config.timezone).normalize().tz_convert("UTC")
+    coldstart_days = ForecastingConfig().cycle_coldstart_days
+    earliest_fault_day = shift_local_days(mains_series.index[0], coldstart_days + 1, project_config.timezone)
+    anchor_time = max(earliest_fault_day, mains_series.index[len(mains_series) // 2])
+    fault_day = local_day(anchor_time, project_config.timezone)
+    fault_day_start = fault_day.tz_convert("UTC")
     fault_start = fault_day_start + pd.Timedelta(hours=1)
     fault_end = fault_start + pd.Timedelta(hours=STUCK_HOURS - 1)
 
@@ -61,12 +64,13 @@ def run() -> None:
     )
 
     corrupted_series = crop_history_for_coldstart(
-        corrupted_series, coldstart_hours=coldstart_hours, first_decision_time=decision_times[0],
+        corrupted_series, coldstart_days=coldstart_days, first_decision_time=decision_times[0],
+        local_timezone=project_config.timezone,
     )
 
     scenario = ScenarioData(
         target_series=corrupted_series,
-        coldstart_hours=coldstart_hours,
+        coldstart_days=coldstart_days,
         decision_times=decision_times,
         calendar_events=(),
         calendar_source_available=False,
@@ -85,8 +89,8 @@ def run() -> None:
         run_id=run_directory.name,
         max_consecutive_llm_failures=1,
         max_total_llm_failures=1,
-        calendar_lookback_hours=24,
-        calendar_lookahead_hours=24,
+        calendar_lookback_days=ComparisonConfig().calendar_lookback_days,
+        calendar_lookahead_days=ComparisonConfig().calendar_lookahead_days,
     )
 
     logger.info("G5 result:\n%s", result.to_string(index=False))
@@ -95,9 +99,9 @@ def run() -> None:
     classification = result["classification"].iloc[-1] if not result.empty else None
 
     if classification == "measurement_error":
-        logger.info("PASS: fault day %s was classified as measurement_error.", fault_day_start.date())
+        logger.info("PASS: fault day %s was classified as measurement_error.", fault_day.date())
     else:
-        logger.error("FAIL: fault day %s was classified as %r, expected measurement_error.", fault_day_start.date(), classification)
+        logger.error("FAIL: fault day %s was classified as %r, expected measurement_error.", fault_day.date(), classification)
 
 
 def main() -> None:

@@ -2,15 +2,14 @@ import numpy as np
 import pandas as pd
 from prophet import Prophet
 
-from src.common.timestamps import local_calendar_range
+from src.common.timestamps import local_calendar_range, local_day_hours, shift_local_days
 from src.config.config_forecasting import ProphetVariantConfig
-from src.forecasting.baselines import build_daily_naive_forecast, build_last_value_forecast,build_weekly_naive_forecast
+from src.forecasting.baselines import build_daily_naive_forecast, build_last_value_forecast, build_weekly_naive_forecast
 from src.forecasting.prophet_model import build_prophet_forecast, fit_prophet_model, is_refit_required, select_prophet_history
 from src.forecasting.forecast_schema import FORECAST_OUTPUT_COLUMNS, validate_forecast_output
 
 
-_BASELINE_BUILDERS = {
-    "B1": build_last_value_forecast,
+_SEASONAL_NAIVE_BUILDERS = {
     "B2": build_daily_naive_forecast,
     "B3": build_weekly_naive_forecast,
 }
@@ -24,8 +23,8 @@ def build_walk_forward_forecasts(
     run_id: str,
     experiment_id: str,
     split: str,
-    horizon_hours: int,
-    forecast_origin_step_hours: int,
+    horizon_days: int,
+    forecast_origin_step_days: int,
     frequency: str,
     local_timezone: str,
     clip_negative_forecasts: bool,
@@ -43,7 +42,7 @@ def build_walk_forward_forecasts(
     if (baseline_model_id is None) == (prophet_variant is None):
         raise ValueError("Exactly one of baseline_model_id or prophet_variant must be given.")
 
-    if baseline_model_id is not None and baseline_model_id not in _BASELINE_BUILDERS:
+    if baseline_model_id not in (None, "B1", "B2", "B3"):
         raise ValueError(f"Unsupported baseline model ID: {baseline_model_id}")
 
     _validate_walk_forward_data(fixed_history, evaluation_targets, evaluation_imputation_mask, frequency)
@@ -53,10 +52,10 @@ def build_walk_forward_forecasts(
             raise ValueError(f"{name} must not be empty.")
 
     # Horizont-Scheduling: Ursprünge dürfen sich nicht überlappende Horizonte teilen.
-    if horizon_hours < 1:
-        raise ValueError("horizon_hours must be at least 1.")
-    if forecast_origin_step_hours < horizon_hours:
-        raise ValueError("forecast_origin_step_hours must be at least horizon_hours to prevent overlapping horizons.")
+    if horizon_days < 1:
+        raise ValueError("horizon_days must be at least 1.")
+    if forecast_origin_step_days < horizon_days:
+        raise ValueError("forecast_origin_step_days must be at least horizon_days to prevent overlapping horizons.")
 
     # Prophet-weite Annahmen dieser Implementierung.
     if growth != "linear":
@@ -67,19 +66,20 @@ def build_walk_forward_forecasts(
     model_id = baseline_model_id if baseline_model_id is not None else prophet_variant.model_id  # type: ignore[union-attr]
 
     first_origin = evaluation_targets.index[0]
-    last_origin = evaluation_targets.index[-1] - pd.Timedelta(hours=horizon_hours - 1)
+    evaluation_end = evaluation_targets.index[-1] + pd.Timedelta(frequency)
+    last_origin = shift_local_days(evaluation_end, -horizon_days, local_timezone)
 
     if last_origin < first_origin:
         raise ValueError("Evaluation split contains no complete forecast horizon.")
 
-    forecast_origins = local_calendar_range(first_origin, forecast_origin_step_hours, last_origin, local_timezone)
+    forecast_origins = local_calendar_range(first_origin, forecast_origin_step_days, last_origin, local_timezone)
 
     complete_history = pd.concat([fixed_history, evaluation_targets])
     prophet_state: tuple[Prophet, pd.Timestamp, pd.Series] | None = None
     forecast_outputs: list[pd.DataFrame] = []
 
     for forecast_origin in forecast_origins:
-        target_index = pd.date_range(start=forecast_origin, periods=horizon_hours, freq=frequency)
+        target_index = local_day_hours(forecast_origin, horizon_days, frequency, local_timezone)
         available_history = complete_history.loc[complete_history.index < forecast_origin]
 
         target_values = evaluation_targets.loc[target_index]
@@ -91,7 +91,10 @@ def build_walk_forward_forecasts(
         target_exclusion_reason.loc[target_values.isna()] = "missing_target"
 
         if baseline_model_id is not None:
-            raw_predictions = _BASELINE_BUILDERS[baseline_model_id](available_history, target_index)
+            if baseline_model_id == "B1":
+                raw_predictions = build_last_value_forecast(available_history, target_index)
+            else:
+                raw_predictions = _SEASONAL_NAIVE_BUILDERS[baseline_model_id](available_history, target_index, local_timezone)
 
             predictions = (
                 raw_predictions.clip(lower=0.0)
@@ -128,13 +131,13 @@ def build_walk_forward_forecasts(
                     retrained=False,
                     refit_runtime_seconds=0.0,
                     config_version=config_version,
+                    local_timezone=local_timezone,
                 )
             )
 
         else:
             assert prophet_variant is not None
             history_mode = prophet_variant.history_mode
-            retraining_interval_hours = prophet_variant.retraining_interval_hours
 
             had_fitted_model = prophet_state is not None
 
@@ -143,7 +146,8 @@ def build_walk_forward_forecasts(
                 history_mode=history_mode,
                 fitted_at=prophet_state[1] if prophet_state is not None else None,
                 current_time=forecast_origin,
-                retraining_interval_hours=retraining_interval_hours,
+                retraining_interval_days=prophet_variant.retraining_interval_days,
+                local_timezone=local_timezone,
             )
 
             refit_runtime_seconds = 0.0
@@ -154,7 +158,8 @@ def build_walk_forward_forecasts(
                     available_history,
                     forecast_origin=forecast_origin,
                     history_mode=history_mode,
-                    rolling_window_hours=prophet_variant.rolling_window_hours,
+                    rolling_window_days=prophet_variant.rolling_window_days,
+                    local_timezone=local_timezone,
                 )
 
                 fit_start = pd.Timestamp.now()
@@ -217,13 +222,14 @@ def build_walk_forward_forecasts(
                     retrained=fit_required and had_fitted_model,
                     refit_runtime_seconds=refit_runtime_seconds,
                     config_version=config_version,
+                    local_timezone=local_timezone,
                 )
             )
 
     forecasts = pd.concat(forecast_outputs, ignore_index=True)
     forecasts = forecasts[FORECAST_OUTPUT_COLUMNS]
 
-    validate_forecast_output(forecasts, horizon_hours=horizon_hours)
+    validate_forecast_output(forecasts)
 
     return forecasts
 
@@ -247,6 +253,7 @@ def _build_forecast_output(
     retrained: bool,
     refit_runtime_seconds: float,
     config_version: str,
+    local_timezone: str,
 ) -> pd.DataFrame:
     output = model_forecast.copy()
     output.index.name = "target_timestamp"
@@ -259,6 +266,7 @@ def _build_forecast_output(
     output["model_id"] = model_id
     output["seasonality_config"] = seasonality_config
     output["forecast_origin"] = forecast_origin
+    output["forecast_day"] = forecast_origin.tz_convert(local_timezone).date()
     output["horizon_step"] = np.arange(1, len(output) + 1)
 
     output["y_true"] = target_values.to_numpy(dtype="float64")

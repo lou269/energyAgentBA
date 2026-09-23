@@ -59,7 +59,7 @@ class _AlwaysEmptyClient:
 def _synthetic_scenario(
     *,
     hours: int = 360,
-    coldstart_hours: int = 144,
+    coldstart_days: int = 6,
     decision_count: int = 2
 ) -> ScenarioData:
     index = pd.date_range("2024-01-01", periods=hours, freq="1h", tz="UTC")
@@ -69,7 +69,7 @@ def _synthetic_scenario(
 
     decision_times = tuple(
         pd.date_range(
-            start=series.index[coldstart_hours] + pd.Timedelta(hours=1),
+            start=series.index[0] + pd.Timedelta(days=coldstart_days + 1),
             periods=decision_count,
             freq="24h",
         )
@@ -77,7 +77,7 @@ def _synthetic_scenario(
 
     return ScenarioData(
         target_series=series,
-        coldstart_hours=coldstart_hours,
+        coldstart_days=coldstart_days,
         decision_times=decision_times,
         calendar_events=(),
         calendar_source_available=False,
@@ -85,7 +85,7 @@ def _synthetic_scenario(
     )
 
 
-def test_build_scenario_from_split_manifest_uses_given_coldstart_hours() -> None:
+def test_build_scenario_from_split_manifest_uses_given_coldstart_days() -> None:
     index = pd.date_range("2024-01-01", periods=100, freq="1h", tz="UTC")
     treated_hourly = pd.DataFrame({"target": range(100)}, index=index)
     split_manifest = pd.DataFrame(
@@ -97,12 +97,12 @@ def test_build_scenario_from_split_manifest_uses_given_coldstart_hours() -> None
     )
 
     scenario = build_scenario_from_split_manifest(
-        treated_hourly, split_manifest, "target", coldstart_hours=48, local_timezone="UTC"
+        treated_hourly, split_manifest, "target", coldstart_days=2, local_timezone="UTC"
     )
 
-    assert scenario.coldstart_hours == 48
+    assert scenario.coldstart_days == 2
     assert scenario.target_series.index[-1] == index[99]
-    # cycle_start liegt bei coldstart_hours // 24 = 2 Kalendertagen nach Datenbeginn (index[48]),
+    # cycle_start liegt 2 Kalendertage nach Datenbeginn (index[48]),
     # decision_times[0] einen vollen lokalen Kalendertag danach, sonst ist new_observations beim ersten Zyklus-Aufruf leer
     assert scenario.decision_times[0] == index[72]
     assert scenario.decision_times[-1] <= index[99]
@@ -121,7 +121,7 @@ def test_build_scenario_from_split_manifest_uses_local_calendar_days() -> None:
     )
 
     scenario = build_scenario_from_split_manifest(
-        treated_hourly, split_manifest, "target", coldstart_hours=48, local_timezone="America/New_York"
+        treated_hourly, split_manifest, "target", coldstart_days=2, local_timezone="America/New_York"
     )
 
     cycle_start_local = index[48].tz_convert("America/New_York")
@@ -163,7 +163,7 @@ def test_build_scenario_from_split_manifest_integrates_with_run_comparison(tmp_p
     )
 
     scenario = build_scenario_from_split_manifest(
-        treated_hourly, split_manifest, "target", coldstart_hours=144, local_timezone="Europe/London"
+        treated_hourly, split_manifest, "target", coldstart_days=6, local_timezone="Europe/London"
     )
     result = run_comparison(
         scenario,
@@ -173,8 +173,8 @@ def test_build_scenario_from_split_manifest_integrates_with_run_comparison(tmp_p
         local_timezone="Europe/London",
         max_consecutive_llm_failures=COMPARISON_CONFIG.max_consecutive_llm_failures,
         max_total_llm_failures=COMPARISON_CONFIG.max_total_llm_failures,
-        calendar_lookback_hours=COMPARISON_CONFIG.calendar_lookback_hours,
-        calendar_lookahead_hours=COMPARISON_CONFIG.calendar_lookahead_hours,
+        calendar_lookback_days=COMPARISON_CONFIG.calendar_lookback_days,
+        calendar_lookahead_days=COMPARISON_CONFIG.calendar_lookahead_days,
     )
 
     assert len(result) == len(scenario.decision_times)
@@ -193,8 +193,8 @@ def test_run_comparison_produces_one_row_per_decision_and_config(tmp_path: Path)
         local_timezone="Europe/London",
         max_consecutive_llm_failures=COMPARISON_CONFIG.max_consecutive_llm_failures,
         max_total_llm_failures=COMPARISON_CONFIG.max_total_llm_failures,
-        calendar_lookback_hours=COMPARISON_CONFIG.calendar_lookback_hours,
-        calendar_lookahead_hours=COMPARISON_CONFIG.calendar_lookahead_hours,
+        calendar_lookback_days=COMPARISON_CONFIG.calendar_lookback_days,
+        calendar_lookahead_days=COMPARISON_CONFIG.calendar_lookahead_days,
     )
 
     assert len(result) == len(scenario.decision_times) * len(configs)
@@ -215,8 +215,8 @@ def test_run_comparison_off_mode_never_classifies_or_adapts(tmp_path: Path) -> N
         local_timezone="Europe/London",
         max_consecutive_llm_failures=COMPARISON_CONFIG.max_consecutive_llm_failures,
         max_total_llm_failures=COMPARISON_CONFIG.max_total_llm_failures,
-        calendar_lookback_hours=COMPARISON_CONFIG.calendar_lookback_hours,
-        calendar_lookahead_hours=COMPARISON_CONFIG.calendar_lookahead_hours,
+        calendar_lookback_days=COMPARISON_CONFIG.calendar_lookback_days,
+        calendar_lookahead_days=COMPARISON_CONFIG.calendar_lookahead_days,
     )
 
     assert result["classification"].isna().all()
@@ -235,8 +235,8 @@ def test_run_comparison_fixed_train_retrains_only_once(tmp_path: Path) -> None:
         local_timezone="Europe/London",
         max_consecutive_llm_failures=COMPARISON_CONFIG.max_consecutive_llm_failures,
         max_total_llm_failures=COMPARISON_CONFIG.max_total_llm_failures,
-        calendar_lookback_hours=COMPARISON_CONFIG.calendar_lookback_hours,
-        calendar_lookahead_hours=COMPARISON_CONFIG.calendar_lookahead_hours,
+        calendar_lookback_days=COMPARISON_CONFIG.calendar_lookback_days,
+        calendar_lookahead_days=COMPARISON_CONFIG.calendar_lookahead_days,
     ).sort_values("decision_time")
 
     assert result["retrained"].tolist() == [True, False, False]
@@ -254,8 +254,8 @@ def test_run_comparison_expanding_variant_retrains_every_cycle(tmp_path: Path) -
         local_timezone="Europe/London",
         max_consecutive_llm_failures=COMPARISON_CONFIG.max_consecutive_llm_failures,
         max_total_llm_failures=COMPARISON_CONFIG.max_total_llm_failures,
-        calendar_lookback_hours=COMPARISON_CONFIG.calendar_lookback_hours,
-        calendar_lookahead_hours=COMPARISON_CONFIG.calendar_lookahead_hours,
+        calendar_lookback_days=COMPARISON_CONFIG.calendar_lookback_days,
+        calendar_lookahead_days=COMPARISON_CONFIG.calendar_lookahead_days,
     ).sort_values("decision_time")
 
     assert result["retrained"].tolist() == [True, True, True]
@@ -273,8 +273,8 @@ def test_run_comparison_mae_is_finite(tmp_path: Path) -> None:
         local_timezone="Europe/London",
         max_consecutive_llm_failures=COMPARISON_CONFIG.max_consecutive_llm_failures,
         max_total_llm_failures=COMPARISON_CONFIG.max_total_llm_failures,
-        calendar_lookback_hours=COMPARISON_CONFIG.calendar_lookback_hours,
-        calendar_lookahead_hours=COMPARISON_CONFIG.calendar_lookahead_hours,
+        calendar_lookback_days=COMPARISON_CONFIG.calendar_lookback_days,
+        calendar_lookahead_days=COMPARISON_CONFIG.calendar_lookahead_days,
     )
 
     for mae_w in result["mae_w"]:
@@ -286,7 +286,7 @@ def test_run_comparison_with_target_imputed_shorter_than_forecast_horizon(tmp_pa
     scenario_base = _synthetic_scenario()
     target_imputed = pd.Series(
         False,
-        index=scenario_base.target_series.index[: scenario_base.coldstart_hours],
+        index=scenario_base.target_series.index[: 24 * scenario_base.coldstart_days],
         dtype=bool,
     )
     scenario = replace(scenario_base, target_imputed=target_imputed)
@@ -299,32 +299,32 @@ def test_run_comparison_with_target_imputed_shorter_than_forecast_horizon(tmp_pa
         local_timezone="Europe/London",
         max_consecutive_llm_failures=COMPARISON_CONFIG.max_consecutive_llm_failures,
         max_total_llm_failures=COMPARISON_CONFIG.max_total_llm_failures,
-        calendar_lookback_hours=COMPARISON_CONFIG.calendar_lookback_hours,
-        calendar_lookahead_hours=COMPARISON_CONFIG.calendar_lookahead_hours,
+        calendar_lookback_days=COMPARISON_CONFIG.calendar_lookback_days,
+        calendar_lookahead_days=COMPARISON_CONFIG.calendar_lookahead_days,
     )
 
     assert result["mae_w"].apply(math.isfinite).all()
 
 
-def _series_with_a_sustained_jump(hours: int, coldstart_hours: int, *, seed: int = 1) -> pd.Series:
+def _series_with_a_sustained_jump(hours: int, jump_hour: int, *, seed: int = 1) -> pd.Series:
     
     index = pd.date_range("2024-01-01", periods=hours, freq="1h", tz="UTC")
     day_of_series = np.arange(hours) // 24
     jitter_by_day = np.random.default_rng(seed).normal(0.0, 5.0, size=day_of_series.max() + 1)
     values = 200.0 + 50.0 * np.sin(2 * np.pi * index.hour.to_numpy() / 24) + jitter_by_day[day_of_series]
-    values[coldstart_hours:] += 300.0
+    values[jump_hour:] += 300.0
     return pd.Series(values, index=index, name="target")
 
 
 def test_run_comparison_survives_llm_inference_failures(tmp_path: Path) -> None:
     # Ollama liefert gelegentlich ungültige Ausgaben -> Fehlschlag darf Vergleichslauf nciht abbrechen
-    hours, coldstart_hours = 24 * 30, 24 * 24
-    series = _series_with_a_sustained_jump(hours, coldstart_hours)
+    hours, coldstart_days = 24 * 30, 24
+    series = _series_with_a_sustained_jump(hours, 24 * coldstart_days)
     scenario = ScenarioData(
         target_series=series,
-        coldstart_hours=coldstart_hours,
+        coldstart_days=coldstart_days,
         decision_times=tuple(
-            pd.date_range(start=series.index[coldstart_hours] + pd.Timedelta(hours=1), periods=3, freq="24h")
+            pd.date_range(start=series.index[0] + pd.Timedelta(days=coldstart_days + 1), periods=3, freq="24h")
         ),
         calendar_events=(),
         calendar_source_available=False,
@@ -353,8 +353,8 @@ def test_run_comparison_survives_llm_inference_failures(tmp_path: Path) -> None:
         llm_client=_AlwaysEmptyClient(),
         max_consecutive_llm_failures=COMPARISON_CONFIG.max_consecutive_llm_failures,
         max_total_llm_failures=COMPARISON_CONFIG.max_total_llm_failures,
-        calendar_lookback_hours=COMPARISON_CONFIG.calendar_lookback_hours,
-        calendar_lookahead_hours=COMPARISON_CONFIG.calendar_lookahead_hours,
+        calendar_lookback_days=COMPARISON_CONFIG.calendar_lookback_days,
+        calendar_lookahead_days=COMPARISON_CONFIG.calendar_lookahead_days,
     )
 
     assert len(result) == len(scenario.decision_times)
@@ -365,13 +365,13 @@ def test_run_comparison_survives_llm_inference_failures(tmp_path: Path) -> None:
 
 def test_run_comparison_records_rule_based_explanation(tmp_path: Path) -> None:
     # garantiert eine echte Anomalie pro Zyklus -> rule_based_classify wird aufgerufen und liefert eine reasoning, die hier als "explanation" landen muss
-    hours, coldstart_hours = 24 * 30, 24 * 24
-    series = _series_with_a_sustained_jump(hours, coldstart_hours, seed=2)
+    hours, coldstart_days = 24 * 30, 24
+    series = _series_with_a_sustained_jump(hours, 24 * coldstart_days, seed=2)
     scenario = ScenarioData(
         target_series=series,
-        coldstart_hours=coldstart_hours,
+        coldstart_days=coldstart_days,
         decision_times=tuple(
-            pd.date_range(start=series.index[coldstart_hours] + pd.Timedelta(hours=1), periods=2, freq="24h")
+            pd.date_range(start=series.index[0] + pd.Timedelta(days=coldstart_days + 1), periods=2, freq="24h")
         ),
         calendar_events=(),
         calendar_source_available=False,
@@ -392,8 +392,8 @@ def test_run_comparison_records_rule_based_explanation(tmp_path: Path) -> None:
         local_timezone="Europe/London",
         max_consecutive_llm_failures=COMPARISON_CONFIG.max_consecutive_llm_failures,
         max_total_llm_failures=COMPARISON_CONFIG.max_total_llm_failures,
-        calendar_lookback_hours=COMPARISON_CONFIG.calendar_lookback_hours,
-        calendar_lookahead_hours=COMPARISON_CONFIG.calendar_lookahead_hours,
+        calendar_lookback_days=COMPARISON_CONFIG.calendar_lookback_days,
+        calendar_lookahead_days=COMPARISON_CONFIG.calendar_lookahead_days,
     )
 
     classified = result.loc[result["classification"].notna()]

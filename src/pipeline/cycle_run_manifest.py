@@ -26,7 +26,7 @@ def build_cycle_run_manifest(
     project_root: Path,
     run_id: str,
     config_values: Mapping[str, Mapping[str, Any]],
-    coldstart_hours: int,
+    coldstart_days: int,
     decision_time_count: int,
     decision_time_start: str | None,
     decision_time_end: str | None,
@@ -50,7 +50,7 @@ def build_cycle_run_manifest(
             "sha256": json_sha256(config_values),
         },
         "scenario": {
-            "coldstart_hours": coldstart_hours,
+            "coldstart_days": coldstart_days,
             "decision_time_count": decision_time_count,
             "decision_time_start": decision_time_start,
             "decision_time_end": decision_time_end,

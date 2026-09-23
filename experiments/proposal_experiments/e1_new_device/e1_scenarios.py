@@ -21,7 +21,7 @@ def build_device_scenario(
     device_meter_key: str,
     *,
     cutover_time: pd.Timestamp,
-    coldstart_hours: int,
+    coldstart_days: int,
     decision_times: tuple[pd.Timestamp, ...],
     target_imputed: pd.Series | None = None,
     value_implausible: pd.Series | None = None,
@@ -45,7 +45,7 @@ def build_device_scenario(
 
     return ScenarioData(
         target_series=target_series,
-        coldstart_hours=coldstart_hours,
+        coldstart_days=coldstart_days,
         decision_times=decision_times,
         calendar_events=(),
         calendar_source_available=False,

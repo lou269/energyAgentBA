@@ -21,8 +21,8 @@ def _no_imputation(
 
 
 def test_only_complete_horizons_are_forecasted() -> None:
-    fixed_history = _hourly("2020-01-01", [100.0, 100.0])
-    # 30 volle Zielstunden, aber horizon=24 -> die letzten 6 Stunden können keinen
+    fixed_history = _hourly("2019-12-31T22:00", [100.0, 100.0])
+    # 30 volle Zielstunden, aber horizon=1 -> die letzten 6 Stunden können keinen
     # vollständigen Horizont mehr bilden und dürfen nicht im Output landen
     evaluation_targets = _hourly(fixed_history.index[-1] + pd.Timedelta(hours=1), [float(h) for h in range(30)])
     mask = _no_imputation(evaluation_targets.index)
@@ -34,8 +34,8 @@ def test_only_complete_horizons_are_forecasted() -> None:
         run_id="r1",
         experiment_id="e1",
         split="validation",
-        horizon_hours=24,
-        forecast_origin_step_hours=24,
+        horizon_days=1,
+        forecast_origin_step_days=1,
         frequency="1h",
         baseline_model_id="B1",
         growth="linear",
@@ -54,7 +54,7 @@ def test_only_complete_horizons_are_forecasted() -> None:
 
 
 def test_available_history_is_strictly_causal_and_grows_between_origins() -> None:
-    fixed_history = _hourly("2020-01-01", [100.0, 100.0])
+    fixed_history = _hourly("2019-12-31T22:00", [100.0, 100.0])
     evaluation_targets = _hourly(fixed_history.index[-1] + pd.Timedelta(hours=1), [100.0] * 48)
     mask = _no_imputation(evaluation_targets.index)
 
@@ -65,8 +65,8 @@ def test_available_history_is_strictly_causal_and_grows_between_origins() -> Non
         run_id="r1",
         experiment_id="e1",
         split="validation",
-        horizon_hours=24,
-        forecast_origin_step_hours=24,
+        horizon_days=1,
+        forecast_origin_step_days=1,
         frequency="1h",
         baseline_model_id="B1",
         growth="linear",
@@ -110,8 +110,8 @@ def test_forecast_origins_stay_on_local_midnight_across_a_dst_transition() -> No
         run_id="r1",
         experiment_id="e1",
         split="validation",
-        horizon_hours=24,
-        forecast_origin_step_hours=24,
+        horizon_days=1,
+        forecast_origin_step_days=1,
         frequency="1h",
         baseline_model_id="B1",
         growth="linear",
@@ -138,8 +138,8 @@ def test_prophet_expanding_history_grows_and_retrains_on_schedule() -> None:
     variant = ProphetVariantConfig(
         model_id="C2test",
         history_mode="expanding",
-        rolling_window_hours=None,
-        retraining_interval_hours=24,
+        rolling_window_days=None,
+        retraining_interval_days=1,
     )
 
     forecasts = build_walk_forward_forecasts(
@@ -149,8 +149,8 @@ def test_prophet_expanding_history_grows_and_retrains_on_schedule() -> None:
         run_id="r1",
         experiment_id="e1",
         split="validation",
-        horizon_hours=24,
-        forecast_origin_step_hours=24,
+        horizon_days=1,
+        forecast_origin_step_days=1,
         frequency="1h",
         prophet_variant=variant,
         growth="linear",
@@ -185,8 +185,8 @@ def test_prophet_fixed_train_reuses_the_same_model_and_history() -> None:
     variant = ProphetVariantConfig(
         model_id="C1test",
         history_mode="fixed_train",
-        rolling_window_hours=None,
-        retraining_interval_hours=None,
+        rolling_window_days=None,
+        retraining_interval_days=None,
     )
 
     forecasts = build_walk_forward_forecasts(
@@ -196,8 +196,8 @@ def test_prophet_fixed_train_reuses_the_same_model_and_history() -> None:
         run_id="r1",
         experiment_id="e1",
         split="validation",
-        horizon_hours=24,
-        forecast_origin_step_hours=24,
+        horizon_days=1,
+        forecast_origin_step_days=1,
         frequency="1h",
         prophet_variant=variant,
         growth="linear",

@@ -32,6 +32,7 @@ def _calendar_context(decision_time: pd.Timestamp):
         decision_time=decision_time,
         window_start=decision_time - pd.Timedelta(hours=24),
         window_end=decision_time + pd.Timedelta(hours=24),
+        local_timezone="Europe/London",
     )
 
 
@@ -50,16 +51,6 @@ def test_event_adaptation_requires_a_classification_mode() -> None:
     with pytest.raises(ValueError, match="event_adaptation"):
         run_cycle(
             _state(_hourly("2024-01-01", [100.0])), _hourly("2024-01-01", [100.0]), pd.Timestamp("2024-01-01", tz="UTC"), config,
-            local_timezone="Europe/London",
-        )
-
-
-def test_decision_time_must_be_utc() -> None:
-    new_observations = _hourly("2024-01-02", [100.0])
-
-    with pytest.raises(ValueError, match="UTC"):
-        run_cycle(
-            _state(_hourly("2024-01-01", [100.0])), new_observations, pd.Timestamp("2024-01-02T01:00:00"), SYS_VARIANTS["SYS0"],
             local_timezone="Europe/London",
         )
 
@@ -191,9 +182,11 @@ def test_sustained_level_shift_triggers_new_pattern_with_baseline_reset() -> Non
 
     history_start_before_adaption = state.history.index[0]
 
-    # vier weitere Tage im Shift -> streak_tolerance_window_days=7 mit 6 Treffern noetig -> new_pattern
-    for _ in range(3):
-        _, state = _advance_one_day(series, state, config)
+    # new_pattern erst, wenn die Streak voll ist (6 von 7 Tagen), vorher bleibt es peak
+    streak_days = config.numerical_analysis_config.sustained_anomaly_streak_days
+    for _ in range(streak_days - 2):
+        result, state = _advance_one_day(series, state, config)
+        assert result.classification != "new_pattern"
     second_result, second_state = _advance_one_day(series, state, config)
 
     assert second_result.classification == "new_pattern"

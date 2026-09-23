@@ -2,7 +2,7 @@ from collections.abc import Mapping
 
 import pandas as pd
 
-from src.common.timestamps import parse_utc_timestamp
+from src.common.timestamps import local_isoformat, parse_utc_timestamp
 from src.context.calendar_schema import (
     REQUIRED_EVENT_FIELDS,
     CalendarContext,
@@ -21,6 +21,7 @@ def build_calendar_context(
     decision_time: str | pd.Timestamp,
     window_start: str | pd.Timestamp,
     window_end: str | pd.Timestamp,
+    local_timezone: str,
 ) -> CalendarContext:
     """
     Überführt bereits abgerufene Kalenderereignisse in kausal verfügbaren Kontext.
@@ -56,10 +57,10 @@ def build_calendar_context(
     context: CalendarContext = {
         "source_available": source_available,
         "source": source,
-        "retrieved_at": retrieved_at.isoformat(),
-        "decision_time": decision_time.isoformat(),
-        "window_start": window_start.isoformat(),
-        "window_end": window_end.isoformat(),
+        "retrieved_at": local_isoformat(retrieved_at, local_timezone),
+        "decision_time": local_isoformat(decision_time, local_timezone),
+        "window_start": local_isoformat(window_start, local_timezone),
+        "window_end": local_isoformat(window_end, local_timezone),
         "events": [],
     }
 
@@ -70,7 +71,7 @@ def build_calendar_context(
         validate_calendar_context(context)
         return context
 
-    normalized_events: list[CalendarEvent] = []
+    normalized_events: list[tuple[pd.Timestamp, pd.Timestamp, CalendarEvent]] = []
     event_ids: set[str] = set()
 
     for event in events:
@@ -110,24 +111,23 @@ def build_calendar_context(
             continue
 
         normalized_events.append(
-            {
-                "event_id": event_id,
-                "event_type": event_type,
-                "start": start.isoformat(),
-                "end": end.isoformat(),
-                "known_at": known_at.isoformat(),
-            }
+            (
+                start,
+                end,
+                {
+                    "event_id": event_id,
+                    "event_type": event_type,
+                    "start": local_isoformat(start, local_timezone),
+                    "end": local_isoformat(end, local_timezone),
+                    "known_at": local_isoformat(known_at, local_timezone),
+                },
+            )
         )
 
-    normalized_events.sort(
-        key=lambda event: (
-            event["start"],
-            event["end"],
-            event["event_id"],
-        )
-    )
+    # nach Zeitpunkt statt nach String sortieren, Sommer- und Winterzeit haben unterschiedliche Offsets
+    normalized_events.sort(key=lambda item: (item[0], item[1], item[2]["event_id"]))
 
-    context["events"] = normalized_events
+    context["events"] = [event for _start, _end, event in normalized_events]
     validate_calendar_context(context)
 
     return context

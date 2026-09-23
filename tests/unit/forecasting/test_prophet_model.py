@@ -25,6 +25,7 @@ def _fit(
     country_holidays: str | None = None,
     local_timezone: str = "UTC",
     log_transform: bool = False,
+    level_shift_start: pd.Timestamp | None = None,
 ):
     return fit_prophet_model(
         history,
@@ -37,6 +38,7 @@ def _fit(
         log_transform=log_transform,
         interval_width=0.8,
         uncertainty_samples=200,
+        level_shift_start=level_shift_start,
     )
 
 
@@ -129,20 +131,46 @@ def test_log_transform_forecast_stays_positive_and_matches_scale() -> None:
     assert forecast["y_pred"].between(10, 1000).all()
 
 
+def test_level_shift_regressor_is_dropped_once_its_start_left_the_window() -> None:
+    history = _history([100.0] * 48)
+
+    inside = _fit(history, level_shift_start=history.index[24])
+    before = _fit(history, level_shift_start=history.index[0])
+
+    assert "level_shift" in inside.extra_regressors
+    assert "level_shift" not in before.extra_regressors
+
+
+def test_level_shift_forecast_continues_at_the_new_level() -> None:
+    np.random.seed(0)
+    history = _history([100.0] * 48 + [200.0] * 24)
+    model = _fit(history, level_shift_start=history.index[48])
+    target_index = pd.date_range(history.index[-1] + pd.Timedelta(hours=1), periods=6, freq="1h", tz="UTC")
+
+    forecast = build_prophet_forecast(
+        model, target_index, clip_negative_forecasts=False,
+        history_end=history.index[-1], local_timezone="UTC", log_transform=False,
+    )
+
+    assert forecast["y_pred"].between(180, 220).all()
+
+
 def test_first_call_always_refits_regardless_of_history_mode() -> None:
     assert is_refit_required(
         False,
         history_mode="fixed_train",
         fitted_at=None,
         current_time=pd.Timestamp("2020-01-02", tz="UTC"),
-        retraining_interval_hours=24,
+        retraining_interval_days=1,
+        local_timezone="UTC",
     )
     assert is_refit_required(
         False,
         history_mode="expanding",
         fitted_at=None,
         current_time=pd.Timestamp("2020-01-02", tz="UTC"),
-        retraining_interval_hours=24,
+        retraining_interval_days=1,
+        local_timezone="UTC",
     )
 
 
@@ -152,7 +180,8 @@ def test_fixed_train_never_refits_again_once_a_model_exists() -> None:
         history_mode="fixed_train",
         fitted_at=pd.Timestamp("2020-01-01", tz="UTC"),
         current_time=pd.Timestamp("2021-01-01", tz="UTC"),
-        retraining_interval_hours=None,
+        retraining_interval_days=None,
+        local_timezone="UTC",
     )
 
 
@@ -164,23 +193,26 @@ def test_expanding_refits_only_once_the_interval_has_elapsed() -> None:
         history_mode="expanding",
         fitted_at=fitted_at,
         current_time=fitted_at + pd.Timedelta(hours=23),
-        retraining_interval_hours=24,
+        retraining_interval_days=1,
+        local_timezone="UTC",
     )
     assert is_refit_required(
         True,
         history_mode="expanding",
         fitted_at=fitted_at,
         current_time=fitted_at + pd.Timedelta(hours=24),
-        retraining_interval_hours=24,
+        retraining_interval_days=1,
+        local_timezone="UTC",
     )
 
 
 def test_expanding_without_a_retraining_interval_raises() -> None:
-    with pytest.raises(RuntimeError, match="retraining_interval_hours"):
+    with pytest.raises(RuntimeError, match="retraining_interval_days"):
         is_refit_required(
             True,
             history_mode="expanding",
             fitted_at=pd.Timestamp("2020-01-01", tz="UTC"),
             current_time=pd.Timestamp("2020-01-02", tz="UTC"),
-            retraining_interval_hours=None,
+            retraining_interval_days=None,
+            local_timezone="UTC",
         )

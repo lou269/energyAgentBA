@@ -7,22 +7,20 @@
 
 import argparse
 import logging
-from pathlib import Path
+from dataclasses import asdict
 
 from experiments.proposal_experiments.e_config import E1Config
 from experiments.proposal_experiments.e1_new_device.e1_scenarios import build_device_scenario, load_device_hourly
 from experiments.proposal_experiments.shared import build_decision_times, crop_history_for_coldstart, load_target_series
-from src.common.timestamps import parse_utc_timestamp
+from src.common.timestamps import local_midnight_utc
 from src.config.project_config import ProjectConfig, ensure_project_directories
 from src.llm.llm_run_artifacts import load_prompt
 from src.llm.llm_runner import PROMPT_DIRECTORY
 from src.pipeline.comparison_harness import run_comparison
 from src.config.config_forecasting import ComparisonConfig, ForecastingConfig, SYS_VARIANTS
-from src.pipeline.io import next_sequential_number
+from src.pipeline.io import create_experiment_run
 
 logger = logging.getLogger(__name__)
-
-OUTPUT_DIR = Path(__file__).parent / "output"
 
 
 class E1Runner:
@@ -37,7 +35,7 @@ class E1Runner:
         self.forecast_config = forecast_config or ForecastingConfig()
 
     def run(self, apply_device_injection: bool = True) -> None:
-        cutover_time = parse_utc_timestamp(self.e1_config.cutover_time, "E1Config.cutover_time")
+        cutover_time = local_midnight_utc(self.e1_config.cutover_date, self.project_config.timezone)
         ensure_project_directories(self.project_config)
 
         mains_series, target_imputed, target_value_implausible, _meter_key = load_target_series(self.project_config)
@@ -50,12 +48,13 @@ class E1Runner:
         )
 
         mains_series = crop_history_for_coldstart(
-            mains_series, coldstart_hours=self.forecast_config.cycle_coldstart_hours, first_decision_time=decision_times[0],
+            mains_series, coldstart_days=self.forecast_config.cycle_coldstart_days, first_decision_time=decision_times[0],
+            local_timezone=self.project_config.timezone,
         )
 
         scenario = build_device_scenario(
             mains_series, device_hourly, self.e1_config.device_meter_key,
-            cutover_time=cutover_time, coldstart_hours=self.forecast_config.cycle_coldstart_hours,
+            cutover_time=cutover_time, coldstart_days=self.forecast_config.cycle_coldstart_days,
             decision_times=decision_times, target_imputed=target_imputed,
             value_implausible=target_value_implausible,
             apply_device_injection=apply_device_injection,
@@ -68,9 +67,9 @@ class E1Runner:
 
 
         run_prefix = "e1" if apply_device_injection else "e1_control"
-        e1_run_number = next_sequential_number(OUTPUT_DIR, prefix=run_prefix)
-        e1_run_directory = OUTPUT_DIR / f"{run_prefix}_{e1_run_number:03d}"
-        e1_run_directory.mkdir(parents=True, exist_ok=False)
+        e1_run_directory, raw_directory = create_experiment_run(
+            self.project_config.e1_output_dir, run_prefix, {"e1_config": asdict(self.e1_config)},
+        )
 
         configs = {
             "SYS1": SYS_VARIANTS["SYS1"],
@@ -85,13 +84,13 @@ class E1Runner:
             "Running E1 (cutover=%s, apply_device_injection=%s) over %d decision times...", cutover_time, apply_device_injection, len(decision_times),
         )
         run_comparison(
-            scenario, configs, e1_run_directory, self.project_config.project_root,
+            scenario, configs, raw_directory, self.project_config.project_root,
             local_timezone=self.project_config.timezone,
             run_id=e1_run_directory.name, llm_prompt=llm_prompt,
             max_consecutive_llm_failures=comparison_config.max_consecutive_llm_failures,
             max_total_llm_failures=comparison_config.max_total_llm_failures,
-            calendar_lookback_hours=comparison_config.calendar_lookback_hours,
-            calendar_lookahead_hours=comparison_config.calendar_lookahead_hours,
+            calendar_lookback_days=comparison_config.calendar_lookback_days,
+            calendar_lookahead_days=comparison_config.calendar_lookahead_days,
         )
 
         logger.info("E1 completed, see %s.", e1_run_directory)

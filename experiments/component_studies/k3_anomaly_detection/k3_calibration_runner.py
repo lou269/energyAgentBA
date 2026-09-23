@@ -4,7 +4,6 @@
 # Stufe 3: Schwellen je Referenzfenster bei gleicher Fehlalarmrate, danach Vergleich der Fenster an diesem Arbeitspunkt
 
 import sys
-from pathlib import Path
 
 import pandas as pd
 
@@ -16,17 +15,16 @@ from experiments.component_studies.k3_anomaly_detection.k3_calibration import (
 )
 from experiments.component_studies.k3_anomaly_detection.k3_config import K3CalibrationConfig
 from src.config.config_forecasting import NumericalAnalysisConfig
-from src.pipeline.io import df_to_csv, resolve_run_directory
-
-OUTPUT_DIR = Path(__file__).parent / "output"
+from src.config.project_config import ProjectConfig
+from src.pipeline.io import RAW_SUBDIR, df_to_csv, resolve_run_directory
 
 
 def main() -> None:
     calibration_config = K3CalibrationConfig()
     numerical_analysis_config = NumericalAnalysisConfig()
-    run_directory = resolve_run_directory(OUTPUT_DIR, "k3", sys.argv[1] if len(sys.argv) > 1 else None)
+    run_directory = resolve_run_directory(ProjectConfig().k3_output_dir, "k3", sys.argv[1] if len(sys.argv) > 1 else None)
 
-    results = pd.read_csv(run_directory / "k3_results.csv", dtype={"cutover_date": str})
+    results = pd.read_csv(run_directory / RAW_SUBDIR / "k3_results.csv", dtype={"cutover_date": str})
 
     grid_metrics = build_grid_metrics(
         results,

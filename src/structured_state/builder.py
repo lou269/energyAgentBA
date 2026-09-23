@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 from src.common.forecast_summary import mean_and_peak, mean_interval_width
-from src.common.timestamps import parse_utc_timestamp
+from src.common.timestamps import local_isoformat, parse_utc_timestamp
 from src.common.validation import require_non_empty_string
 from src.context.calendar_schema import CalendarContext
 from src.pipeline.schema_validation import is_real_number
@@ -14,7 +14,6 @@ from src.structured_state.structured_state_schema import (
     ANOMALY_DIRECTIONS,
     ANOMALY_LEVELS,
     TREND_NAMES,
-    FORECAST_HORIZON_HOURS,
     SCALE_NAMES,
     SCHEMA_VERSION,
     ContextState,
@@ -87,6 +86,7 @@ def build_structured_state(
     analysis_row: pd.Series,
     forecast_rows: pd.DataFrame,
     calendar_context: CalendarContext,
+    local_timezone: str,
 ) -> StructuredState:
     decision_time = parse_utc_timestamp(decision_time, "decision_time")
 
@@ -131,6 +131,7 @@ def build_structured_state(
     forecast_state = _build_forecast_state(
         forecast_rows=forecast_rows,
         decision_time=decision_time,
+        local_timezone=local_timezone,
     )
 
     context: ContextState = {
@@ -144,10 +145,10 @@ def build_structured_state(
 
     state: StructuredState = {
         "schema_version": SCHEMA_VERSION,
-        "decision_time": decision_time.isoformat(),
+        "decision_time": local_isoformat(decision_time, local_timezone),
         "observation": {
-            "observation_start": analysis_timestamp.isoformat(),
-            "observation_end": decision_time.isoformat(),
+            "observation_start": local_isoformat(analysis_timestamp, local_timezone),
+            "observation_end": local_isoformat(decision_time, local_timezone),
             "current_power_w": _nullable_float(analysis_row["today_mean"], "analysis.today_mean"),
             "value_implausible": _bool(analysis_row["value_implausible"], "analysis.value_implausible"),
         },
@@ -170,7 +171,7 @@ def build_structured_state(
             "level": _nullable_text(analysis_row["anomaly_level"], "anomaly.level", ANOMALY_LEVELS),
             "direction": _nullable_text(analysis_row["anomaly_direction"],"anomaly.direction", ANOMALY_DIRECTIONS),
             "dominant_scale": _nullable_text(analysis_row["dominant_scale"], "anomaly.dominant_scale", SCALE_NAMES),
-            "peak_timestamp": _nullable_timestamp(analysis_row["anomaly_peak_timestamp"], "analysis.anomaly_peak_timestamp"),
+            "peak_timestamp": _nullable_timestamp(analysis_row["anomaly_peak_timestamp"], "analysis.anomaly_peak_timestamp", local_timezone),
             "scale_scores": scale_scores,
             "scale_anomaly_streak_days": scale_streak_days,
             "sustained_scales": sustained_scales,
@@ -188,12 +189,10 @@ def _build_forecast_state(
     *, 
     forecast_rows: pd.DataFrame,
     decision_time: pd.Timestamp,
+    local_timezone: str,
 ) -> ForecastState:
     if forecast_rows.empty:
         raise ValueError("Forecast rows must not be empty.")
-
-    if len(forecast_rows) != FORECAST_HORIZON_HOURS:
-        raise ValueError(f"Forecast must contain exactly {FORECAST_HORIZON_HOURS} rows.")
 
     forecast = forecast_rows.sort_values("target_timestamp").reset_index(drop=True)
 
@@ -227,7 +226,7 @@ def _build_forecast_state(
 
         forecast_points.append(
             {
-                "timestamp": timestamp.isoformat(),
+                "timestamp": local_isoformat(timestamp, local_timezone),
                 "predicted_power_w": prediction,
                 "lower_w": lower,
                 "upper_w": upper,
@@ -241,8 +240,8 @@ def _build_forecast_state(
         "run_id": run_id,
         "model_id": model_id,
         "config_version": config_version,
-        "origin": forecast_origin.isoformat(),
-        "horizon_hours": FORECAST_HORIZON_HOURS,
+        "origin": local_isoformat(forecast_origin, local_timezone),
+        "horizon_hours": len(forecast_points),
         "points": forecast_points,
         "summary": {
             "mean_w": mean_w,
@@ -319,11 +318,12 @@ def _nullable_text(
 def _nullable_timestamp(
     value: object,
     field_name: str,
+    local_timezone: str,
 ) -> str | None:
     if _is_missing(value):
         return None
 
-    return parse_utc_timestamp(value, field_name).isoformat()
+    return local_isoformat(parse_utc_timestamp(value, field_name), local_timezone)
 
 
 def _bool(

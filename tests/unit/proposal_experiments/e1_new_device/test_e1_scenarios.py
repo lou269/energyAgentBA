@@ -37,7 +37,7 @@ def test_before_cutover_device_load_is_subtracted_from_mains() -> None:
     cutover_time = mains.index[100]
 
     scenario = build_device_scenario(
-        mains, device, DEVICE_METER_KEY, cutover_time=cutover_time, coldstart_hours=24, decision_times=(mains.index[150],),
+        mains, device, DEVICE_METER_KEY, cutover_time=cutover_time, coldstart_days=1, decision_times=(mains.index[150],),
     )
 
     before = mains.index[96]  # aktive Gerätestunde (Tag 4, 00:00), liegt vor dem Cutover
@@ -51,7 +51,7 @@ def test_at_and_after_cutover_mains_is_left_unchanged() -> None:
     cutover_time = mains.index[96]  # selbst eine aktive Gerätestunde -> prüft die Inklusiv-Grenze direkt
 
     scenario = build_device_scenario(
-        mains, device, DEVICE_METER_KEY, cutover_time=cutover_time, coldstart_hours=24, decision_times=(mains.index[150],)
+        mains, device, DEVICE_METER_KEY, cutover_time=cutover_time, coldstart_days=1, decision_times=(mains.index[150],)
     )
 
     for timestamp in (cutover_time, mains.index[120]):
@@ -67,20 +67,20 @@ def test_cutover_time_must_lie_strictly_inside_the_series(bad_cutover_offset: in
     with pytest.raises(ValueError, match="cutover_time"):
         build_device_scenario(
             mains, device, DEVICE_METER_KEY, cutover_time=mains.index[bad_cutover_offset],
-            coldstart_hours=24, decision_times=(mains.index[150],),
+            coldstart_days=1, decision_times=(mains.index[150],),
         )
 
 
 def test_run_comparison_completes_across_the_cutover(tmp_path: Path) -> None:
     mains = _mains(480)
     device = _device(480)
-    coldstart_hours = 200
-    decision_times = tuple(pd.date_range(start=mains.index[coldstart_hours] + pd.Timedelta(hours=1), periods=5, freq="24h", tz="UTC"))
+    coldstart_days = 8
+    decision_times = tuple(pd.date_range(start=mains.index[0] + pd.Timedelta(days=coldstart_days + 1), periods=5, freq="24h"))
     cutover_time = decision_times[2]  # liegt zwischen dem 2. und 3. Zyklus -> beide Seiten werden durchlaufen
 
     scenario = build_device_scenario(
         mains, device, DEVICE_METER_KEY,
-        cutover_time=cutover_time, coldstart_hours=coldstart_hours, decision_times=decision_times,
+        cutover_time=cutover_time, coldstart_days=coldstart_days, decision_times=decision_times,
     )
 
     config = {"SYS2": SYS_VARIANTS["SYS2"]}
@@ -92,8 +92,8 @@ def test_run_comparison_completes_across_the_cutover(tmp_path: Path) -> None:
         local_timezone="Europe/London",
         max_consecutive_llm_failures=COMPARISON_CONFIG.max_consecutive_llm_failures,
         max_total_llm_failures=COMPARISON_CONFIG.max_total_llm_failures,
-        calendar_lookback_hours=COMPARISON_CONFIG.calendar_lookback_hours,
-        calendar_lookahead_hours=COMPARISON_CONFIG.calendar_lookahead_hours,
+        calendar_lookback_days=COMPARISON_CONFIG.calendar_lookback_days,
+        calendar_lookahead_days=COMPARISON_CONFIG.calendar_lookahead_days,
     )
 
     assert len(result) == len(decision_times)

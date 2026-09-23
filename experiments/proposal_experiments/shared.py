@@ -3,7 +3,7 @@ from collections.abc import Sequence
 import pandas as pd
 
 from src.common.target_series import load_target_series
-from src.common.timestamps import local_calendar_range
+from src.common.timestamps import local_calendar_range, shift_local_days
 
 
 def build_decision_times(
@@ -14,20 +14,21 @@ def build_decision_times(
     margin_after_days: int,
     local_timezone: str,
 ) -> tuple[pd.Timestamp, ...]:
-    start = window_start - pd.Timedelta(days=margin_before_days)
-    end = window_end + pd.Timedelta(days=margin_after_days)
+    start = shift_local_days(window_start, -margin_before_days, local_timezone)
+    end = shift_local_days(window_end, margin_after_days, local_timezone)
 
-    return tuple(local_calendar_range(start, 24, end, local_timezone))
+    return tuple(local_calendar_range(start, 1, end, local_timezone))
 
 
 def crop_history_for_coldstart(
     series: pd.Series,
     *,
-    coldstart_hours: int,
+    coldstart_days: int,
     first_decision_time: pd.Timestamp,
+    local_timezone: str,
 ) -> pd.Series:
-    
-    crop_start = first_decision_time - pd.Timedelta(hours=coldstart_hours + 24)
+    # coldstart_days Historie plus der Tag vor first_decision_time, der im ersten Zyklus als new_observations kommt
+    crop_start = shift_local_days(first_decision_time, -(coldstart_days + 1), local_timezone)
     return series.loc[crop_start:]
 
 
@@ -66,4 +67,11 @@ def add_constant_step(series: pd.Series, start: pd.Timestamp, watts: float) -> p
     stepped.loc[stepped.index >= start] += watts
 
     return stepped
+
+
+def scale_from(series: pd.Series, start: pd.Timestamp, factor: float) -> pd.Series:
+    scaled = series.copy()
+    scaled.loc[scaled.index >= start] *= factor
+
+    return scaled
 

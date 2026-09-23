@@ -10,12 +10,12 @@ import pandas as pd
 
 from experiments.component_studies.k4_llm_classification.k4_1_llm_model.baseline_classifier import baseline_classify
 from experiments.component_studies.k4_llm_classification.k4_1_llm_model.evaluation_cases import LLMEvaluationCase, llm_relevant_cases
-from experiments.component_studies.k4_llm_classification.k4_1_llm_model.llm_model_config import K4_OUTPUT_ROOT, LLMModelExperimentConfig, LLMModelVariant
+from experiments.component_studies.k4_llm_classification.k4_1_llm_model.llm_model_config import LLMModelExperimentConfig, LLMModelVariant
 from src.llm.client import LLMClient, ModelMetadata, OllamaClient
 from src.llm.inference import LLMAttemptRecord, LLMInferenceError, infer_llm_output
 from src.llm.llm_run_artifacts import load_prompt
 from src.llm.llm_runner import PROMPT_DIRECTORY
-from src.pipeline.io import append_csv, append_jsonl, next_sequential_number, save_json
+from src.pipeline.io import append_csv, append_jsonl, create_experiment_run, save_json
 
 logger = logging.getLogger(__name__)
 
@@ -36,10 +36,8 @@ class LLMModelRunner:
         )
         prompt = load_prompt(PROMPT_DIRECTORY / f"prompt_{self.experiment_config.base_llm_config.prompt_version}.txt")
 
-        run_number = next_sequential_number(K4_OUTPUT_ROOT, prefix="k4")
-        run_dir = K4_OUTPUT_ROOT / f"k4_{run_number:03d}"
-        results_file = run_dir / "results.csv"
-        raw_dir = run_dir / "raw"
+        run_dir, raw_dir = create_experiment_run(self.experiment_config.project_config.k4_output_dir, "k4", {"config": asdict(self.experiment_config)})
+        results_file = raw_dir / "results.csv"
 
         logger.info(
             "Starting K4.1 model comparison: %d models x %d cases x %d repetitions.",
@@ -57,11 +55,10 @@ class LLMModelRunner:
         save_json(
             {
                 "experiment_id": self.experiment_config.experiment_id,
-                "config": asdict(self.experiment_config),
                 "cases": {case.case_id: case.expected_classification for case in cases},
                 "runtime_seconds": perf_counter() - run_started,
             },
-            run_dir / "run_manifest.json",
+            raw_dir / "run_manifest.json",
         )
 
         logger.info("K4.1 model comparison completed: %s", run_dir)

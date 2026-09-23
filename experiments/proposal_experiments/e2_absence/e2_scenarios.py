@@ -6,7 +6,7 @@ from src.pipeline.comparison_harness import ScenarioData
 def build_ctx_scenarios(
     target_series: pd.Series,
     *,
-    coldstart_hours: int,
+    coldstart_days: int,
     decision_times: tuple[pd.Timestamp, ...],
     calendar_events: tuple[Mapping[str, object], ...],
     target_imputed: pd.Series | None = None,
@@ -14,7 +14,7 @@ def build_ctx_scenarios(
 ) -> tuple[ScenarioData, ScenarioData]:
     ctx0 = ScenarioData(
         target_series=target_series,
-        coldstart_hours=coldstart_hours,
+        coldstart_days=coldstart_days,
         decision_times=decision_times,
         calendar_events=(),
         calendar_source_available=False,
@@ -24,7 +24,7 @@ def build_ctx_scenarios(
     )
     ctx1 = ScenarioData(
         target_series=target_series,
-        coldstart_hours=coldstart_hours,
+        coldstart_days=coldstart_days,
         decision_times=decision_times,
         calendar_events=calendar_events,
         calendar_source_available=True,

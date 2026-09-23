@@ -1,4 +1,0 @@
-variant,gate_threshold,weekly_threshold,long_term_threshold,alarm_rate,false_new_pattern,detected,detection_day,rank
-REF_ROLL60,2.6,1.25,1.0,0.04136155606407323,1.0,4,10.5,1
-REF_EXPANDING,2.6,1.25,1.5,0.03924485125858124,1.0,4,12.75,2
-REF_STATIC,2.6,2.5,5.0,0.04797864225781846,0.5,3,22.0,3

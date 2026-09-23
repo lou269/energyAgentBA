@@ -65,7 +65,7 @@ class NumericalAnalysisConfig:
     reference_window_rolling_days: int | None = 60
 
     # 3-Tage-Fenster ab reference_window_end: train bis reference_window_end-1, Rest validation+test
-    reference_window_hours: int = 72
+    reference_window_days: int = 3
 
     min_weekly_reference_samples: int = 1
     min_longterm_reference_samples: int = 1
@@ -82,8 +82,8 @@ class NumericalAnalysisConfig:
 class ProphetVariantConfig:
     model_id: str
     history_mode: HistoryMode
-    rolling_window_hours: int | None
-    retraining_interval_hours: int | None
+    rolling_window_days: int | None
+    retraining_interval_days: int | None
     weekly_seasonality: bool = False
     yearly_seasonality: bool = False
 
@@ -91,36 +91,36 @@ class ProphetVariantConfig:
 C1_STATIC = ProphetVariantConfig(
     model_id="C1",
     history_mode="fixed_train",
-    rolling_window_hours=None,
-    retraining_interval_hours=None,
+    rolling_window_days=None,
+    retraining_interval_days=None,
 )
 
 C2_EXPANDING = ProphetVariantConfig(
     model_id="C2",
     history_mode="expanding",
-    rolling_window_hours=None,
-    retraining_interval_hours=24,
+    rolling_window_days=None,
+    retraining_interval_days=1,
 )
 
 C3_ROLLING_7 = ProphetVariantConfig(
     model_id="C3_7",
     history_mode="rolling",
-    rolling_window_hours=7 * 24,
-    retraining_interval_hours=24,
+    rolling_window_days=7,
+    retraining_interval_days=1,
 )
 
 C3_ROLLING_30 = ProphetVariantConfig(
     model_id="C3_30",
     history_mode="rolling",
-    rolling_window_hours=30 * 24,
-    retraining_interval_hours=24,
+    rolling_window_days=30,
+    retraining_interval_days=1,
 )
 
 C3_ROLLING_60 = ProphetVariantConfig(
     model_id="C3_60",
     history_mode="rolling",
-    rolling_window_hours=60 * 24,
-    retraining_interval_hours=24,
+    rolling_window_days=60,
+    retraining_interval_days=1,
 )
 
 FORECAST_MODEL_PROPHET_VARIANTS: tuple[ProphetVariantConfig, ...] = (
@@ -130,6 +130,17 @@ FORECAST_MODEL_PROPHET_VARIANTS: tuple[ProphetVariantConfig, ...] = (
     C3_ROLLING_30,
     C3_ROLLING_60
 )
+
+MODEL_LABELS: dict[str, str] = {
+    "B1": "B1 naiv, letzter Wert",
+    "B2": "B2 naiv, Vortag",
+    "B3": "B3 naiv, Vorwoche",
+    "C1": "C1 statisch",
+    "C2": "C2 expanding",
+    "C3_7": "C3_7 rolling 7 Tage",
+    "C3_30": "C3_30 rolling 30 Tage",
+    "C3_60": "C3_60 rolling 60 Tage",
+}
 
 selected_prophet_model = C3_ROLLING_30
 
@@ -145,12 +156,13 @@ class ForecastingConfig:
     # Forecast-Ziel
     frequency: str = "1h"
 
-    horizon_hours: int = 24
+    # ganze lokale Kalendertage ab Mitternacht
+    horizon_days: int = 1
 
     # Walk-Forward-Evaluation
-    forecast_origin_step_hours: int = 24
+    forecast_origin_step_days: int = 1
 
-    cycle_coldstart_hours: int =  60 * 24
+    cycle_coldstart_days: int = 60
 
     # Naive Baselines
     baseline_model_ids: tuple[str, ...] = ("B1", "B2", "B3")
@@ -194,8 +206,8 @@ class LLMConfig:
 class ComparisonConfig:
     max_consecutive_llm_failures: int = 5
     max_total_llm_failures: int = 15
-    calendar_lookback_hours: int = 24
-    calendar_lookahead_hours: int = 24
+    calendar_lookback_days: int = 1
+    calendar_lookahead_days: int = 1
 
 
 @dataclass(frozen=True)
@@ -232,4 +244,11 @@ SYS_VARIANTS: dict[str, CycleConfig] = {
         llm_mode="real",
         llm_config=LLMConfig(model="qwen3:8b"),
     ),
+}
+
+SYS_LABELS: dict[str, str] = {
+    "SYS0": "SYS0 statisch, ohne Adaption",
+    "SYS1": "SYS1 ohne Adaption",
+    "SYS2": "SYS2 Regel",
+    "SYS3": "SYS3 LLM",
 }

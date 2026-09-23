@@ -70,7 +70,7 @@ def test_step_scenario_shares_decision_times_and_only_differs_after_the_cutover(
     mains = pd.Series(300.0, index=index, name="mains")
 
     scenarios = build_k3_scenarios(
-        mains, cutover_date="2014-04-15", coldstart_hours=20 * 24,
+        mains, cutover_date="2014-04-15", coldstart_days=20,
         monitoring_before_cutover_days=20, margin_after_days=10,
         step_injection_w=100.0, local_timezone="Europe/London",
     )

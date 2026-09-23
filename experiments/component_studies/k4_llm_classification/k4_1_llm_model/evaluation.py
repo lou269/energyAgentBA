@@ -9,12 +9,12 @@ from pathlib import Path
 import pandas as pd
 
 from experiments.component_studies.k4_llm_classification.k4_1_llm_model.evaluation_cases import EXPECTED_EVIDENCE_PATHS
-from experiments.component_studies.k4_llm_classification.k4_1_llm_model.llm_model_config import K4_OUTPUT_ROOT, K4_SEQUENCE_OUTPUT_ROOT
 from experiments.proposal_experiments.e_config import E1Config
 from experiments.proposal_experiments.shared_analysis import summarize_classification_detection, summarize_mae_before_after
-from src.common.timestamps import parse_utc_timestamp
+from src.common.timestamps import local_midnight_utc
+from src.config.project_config import ProjectConfig
 from src.llm.llm_schema import CLASSIFICATIONS
-from src.pipeline.io import df_to_csv, find_run_directory
+from src.pipeline.io import RAW_SUBDIR, df_to_csv, find_run_directory
 
 
 ''' EBENE 1 - billiger Einzelfall-Vergleich (synthetische Fälle, isoliert) '''
@@ -100,7 +100,7 @@ def export_explanations_for_rating(run_dir: Path) -> Path:
 
     rows = []
 
-    for raw_file in sorted((run_dir / "raw").glob("*.jsonl")):
+    for raw_file in sorted((run_dir / RAW_SUBDIR).glob("*.jsonl")):
         for line in raw_file.read_text().splitlines():
             record = json.loads(line)
 
@@ -124,10 +124,10 @@ def export_explanations_for_rating(run_dir: Path) -> Path:
 
 ''' EBENE 2 - echter Sequenzvergleich (E1-Geräteszenario, Tag für Tag mit Adaption) '''
 
-def summarize_sequence(comparison: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
-    cutover_time = parse_utc_timestamp(E1Config().cutover_time, "E1Config.cutover_time")
+def summarize_sequence(comparison: pd.DataFrame, cutover_date: str, local_timezone: str) -> tuple[pd.DataFrame, pd.DataFrame]:
+    cutover_time = local_midnight_utc(cutover_date, local_timezone)
 
-    detection = summarize_classification_detection(comparison, cutover_time, "new_pattern")
+    detection = summarize_classification_detection(comparison, cutover_time, "new_pattern", local_timezone)
     mae_before_after = summarize_mae_before_after(comparison, cutover_time)
 
     return detection, mae_before_after
@@ -161,13 +161,14 @@ def main() -> None:
     parser.add_argument("--sequence-run", type=int, help="k4_seq_<number> Sequenz-Lauf. Standard: der neueste.")
 
     arguments = parser.parse_args()
+    k4_output_dir = ProjectConfig().k4_output_dir
 
     single_case_summary = None
-    single_found = find_run_directory(K4_OUTPUT_ROOT, prefix="k4", number=arguments.run)
+    single_found = find_run_directory(k4_output_dir, prefix="k4", number=arguments.run)
 
     if single_found is not None:
         _, single_run_dir = single_found
-        results = pd.read_csv(single_run_dir / "results.csv")
+        results = pd.read_csv(single_run_dir / RAW_SUBDIR / "results.csv")
 
         single_case_summary = summarize_models(results)
         df_to_csv(single_case_summary, single_run_dir, "model_comparison")
@@ -178,16 +179,16 @@ def main() -> None:
         print("=== Einzelfall-Vergleich (billiger Vorab-Check) ===")
         print(single_case_summary.to_string(index=False))
     else:
-        print(f"Kein K4-Einzelfall-Lauf unter {K4_OUTPUT_ROOT} gefunden - übersprungen.")
+        print(f"Kein K4-Einzelfall-Lauf unter {k4_output_dir} gefunden - übersprungen.")
 
     detection = mae_before_after = None
-    sequence_found = find_run_directory(K4_SEQUENCE_OUTPUT_ROOT, prefix="k4_seq", number=arguments.sequence_run)
+    sequence_found = find_run_directory(k4_output_dir, prefix="k4_seq", number=arguments.sequence_run)
 
     if sequence_found is not None:
         _, sequence_run_dir = sequence_found
-        comparison = pd.read_csv(sequence_run_dir / "comparison_summary.csv", parse_dates=["decision_time"])
+        comparison = pd.read_csv(sequence_run_dir / RAW_SUBDIR / "comparison_summary.csv", parse_dates=["decision_time"])
 
-        detection, mae_before_after = summarize_sequence(comparison)
+        detection, mae_before_after = summarize_sequence(comparison, E1Config().cutover_date, ProjectConfig().timezone)
         df_to_csv(detection, sequence_run_dir, "sequence_detection")
         df_to_csv(mae_before_after, sequence_run_dir, "sequence_mae_before_after")
 
@@ -196,11 +197,11 @@ def main() -> None:
         print()
         print(mae_before_after.to_string(index=False))
     else:
-        print(f"Kein K4-Sequenz-Lauf unter {K4_SEQUENCE_OUTPUT_ROOT} gefunden - übersprungen.")
+        print(f"Kein K4-Sequenz-Lauf unter {k4_output_dir} gefunden - übersprungen.")
 
     if single_case_summary is not None and detection is not None and mae_before_after is not None:
         combined = summarize_combined(single_case_summary, detection, mae_before_after)
-        df_to_csv(combined, K4_OUTPUT_ROOT.parent, "k4_combined_comparison")
+        df_to_csv(combined, k4_output_dir, "k4_combined_comparison")
 
         print("\n=== Gesamtübersicht (Einzelfall + Sequenz je Modell) ===")
         print(combined.to_string(index=False))

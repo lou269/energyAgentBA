@@ -20,8 +20,8 @@ def test_combines_baselines_and_a_prophet_variant_into_one_evaluated_comparison(
     variant = ProphetVariantConfig(
         model_id="C2test",
         history_mode="expanding",
-        rolling_window_hours=None,
-        retraining_interval_hours=24,
+        rolling_window_days=None,
+        retraining_interval_days=1,
     )
 
     forecasts, evaluation_results = run_forecast_comparison(
@@ -32,8 +32,8 @@ def test_combines_baselines_and_a_prophet_variant_into_one_evaluated_comparison(
         run_id="r1",
         experiment_id="e1",
         split="validation",
-        horizon_hours=24,
-        forecast_origin_step_hours=24,
+        horizon_days=1,
+        forecast_origin_step_days=1,
         frequency="1h",
         local_timezone="UTC",
         clip_negative_forecasts=False,

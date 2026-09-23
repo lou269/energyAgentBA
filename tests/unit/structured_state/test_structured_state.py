@@ -86,6 +86,7 @@ def _calendar_context() -> CalendarContext:
         decision_time=DECISION_TIME,
         window_start=DECISION_TIME - pd.Timedelta(days=1),
         window_end=DECISION_TIME + pd.Timedelta(days=1),
+        local_timezone="UTC",
     )
 
 
@@ -100,7 +101,8 @@ def _build_state(
         decision_time=DECISION_TIME,
         analysis_row=analysis_row if analysis_row is not None else _analysis_row(),
         forecast_rows=forecast_rows if forecast_rows is not None else _forecast_rows(),
-        calendar_context=calendar_context if calendar_context is not None else _calendar_context()
+        calendar_context=calendar_context if calendar_context is not None else _calendar_context(),
+        local_timezone="UTC",
     )
 
 
@@ -136,9 +138,12 @@ def test_analysis_timestamp_must_precede_decision_time() -> None:
         _build_state(analysis_row=analysis_row)
 
 
-def test_forecast_requires_exactly_24_consecutive_points() -> None:
-    with pytest.raises(ValueError, match="exactly 24 rows"):
-        _build_state(forecast_rows=_forecast_rows().iloc[:-1])
+def test_forecast_requires_consecutive_points_matching_horizon_hours() -> None:
+    state = _build_state()
+    state["forecast"]["points"].pop()
+
+    with pytest.raises(ValueError, match="horizon_hours must equal"):
+        validate_structured_state(state)
 
     state = _build_state()
     state["forecast"]["points"][1]["timestamp"] = (DECISION_TIME + pd.Timedelta(hours=2)).isoformat()

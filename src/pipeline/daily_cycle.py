@@ -4,6 +4,7 @@ import pandas as pd
 from prophet import Prophet
 
 from src.adaption.adaption_policy import AdaptionAction, adaption_policy
+from src.common.timestamps import local_day_hours
 from src.config.config_forecasting import CycleConfig, ProphetVariantConfig
 from src.context.calendar_schema import CalendarContext
 from src.forecasting.prophet_model import build_prophet_forecast, fit_prophet_model, is_refit_required, select_prophet_history
@@ -24,6 +25,7 @@ class CycleState:
     model_history: pd.Series | None
     model_fitted_at: pd.Timestamp | None
     fixed_history: pd.Series | None = None
+    level_shift_start: pd.Timestamp | None = None
 
 
 @dataclass(frozen=True)
@@ -76,11 +78,14 @@ def run_cycle(
         history_mode=variant.history_mode,
         fitted_at=state.model_fitted_at,
         current_time=decision_time,
-        retraining_interval_hours=variant.retraining_interval_hours,
+        retraining_interval_days=variant.retraining_interval_days,
+        local_timezone=local_timezone,
     )
 
     if fit_required:
-        prophet_model, model_history = _fit_variant(fixed_history, history, decision_time, config, variant, local_timezone)
+        prophet_model, model_history = _fit_variant(
+            fixed_history, history, decision_time, config, variant, local_timezone, state.level_shift_start
+        )
         model_fitted_at = decision_time
     else:
         assert state.prophet_model is not None
@@ -91,7 +96,7 @@ def run_cycle(
 
     forecast = _build_forecast(prophet_model, model_history, decision_time, config, variant, local_timezone)
 
-    # None, solange die History (z.B. direkt nach einem Reset) kürzer als reference_window_hours ist
+    # None, solange die History (z.B. direkt nach einem Reset) kürzer als reference_window_days ist
     analysis_row = compute_analysis_row(
         history,
         target_timestamp=decision_time - pd.Timedelta(hours=1),
@@ -115,6 +120,7 @@ def run_cycle(
             analysis_row=analysis_row,
             forecast_rows=forecast,
             calendar_context=calendar_context,
+            local_timezone=local_timezone,
         )
 
         classification, llm_output, rule_output = _classify(structured_state, config, local_timezone, llm_client, llm_prompt)
@@ -124,14 +130,17 @@ def run_cycle(
                 classification,
                 structured_state,
                 streak_tolerance_window_days=config.numerical_analysis_config.streak_tolerance_window_days,
+                local_timezone=local_timezone,
             )
 
     reference_reset = False
 
     if adaption_action is not None and adaption_action.kind != "none":
-        history = _apply_adaption(history, adaption_action)
+        history = apply_adaption(history, adaption_action)
 
-        prophet_model, model_history = _fit_variant(fixed_history, history, decision_time, config, variant, local_timezone)
+        prophet_model, model_history = _fit_variant(
+            fixed_history, history, decision_time, config, variant, local_timezone, state.level_shift_start
+        )
         model_fitted_at = decision_time
         forecast = _build_forecast(prophet_model, model_history, decision_time, config, variant, local_timezone)
 
@@ -144,6 +153,7 @@ def run_cycle(
         model_history=model_history,
         model_fitted_at=model_fitted_at,
         fixed_history=fixed_history,
+        level_shift_start=state.level_shift_start,
     )
 
     result = CycleResult(
@@ -206,10 +216,11 @@ def _build_forecast(
     variant: ProphetVariantConfig,
     local_timezone: str,
 ) -> pd.DataFrame:
-    target_index = pd.date_range(
-        start=decision_time,
-        periods=config.forecasting_config.horizon_hours,
-        freq=config.forecasting_config.frequency,
+    target_index = local_day_hours(
+        decision_time,
+        config.forecasting_config.horizon_days,
+        config.forecasting_config.frequency,
+        local_timezone,
     )
 
     raw_forecast = build_prophet_forecast(
@@ -222,7 +233,7 @@ def _build_forecast(
     )
 
     forecast = raw_forecast.reset_index()[["target_timestamp", "y_pred", "y_lower", "y_upper"]].copy()
-    forecast["run_id"] = f"cycle_{decision_time.strftime('%Y%m%dT%H%M')}"
+    forecast["run_id"] = f"cycle_{decision_time.tz_convert(local_timezone).strftime('%Y%m%dT%H%M')}"
     forecast["model_id"] = variant.model_id
     forecast["config_version"] = config.forecasting_config.config_version
     forecast["forecast_origin"] = decision_time
@@ -237,6 +248,7 @@ def _fit_variant(
     config: CycleConfig,
     variant: ProphetVariantConfig,
     local_timezone: str,
+    level_shift_start: pd.Timestamp | None,
 ) -> tuple[Prophet, pd.Series]:
     forecasting_config = config.forecasting_config
 
@@ -245,7 +257,8 @@ def _fit_variant(
         available_history,
         forecast_origin=decision_time,
         history_mode=variant.history_mode,
-        rolling_window_hours=variant.rolling_window_hours,
+        rolling_window_days=variant.rolling_window_days,
+        local_timezone=local_timezone,
     )
 
     model = fit_prophet_model(
@@ -259,12 +272,13 @@ def _fit_variant(
         log_transform=forecasting_config.log_transform,
         interval_width=forecasting_config.interval_width,
         uncertainty_samples=forecasting_config.uncertainty_samples,
+        level_shift_start=level_shift_start,
     )
 
     return model, model_history
 
 
-def _apply_adaption(
+def apply_adaption(
     history: pd.Series,
     action: AdaptionAction
 ) -> pd.Series:

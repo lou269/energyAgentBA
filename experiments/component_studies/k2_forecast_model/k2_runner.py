@@ -1,9 +1,9 @@
 # conda activate forecasting-env
-# python -m experiments.component_studies.k2_forecast_model.forecast_model_runner
+# python -m experiments.component_studies.k2_forecast_model.k2_runner
 
 import logging
+from dataclasses import asdict
 from pathlib import Path
-from typing import cast
 
 import numpy as np
 import pandas as pd
@@ -14,12 +14,9 @@ from src.common.target_series import read_preprocessed_target
 from src.config.project_config import ProjectConfig, ensure_project_directories
 from src.forecasting.evaluation import select_primary_naive_reference
 from src.forecasting.forecasting import run_forecast_comparison
-from src.pipeline.io import df_to_csv, next_sequential_number, read_split_bounds
-from docs.plots.plot_forecast_model_vergleich import build_forecast_model_plot
+from src.pipeline.io import create_experiment_run, df_to_csv, read_split_bounds
 
 logger = logging.getLogger(__name__)
-
-OUTPUT_DIR = Path(__file__).parent / "output"
 
 
 class ForecastModelRunner:
@@ -39,8 +36,9 @@ class ForecastModelRunner:
         target_series, target_imputed, _target_value_implausible = read_preprocessed_target(self.project_config)
         split_start, split_end = read_split_bounds(self.project_config, self.experiment_config.split)
 
-        run_number = next_sequential_number(OUTPUT_DIR, prefix="k2")
-        run_root = OUTPUT_DIR / f"k2_{run_number:03d}"
+        run_directory, raw_directory = create_experiment_run(
+            self.project_config.k2_output_dir, "k2", {"experiment_config": asdict(self.experiment_config)},
+        )
 
         for mode in self.experiment_config.comparison_modes:
             history, targets, targets_imputed = slice_comparison_window(
@@ -48,9 +46,10 @@ class ForecastModelRunner:
                 split_start=split_start,
                 split_end=split_end,
                 mode=mode,
-                coldstart_hours=self.experiment_config.cycle_coldstart_hours,
+                coldstart_days=self.experiment_config.cycle_coldstart_days,
+                local_timezone=self.project_config.timezone,
             )
-            self._run_mode(mode, history, targets, targets_imputed, run_root=run_root, run_number=run_number)
+            self._run_mode(mode, history, targets, targets_imputed, raw_directory=raw_directory, run_name=run_directory.name)
 
     def _run_mode(
         self,
@@ -59,14 +58,14 @@ class ForecastModelRunner:
         targets: pd.Series,
         targets_imputed: pd.Series,
         *,
-        run_root: Path,
-        run_number: int,
+        raw_directory: Path,
+        run_name: str,
     ) -> None:
         split = self.experiment_config.split
         prophet_model_ids = tuple(variant.model_id for variant in self.experiment_config.prophet_variants)
 
-        run_id = f"{mode}_{split}_{run_number:03d}"
-        run_dir = run_root / f"{mode}_{SPLIT_DIRECTORY_SUFFIX[split]}"
+        run_id = f"{run_name}_{mode}_{split}"
+        run_dir = raw_directory / f"{mode}_{SPLIT_DIRECTORY_SUFFIX[split]}"
         run_dir.mkdir(parents=True, exist_ok=False)
 
         forecasts, evaluation_results = run_forecast_comparison(
@@ -77,8 +76,8 @@ class ForecastModelRunner:
             run_id=run_id,
             experiment_id=self.experiment_config.experiment_id,
             split=split,
-            horizon_hours=self.experiment_config.horizon_hours,
-            forecast_origin_step_hours=self.experiment_config.forecast_origin_step_hours,
+            horizon_days=self.experiment_config.horizon_days,
+            forecast_origin_step_days=self.experiment_config.forecast_origin_step_days,
             frequency=self.experiment_config.frequency,
             local_timezone=self.project_config.timezone,
             clip_negative_forecasts=self.experiment_config.negative_forecast_handling == "clip_zero",
@@ -109,16 +108,6 @@ class ForecastModelRunner:
             df_to_csv(result, run_dir, name)
 
         df_to_csv(pd.DataFrame({"model_id": [primary_naive_reference]}), run_dir, "primary_naive_reference")
-
-        build_forecast_model_plot(
-            run_dir,
-            run_dir,
-            split=split,
-            comparison_mode=mode,
-            baseline_model_ids=self.experiment_config.baseline_model_ids,
-            variant_model_ids=prophet_model_ids,
-            reference_baseline=cast(str, primary_naive_reference),
-        )
 
         logger.info(
             "Forecast-model experiment completed: mode=%s, run=%s, origins=%d, primary naive reference=%s",

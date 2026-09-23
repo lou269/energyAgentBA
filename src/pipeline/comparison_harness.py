@@ -9,10 +9,10 @@ from typing import cast
 import numpy as np
 import pandas as pd
 
-from src.common.timestamps import local_calendar_range
+from src.common.timestamps import analyzed_day, local_calendar_range, shift_local_days
 from src.context.calendar_context import build_calendar_context
 from src.context.calendar_schema import CalendarContext
-from src.forecasting.evaluation import calculate_mae, calculate_mape
+from src.forecasting.evaluation import score_cycle_forecast
 from src.llm.client import LLMClient, OllamaClient
 from src.llm.inference import LLMAttemptRecord, LLMInferenceError
 from src.pipeline.cycle_run_manifest import build_cycle_run_manifest
@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 @dataclass(frozen=True)
 class ScenarioData:
     target_series: pd.Series
-    coldstart_hours: int
+    coldstart_days: int
     decision_times: tuple[pd.Timestamp, ...]
     calendar_events: tuple[Mapping[str, object], ...]
     calendar_source_available: bool
@@ -44,7 +44,7 @@ def build_scenario_from_split_manifest(
     split_manifest: pd.DataFrame,
     target_column: str,
     *,
-    coldstart_hours: int,
+    coldstart_days: int,
     local_timezone: str,
     target_imputed: pd.Series | None = None,
     value_implausible: pd.Series | None = None,
@@ -54,16 +54,15 @@ def build_scenario_from_split_manifest(
 
     target_series = treated_hourly.loc[:cycle_end, target_column]
 
-    cycle_start_days = local_calendar_range(target_series.index[0], 24, target_series.index[-1], local_timezone)
-    cycle_start = cycle_start_days[coldstart_hours // 24]
+    cycle_start = shift_local_days(target_series.index[0], coldstart_days, local_timezone)
 
     # state.history endet bereits bei cycle_start - 1h -> der erste decision_time liegt einen vollen lokalen Kalendertag danach, sonst ist new_observations 
     # in run_comparison leer
-    decision_times = tuple(local_calendar_range(cycle_start, 24, cycle_end, local_timezone))[1:]
+    decision_times = tuple(local_calendar_range(cycle_start, 1, cycle_end, local_timezone))[1:]
 
     return ScenarioData(
         target_series=target_series,
-        coldstart_hours=coldstart_hours,
+        coldstart_days=coldstart_days,
         decision_times=decision_times,
         calendar_events=(),
         calendar_source_available=False,
@@ -88,8 +87,8 @@ def run_comparison(
     llm_client: LLMClient | None = None,
     max_consecutive_llm_failures: int,
     max_total_llm_failures: int,
-    calendar_lookback_hours: int,
-    calendar_lookahead_hours: int,
+    calendar_lookback_days: int,
+    calendar_lookahead_days: int,
 ) -> pd.DataFrame:
     run_started = perf_counter()
     run_id = run_id or run_directory.name
@@ -106,7 +105,7 @@ def run_comparison(
         np.random.seed(config.forecasting_config.seed)
 
         state = CycleState(
-            history=scenario.target_series.iloc[: scenario.coldstart_hours],
+            history=coldstart_history(scenario.target_series, scenario.decision_times[0], local_timezone),
             prophet_model=None,
             model_history=None,
             model_fitted_at=None,
@@ -134,9 +133,8 @@ def run_comparison(
         try:
             try:
                 for decision_time in scenario.decision_times:
-                    new_observations = scenario.target_series.loc[
-                        state.history.index[-1] + pd.Timedelta(hours=1) : decision_time - pd.Timedelta(hours=1)
-                    ]
+                    analyzed_date = analyzed_day(decision_time, local_timezone).date()
+                    new_observations = observations_since(scenario.target_series, state.history, decision_time)
 
                     new_value_implausible = (
                         scenario.value_implausible.loc[new_observations.index[0] : new_observations.index[-1]]
@@ -148,8 +146,9 @@ def run_comparison(
                         _build_calendar_context(
                             scenario,
                             decision_time,
-                            lookback_hours=calendar_lookback_hours,
-                            lookahead_hours=calendar_lookahead_hours,
+                            lookback_days=calendar_lookback_days,
+                            lookahead_days=calendar_lookahead_days,
+                            local_timezone=local_timezone,
                         )
                         if config.llm_mode != "off"
                         else None
@@ -184,6 +183,7 @@ def run_comparison(
 
                         error_row = {
                             "decision_time": decision_time,
+                            "analyzed_day": analyzed_date,
                             "config": config_label,
                             "classification": None,
                             "explanation": "",
@@ -216,22 +216,17 @@ def run_comparison(
                     else:
                         consecutive_llm_failures = 0
 
-                    actual = scenario.target_series.reindex(result.forecast["target_timestamp"])
-                    predicted = result.forecast["y_pred"].to_numpy()
-
-                    eligible = actual.notna().to_numpy()
-                    if scenario.target_imputed is not None:
-                        imputed = scenario.target_imputed.reindex(actual.index).fillna(False).to_numpy(dtype=bool)
-                        eligible = eligible & ~imputed
-
-                    mae_w = calculate_mae(actual.to_numpy(), predicted, eligible)
-                    mape_pct = calculate_mape(
-                        actual.to_numpy(), predicted, eligible, config.forecasting_config.mape_min_eligible_watts
+                    mae_w, mape_pct = score_cycle_forecast(
+                        result.forecast,
+                        scenario.target_series,
+                        scenario.target_imputed,
+                        config.forecasting_config.mape_min_eligible_watts,
                     )
 
                     forecast_slice = result.forecast[FORECAST_COLUMNS].copy()
                     forecast_slice.insert(0, "config", config_label)
                     forecast_slice.insert(1, "decision_time", decision_time)
+                    forecast_slice.insert(2, "forecast_day", decision_time.tz_convert(local_timezone).date())
                     forecast_frames.append(forecast_slice)
                     append_csv(forecast_slice, config_directory / "forecasts.csv")
 
@@ -239,6 +234,7 @@ def run_comparison(
                         anomaly_row = result.analysis_row.to_frame().T
                         anomaly_row.insert(0, "config", config_label)
                         anomaly_row.insert(1, "decision_time", decision_time)
+                        anomaly_row.insert(2, "analyzed_day", analyzed_date)
                         append_csv(anomaly_row, config_directory / "anomaly.csv")
 
                     if result.structured_state is not None and (result.llm_output is not None or result.rule_output is not None):
@@ -256,6 +252,7 @@ def run_comparison(
 
                     summary_row = {
                         "decision_time": decision_time,
+                        "analyzed_day": analyzed_date,
                         "config": config_label,
                         "classification": result.classification,
                         "explanation": _explanation(result),
@@ -276,7 +273,7 @@ def run_comparison(
 
                     logger.info(
                         "%s %d/%d (%s): classification=%s adaption=%s retrained=%s",
-                        config_label, days_completed, len(scenario.decision_times), decision_time.date(),
+                        config_label, days_completed, len(scenario.decision_times), analyzed_date,
                         result.classification, summary_row["adaption_action"], result.retrained,
                     )
             except KeyboardInterrupt:
@@ -345,7 +342,7 @@ def run_comparison(
         project_root=project_root,
         run_id=run_id,
         config_values={label: asdict(config) for label, config in configs.items()},
-        coldstart_hours=scenario.coldstart_hours,
+        coldstart_days=scenario.coldstart_days,
         decision_time_count=len(decision_times),
         decision_time_start=decision_times[0].isoformat() if decision_times else None,
         decision_time_end=decision_times[-1].isoformat() if decision_times else None,
@@ -401,8 +398,9 @@ def _build_calendar_context(
     scenario: ScenarioData, 
     decision_time: pd.Timestamp,
     *,
-    lookback_hours: int,
-    lookahead_hours: int,
+    lookback_days: int,
+    lookahead_days: int,
+    local_timezone: str,
 ) -> CalendarContext:
     return build_calendar_context(
         list(scenario.calendar_events),
@@ -410,6 +408,17 @@ def _build_calendar_context(
         source=scenario.calendar_source,
         retrieved_at=decision_time,
         decision_time=decision_time,
-        window_start=decision_time - pd.Timedelta(hours=lookback_hours),
-        window_end=decision_time + pd.Timedelta(hours=lookahead_hours),
+        window_start=shift_local_days(decision_time, -lookback_days, local_timezone),
+        window_end=shift_local_days(decision_time, lookahead_days, local_timezone),
+        local_timezone=local_timezone,
     )
+
+
+def coldstart_history(target_series: pd.Series, first_decision_time: pd.Timestamp, local_timezone: str) -> pd.Series:
+    # der erste Zyklus bekommt den vollen Tag vor first_decision_time als new_observations
+    history_end = shift_local_days(first_decision_time, -1, local_timezone)
+    return target_series.loc[target_series.index < history_end]
+
+
+def observations_since(target_series: pd.Series, history: pd.Series, decision_time: pd.Timestamp) -> pd.Series:
+    return target_series.loc[history.index[-1] + pd.Timedelta(hours=1) : decision_time - pd.Timedelta(hours=1)]

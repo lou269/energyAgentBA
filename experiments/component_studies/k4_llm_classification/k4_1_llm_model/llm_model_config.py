@@ -1,5 +1,4 @@
 from dataclasses import dataclass, replace
-from pathlib import Path
 
 from src.config.config_forecasting import SYS_VARIANTS, CycleConfig, LLMConfig, NumericalAnalysisConfig
 from src.config.project_config import ProjectConfig
@@ -39,10 +38,6 @@ class LLMModelExperimentConfig:
     include_rule_based_baseline: bool = True
     numerical_analysis_config: NumericalAnalysisConfig = NumericalAnalysisConfig()
     project_config: ProjectConfig = ProjectConfig()
-
-
-K4_OUTPUT_ROOT: Path = Path(__file__).resolve().parent / "output"
-K4_SEQUENCE_OUTPUT_ROOT: Path = Path(__file__).resolve().parent / "output_sequence"
 
 
 def build_sequence_configs(

@@ -229,7 +229,7 @@ _BASE_STATE_JSON = """
     "observation_start": "2015-12-15T10:00:00+00:00",
     "value_implausible": false
   },
-  "schema_version": "1.6"
+  "schema_version": "1.7"
 }
 """
 

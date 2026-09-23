@@ -29,7 +29,7 @@ def test_ctx0_has_no_calendar_source() -> None:
     decision_times = (series.index[100],)
     events = ({"event_id": "e", "event_type": "absence", "start": "2024-01-01T00:00:00+00:00", "end": "2024-01-02T00:00:00+00:00", "known_at": "2023-12-01T00:00:00+00:00"},)
 
-    ctx0, _ = build_ctx_scenarios(series, coldstart_hours=72, decision_times=decision_times, calendar_events=events)
+    ctx0, _ = build_ctx_scenarios(series, coldstart_days=3, decision_times=decision_times, calendar_events=events)
 
     assert ctx0.calendar_source_available is False
     assert ctx0.calendar_events == ()
@@ -40,7 +40,7 @@ def test_ctx1_carries_the_same_events_as_ctx0_input() -> None:
     decision_times = (series.index[100],)
     events = ({"event_id": "e", "event_type": "absence", "start": "2024-01-01T00:00:00+00:00", "end": "2024-01-02T00:00:00+00:00", "known_at": "2023-12-01T00:00:00+00:00"},)
 
-    _, ctx1 = build_ctx_scenarios(series, coldstart_hours=72, decision_times=decision_times, calendar_events=events)
+    _, ctx1 = build_ctx_scenarios(series, coldstart_days=3, decision_times=decision_times, calendar_events=events)
 
     assert ctx1.calendar_source_available is True
     assert ctx1.calendar_events == events
@@ -50,10 +50,10 @@ def test_ctx0_and_ctx1_share_identical_series_and_timing() -> None:
     series = _series(240)
     decision_times = (series.index[100], series.index[150])
 
-    ctx0, ctx1 = build_ctx_scenarios(series, coldstart_hours=72, decision_times=decision_times, calendar_events=())
+    ctx0, ctx1 = build_ctx_scenarios(series, coldstart_days=3, decision_times=decision_times, calendar_events=())
 
     assert ctx0.target_series.equals(ctx1.target_series)
-    assert ctx0.coldstart_hours == ctx1.coldstart_hours
+    assert ctx0.coldstart_days == ctx1.coldstart_days
     assert ctx0.decision_times == ctx1.decision_times
 
 
@@ -86,6 +86,7 @@ def test_ctx1_structured_state_carries_the_calendar_event_through_run_cycle() ->
         decision_time=decision_time,
         window_start=decision_time - pd.Timedelta(hours=24),
         window_end=decision_time + pd.Timedelta(hours=24),
+        local_timezone="Europe/London",
     )
 
     config = replace(SYS_VARIANTS["SYS1"], llm_mode="rule")
@@ -104,8 +105,8 @@ def test_ctx1_structured_state_carries_the_calendar_event_through_run_cycle() ->
 def test_run_comparison_completes_for_both_ctx_scenarios(tmp_path: Path) -> None:
  
     series = _series(480)
-    coldstart_hours = 200
-    decision_times = tuple(pd.date_range(start=series.index[coldstart_hours] + pd.Timedelta(hours=1), periods=3, freq="24h", tz="UTC"))
+    coldstart_days = 8
+    decision_times = tuple(pd.date_range(start=series.index[0] + pd.Timedelta(days=coldstart_days + 1), periods=3, freq="24h"))
     event = {
         "event_id": "vacation-test",
         "event_type": "absence",
@@ -114,7 +115,7 @@ def test_run_comparison_completes_for_both_ctx_scenarios(tmp_path: Path) -> None
         "known_at": (decision_times[0] - pd.Timedelta(days=30)).isoformat(),
     }
 
-    ctx0, ctx1 = build_ctx_scenarios(series, coldstart_hours=coldstart_hours, decision_times=decision_times, calendar_events=(event,))
+    ctx0, ctx1 = build_ctx_scenarios(series, coldstart_days=coldstart_days, decision_times=decision_times, calendar_events=(event,))
 
     config = {"SYS2": SYS_VARIANTS["SYS2"]}
 
@@ -127,16 +128,16 @@ def test_run_comparison_completes_for_both_ctx_scenarios(tmp_path: Path) -> None
         local_timezone="Europe/London",
         max_consecutive_llm_failures=COMPARISON_CONFIG.max_consecutive_llm_failures,
         max_total_llm_failures=COMPARISON_CONFIG.max_total_llm_failures,
-        calendar_lookback_hours=COMPARISON_CONFIG.calendar_lookback_hours,
-        calendar_lookahead_hours=COMPARISON_CONFIG.calendar_lookahead_hours,
+        calendar_lookback_days=COMPARISON_CONFIG.calendar_lookback_days,
+        calendar_lookahead_days=COMPARISON_CONFIG.calendar_lookahead_days,
     )
     ctx1_result = run_comparison(
         ctx1, config, ctx1_dir, PROJECT_ROOT,
         local_timezone="Europe/London",
         max_consecutive_llm_failures=COMPARISON_CONFIG.max_consecutive_llm_failures,
         max_total_llm_failures=COMPARISON_CONFIG.max_total_llm_failures,
-        calendar_lookback_hours=COMPARISON_CONFIG.calendar_lookback_hours,
-        calendar_lookahead_hours=COMPARISON_CONFIG.calendar_lookahead_hours,
+        calendar_lookback_days=COMPARISON_CONFIG.calendar_lookback_days,
+        calendar_lookahead_days=COMPARISON_CONFIG.calendar_lookahead_days,
     )
 
     assert len(ctx0_result) == len(decision_times)

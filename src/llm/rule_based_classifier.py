@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from src.common.timestamps import parse_utc_timestamp
+from src.common.timestamps import analyzed_day, parse_utc_timestamp
 from src.llm.llm_schema import Classification
 from src.structured_state.structured_state_schema import StructuredState
 
@@ -21,7 +21,7 @@ def rule_based_classify(
 
     decision_time = parse_utc_timestamp(state["decision_time"], "decision_time")
     # nur für die reasoning-Texte gedacht (Nachvollziehbarkeit), fließt in keine Entscheidung ein
-    day_label = "weekend" if decision_time.tz_convert(local_timezone).dayofweek >= 5 else "weekday"
+    day_label = "weekend" if analyzed_day(decision_time, local_timezone).dayofweek >= 5 else "weekday"
 
     if observation["value_implausible"]:
         return RuleClassificationResult(

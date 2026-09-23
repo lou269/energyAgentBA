@@ -105,9 +105,10 @@ def test_build_canonical_data_snaps_a_partial_window_to_full_local_days() -> Non
     assert snapped_start == pd.Timestamp("2020-01-02T00:00:00Z")
     assert snapped_end == pd.Timestamp("2020-01-04T00:00:00Z")
     assert canonical_data_hourly.index[0] == snapped_start
-    assert canonical_data_hourly.index[-1] == snapped_end
+    # snapped_end ist exklusiv, die letzte Zeile ist das letzte Intervall vor Mitternacht
+    assert canonical_data_hourly.index[-1] == snapped_end - pd.Timedelta(hours=1)
     assert canonical_data_15min.index[0] == snapped_start
-    assert canonical_data_15min.index[-1] == snapped_end
+    assert canonical_data_15min.index[-1] == snapped_end - pd.Timedelta(minutes=15)
 
     assert list(canonical_data_hourly.columns) == [channel_data_column(meter_key, "hourly")]
     assert list(canonical_data_15min.columns) == [channel_data_column(meter_key, "15min")]

@@ -9,6 +9,7 @@ FORECAST_OUTPUT_COLUMNS = [
     "model_id",
     "seasonality_config",
     "forecast_origin",
+    "forecast_day",
     "target_timestamp",
     "horizon_step",
     "y_pred",
@@ -39,10 +40,7 @@ FORECAST_KEY_COLUMNS = [
     "target_timestamp",
 ]
 
-def validate_forecast_output(forecasts: pd.DataFrame, *, horizon_hours: int) -> None:
-    if horizon_hours < 1:
-        raise ValueError("horizon_hours must be at least 1.")
-
+def validate_forecast_output(forecasts: pd.DataFrame) -> None:
     required_values = [
         column
         for column in FORECAST_OUTPUT_COLUMNS

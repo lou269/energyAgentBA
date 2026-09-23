@@ -2,7 +2,7 @@ from typing import cast
 
 import pandas as pd
 
-from src.common.timestamps import local_day_index
+from src.common.timestamps import local_day, local_day_index, shift_local_days
 from src.config.config_forecasting import NumericalAnalysisConfig
 from src.numerical_analysis.anomaly_detection import build_anomaly_detection
 from src.numerical_analysis.multi_scale_analysis import build_multi_scale_analysis
@@ -25,21 +25,20 @@ def compute_reference_window_end(
     *,
     local_timezone: str,
     max_growth_days: int | None,
-    reference_window_hours: int,
+    reference_window_days: int,
 ) -> pd.Timestamp | None:
-    if len(history) < reference_window_hours:
+    history_days = local_day_index(history.index, local_timezone)
+
+    if history_days.nunique() < reference_window_days:
         # kurz nach einem advance_history_start-Reset kann history vorübergehend unter die Mindestgröße fallen
         # -> Analyse für diesen einen Zyklus auslassen statt abzubrechen
         return None
 
-    effective_now = history.index[-1]
+    last_day = history_days.max()
     if max_growth_days is not None:
-        window_start = local_day_index(history.index, local_timezone).min()
-        # DateOffset statt Timedelta, damit ein DST-Wechsel innerhalb von max_growth_days die Grenze nicht um eine Stunde verschiebt
-        growth_ceiling = window_start + pd.DateOffset(days=max_growth_days)
-        effective_now = min(effective_now, growth_ceiling)
+        last_day = min(last_day, history_days.min() + pd.DateOffset(days=max_growth_days - 1))
 
-    return effective_now - pd.Timedelta(hours=reference_window_hours - 1)
+    return shift_local_days(last_day, -(reference_window_days - 1), local_timezone)
 
 
 def compute_analysis_row(
@@ -54,12 +53,12 @@ def compute_analysis_row(
         history,
         local_timezone=local_timezone,
         max_growth_days=config.max_reference_window_growth_days,
-        reference_window_hours=config.reference_window_hours,
+        reference_window_days=config.reference_window_days,
     )
     if reference_window_end is None:
         return None
 
-    target_day = target_timestamp.tz_convert(local_timezone).normalize()
+    target_day = local_day(target_timestamp, local_timezone)
 
     analysis = build_multi_scale_analysis(
         history,
@@ -101,12 +100,12 @@ def compute_analysis_row(
     )
 
     row = cast(pd.Series, anomaly.loc[target_day]).copy()
-    row["timestamp"] = target_day
+    row["timestamp"] = target_day.tz_convert("UTC")
 
     day_implausible = False
     if raw_value_implausible is not None:
         day_implausible = bool(raw_value_implausible[local_day_index(raw_value_implausible.index, local_timezone) == target_day].any())
     row["value_implausible"] = bool(pd.isna(row["today_mean"])) or day_implausible
-    row["anomaly_peak_timestamp"] = target_day if pd.notna(row["anomaly_score"]) else pd.NaT
+    row["anomaly_peak_timestamp"] = row["timestamp"] if pd.notna(row["anomaly_score"]) else pd.NaT
 
     return row

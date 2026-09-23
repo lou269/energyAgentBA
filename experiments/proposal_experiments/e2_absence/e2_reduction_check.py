@@ -5,7 +5,6 @@
 
 import logging
 from pathlib import Path
-from typing import cast
 
 import pandas as pd
 
@@ -16,6 +15,7 @@ from experiments.proposal_experiments.e2_absence.e2_selection import (
     select_channels_for_subtraction,
 )
 from experiments.proposal_experiments.shared import load_target_series, subtract_channels_in_window
+from src.common.timestamps import local_day_index
 from src.config.project_config import ProjectConfig
 from src.pipeline.io import df_to_csv
 
@@ -36,7 +36,7 @@ class AbsenceReductionCheckRunner:
     def run(self) -> None:
         mains_series, _target_imputed, _target_value_implausible, _meter_key = load_target_series(self.project_config)
 
-        calendar_events = load_calendar_events(self.e2_config.calendar_events_file)
+        calendar_events = load_calendar_events(self.e2_config.calendar_events_file, self.project_config.timezone)
         window_start, window_end = resolve_absence_window(calendar_events, self.e2_config.active_absence_event_id)
 
         ranking = pd.read_csv(OUTPUT_DIR / "absence_channel_ranking.csv")
@@ -48,8 +48,7 @@ class AbsenceReductionCheckRunner:
         raw_window = mains_series.loc[window_mask]
         adjusted_window = absence_adjusted_series.loc[window_mask]
 
-        # Abwesenheitsfenster liegt im Sommer, UTC-Mitternacht != lokale Mitternacht
-        local_day = cast(pd.DatetimeIndex, raw_window.index).tz_convert(self.project_config.timezone).normalize()
+        local_day = local_day_index(raw_window.index, self.project_config.timezone).date
 
         comparison = pd.DataFrame({
             "mains_before_w": raw_window.groupby(local_day).mean(),

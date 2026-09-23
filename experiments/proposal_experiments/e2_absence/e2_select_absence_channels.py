@@ -36,7 +36,7 @@ class AbsenceChannelSelectionRunner:
         context = load_nilmtk_context(self.project_config)
         mains_data = load_treated_mains_series(self.project_config, context.mains_meter_key)
 
-        calendar_events = load_calendar_events(self.e2_config.calendar_events_file)
+        calendar_events = load_calendar_events(self.e2_config.calendar_events_file, self.project_config.timezone)
         window_start, window_end = resolve_absence_window(calendar_events, self.e2_config.active_absence_event_id)
 
         logger.info("Selecting auxiliary appliance channels for house %d, window %s to %s...", context.house, window_start, window_end)

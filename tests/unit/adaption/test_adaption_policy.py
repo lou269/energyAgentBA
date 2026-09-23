@@ -23,11 +23,11 @@ def _context(*, decision_time: str) -> StructuredState:
 def test_new_pattern_advances_the_history_start_by_the_tolerance_window() -> None:
     context = _context(decision_time="2024-01-07T10:00:00+00:00")
 
-    action = adaption_policy("new_pattern", context, streak_tolerance_window_days=2)
+    action = adaption_policy("new_pattern", context, streak_tolerance_window_days=2, local_timezone="UTC")
 
     assert action.kind == "advance_history_start"
     assert action.new_history_start is not None
-    # 2 Tage Fenster, endet bei decision_time - 1h -> Fensterstart ist 47h davor
+    # 2 Kalendertage vor decision_time
     assert action.new_history_start.isoformat() == "2024-01-05T10:00:00+00:00"
 
 
@@ -35,6 +35,6 @@ def test_new_pattern_advances_the_history_start_by_the_tolerance_window() -> Non
 def test_classifications_without_a_defined_reaction_trigger_no_action(classification: Classification) -> None:
     context = _context(decision_time="2024-01-07T10:00:00+00:00")
 
-    action = adaption_policy(classification, context, streak_tolerance_window_days=7)
+    action = adaption_policy(classification, context, streak_tolerance_window_days=7, local_timezone="UTC")
 
     assert action.kind == "none"

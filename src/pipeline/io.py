@@ -9,6 +9,8 @@ import pandas as pd
 
 from src.config.project_config import ProjectConfig
 
+RAW_SUBDIR = "raw"
+
 
 def read_canonical_frame(project_config: ProjectConfig, name: str) -> pd.DataFrame:
     return pd.read_csv(
@@ -79,6 +81,19 @@ def latest_sequential_number(directory: Path, prefix: str) -> int | None:
 
 def next_sequential_number(directory: Path, prefix: str) -> int:
     return (latest_sequential_number(directory, prefix) or 0) + 1
+
+
+def create_experiment_run(experiment_directory: Path, prefix: str, run_config: dict[str, Any]) -> tuple[Path, Path]:
+    run_directory = experiment_directory / f"{prefix}_{next_sequential_number(experiment_directory, prefix):03d}"
+    raw_directory = run_directory / RAW_SUBDIR
+    raw_directory.mkdir(parents=True, exist_ok=False)
+    save_json(run_config, raw_directory / "run_config.json")
+
+    return run_directory, raw_directory
+
+
+def read_raw_json(run_directory: Path, name: str) -> dict[str, Any]:
+    return json.loads((run_directory / RAW_SUBDIR / f"{name}.json").read_text(encoding="utf-8"))
 
 
 def resolve_run_directory(directory: Path, prefix: str, explicit: str | None) -> Path:

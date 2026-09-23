@@ -37,6 +37,7 @@ def _build_context(
         decision_time=decision_time,
         window_start=window_start,
         window_end=window_end,
+        local_timezone="UTC",
     )
 
 

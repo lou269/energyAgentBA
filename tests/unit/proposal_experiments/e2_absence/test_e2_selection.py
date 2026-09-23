@@ -11,12 +11,12 @@ E2_CONFIG = E2Config()
 
 
 def test_resolve_absence_window_matches_e2_config_reference() -> None:
-    events = load_calendar_events(E2_CONFIG.calendar_events_file)
+    events = load_calendar_events(E2_CONFIG.calendar_events_file, "Europe/London")
 
     window_start, window_end = resolve_absence_window(events, E2_CONFIG.active_absence_event_id)
 
-    assert window_start == pd.Timestamp("2013-06-06T00:00:00+00:00")
-    assert window_end == pd.Timestamp("2013-06-13T00:00:00+00:00")
+    assert window_start == pd.Timestamp("2013-06-06T00:00:00+01:00")
+    assert window_end == pd.Timestamp("2013-06-13T00:00:00+01:00")
 
 
 def test_resolve_absence_window_raises_for_unknown_event_id() -> None:

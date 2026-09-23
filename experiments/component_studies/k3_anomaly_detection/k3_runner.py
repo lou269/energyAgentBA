@@ -5,6 +5,7 @@
 # Referenzfenster der Anomalieerkennung, je Cutover control/step, einmal isoliert und einmal im Kreislauf mit Adaption (rule, ohne LLM)
 
 import logging
+from dataclasses import asdict
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -17,11 +18,9 @@ from src.common.target_series import read_preprocessed_target
 from src.config.config_forecasting import ComparisonConfig, ForecastingConfig
 from src.config.project_config import ProjectConfig
 from src.pipeline.comparison_harness import run_comparison
-from src.pipeline.io import df_to_csv, next_sequential_number
+from src.pipeline.io import create_experiment_run, df_to_csv
 
 logger = logging.getLogger(__name__)
-
-OUTPUT_DIR = Path(__file__).parent / "output"
 
 
 class K3Runner:
@@ -38,8 +37,9 @@ class K3Runner:
     def run(self) -> Path:
         mains_series, target_imputed, target_value_implausible = read_preprocessed_target(self.project_config)
 
-        run_directory = OUTPUT_DIR / f"k3_{next_sequential_number(OUTPUT_DIR, prefix='k3'):03d}"
-        run_directory.mkdir(parents=True, exist_ok=False)
+        run_directory, raw_directory = create_experiment_run(
+            self.project_config.k3_output_dir, "k3", {"k3_config": asdict(self.k3_config)},
+        )
 
         comparison_config = ComparisonConfig()
         scenario_results: list[pd.DataFrame] = []
@@ -48,7 +48,7 @@ class K3Runner:
             scenarios = build_k3_scenarios(
                 mains_series,
                 cutover_date=cutover_date,
-                coldstart_hours=self.forecast_config.cycle_coldstart_hours,
+                coldstart_days=self.forecast_config.cycle_coldstart_days,
                 monitoring_before_cutover_days=self.k3_config.monitoring_before_cutover_days,
                 margin_after_days=self.k3_config.margin_after_days,
                 step_injection_w=self.k3_config.step_injection_w,
@@ -70,8 +70,8 @@ class K3Runner:
                             run_id=f"{run_directory.name}_{scenario_name}_{mode}",
                             max_consecutive_llm_failures=comparison_config.max_consecutive_llm_failures,
                             max_total_llm_failures=comparison_config.max_total_llm_failures,
-                            calendar_lookback_hours=comparison_config.calendar_lookback_hours,
-                            calendar_lookahead_hours=comparison_config.calendar_lookahead_hours,
+                            calendar_lookback_days=comparison_config.calendar_lookback_days,
+                            calendar_lookahead_days=comparison_config.calendar_lookahead_days,
                         )
                         scenario_results.append(
                             read_scenario_results(
@@ -83,7 +83,7 @@ class K3Runner:
                             )
                         )
 
-        df_to_csv(pd.concat(scenario_results, ignore_index=True), run_directory, "k3_results")
+        df_to_csv(pd.concat(scenario_results, ignore_index=True), raw_directory, "k3_results")
 
         logger.info("K3 completed, see %s.", run_directory)
         return run_directory

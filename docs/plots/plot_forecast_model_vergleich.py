@@ -10,10 +10,10 @@ from experiments.component_studies.k2_forecast_model.k2_config import (
     SPLIT_DIRECTORY_SUFFIX,
     ForecastModelExperimentConfig,
 )
-from src.pipeline.io import latest_sequential_number
+from src.config.project_config import ProjectConfig
+from src.pipeline.io import RAW_SUBDIR, latest_sequential_number
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-K2_OUTPUT_DIR = PROJECT_ROOT / "experiments" / "component_studies" / "k2_forecast_model" / "output"
 FIGURE_DIR = PROJECT_ROOT / "docs" / "diagrams" / "generated"
 
 BASELINE_COLORS = {
@@ -76,7 +76,7 @@ def build_forecast_model_plot(
     overall_metrics = pd.read_csv(run_directory / "overall_metrics.csv").set_index("model_id")
     mae_skill = pd.read_csv(run_directory / "mae_skill.csv")
 
-    origin_metrics["forecast_origin"] = pd.to_datetime(origin_metrics["forecast_origin"], utc=True)
+    origin_metrics["forecast_day"] = pd.to_datetime(origin_metrics["forecast_day"])
 
     figure = plt.figure(figsize=(13, 12))
     grid = figure.add_gridspec(
@@ -94,10 +94,10 @@ def build_forecast_model_plot(
 
     # A: MAE je Forecast-Origin über die Zeit
     for model_id in variant_model_ids:
-        model_origins = origin_metrics.loc[origin_metrics["model_id"].eq(model_id)].sort_values("forecast_origin")
+        model_origins = origin_metrics.loc[origin_metrics["model_id"].eq(model_id)].sort_values("forecast_day")
 
         timeline_axis.plot(
-            model_origins["forecast_origin"],
+            model_origins["forecast_day"],
             model_origins["mae_w"],
             marker="o",
             markersize=4,
@@ -107,7 +107,7 @@ def build_forecast_model_plot(
         )
 
     timeline_axis.set_title(f"A: MAE je Forecast-Origin über die Zeit ({split.capitalize()})", loc="left")
-    timeline_axis.set_xlabel("Forecast-Origin")
+    timeline_axis.set_xlabel("Prognosetag (Ortszeit)")
     timeline_axis.set_ylabel("MAE (W)")
     timeline_axis.xaxis.set_major_formatter(mdates.DateFormatter("%d.%m."))
     timeline_axis.tick_params(axis="x", rotation=25)
@@ -161,7 +161,8 @@ def build_forecast_model_plot(
     skill_axis.axhline(0, color="#333333", linewidth=1)
     skill_axis.set_title(f"C: MAE-Skill ggü. Baseline {reference_baseline} ({split.capitalize()})", loc="left")
     skill_axis.set_ylabel(f"Verbesserung ggü. {reference_baseline} (%)")
-    skill_axis.set_ylim(0, skill_plot["mae_skill_pct"].max() * 1.3)
+    # negativer Skill (schlechter als die Baseline) muss sichtbar bleiben
+    skill_axis.set_ylim(min(0, skill_plot["mae_skill_pct"].min() * 1.3), skill_plot["mae_skill_pct"].max() * 1.3)
     skill_axis.grid(axis="y", alpha=0.25)
     add_bar_labels(skill_axis, "{:.1f}%")
 
@@ -216,11 +217,13 @@ def main() -> None:
     experiment_config = ForecastModelExperimentConfig()
     split = experiment_config.split
 
-    run_number = latest_sequential_number(K2_OUTPUT_DIR, prefix="k2")
-    if run_number is None:
-        raise FileNotFoundError(f"No k2_forecast_model run found in {K2_OUTPUT_DIR}.")
+    k2_output_dir = ProjectConfig().k2_output_dir
 
-    run_root = K2_OUTPUT_DIR / f"k2_{run_number:03d}"
+    run_number = latest_sequential_number(k2_output_dir, prefix="k2")
+    if run_number is None:
+        raise FileNotFoundError(f"No k2_forecast_model run found in {k2_output_dir}.")
+
+    run_root = k2_output_dir / f"k2_{run_number:03d}" / RAW_SUBDIR
 
     for mode in experiment_config.comparison_modes:
         run_directory = run_root / f"{mode}_{SPLIT_DIRECTORY_SUFFIX[split]}"

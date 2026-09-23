@@ -2,20 +2,18 @@
 # optional: <run_directory> als Argument
 
 import sys
-from pathlib import Path
 
 import pandas as pd
 
-from src.pipeline.io import df_to_csv, resolve_run_directory
-
-OUTPUT_DIR = Path(__file__).parent / "output"
+from src.config.project_config import ProjectConfig
+from src.pipeline.io import RAW_SUBDIR, df_to_csv, resolve_run_directory
 
 
 def main() -> None:
-    run_directory = resolve_run_directory(OUTPUT_DIR, "e3_drift", sys.argv[1] if len(sys.argv) > 1 else None)
+    run_directory = resolve_run_directory(ProjectConfig().e3_output_dir, "e3_drift", sys.argv[1] if len(sys.argv) > 1 else None)
 
-    comparison = pd.read_csv(run_directory / "comparison_summary.csv", parse_dates=["decision_time"])
-    anomaly = pd.read_csv(run_directory / "SYS3" / "anomaly.csv", parse_dates=["decision_time"])
+    comparison = pd.read_csv(run_directory / RAW_SUBDIR / "comparison_summary.csv", parse_dates=["decision_time"])
+    anomaly = pd.read_csv(run_directory / RAW_SUBDIR / "SYS3" / "anomaly.csv", parse_dates=["decision_time"])
 
     merged = comparison.merge(anomaly[["decision_time", "dominant_scale", "anomaly_level"]], on="decision_time", how="left")
 

@@ -11,9 +11,13 @@ SCENARIOS_DIR = Path(__file__).resolve().parents[1] / "scenarios"
 ''' E1 - NEUES GERÄT '''
 @dataclass(frozen=True)
 class E1Config:
+    reference_config: str = "SYS1"
+    target_classification: str = "new_pattern"
+
     device_meter_key: str = "H1_M9"  # HTPC, siehe channel_registry.csv appliances
 
-    cutover_time: str | None = "2014-04-15T00:00:00+00:00"
+    # lokales Datum, wird über local_midnight_utc() zur Mitternacht Ortszeit
+    cutover_date: str = "2014-04-15"
 
     margin_before_days: int = 14
     margin_after_days: int = 14
@@ -36,8 +40,8 @@ class E2Config:
 @dataclass(frozen=True)
 class E3Config:
     # Übergang Herbst -> Winter, liegt im produktiven Kandidaten (H1-M54-S2, 2013-04-01..2014-07-21)
-    observation_window_start: str = "2013-09-01T00:00:00+00:00"
-    observation_window_end: str = "2013-12-15T00:00:00+00:00"
+    observation_window_start_date: str = "2013-09-01"
+    observation_window_end_date: str = "2013-12-15"
 
     margin_before_days: int = 7
     margin_after_days: int = 0
@@ -48,8 +52,9 @@ class E3Config:
 class E3DataConfig:
     # deckt Sommer 2013, Winter 2013/14 und Frühling/Sommer 2014 ab, kein volles zweites Jahr
     # (Kandidat endet 2014-07-21) aber ein kompletter Saisonzyklus
-    test_window_start: str = "2013-06-01T00:00:00+00:00"
-    test_window_end: str = "2014-07-20T00:00:00+00:00"
+    test_window_start_date: str = "2013-06-01"
+    # exklusiv, letzter ausgewerteter Tag ist der 19.07.
+    test_window_end_date: str = "2014-07-20"
 
 
 ''' E4 - KALTSTART (Teil a, Prognose) '''
@@ -73,16 +78,16 @@ class E4Config:
 _S0 = ProphetVariantConfig(
     model_id="S0",
     history_mode="expanding",
-    rolling_window_hours=None,
-    retraining_interval_hours=24,
+    rolling_window_days=None,
+    retraining_interval_days=1,
     weekly_seasonality=True,
     yearly_seasonality=False,
 )
 _S1 = ProphetVariantConfig(
     model_id="S1",
     history_mode="expanding",
-    rolling_window_hours=None,
-    retraining_interval_hours=24,
+    rolling_window_days=None,
+    retraining_interval_days=1,
     weekly_seasonality=True,
     yearly_seasonality=True,
 )
