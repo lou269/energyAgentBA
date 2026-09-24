@@ -12,11 +12,25 @@ from tempfile import TemporaryDirectory
 import pandas as pd
 
 from experiments.component_studies.k3_anomaly_detection.k3_config import K3Config
-from experiments.component_studies.k3_anomaly_detection.k3_scenarios import build_k3_scenarios
-from experiments.component_studies.k5_adaptation_strategies.k5_config import K5_CYCLE_CONFIG, K5_DECISION_CONFIG, K5_MASKING_VARIANTS
-from experiments.component_studies.k5_adaptation_strategies.k5_evaluation import label_oracle_results
-from experiments.component_studies.k5_adaptation_strategies.k5_masking_evaluation import read_sys2_decisions
-from experiments.component_studies.k5_adaptation_strategies.k5_oracle import replay_actions, replay_masked_days, run_oracle
+from experiments.component_studies.k3_anomaly_detection.k3_scenarios import (
+    build_k3_scenarios,
+)
+from experiments.component_studies.k5_adaptation_strategies.k5_config import (
+    K5_CYCLE_CONFIG,
+    K5_DECISION_CONFIG,
+    K5_MASKING_VARIANTS,
+)
+from experiments.component_studies.k5_adaptation_strategies.k5_evaluation import (
+    label_oracle_results,
+)
+from experiments.component_studies.k5_adaptation_strategies.k5_masking_evaluation import (
+    read_sys2_decisions,
+)
+from experiments.component_studies.k5_adaptation_strategies.k5_oracle import (
+    replay_actions,
+    replay_masked_days,
+    run_oracle,
+)
 from src.common.target_series import read_preprocessed_target
 from src.config.config_forecasting import ComparisonConfig, ForecastingConfig
 from src.config.project_config import ProjectConfig
@@ -38,15 +52,23 @@ class K5MaskingRunner:
         self.forecast_config = forecast_config or ForecastingConfig()
 
     def run(self) -> Path:
-        mains_series, target_imputed, target_value_implausible = read_preprocessed_target(self.project_config)
+        mains_series, target_imputed, target_value_implausible = (
+            read_preprocessed_target(self.project_config)
+        )
 
         run_directory, raw_directory = create_experiment_run(
-            self.project_config.k5_output_dir, "k5_mask",
-            {"k3_config": asdict(self.k3_config), "masking_variants": K5_MASKING_VARIANTS},
+            self.project_config.k5_output_dir,
+            "k5_mask",
+            {
+                "k3_config": asdict(self.k3_config),
+                "masking_variants": K5_MASKING_VARIANTS,
+            },
         )
 
         comparison_config = ComparisonConfig()
-        streak_tolerance_window_days = K5_CYCLE_CONFIG.numerical_analysis_config.streak_tolerance_window_days
+        streak_tolerance_window_days = (
+            K5_CYCLE_CONFIG.numerical_analysis_config.streak_tolerance_window_days
+        )
         decisions: list[pd.DataFrame] = []
         results: list[pd.DataFrame] = []
 
@@ -69,7 +91,10 @@ class K5MaskingRunner:
                 # wie in K3 braucht es vom Harness-Output nur die Summary
                 with TemporaryDirectory() as scratch:
                     run_comparison(
-                        scenario, {"SYS2": K5_DECISION_CONFIG}, Path(scratch), self.project_config.project_root,
+                        scenario,
+                        {"SYS2": K5_DECISION_CONFIG},
+                        Path(scratch),
+                        self.project_config.project_root,
                         local_timezone=self.project_config.timezone,
                         run_id=f"{run_directory.name}_{kind}_{cutover_date}",
                         max_consecutive_llm_failures=comparison_config.max_consecutive_llm_failures,
@@ -77,7 +102,9 @@ class K5MaskingRunner:
                         calendar_lookback_days=comparison_config.calendar_lookback_days,
                         calendar_lookahead_days=comparison_config.calendar_lookahead_days,
                     )
-                    scenario_decisions = read_sys2_decisions(Path(scratch), kind=kind, cutover_date=cutover_date)
+                    scenario_decisions = read_sys2_decisions(
+                        Path(scratch), kind=kind, cutover_date=cutover_date
+                    )
 
                 decisions.append(scenario_decisions)
 
@@ -87,7 +114,9 @@ class K5MaskingRunner:
                         K5_CYCLE_CONFIG,
                         actions=replay_actions(scenario_decisions),
                         masked_days=replay_masked_days(
-                            scenario_decisions, masked_classifications=masked_classifications, local_timezone=self.project_config.timezone
+                            scenario_decisions,
+                            masked_classifications=masked_classifications,
+                            local_timezone=self.project_config.timezone,
                         ),
                         streak_tolerance_window_days=streak_tolerance_window_days,
                         local_timezone=self.project_config.timezone,
@@ -103,8 +132,12 @@ class K5MaskingRunner:
                         )
                     )
 
-        df_to_csv(pd.concat(decisions, ignore_index=True), raw_directory, "k5_mask_decisions")
-        df_to_csv(pd.concat(results, ignore_index=True), raw_directory, "k5_mask_results")
+        df_to_csv(
+            pd.concat(decisions, ignore_index=True), raw_directory, "k5_mask_decisions"
+        )
+        df_to_csv(
+            pd.concat(results, ignore_index=True), raw_directory, "k5_mask_results"
+        )
 
         logger.info("K5 masking completed, see %s.", run_directory)
         return run_directory

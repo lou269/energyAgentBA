@@ -1,0 +1,3 @@
+System,MAE vor Cutover [W],MAE ab Cutover [W],"MAE ab Cutover, Kontrolle [W]",Differenz [W],2 Standardfehler [W],Tage,Tage besser [%],belastbar
+SYS1 ohne Adaption,121.7,178.1,177.4,,,,,
+SYS2 Regel,121.7,178.1,177.4,0.0,0.0,29.0,0.0,nein

@@ -8,8 +8,10 @@ from typing import Any
 import pandas as pd
 
 from src.config.project_config import ProjectConfig
+from src.pipeline.provenance import build_code_version
 
 RAW_SUBDIR = "raw"
+USER_OUTPUT_SUBDIR = "user_output"
 
 
 def read_canonical_frame(project_config: ProjectConfig, name: str) -> pd.DataFrame:
@@ -28,20 +30,33 @@ def read_preprocessing_frame(project_config: ProjectConfig, name: str) -> pd.Dat
     )
 
 
-def hourly_split_bounds(split_manifest: pd.DataFrame, split: str) -> tuple[pd.Timestamp, pd.Timestamp]:
-    hourly_splits = split_manifest.loc[split_manifest["frequency"].eq("hourly")].set_index("split")
+def hourly_split_bounds(
+    split_manifest: pd.DataFrame, split: str
+) -> tuple[pd.Timestamp, pd.Timestamp]:
+    hourly_splits = split_manifest.loc[
+        split_manifest["frequency"].eq("hourly")
+    ].set_index("split")
 
-    return pd.Timestamp(hourly_splits.at[split, "start"]), pd.Timestamp(hourly_splits.at[split, "end"])
+    return pd.Timestamp(hourly_splits["start"].loc[split]), pd.Timestamp(
+        hourly_splits["end"].loc[split]
+    )
 
 
-def read_split_bounds(project_config: ProjectConfig, split: str) -> tuple[pd.Timestamp, pd.Timestamp]:
-    split_manifest = pd.read_csv(project_config.preprocessing_output_dir / "split_manifest.csv", parse_dates=["start", "end"])
+def read_split_bounds(
+    project_config: ProjectConfig, split: str
+) -> tuple[pd.Timestamp, pd.Timestamp]:
+    split_manifest = pd.read_csv(
+        project_config.preprocessing_output_dir / "split_manifest.csv",
+        parse_dates=["start", "end"],
+    )
 
     return hourly_split_bounds(split_manifest, split)
 
 
 def read_target_meter_key(project_config: ProjectConfig) -> str:
-    canonical_manifest = pd.read_csv(project_config.canonical_output_dir / "canonical_manifest.csv")
+    canonical_manifest = pd.read_csv(
+        project_config.canonical_output_dir / "canonical_manifest.csv"
+    )
 
     if len(canonical_manifest) != 1:
         raise ValueError("Canonical manifest must contain exactly one mains target.")
@@ -83,30 +98,60 @@ def next_sequential_number(directory: Path, prefix: str) -> int:
     return (latest_sequential_number(directory, prefix) or 0) + 1
 
 
-def create_experiment_run(experiment_directory: Path, prefix: str, run_config: dict[str, Any]) -> tuple[Path, Path]:
-    run_directory = experiment_directory / f"{prefix}_{next_sequential_number(experiment_directory, prefix):03d}"
+def create_experiment_run(
+    experiment_directory: Path, prefix: str, run_config: dict[str, Any]
+) -> tuple[Path, Path]:
+    run_directory = (
+        experiment_directory
+        / f"{prefix}_{next_sequential_number(experiment_directory, prefix):03d}"
+    )
     raw_directory = run_directory / RAW_SUBDIR
     raw_directory.mkdir(parents=True, exist_ok=False)
-    save_json(run_config, raw_directory / "run_config.json")
+    # git findet das Repo auch vom Laufordner aus, damit steht der Code-Stand an jedem Lauf
+    save_json(
+        {**run_config, "code_version": build_code_version(run_directory)},
+        raw_directory / "run_config.json",
+    )
 
     return run_directory, raw_directory
 
 
+def user_output_directory(run_directory: Path) -> Path:
+    output_directory = run_directory / USER_OUTPUT_SUBDIR
+    output_directory.mkdir(parents=True, exist_ok=True)
+
+    return output_directory
+
+
 def read_raw_json(run_directory: Path, name: str) -> dict[str, Any]:
-    return json.loads((run_directory / RAW_SUBDIR / f"{name}.json").read_text(encoding="utf-8"))
+    return json.loads(
+        (run_directory / RAW_SUBDIR / f"{name}.json").read_text(encoding="utf-8")
+    )
 
 
 def resolve_run_directory(directory: Path, prefix: str, explicit: str | None) -> Path:
     if explicit is not None:
-        return Path(explicit)
+        # "003", "e1_003" oder ein Pfad
+        for candidate in (
+            directory / f"{prefix}_{explicit}",
+            directory / explicit,
+            Path(explicit),
+        ):
+            if candidate.is_dir():
+                return candidate
+        raise SystemExit(f"run {explicit} not found under {directory}.")
 
     latest_run = find_run_directory(directory, prefix)
     if latest_run is None:
-        raise SystemExit(f"no {prefix}_XXX run found under {directory} - pass a run_directory explicitly.")
+        raise SystemExit(
+            f"no {prefix}_XXX run found under {directory} - pass a run_directory explicitly."
+        )
     return latest_run[1]
 
 
-def find_run_directory(directory: Path, prefix: str, number: int | None = None) -> tuple[int, Path] | None:
+def find_run_directory(
+    directory: Path, prefix: str, number: int | None = None
+) -> tuple[int, Path] | None:
     pattern = re.compile(rf"^{re.escape(prefix)}_(\d+)(?:_.*)?$")
 
     candidates = [

@@ -1,0 +1,3 @@
+Kennzahl,Wert,Bezug
+SYS2 Regel: erster new_pattern [Tag seit Cutover],15.0,0 Fehlalarme vor Cutover
+SYS2 Regel: MAE-Differenz zu SYS1 ab Adaption [W],6.0,"±14,7 W, 13 Tage, belastbar: nein"

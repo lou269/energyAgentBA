@@ -1,0 +1,9 @@
+Referenzfenster,Modus,2013-10-15,2014-01-15,2014-04-15,2014-07-15,Mittel erkannter,erkannt,MAE nach Cutover [W]
+Statisch,ohne Reset,16,8.0,12.0,14,12.5,4/4,140.1
+Statisch,mit Reset,0,,12.0,7,6.3,3/4,140.7
+Expanding,ohne Reset,5,25.0,,7,12.3,3/4,140.1
+Expanding,mit Reset,5,,,7,6.0,2/4,140.6
+Rolling 60,ohne Reset,5,25.0,11.0,2,10.8,4/4,140.1
+Rolling 60,mit Reset,5,,11.0,7,7.7,3/4,140.7
+Rolling 35,ohne Reset,5,26.0,,7,12.7,3/4,140.1
+Rolling 35,mit Reset,5,28.0,48.0,7,22.0,4/4,140.7

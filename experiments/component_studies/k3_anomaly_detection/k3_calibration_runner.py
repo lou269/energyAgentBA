@@ -1,5 +1,6 @@
 # conda activate forecasting-env
 # python -m experiments.component_studies.k3_anomaly_detection.k3_calibration_runner [run_directory]
+# danach: python -m experiments.component_studies.k3_anomaly_detection.k3_analysis [run_directory]
 
 # Stufe 3: Schwellen je Referenzfenster bei gleicher Fehlalarmrate, danach Vergleich der Fenster an diesem Arbeitspunkt
 
@@ -8,12 +9,15 @@ import sys
 import pandas as pd
 
 from experiments.component_studies.k3_anomaly_detection.k3_calibration import (
+    CALIBRATION_FILES,
     build_grid_metrics,
     leave_one_cutover_out,
     operating_points_by_cutover,
     select_operating_points,
 )
-from experiments.component_studies.k3_anomaly_detection.k3_config import K3CalibrationConfig
+from experiments.component_studies.k3_anomaly_detection.k3_config import (
+    K3CalibrationConfig,
+)
 from src.config.config_forecasting import NumericalAnalysisConfig
 from src.config.project_config import ProjectConfig
 from src.pipeline.io import RAW_SUBDIR, df_to_csv, resolve_run_directory
@@ -22,9 +26,13 @@ from src.pipeline.io import RAW_SUBDIR, df_to_csv, resolve_run_directory
 def main() -> None:
     calibration_config = K3CalibrationConfig()
     numerical_analysis_config = NumericalAnalysisConfig()
-    run_directory = resolve_run_directory(ProjectConfig().k3_output_dir, "k3", sys.argv[1] if len(sys.argv) > 1 else None)
+    run_directory = resolve_run_directory(
+        ProjectConfig().k3_output_dir, "k3", sys.argv[1] if len(sys.argv) > 1 else None
+    )
 
-    results = pd.read_csv(run_directory / RAW_SUBDIR / "k3_results.csv", dtype={"cutover_date": str})
+    results = pd.read_csv(
+        run_directory / RAW_SUBDIR / "k3_results.csv", dtype={"cutover_date": str}
+    )
 
     grid_metrics = build_grid_metrics(
         results,
@@ -46,11 +54,12 @@ def main() -> None:
     )
 
     tables = {
-        "k3_calibration_operating_points": operating_points,
-        "k3_calibration_by_cutover": operating_points_by_cutover(
+        "grid": grid_metrics,
+        "operating_points": operating_points,
+        "by_cutover": operating_points_by_cutover(
             operating_points, grid_metrics, slow_scales=calibration_config.slow_scales
         ),
-        "k3_calibration_loco": leave_one_cutover_out(
+        "loco": leave_one_cutover_out(
             grid_metrics,
             slow_scales=calibration_config.slow_scales,
             target_alarm_rate=calibration_config.target_alarm_rate,
@@ -58,13 +67,10 @@ def main() -> None:
         ),
     }
 
-    df_to_csv(grid_metrics, run_directory, "k3_calibration_grid")
-
     for name, table in tables.items():
-        df_to_csv(table, run_directory, name)
-        print(name)
-        print(table.to_string(index=False))
-        print()
+        df_to_csv(table, run_directory / RAW_SUBDIR, CALIBRATION_FILES[name])
+
+    print(f"Calibration written to {run_directory / RAW_SUBDIR}")
 
 
 if __name__ == "__main__":

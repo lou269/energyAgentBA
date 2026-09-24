@@ -1,0 +1,5 @@
+Trigger-Tag,Aktion,2013-10-15,2014-01-15,2014-04-15,2014-07-15,Mittel,gleiche Richtung
+6,"cut, Historie ab t_c",1.5,-5.9,-0.3,4.3,-0.1,2/4
+6,Stufen-Regressor,0.5,-2.4,-0.7,0.8,-0.4,2/4
+12,"cut, Historie ab t_c",2.1,-3.3,-0.7,2.8,0.2,2/4
+12,Stufen-Regressor,0.1,0.1,0.8,-0.4,0.2,3/4

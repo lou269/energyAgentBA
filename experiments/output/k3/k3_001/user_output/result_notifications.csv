@@ -1,0 +1,9 @@
+Referenzfenster,Modus,ohne Ereignis je 30 Tage,unknown ohne Ereignis,mit Stufe je 30 Tage,unknown mit Stufe,"zusätzlich durch die Stufe, alle Cutover",new_pattern ohne Ereignis je Fenster
+Statisch,ohne Reset,8.5,0.0,12.5,0.0,65,29.8
+Statisch,mit Reset,1.1,0.9,1.6,1.5,8,1.2
+Expanding,ohne Reset,2.6,0.0,6.4,0.0,61,6.8
+Expanding,mit Reset,1.4,1.1,1.2,1.2,-3,1.5
+Rolling 60,ohne Reset,2.4,0.0,4.0,0.0,26,5.2
+Rolling 60,mit Reset,1.5,1.1,1.7,1.5,3,1.5
+Rolling 35,ohne Reset,3.5,0.0,4.6,0.0,17,4.2
+Rolling 35,mit Reset,2.2,1.1,2.2,1.5,0,1.5

@@ -1,0 +1,11 @@
+{
+  "e1_config": {
+    "cutover_date": "2014-04-15",
+    "device_check_subdir": "output_raw/device_check",
+    "device_meter_key": "H1_M6",
+    "margin_after_days": 14,
+    "margin_before_days": 14,
+    "reference_config": "SYS1",
+    "target_classification": "new_pattern"
+  }
+}

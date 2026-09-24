@@ -2,10 +2,16 @@
 
 import pandas as pd
 
-from experiments.component_studies.k5_adaptation_strategies.k5_evaluation import pair_with_none
+from experiments.component_studies.k5_adaptation_strategies.k5_evaluation import (
+    excess_without_reaction,
+    net_of_control,
+    pair_with_none,
+)
 
 
-def _results(strategy: str, trigger_day: float, mae: list[float], kind: str = "step") -> pd.DataFrame:
+def _results(
+    strategy: str, trigger_day: float, mae: list[float], kind: str = "step"
+) -> pd.DataFrame:
     return pd.DataFrame(
         {
             "kind": kind,
@@ -34,3 +40,43 @@ def test_actions_are_paired_with_none_on_the_same_scenario_and_day() -> None:
     assert paired["days_since_trigger"].tolist() == [0, 1]
     assert paired["mae_none_w"].tolist() == [150.0, 140.0]
     assert paired["mae_delta_w"].tolist() == [-30.0, -30.0]
+
+
+def test_net_effect_subtracts_what_the_same_action_does_without_a_change() -> None:
+    summary = pd.DataFrame(
+        {
+            "kind": ["step", "control", "step"],
+            "trigger_day": [6.0, 6.0, 12.0],
+            "strategy": "cut",
+            "cutover_date": "2014-04-15",
+            "mae_delta_w": [-5.0, -1.0, -2.0],
+        }
+    )
+
+    net = net_of_control(summary)
+
+    # ohne control-Zeile zum selben Trigger gibt es keinen Nettowert
+    assert net["trigger_day"].tolist() == [6.0]
+    assert net["net_delta_w"].tolist() == [-4.0]
+
+
+def test_excess_without_reaction_is_none_minus_control_per_week() -> None:
+    days = list(range(-1, 8))
+    results = pd.concat(
+        [
+            _results("none", float("nan"), [100.0] * 9, kind="control").assign(
+                days_since_cutover=days
+            ),
+            _results(
+                "none", float("nan"), [100.0] + [130.0] * 7 + [110.0], kind="step"
+            ).assign(days_since_cutover=days),
+        ],
+        ignore_index=True,
+    )
+
+    excess = excess_without_reaction(results).set_index("week_since_cutover")[
+        "excess_w"
+    ]
+
+    # Tag -1 liegt vor dem Cutover und zählt nicht
+    assert excess.tolist() == [30.0, 10.0]

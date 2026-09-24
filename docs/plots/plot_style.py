@@ -1,0 +1,68 @@
+from pathlib import Path
+
+from matplotlib.axes import Axes
+from matplotlib.figure import Figure
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+
+SYSTEM_COLORS = {
+    "SYS1": "#4C78A8",
+    "SYS2": "#F58518",
+    "SYS3": "#54A24B",
+}
+BASELINE_COLORS = {
+    "B1": "#B0B0B0",
+    "B2": "#8C8C8C",
+    "B3": "#4C78A8",
+}
+# C3 in Grüntönen, je länger das Fenster, desto dunkler
+FORECAST_VARIANT_COLORS = {
+    "C1": "#F2CF5B",
+    "C2": "#E45756",
+    "C3_7": "#54A24B",
+    "C3_30": "#3F7A38",
+    "C3_60": "#2A5225",
+}
+COLDSTART_COLORS = {7: "#54A24B", 14: "#3F7A38", 30: "#2A5225"}
+REFERENCE_WINDOW_COLORS = {
+    "REF_STATIC": "#4C78A8",
+    "REF_EXPANDING": "#F58518",
+    "REF_ROLL60": "#54A24B",
+    "REF_ROLL35": "#B279A2",
+}
+RESET_MODE_COLORS = {
+    "isolated": "#B0B0B0",
+    "adaption": "#54A24B",
+}
+STRATEGY_COLORS = {
+    "cut": "#E45756",
+    "step_regressor": "#4C78A8",
+}
+
+
+def save_figure(figure: Figure, output_directory: Path, name: str) -> None:
+    # PNG für ergebnis.md, SVG für die Arbeit
+    figure.savefig(str(output_directory / f"{name}.png"), dpi=300, bbox_inches="tight")
+    figure.savefig(str(output_directory / f"{name}.svg"), bbox_inches="tight")
+    plt.close(figure)
+
+
+def grouped_bars(
+    axis: Axes, values: pd.DataFrame, colors: dict[str, str], labels: dict[str, str]
+) -> None:
+    """values: Zeilen = Gruppen auf der x-Achse, Spalten = Balken je Gruppe"""
+    positions = np.arange(len(values.index))
+    bar_width = 0.8 / len(values.columns)
+
+    for offset, column in enumerate(values.columns):
+        axis.bar(
+            positions + (offset - (len(values.columns) - 1) / 2) * bar_width,
+            values[column],
+            width=bar_width - 0.02,
+            color=colors[column],
+            label=labels[column],
+        )
+
+    axis.set_xticks(positions, values.index)
+    axis.grid(axis="y", alpha=0.25)

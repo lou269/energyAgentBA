@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Literal
 
+from experiments.shared_analysis import ALL_DAYS
 from src.config.config_forecasting import SYS_VARIANTS
 
 
@@ -24,9 +25,31 @@ class K5Config:
 
 K5_CYCLE_CONFIG = SYS_VARIANTS["SYS1"]
 
+K5_STRATEGY_LABELS: dict[str, str] = {
+    "none": "keine Aktion",
+    "cut": "cut, Historie ab t_c",
+    "step_regressor": "Stufen-Regressor",
+}
+K5_KIND_LABELS: dict[str, str] = {
+    "control": "keine Änderung",
+    "step": "Dauerlast",
+    "scaled": "proportional",
+}
+
 # Teil 2, peak/low ausblenden: SYS2 zeichnet die Entscheidungen auf, das Orakel spielt sie ohne und mit Ausblenden nach
 K5_DECISION_CONFIG = SYS_VARIANTS["SYS2"]
 K5_MASKED_CLASSIFICATIONS: tuple[str, ...] = ("peak", "low")
-K5_MASKING_VARIANTS: dict[str, tuple[str, ...]] = {"replay": (), "mask": K5_MASKED_CLASSIFICATIONS}
+K5_MASKING_VARIANTS: dict[str, tuple[str, ...]] = {
+    "replay": (),
+    "mask": K5_MASKED_CLASSIFICATIONS,
+}
 # in den ersten zwei Wochen nach dem Cutover kann der Beginn einer echten Änderung noch als peak ausgeblendet werden
 K5_MASKING_EARLY_DAYS = 14
+K5_MASKING_PHASE_LABELS: dict[str, str] = {
+    "before_cutover": "vor Cutover",
+    "early": f"Tag 0-{K5_MASKING_EARLY_DAYS - 1}",
+    "late": f"ab Tag {K5_MASKING_EARLY_DAYS}",
+    ALL_DAYS: "alle Tage",
+}
+K5_KEY_FIGURE_KIND = "step"
+K5_KEY_FIGURE_LATE_WEEK = 2

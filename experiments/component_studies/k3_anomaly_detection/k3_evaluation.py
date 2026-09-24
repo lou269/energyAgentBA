@@ -2,15 +2,29 @@ from pathlib import Path
 
 import pandas as pd
 
+from experiments.shared_analysis import ALL_DAYS
 from src.common.timestamps import analyzed_day_index
 from src.numerical_analysis.daily_analysis import DAILY_ANOMALY_SCALES
 
 SCALE_SCORE_COLUMNS = tuple(f"{scale}_score" for scale in DAILY_ANOMALY_SCALES)
 
 RESULT_COLUMNS = [
-    "mode", "kind", "cutover_date", "variant", "decision_time", "days_since_cutover",
-    "anomaly_level", "anomaly_score", *SCALE_SCORE_COLUMNS, "sustained_drift", "classification",
-    "alarm", "gate_open", "new_pattern", "reference_reset", "mae_w",
+    "mode",
+    "kind",
+    "cutover_date",
+    "variant",
+    "decision_time",
+    "days_since_cutover",
+    "anomaly_level",
+    "anomaly_score",
+    *SCALE_SCORE_COLUMNS,
+    "sustained_drift",
+    "classification",
+    "alarm",
+    "gate_open",
+    "new_pattern",
+    "reference_reset",
+    "mae_w",
 ]
 
 
@@ -23,9 +37,16 @@ def read_scenario_results(
     local_timezone: str,
 ) -> pd.DataFrame:
     # summary hat jeden Tag, anomaly.csv fehlt an Tagen ohne Analyse (z.B. direkt nach einem Reset)
-    summary = pd.read_csv(run_directory / "comparison_summary.csv")[["decision_time", "config", "classification", "reference_reset", "mae_w"]]
-    anomaly = pd.concat([pd.read_csv(file) for file in sorted(run_directory.glob("*/anomaly.csv"))], ignore_index=True)
-    results = summary.merge(anomaly, on=["decision_time", "config"], how="left").rename(columns={"config": "variant"})
+    summary = pd.read_csv(run_directory / "comparison_summary.csv")[
+        ["decision_time", "config", "classification", "reference_reset", "mae_w"]
+    ]
+    anomaly = pd.concat(
+        [pd.read_csv(file) for file in sorted(run_directory.glob("*/anomaly.csv"))],
+        ignore_index=True,
+    )
+    results = summary.merge(anomaly, on=["decision_time", "config"], how="left").rename(
+        columns={"config": "variant"}
+    )
 
     decision_time = pd.DatetimeIndex(pd.to_datetime(results["decision_time"], utc=True))
     target_day = analyzed_day_index(decision_time, local_timezone).tz_localize(None)
@@ -34,7 +55,9 @@ def read_scenario_results(
     results["kind"] = kind
     results["cutover_date"] = cutover_date
     results["days_since_cutover"] = (target_day - pd.Timestamp(cutover_date)).days
-    results["alarm"] = results["anomaly_level"].notna() & results["anomaly_level"].ne("normal")
+    results["alarm"] = results["anomaly_level"].notna() & results["anomaly_level"].ne(
+        "normal"
+    )
     results["gate_open"] = results["alarm"] | results["sustained_drift"].eq(True)
     results["new_pattern"] = results["classification"].eq("new_pattern")
 
@@ -42,20 +65,34 @@ def read_scenario_results(
 
 
 def summarize_control(results: pd.DataFrame) -> pd.DataFrame:
-    """Fehlalarme und Score-Verfügbarkeit ohne Ereignis, getrennt vor/nach Cutover"""
+    """Fehlalarme und Score-Verfügbarkeit ohne Ereignis, vor und ab Cutover und über das ganze Fenster"""
     control = results.loc[results["kind"].eq("control")].copy()
-    control["phase"] = control["days_since_cutover"].ge(0).map({False: "before", True: "after"})
-
     score_columns = ["anomaly_score", *SCALE_SCORE_COLUMNS]
     control[score_columns] = control[score_columns].notna()
 
-    return control.groupby(["variant", "cutover_date", "phase"]).agg(
-        days=("alarm", "size"),
-        alarm_rate=("alarm", "mean"),
-        gate_open_rate=("gate_open", "mean"),
-        new_pattern_days=("new_pattern", "sum"),
-        **{f"{column}_available_share": (column, "mean") for column in score_columns},
-    ).reset_index()
+    phase = (
+        control["days_since_cutover"]
+        .ge(0)
+        .map({False: "before_cutover", True: "after_cutover"})
+    )
+    control = pd.concat(
+        [control.assign(phase=phase), control.assign(phase=ALL_DAYS)], ignore_index=True
+    )
+
+    return (
+        control.groupby(["mode", "variant", "cutover_date", "phase"])
+        .agg(
+            days=("alarm", "size"),
+            alarm_rate=("alarm", "mean"),
+            gate_open_rate=("gate_open", "mean"),
+            new_pattern_days=("new_pattern", "sum"),
+            **{
+                f"{column}_available_share": (column, "mean")
+                for column in score_columns
+            },
+        )
+        .reset_index()
+    )
 
 
 def pair_with_control(results: pd.DataFrame) -> pd.DataFrame:
@@ -78,58 +115,75 @@ def pair_with_control(results: pd.DataFrame) -> pd.DataFrame:
     return paired
 
 
-def summarize_event_response(paired: pd.DataFrame, unusual_threshold: float) -> pd.DataFrame:
+def summarize_event_response(
+    paired: pd.DataFrame, unusual_threshold: float
+) -> pd.DataFrame:
     rows: list[dict[str, object]] = []
     after_cutover = paired.loc[paired["days_since_cutover"].ge(0)]
 
-    for (variant, cutover_date), group in after_cutover.groupby(["variant", "cutover_date"]):
-        above_threshold = group.loc[group["score_shift"].ge(unusual_threshold), "days_since_cutover"]
+    for (variant, cutover_date), group in after_cutover.groupby(
+        ["variant", "cutover_date"]
+    ):
+        above_threshold = group.loc[
+            group["score_shift"].ge(unusual_threshold), "days_since_cutover"
+        ]
 
         rows.append(
             {
                 "variant": variant,
                 "cutover_date": cutover_date,
                 "days_after_cutover": len(group),
-                "excess_alarm_rate": group["alarm"].mean() - group["alarm_control"].mean(),
-                "first_event_alarm_day": group.loc[group["event_alarm"], "days_since_cutover"].min(),
-                "first_event_new_pattern_day": group.loc[group["event_new_pattern"], "days_since_cutover"].min(),
+                "excess_alarm_rate": group["alarm"].mean()
+                - group["alarm_control"].mean(),
+                "first_event_alarm_day": group.loc[
+                    group["event_alarm"], "days_since_cutover"
+                ].min(),
+                "first_event_new_pattern_day": group.loc[
+                    group["event_new_pattern"], "days_since_cutover"
+                ].min(),
                 "peak_score_shift": group["score_shift"].max(),
                 # ab dem Tag danach liegt das Ereignis nicht mehr über der Schwelle, NaN = nie darüber
                 "last_day_shift_above_threshold": above_threshold.max(),
             }
         )
 
-    return pd.DataFrame(rows).sort_values(["variant", "cutover_date"]).reset_index(drop=True)
+    return (
+        pd.DataFrame(rows)
+        .sort_values(["variant", "cutover_date"])
+        .reset_index(drop=True)
+    )
 
 
 def summarize_closed_loop(results: pd.DataFrame) -> pd.DataFrame:
     keys = ["variant", "cutover_date"]
     after_cutover = results.loc[results["days_since_cutover"].ge(0)]
 
-    loop_control = results.loc[results["mode"].eq("adaption") & results["kind"].eq("control")].groupby(keys)
-    loop_step = after_cutover.loc[after_cutover["mode"].eq("adaption") & after_cutover["kind"].eq("step")]
+    loop_control = results.loc[
+        results["mode"].eq("adaption") & results["kind"].eq("control")
+    ].groupby(keys)
+    loop_step = after_cutover.loc[
+        after_cutover["mode"].eq("adaption") & after_cutover["kind"].eq("step")
+    ]
     step_resets = loop_step.loc[loop_step["reference_reset"]]
 
     summary = pd.DataFrame(
         {
             "control_resets": loop_control["reference_reset"].sum(),
-            "control_alarm_rate": loop_control["alarm"].mean(),
-            "control_gate_open_rate": loop_control["gate_open"].mean(),
-            "step_resets_after_cutover": loop_step.groupby(keys)["reference_reset"].sum(),
-            "step_first_reset_day": step_resets.groupby(keys)["days_since_cutover"].min(),
+            "step_resets_after_cutover": loop_step.groupby(keys)[
+                "reference_reset"
+            ].sum(),
+            "step_first_reset_day": step_resets.groupby(keys)[
+                "days_since_cutover"
+            ].min(),
         }
     )
 
     # MAE nach Cutover, jeweils neben denselben Lauf ohne Adaption gestellt
-    mae = after_cutover.pivot_table(index=keys, columns=["kind", "mode"], values="mae_w", aggfunc="mean")
+    mae = after_cutover.pivot_table(
+        index=keys, columns=["kind", "mode"], values="mae_w", aggfunc="mean"
+    )
     for kind in ("control", "step"):
         summary[f"{kind}_mae_isolated_w"] = mae[(kind, "isolated")]
         summary[f"{kind}_mae_adaption_w"] = mae[(kind, "adaption")]
 
     return summary.reset_index()
-
-
-def score_shift_by_week(paired: pd.DataFrame) -> pd.DataFrame:
-    weekly = paired.assign(week_since_cutover=paired["days_since_cutover"] // 7)
-
-    return weekly.groupby(["variant", "week_since_cutover"], as_index=False)[["score_shift"]].mean()

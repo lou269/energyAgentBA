@@ -3,12 +3,22 @@ from itertools import product
 
 import pandas as pd
 
-from experiments.component_studies.k3_anomaly_detection.k3_evaluation import pair_with_control, summarize_event_response
+from experiments.component_studies.k3_anomaly_detection.k3_evaluation import (
+    pair_with_control,
+    summarize_event_response,
+)
 from src.numerical_analysis.anomaly_detection import anomaly_streak_days
 
 
 SERIES_KEYS = ["variant", "cutover_date", "kind"]
 WINDOW_KEYS = ["variant", "cutover_date"]
+
+CALIBRATION_FILES = {
+    "grid": "k3_calibration_grid",
+    "operating_points": "k3_calibration_operating_points",
+    "by_cutover": "k3_calibration_by_cutover",
+    "loco": "k3_calibration_loco",
+}
 
 
 def threshold_columns(slow_scales: Sequence[str]) -> list[str]:
@@ -26,7 +36,9 @@ def apply_gate(
     sustained_anomaly_streak_days: int,
     min_sustained_scales: int,
 ) -> pd.DataFrame:
-    gated = results.sort_values([*SERIES_KEYS, "days_since_cutover"]).reset_index(drop=True)
+    gated = results.sort_values([*SERIES_KEYS, "days_since_cutover"]).reset_index(
+        drop=True
+    )
     series_position = gated.groupby(SERIES_KEYS).cumcount()
 
     gate_score_columns = [f"{scale}_score" for scale in gate_scales]
@@ -57,21 +69,31 @@ def apply_gate(
     return gated.loc[series_position >= streak_tolerance_window_days - 1]
 
 
-def summarize_operating_point(gated: pd.DataFrame, gate_threshold: float) -> pd.DataFrame:
+def summarize_operating_point(
+    gated: pd.DataFrame, gate_threshold: float
+) -> pd.DataFrame:
     control = gated.loc[gated["kind"] == "control"]
 
     # isolated bleibt eine Drift oft wochenlang stehen, deshalb zählt nur der erste Tag
-    previous_new_pattern = control.groupby(WINDOW_KEYS)["new_pattern"].shift(fill_value=False)
-    control = control.assign(new_pattern_onset=control["new_pattern"] & ~previous_new_pattern)
+    previous_new_pattern = control.groupby(WINDOW_KEYS)["new_pattern"].shift(
+        fill_value=False
+    )
+    control = control.assign(
+        new_pattern_onset=control["new_pattern"] & ~previous_new_pattern
+    )
 
     summary = control.groupby(WINDOW_KEYS, as_index=False).agg(
         alarm_rate=("alarm", "mean"),
         false_new_pattern=("new_pattern_onset", "sum"),
     )
 
-    response = summarize_event_response(pair_with_control(gated), unusual_threshold=gate_threshold)
+    response = summarize_event_response(
+        pair_with_control(gated), unusual_threshold=gate_threshold
+    )
 
-    return summary.merge(response[[*WINDOW_KEYS, "first_event_new_pattern_day"]], on=WINDOW_KEYS)
+    return summary.merge(
+        response[[*WINDOW_KEYS, "first_event_new_pattern_day"]], on=WINDOW_KEYS
+    )
 
 
 def build_grid_metrics(
@@ -132,18 +154,34 @@ def select_operating_points(
 
     # Einzeltage: die niedrigste Schwelle, die im Mittel noch unter target_alarm_rate bleibt
     points["target_excess"] = (points["alarm_rate"] - target_alarm_rate).clip(lower=0)
-    gate_choice = points.sort_values(["target_excess", "gate_threshold"]).drop_duplicates("variant")
-    points = points.merge(gate_choice[["variant", "gate_threshold"]], on=["variant", "gate_threshold"])
+    gate_choice = points.sort_values(
+        ["target_excess", "gate_threshold"]
+    ).drop_duplicates("variant")
+    points = points.merge(
+        gate_choice[["variant", "gate_threshold"]], on=["variant", "gate_threshold"]
+    )
 
     # Drift: zuerst das Fehlalarm-Budget einhalten, danach möglichst oft und früh erkennen
-    points["budget_excess"] = (points["false_new_pattern"] - max_false_new_pattern).clip(lower=0)
+    points["budget_excess"] = (
+        points["false_new_pattern"] - max_false_new_pattern
+    ).clip(lower=0)
     points = points.sort_values(
-        ["target_excess", "budget_excess", "detected", "detection_day", "false_new_pattern"],
+        [
+            "target_excess",
+            "budget_excess",
+            "detected",
+            "detection_day",
+            "false_new_pattern",
+        ],
         ascending=[True, True, False, True, True],
     )
 
     # pro Variante bleibt der beste Punkt, die erste Zeile ist damit auch die beste Variante
-    points = points.drop_duplicates("variant").drop(columns=["target_excess", "budget_excess"]).reset_index(drop=True)
+    points = (
+        points.drop_duplicates("variant")
+        .drop(columns=["target_excess", "budget_excess"])
+        .reset_index(drop=True)
+    )
     points["rank"] = points.index + 1
 
     return points
@@ -157,7 +195,9 @@ def operating_points_by_cutover(
 ) -> pd.DataFrame:
     selected = operating_points[["variant", "rank", *threshold_columns(slow_scales)]]
 
-    return selected.merge(grid_metrics, on=["variant", *threshold_columns(slow_scales)]).sort_values(["rank", "cutover_date"])
+    return selected.merge(
+        grid_metrics, on=["variant", *threshold_columns(slow_scales)]
+    ).sort_values(["rank", "cutover_date"])
 
 
 def leave_one_cutover_out(

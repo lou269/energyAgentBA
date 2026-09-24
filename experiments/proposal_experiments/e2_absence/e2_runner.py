@@ -12,13 +12,26 @@ import pandas as pd
 
 from experiments.proposal_experiments.e_config import E2Config
 from experiments.proposal_experiments.e2_absence.e2_scenarios import build_ctx_scenarios
-from experiments.proposal_experiments.e2_absence.e2_selection import load_calendar_events, resolve_absence_window, select_channels_for_subtraction
-from experiments.proposal_experiments.shared import build_decision_times, crop_history_for_coldstart, load_target_series, subtract_channels_in_window
+from experiments.proposal_experiments.e2_absence.e2_selection import (
+    load_calendar_events,
+    resolve_absence_window,
+    select_channels_for_subtraction,
+)
+from experiments.proposal_experiments.shared import (
+    build_decision_times,
+    crop_history_for_coldstart,
+    subtract_channels_in_window,
+)
+from src.common.target_series import load_target_series
 from src.config.project_config import ProjectConfig, ensure_project_directories
 from src.llm.llm_run_artifacts import load_prompt
 from src.llm.llm_runner import PROMPT_DIRECTORY
 from src.pipeline.comparison_harness import run_comparison
-from src.config.config_forecasting import ComparisonConfig, ForecastingConfig, SYS_VARIANTS
+from src.config.config_forecasting import (
+    ComparisonConfig,
+    ForecastingConfig,
+    SYS_VARIANTS,
+)
 from src.pipeline.io import create_experiment_run
 
 logger = logging.getLogger(__name__)
@@ -32,7 +45,7 @@ class E2Runner:
         self,
         project_config: ProjectConfig | None = None,
         e2_config: E2Config | None = None,
-        forecast_cofig: ForecastingConfig | None = None
+        forecast_cofig: ForecastingConfig | None = None,
     ) -> None:
         self.project_config = project_config or ProjectConfig()
         self.e2_config = e2_config or E2Config()
@@ -43,17 +56,25 @@ class E2Runner:
         data_file = OUTPUT_DIR / "absence_channel_data_hourly.csv"
 
         ranking = pd.read_csv(ranking_file)
-        data_hourly = pd.read_csv(data_file, parse_dates=["timestamp"], index_col="timestamp")
+        data_hourly = pd.read_csv(
+            data_file, parse_dates=["timestamp"], index_col="timestamp"
+        )
 
         return ranking, data_hourly
 
     def run(self) -> None:
         ensure_project_directories(self.project_config)
 
-        mains_series, target_imputed, target_value_implausible, _meter_key = load_target_series(self.project_config)
+        mains_series, target_imputed, target_value_implausible, _meter_key = (
+            load_target_series(self.project_config)
+        )
 
-        calendar_events = load_calendar_events(self.e2_config.calendar_events_file, self.project_config.timezone)
-        window_start, window_end = resolve_absence_window(calendar_events, self.e2_config.active_absence_event_id)
+        calendar_events = load_calendar_events(
+            self.e2_config.calendar_events_file, self.project_config.timezone
+        )
+        window_start, window_end = resolve_absence_window(
+            calendar_events, self.e2_config.active_absence_event_id
+        )
         decision_times = build_decision_times(
             window_start,
             window_end,
@@ -63,14 +84,23 @@ class E2Runner:
         )
 
         mains_series = crop_history_for_coldstart(
-            mains_series, coldstart_days=self.forecast_config.cycle_coldstart_days, first_decision_time=decision_times[0],
+            mains_series,
+            coldstart_days=self.forecast_config.cycle_coldstart_days,
+            first_decision_time=decision_times[0],
             local_timezone=self.project_config.timezone,
         )
 
         ranking, appliance_data_hourly = self._read_absence_channel_selection()
-        selected_channels = select_channels_for_subtraction(ranking, min_coverage_share=self.e2_config.min_coverage_share_for_subtraction)
+        selected_channels = select_channels_for_subtraction(
+            ranking,
+            min_coverage_share=self.e2_config.min_coverage_share_for_subtraction,
+        )
 
-        logger.info("Subtracting %d channel(s) for the absence week: %s", len(selected_channels), ", ".join(selected_channels))
+        logger.info(
+            "Subtracting %d channel(s) for the absence week: %s",
+            len(selected_channels),
+            ", ".join(selected_channels),
+        )
 
         absence_adjusted_series = subtract_channels_in_window(
             mains_series,
@@ -91,10 +121,14 @@ class E2Runner:
 
         sys3_config = SYS_VARIANTS["SYS3"]
         assert sys3_config.llm_config is not None
-        llm_prompt = load_prompt(PROMPT_DIRECTORY / f"prompt_{sys3_config.llm_config.prompt_version}.txt")
+        llm_prompt = load_prompt(
+            PROMPT_DIRECTORY / f"prompt_{sys3_config.llm_config.prompt_version}.txt"
+        )
 
         e2_run_directory, raw_directory = create_experiment_run(
-            self.project_config.e2_output_dir, "e2", {"e2_config": asdict(self.e2_config)},
+            self.project_config.e2_output_dir,
+            "e2",
+            {"e2_config": asdict(self.e2_config)},
         )
 
         ctx0_dir = raw_directory / "ctx0"
@@ -103,31 +137,42 @@ class E2Runner:
         ctx0_configs = {
             "SYS1": SYS_VARIANTS["SYS1"],
             "SYS2_CTX0": SYS_VARIANTS["SYS2"],
-            "SYS3_CTX0": sys3_config
+            "SYS3_CTX0": sys3_config,
         }
-        ctx1_configs = {
-            "SYS2_CTX1": SYS_VARIANTS["SYS2"],
-            "SYS3_CTX1": sys3_config
-        }
+        ctx1_configs = {"SYS2_CTX1": SYS_VARIANTS["SYS2"], "SYS3_CTX1": sys3_config}
 
         comparison_config = ComparisonConfig()
 
-        logger.info("Running E2/CTX0 (no calendar context) over %d decision times...", len(decision_times))
+        logger.info(
+            "Running E2/CTX0 (no calendar context) over %d decision times...",
+            len(decision_times),
+        )
         ctx0_result = run_comparison(
-            ctx0_scenario, ctx0_configs, ctx0_dir, self.project_config.project_root,
+            ctx0_scenario,
+            ctx0_configs,
+            ctx0_dir,
+            self.project_config.project_root,
             local_timezone=self.project_config.timezone,
-            run_id=f"{e2_run_directory.name}_ctx0", llm_prompt=llm_prompt,
+            run_id=f"{e2_run_directory.name}_ctx0",
+            llm_prompt=llm_prompt,
             max_consecutive_llm_failures=comparison_config.max_consecutive_llm_failures,
             max_total_llm_failures=comparison_config.max_total_llm_failures,
             calendar_lookback_days=comparison_config.calendar_lookback_days,
             calendar_lookahead_days=comparison_config.calendar_lookahead_days,
         )
 
-        logger.info("Running E2/CTX1 (with calendar context) over %d decision times...", len(decision_times))
+        logger.info(
+            "Running E2/CTX1 (with calendar context) over %d decision times...",
+            len(decision_times),
+        )
         ctx1_result = run_comparison(
-            ctx1_scenario, ctx1_configs, ctx1_dir, self.project_config.project_root,
+            ctx1_scenario,
+            ctx1_configs,
+            ctx1_dir,
+            self.project_config.project_root,
             local_timezone=self.project_config.timezone,
-            run_id=f"{e2_run_directory.name}_ctx1", llm_prompt=llm_prompt,
+            run_id=f"{e2_run_directory.name}_ctx1",
+            llm_prompt=llm_prompt,
             max_consecutive_llm_failures=comparison_config.max_consecutive_llm_failures,
             max_total_llm_failures=comparison_config.max_total_llm_failures,
             calendar_lookback_days=comparison_config.calendar_lookback_days,
@@ -138,13 +183,15 @@ class E2Runner:
         combined_output_file = raw_directory / "e2_comparison_summary.csv"
         combined.to_csv(combined_output_file, index=False)
 
-
-        logger.info("E2 completed: %d rows written to %s", len(combined), combined_output_file)
+        logger.info(
+            "E2 completed: %d rows written to %s", len(combined), combined_output_file
+        )
 
 
 def main() -> None:
     logging.basicConfig(level=logging.INFO)
     E2Runner().run()
-    
+
+
 if __name__ == "__main__":
     main()
