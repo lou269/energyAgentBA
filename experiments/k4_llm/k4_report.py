@@ -6,25 +6,24 @@ from pathlib import Path
 
 import pandas as pd
 
-from experiments.common.evaluation import (
-    summarize_classification_detection,
-    summarize_mae_before_after,
+from experiments.common.standard_config import PROJECT_CONFIG
+from experiments.k4_llm.k4_config import (
+    RESULTS_FILE,
+    RUN_PREFIX,
+    SEQUENCE_RESULTS_FILE,
+    SEQUENCE_RUN_PREFIX,
 )
-from experiments.common.harness import COMPARISON_SUMMARY_FILE
-from experiments.common.standard_config import LOCAL_TIMEZONE, PROJECT_CONFIG
-from experiments.k4_llm.k4_config import RESULTS_FILE, RUN_PREFIX, SEQUENCE_RUN_PREFIX
 from experiments.k4_llm.k4_evaluation import (
     summarize_cases,
     summarize_classes,
     summarize_combined,
     summarize_models,
+    summarize_sequence,
 )
-from src.common.timestamps import local_midnight_utc
 from src.pipeline.io import (
     RAW_SUBDIR,
     df_to_csv,
     optional_run_directory_from_argv,
-    read_raw_json,
     user_output_directory,
 )
 
@@ -78,45 +77,30 @@ def main() -> None:
     else:
         print(f"No K4 single-case run found under {k4_output_dir}, skipped.")
 
-    detection = mae_before_after = None
+    sequence = None
     sequence_run_dir = optional_run_directory_from_argv(
         k4_output_dir, SEQUENCE_RUN_PREFIX, 2
     )
 
     if sequence_run_dir is not None:
-        k4_config = read_raw_json(sequence_run_dir, "run_config")["k4_config"]
-        comparison = pd.read_csv(
-            sequence_run_dir
-            / RAW_SUBDIR
-            / k4_config["sequence_target_kind"]
-            / COMPARISON_SUMMARY_FILE,
-            parse_dates=["decision_time"],
+        sequence_results = pd.read_csv(
+            sequence_run_dir / RAW_SUBDIR / f"{SEQUENCE_RESULTS_FILE}.csv",
+            dtype={"cutover_date": str},
         )
-
-        cutover_time = local_midnight_utc(
-            k4_config["sequence_cutover_date"], LOCAL_TIMEZONE
-        )
-        detection = summarize_classification_detection(
-            comparison, cutover_time, k4_config["sequence_target_classification"]
-        )
-        mae_before_after = summarize_mae_before_after(comparison, cutover_time)
+        sequence = summarize_sequence(sequence_results)
         sequence_output_dir = user_output_directory(sequence_run_dir)
-        df_to_csv(detection, sequence_output_dir, "sequence_detection")
-        df_to_csv(mae_before_after, sequence_output_dir, "sequence_mae_before_after")
+        df_to_csv(sequence.events, sequence_output_dir, "sequence_events")
+        df_to_csv(sequence.models, sequence_output_dir, "sequence_models")
 
-        print("\n=== Sequence comparison (standard scenario with adaption) ===")
-        print(detection.to_string(index=False))
+        print("\n=== Sequence comparison (standard scenarios with adaption) ===")
+        print(sequence.events.to_string(index=False))
         print()
-        print(mae_before_after.to_string(index=False))
+        print(sequence.models.to_string(index=False))
     else:
         print(f"No K4 sequence run found under {k4_output_dir}, skipped.")
 
-    if (
-        single_case_summary is not None
-        and detection is not None
-        and mae_before_after is not None
-    ):
-        combined = summarize_combined(single_case_summary, detection, mae_before_after)
+    if single_case_summary is not None and sequence is not None:
+        combined = summarize_combined(single_case_summary, sequence.models)
         df_to_csv(combined, k4_output_dir, "k4_combined_comparison")
 
         print("\n=== Combined (single case + sequence per model) ===")
