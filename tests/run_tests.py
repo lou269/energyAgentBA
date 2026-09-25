@@ -41,7 +41,7 @@ TEST_GROUPS = [
             "tests/unit/evaluation",
             "tests/unit/user_profile",
             "tests/unit/config",
-            "tests/unit/proposal_experiments",
+            "tests/unit/experiments",
         ),
     ),
 ]
@@ -52,8 +52,15 @@ def run_group(group: TestGroup) -> int:
 
     result = subprocess.run(
         [
-            "conda", "run", "--no-capture-output", "-n", group.environment,
-            "python", "-m", "pytest", *group.paths,
+            "conda",
+            "run",
+            "--no-capture-output",
+            "-n",
+            group.environment,
+            "python",
+            "-m",
+            "pytest",
+            *group.paths,
         ],
         cwd=PROJECT_ROOT,
     )

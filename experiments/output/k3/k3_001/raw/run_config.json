@@ -3,7 +3,7 @@
     "git_commit": "a3ddf39eebcc9d930493c785e69d17d0b6350f95",
     "git_dirty": true
   },
-  "k3_config": {
+  "standard_config": {
     "cutover_dates": [
       "2013-10-15",
       "2014-01-15",

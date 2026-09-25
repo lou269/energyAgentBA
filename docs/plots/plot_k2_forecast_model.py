@@ -1,4 +1,3 @@
-# python -m docs.plots.plot_k2_forecast_model
 from pathlib import Path
 
 import matplotlib.dates as mdates
@@ -6,29 +5,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from docs.plots.plot_style import BASELINE_COLORS, FORECAST_VARIANT_COLORS, save_figure
-from experiments.component_studies.k2_forecast_model.k2_config import (
-    SPLIT_DIRECTORY_SUFFIX,
-    ForecastModelExperimentConfig,
-)
-from src.config.project_config import ProjectConfig
-from src.pipeline.io import RAW_SUBDIR, latest_sequential_number
-
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-FIGURE_DIR = PROJECT_ROOT / "docs" / "diagrams" / "generated"
-
-BASELINE_LABELS = {
-    "B1": "B1: Naiv (letzter Wert)",
-    "B2": "B2: Naiv (täglich)",
-    "B3": "B3: Naiv (wöchentlich)",
-}
-VARIANT_LABELS = {
-    "C1": "C1: Statisch\n(kein Retraining)",
-    "C2": "C2: Expanding\n+ Retraining",
-    "C3_7": "C3: Rolling 7-Tage\n+ Retraining",
-    "C3_30": "C3: Rolling 30-Tage\n+ Retraining",
-    "C3_60": "C3: Rolling 60-Tage\n+ Retraining",
-}
+from docs.plots.plot_style import MODEL_COLORS, save_figure
+from src.config.config_forecasting import MODEL_LABELS
 
 
 def add_bar_labels(axis, fmt: str = "{:.0f}") -> None:
@@ -51,7 +29,8 @@ def add_bar_labels(axis, fmt: str = "{:.0f}") -> None:
 
 
 def build_forecast_model_plot(
-    run_directory: Path,
+    overall: pd.DataFrame,
+    origin_metrics: pd.DataFrame,
     output_directory: Path,
     *,
     split: str,
@@ -60,17 +39,8 @@ def build_forecast_model_plot(
     variant_model_ids: tuple[str, ...],
     reference_baseline: str,
 ) -> None:
-    model_colors = {**BASELINE_COLORS, **FORECAST_VARIANT_COLORS}
-    model_labels = {**BASELINE_LABELS, **VARIANT_LABELS}
-    all_model_order = [*baseline_model_ids, *variant_model_ids]
-
-    origin_metrics = pd.read_csv(run_directory / "origin_metrics.csv")
-    overall_metrics = pd.read_csv(run_directory / "overall_metrics.csv").set_index(
-        "model_id"
-    )
-    mae_skill = pd.read_csv(run_directory / "mae_skill.csv")
-
-    origin_metrics["forecast_day"] = pd.to_datetime(origin_metrics["forecast_day"])
+    all_model_order = list(baseline_model_ids) + list(variant_model_ids)
+    model_colors = [MODEL_COLORS[model_id] for model_id in all_model_order]
 
     figure = plt.figure(figsize=(13, 12))
     grid = figure.add_gridspec(
@@ -93,13 +63,13 @@ def build_forecast_model_plot(
         ].sort_values("forecast_day")
 
         timeline_axis.plot(
-            model_origins["forecast_day"],
+            pd.to_datetime(model_origins["forecast_day"]),
             model_origins["mae_w"],
             marker="o",
             markersize=4,
             linewidth=2,
-            color=model_colors[model_id],
-            label=model_labels[model_id].replace("\n", " "),
+            color=MODEL_COLORS[model_id],
+            label=MODEL_LABELS[model_id],
         )
 
     timeline_axis.set_title(
@@ -113,22 +83,22 @@ def build_forecast_model_plot(
     timeline_axis.legend(fontsize=8)
 
     # B: Gesamtfehler je Modell
-    overall_metrics = overall_metrics.loc[all_model_order]
+    overall = overall.loc[all_model_order]
     x_positions = np.arange(len(all_model_order))
     bar_width = 0.35
 
     overall_axis.bar(
         x_positions - bar_width / 2,
-        overall_metrics["mae_w"],
+        overall["mae_w"],
         width=bar_width,
-        color=[model_colors[m] for m in all_model_order],
+        color=model_colors,
         label="MAE",
     )
     overall_axis.bar(
         x_positions + bar_width / 2,
-        overall_metrics["rmse_w"],
+        overall["rmse_w"],
         width=bar_width,
-        color=[model_colors[m] for m in all_model_order],
+        color=model_colors,
         alpha=0.55,
         hatch="//",
         label="RMSE",
@@ -145,21 +115,12 @@ def build_forecast_model_plot(
     overall_axis.legend(fontsize=8)
 
     # C: MAE-Skill der Prophet-Varianten gegenüber der Referenz-Baseline
-    skill_plot = (
-        mae_skill.loc[
-            mae_skill["model_id"].isin(variant_model_ids)
-            & mae_skill["reference_model_id"].eq(reference_baseline)
-        ]
-        .set_index("model_id")
-        .loc[list(variant_model_ids)]
-    )
-
-    skill_plot["mae_skill_pct"] = skill_plot["mae_skill"] * 100
+    skill_pct = overall.loc[list(variant_model_ids), "skill_pct"]
 
     skill_axis.bar(
         variant_model_ids,
-        skill_plot["mae_skill_pct"],
-        color=[model_colors[m] for m in variant_model_ids],
+        skill_pct,
+        color=[MODEL_COLORS[model_id] for model_id in variant_model_ids],
     )
 
     skill_axis.axhline(0, color="#333333", linewidth=1)
@@ -170,22 +131,20 @@ def build_forecast_model_plot(
     skill_axis.set_ylabel(f"Verbesserung ggü. {reference_baseline} (%)")
     # negativer Skill (schlechter als die Baseline) muss sichtbar bleiben
     skill_axis.set_ylim(
-        min(0, skill_plot["mae_skill_pct"].min() * 1.3),
-        skill_plot["mae_skill_pct"].max() * 1.3,
+        min(0, skill_pct.min() * 1.3),
+        skill_pct.max() * 1.3,
     )
     skill_axis.grid(axis="y", alpha=0.25)
     add_bar_labels(skill_axis, "{:.1f}%")
 
     # D: Retraining-Aufwand je Modell
-    retrain_positions = np.arange(len(all_model_order))
-
     cost_axis.bar(
-        retrain_positions,
-        overall_metrics["retraining_count"],
-        color=[model_colors[m] for m in all_model_order],
+        x_positions,
+        overall["retraining_count"],
+        color=model_colors,
         label="Retraining-Vorgänge",
     )
-    cost_axis.set_xticks(retrain_positions)
+    cost_axis.set_xticks(x_positions)
     cost_axis.set_xticklabels(all_model_order)
     cost_axis.set_ylabel("Retraining-Vorgänge (n)")
     cost_axis.set_title(
@@ -196,8 +155,8 @@ def build_forecast_model_plot(
 
     runtime_axis = cost_axis.twinx()
     runtime_axis.plot(
-        retrain_positions,
-        overall_metrics["total_refit_runtime_seconds"],
+        x_positions,
+        overall["refit_seconds"],
         color="#333333",
         marker="D",
         markersize=6,
@@ -222,42 +181,3 @@ def build_forecast_model_plot(
     output_directory.mkdir(parents=True, exist_ok=True)
 
     save_figure(figure, output_directory, "forecast_model_comparison")
-
-
-def main() -> None:
-    experiment_config = ForecastModelExperimentConfig()
-    split = experiment_config.split
-
-    k2_output_dir = ProjectConfig().k2_output_dir
-
-    run_number = latest_sequential_number(k2_output_dir, prefix="k2")
-    if run_number is None:
-        raise FileNotFoundError(f"No k2_forecast_model run found in {k2_output_dir}.")
-
-    run_root = k2_output_dir / f"k2_{run_number:03d}" / RAW_SUBDIR
-
-    for mode in experiment_config.comparison_modes:
-        run_directory = run_root / f"{mode}_{SPLIT_DIRECTORY_SUFFIX[split]}"
-
-        if not run_directory.exists():
-            continue
-
-        primary_naive_reference = pd.read_csv(
-            run_directory / "primary_naive_reference.csv"
-        )["model_id"].iloc[0]
-
-        build_forecast_model_plot(
-            run_directory,
-            FIGURE_DIR / mode,
-            split=split,
-            comparison_mode=mode,
-            baseline_model_ids=experiment_config.baseline_model_ids,
-            variant_model_ids=tuple(
-                variant.model_id for variant in experiment_config.prophet_variants
-            ),
-            reference_baseline=primary_naive_reference,
-        )
-
-
-if __name__ == "__main__":
-    main()

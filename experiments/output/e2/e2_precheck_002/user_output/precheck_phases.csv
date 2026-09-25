@@ -1,0 +1,7 @@
+System,Phase,Tage,Gate offen,davon Einzeltag,davon Drift,new_pattern,low,peak,Resets,Meldungen,MAE [W]
+SYS1,Urlaub,14,2,0,2,0,0,0,0,0,47.5
+SYS1,nach der Rückkehr,30,3,1,2,0,0,0,0,0,122.2
+SYS1,vor dem Urlaub,31,0,0,0,0,0,0,0,0,110.1
+SYS2,Urlaub,14,1,0,1,1,0,0,1,1,46.8
+SYS2,nach der Rückkehr,30,2,2,0,0,0,2,0,2,121.8
+SYS2,vor dem Urlaub,31,0,0,0,0,0,0,0,0,110.1

@@ -11,13 +11,11 @@ SYSTEM_COLORS = {
     "SYS2": "#F58518",
     "SYS3": "#54A24B",
 }
-BASELINE_COLORS = {
+# C3 in Grüntönen, je länger das Fenster, desto dunkler
+MODEL_COLORS = {
     "B1": "#B0B0B0",
     "B2": "#8C8C8C",
     "B3": "#4C78A8",
-}
-# C3 in Grüntönen, je länger das Fenster, desto dunkler
-FORECAST_VARIANT_COLORS = {
     "C1": "#F2CF5B",
     "C2": "#E45756",
     "C3_7": "#54A24B",
@@ -51,7 +49,7 @@ def save_figure(figure: Figure, output_directory: Path, name: str) -> None:
 def grouped_bars(
     axis: Axes, values: pd.DataFrame, colors: dict[str, str], labels: dict[str, str]
 ) -> None:
-    """values: Zeilen = Gruppen auf der x-Achse, Spalten = Balken je Gruppe"""
+    # values: Zeilen = Gruppen auf der x-Achse, Spalten = Balken je Gruppe
     positions = np.arange(len(values.index))
     bar_width = 0.8 / len(values.columns)
 

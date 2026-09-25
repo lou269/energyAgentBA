@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from docs.plots.plot_style import SYSTEM_COLORS, save_figure
-from experiments.shared_analysis import forecast_days_since_event
+from experiments.common.evaluation import days_since_event
 from src.config.config_forecasting import SYS_LABELS
 
 
@@ -15,7 +15,6 @@ def build_e1_plot(
     *,
     cutover_time: pd.Timestamp,
     reference_config: str,
-    local_timezone: str,
 ) -> None:
     figure, axis = plt.subplots(figsize=(9, 4))
 
@@ -24,7 +23,7 @@ def build_e1_plot(
             control_comparison["config"].eq(reference_config)
         ]
         axis.plot(
-            forecast_days_since_event(control, cutover_time, local_timezone),
+            days_since_event(control, cutover_time),
             control["mae_w"],
             color="#999999",
             linewidth=1.2,
@@ -37,7 +36,7 @@ def build_e1_plot(
         if runs.empty:
             continue
 
-        days = forecast_days_since_event(runs, cutover_time, local_timezone)
+        days = days_since_event(runs, cutover_time)
         adapted = runs["adaption_action"].ne("none").to_numpy()
         axis.plot(
             days, runs["mae_w"], color=color, linewidth=1.8, label=SYS_LABELS[config]

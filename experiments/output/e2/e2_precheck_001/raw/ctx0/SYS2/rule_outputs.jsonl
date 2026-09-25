@@ -1,0 +1,7 @@
+{"classification": "new_pattern", "config": "SYS2", "decision_time": "2013-05-31T23:00:00+00:00", "reasoning": "sustained deviation across multiple scales at once (weekly, long_term), on a weekday."}
+{"classification": "peak", "config": "SYS2", "decision_time": "2013-06-04T23:00:00+00:00", "reasoning": "unusual (unusual), but no sustained multi-scale signature (weekday)."}
+{"classification": "peak", "config": "SYS2", "decision_time": "2013-06-19T23:00:00+00:00", "reasoning": "unusual (unusual), but no sustained multi-scale signature (weekday)."}
+{"classification": "peak", "config": "SYS2", "decision_time": "2013-06-28T23:00:00+00:00", "reasoning": "unusual (strong_anomaly), but no sustained multi-scale signature (weekday)."}
+{"classification": "low", "config": "SYS2", "decision_time": "2013-07-09T23:00:00+00:00", "reasoning": "unusual (strong_anomaly) low reading, but no sustained multi-scale signature (weekday)."}
+{"classification": "low", "config": "SYS2", "decision_time": "2013-07-10T23:00:00+00:00", "reasoning": "unusual (strong_anomaly) low reading, but no sustained multi-scale signature (weekday)."}
+{"classification": "low", "config": "SYS2", "decision_time": "2013-07-11T23:00:00+00:00", "reasoning": "unusual (strong_anomaly) low reading, but no sustained multi-scale signature (weekday)."}

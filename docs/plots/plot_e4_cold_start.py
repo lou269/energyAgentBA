@@ -3,8 +3,8 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from docs.plots.plot_style import BASELINE_COLORS, COLDSTART_COLORS, save_figure
-from experiments.proposal_experiments.e4_cold_start.e4_evaluation import ALL_STARTS
+from docs.plots.plot_style import COLDSTART_COLORS, MODEL_COLORS, save_figure
+from experiments.e4_cold_start.e4_evaluation import ALL_STARTS
 
 
 def build_e4_plot(
@@ -13,6 +13,7 @@ def build_e4_plot(
     *,
     variant_id: str,
     reference_model_id: str,
+    smoothing_days: int,
 ) -> None:
     mean_curve = curve.loc[curve["start_date"].eq(ALL_STARTS)]
     coldstart_days = sorted(mean_curve["coldstart_days"].unique())
@@ -38,14 +39,14 @@ def build_e4_plot(
     axis.plot(
         reference["day_since_start"],
         reference["mae_w_smoothed"],
-        color=BASELINE_COLORS[reference_model_id],
+        color=MODEL_COLORS[reference_model_id],
         linewidth=1.5,
         linestyle="--",
         label=reference_model_id,
     )
 
     axis.set_title(
-        "Lernkurve nach dem Kaltstart (Mittel über Starttermine, 7 Tage geglättet)",
+        f"Lernkurve nach dem Kaltstart (Mittel über Starttermine, {smoothing_days} Tage geglättet)",
         loc="left",
     )
     axis.set_xlabel("Tage seit Start")

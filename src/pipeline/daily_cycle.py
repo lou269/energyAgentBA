@@ -3,11 +3,20 @@ from dataclasses import dataclass
 import pandas as pd
 from prophet import Prophet
 
-from src.adaption.adaption_policy import AdaptionAction, adaption_policy
-from src.common.timestamps import local_day_hours
+from src.adaption.adaption_policy import (
+    AdaptionAction,
+    adaption_policy,
+    mask_excluded_windows,
+)
+from src.common.timestamps import local_day_hours, shift_local_days
 from src.config.config_forecasting import CycleConfig, ProphetVariantConfig
 from src.context.calendar_schema import CalendarContext
-from src.forecasting.prophet_model import build_prophet_forecast, fit_prophet_model, is_refit_required, select_prophet_history
+from src.forecasting.prophet_model import (
+    build_prophet_forecast,
+    fit_prophet_model,
+    is_refit_required,
+    select_prophet_history,
+)
 from src.llm.client import LLMClient
 from src.llm.gate import gate_classification
 from src.llm.inference import infer_llm_output
@@ -26,6 +35,8 @@ class CycleState:
     model_fitted_at: pd.Timestamp | None
     fixed_history: pd.Series | None = None
     level_shift_start: pd.Timestamp | None = None
+    # nach absence ausgeschlossene Kalenderfenster, fehlen bei Fit und Referenz, bleiben aber in history
+    excluded_windows: tuple[tuple[pd.Timestamp, pd.Timestamp], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -60,10 +71,14 @@ def run_cycle(
     if not state.history.empty:
         expected_start = state.history.index[-1] + pd.Timedelta(hours=1)
         if new_observations.index[0] != expected_start:
-            raise ValueError("new_observations must continue directly after state.history.")
+            raise ValueError(
+                "new_observations must continue directly after state.history."
+            )
 
     if new_observations.index[-1] != decision_time - pd.Timedelta(hours=1):
-        raise ValueError("new_observations must end exactly one hour before decision_time.")
+        raise ValueError(
+            "new_observations must end exactly one hour before decision_time."
+        )
 
     target_column = new_observations.name
     history = pd.concat([state.history, new_observations]).sort_index()
@@ -82,9 +97,17 @@ def run_cycle(
         local_timezone=local_timezone,
     )
 
+    excluded_windows = state.excluded_windows
+
     if fit_required:
         prophet_model, model_history = _fit_variant(
-            fixed_history, history, decision_time, config, variant, local_timezone, state.level_shift_start
+            mask_excluded_windows(fixed_history, excluded_windows),
+            mask_excluded_windows(history, excluded_windows),
+            decision_time,
+            config,
+            variant,
+            local_timezone,
+            state.level_shift_start,
         )
         model_fitted_at = decision_time
     else:
@@ -94,11 +117,18 @@ def run_cycle(
         model_history = state.model_history
         model_fitted_at = state.model_fitted_at
 
-    forecast = _build_forecast(prophet_model, model_history, decision_time, config, variant, local_timezone)
+    forecast = _build_forecast(
+        prophet_model, model_history, decision_time, config, variant, local_timezone
+    )
 
-    # None, solange die History (z.B. direkt nach einem Reset) kürzer als reference_window_days ist
+    # None, solange die History (z.B. direkt nach einem Reset) kürzer als reference_window_days ist.
+    # Der analysierte Tag bleibt auch im ausgeschlossenen Fenster drin, sonst wäre er ein measurement_error
     analysis_row = compute_analysis_row(
-        history,
+        mask_excluded_windows(
+            history,
+            excluded_windows,
+            keep_from=shift_local_days(decision_time, -1, local_timezone),
+        ),
         target_timestamp=decision_time - pd.Timedelta(hours=1),
         config=config.numerical_analysis_config,
         local_timezone=local_timezone,
@@ -123,7 +153,9 @@ def run_cycle(
             local_timezone=local_timezone,
         )
 
-        classification, llm_output, rule_output = _classify(structured_state, config, local_timezone, llm_client, llm_prompt)
+        classification, llm_output, rule_output = _classify(
+            structured_state, config, local_timezone, llm_client, llm_prompt
+        )
 
         if config.event_adaptation:
             adaption_action = adaption_policy(
@@ -135,17 +167,30 @@ def run_cycle(
 
     reference_reset = False
 
-    if adaption_action is not None and adaption_action.kind != "none":
+    if adaption_action is not None and adaption_action.kind == "advance_history_start":
         history = apply_adaption(history, adaption_action)
+        reference_reset = True
 
+    if adaption_action is not None and adaption_action.kind == "exclude_window":
+        assert adaption_action.excluded_window is not None
+        excluded_windows = excluded_windows + (adaption_action.excluded_window,)
+
+    if adaption_action is not None and adaption_action.kind != "none":
         prophet_model, model_history = _fit_variant(
-            fixed_history, history, decision_time, config, variant, local_timezone, state.level_shift_start
+            mask_excluded_windows(fixed_history, excluded_windows),
+            mask_excluded_windows(history, excluded_windows),
+            decision_time,
+            config,
+            variant,
+            local_timezone,
+            state.level_shift_start,
         )
         model_fitted_at = decision_time
-        forecast = _build_forecast(prophet_model, model_history, decision_time, config, variant, local_timezone)
+        forecast = _build_forecast(
+            prophet_model, model_history, decision_time, config, variant, local_timezone
+        )
 
         fit_required = True
-        reference_reset = True
 
     new_state = CycleState(
         history=history,
@@ -154,6 +199,7 @@ def run_cycle(
         model_fitted_at=model_fitted_at,
         fixed_history=fixed_history,
         level_shift_start=state.level_shift_start,
+        excluded_windows=excluded_windows,
     )
 
     result = CycleResult(
@@ -184,11 +230,15 @@ def _classify(
         return classification, None, None
 
     if config.llm_mode == "rule":
-        rule_output = rule_based_classify(structured_state, local_timezone=local_timezone)
+        rule_output = rule_based_classify(
+            structured_state, local_timezone=local_timezone
+        )
         return rule_output.classification, None, rule_output
 
     if llm_client is None or llm_prompt is None or config.llm_config is None:
-        raise ValueError("llm_client, llm_prompt and config.llm_config are required when llm_mode is 'real'.")
+        raise ValueError(
+            "llm_client, llm_prompt and config.llm_config are required when llm_mode is 'real'."
+        )
 
     inference_result = infer_llm_output(
         structured_state,
@@ -226,14 +276,19 @@ def _build_forecast(
     raw_forecast = build_prophet_forecast(
         prophet_model,
         target_index,
-        clip_negative_forecasts=config.forecasting_config.negative_forecast_handling == "clip_zero",
+        clip_negative_forecasts=config.forecasting_config.negative_forecast_handling
+        == "clip_zero",
         history_end=model_history.index[-1],
         local_timezone=local_timezone,
         log_transform=config.forecasting_config.log_transform,
     )
 
-    forecast = raw_forecast.reset_index()[["target_timestamp", "y_pred", "y_lower", "y_upper"]].copy()
-    forecast["run_id"] = f"cycle_{decision_time.tz_convert(local_timezone).strftime('%Y%m%dT%H%M')}"
+    forecast = raw_forecast.reset_index()[
+        ["target_timestamp", "y_pred", "y_lower", "y_upper"]
+    ].copy()
+    forecast["run_id"] = (
+        f"cycle_{decision_time.tz_convert(local_timezone).strftime('%Y%m%dT%H%M')}"
+    )
     forecast["model_id"] = variant.model_id
     forecast["config_version"] = config.forecasting_config.config_version
     forecast["forecast_origin"] = decision_time
@@ -278,11 +333,6 @@ def _fit_variant(
     return model, model_history
 
 
-def apply_adaption(
-    history: pd.Series,
-    action: AdaptionAction
-) -> pd.Series:
+def apply_adaption(history: pd.Series, action: AdaptionAction) -> pd.Series:
     assert action.new_history_start is not None
     return history.loc[history.index >= action.new_history_start]
-
-

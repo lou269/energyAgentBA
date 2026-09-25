@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -147,6 +148,22 @@ def resolve_run_directory(directory: Path, prefix: str, explicit: str | None) ->
             f"no {prefix}_XXX run found under {directory} - pass a run_directory explicitly."
         )
     return latest_run[1]
+
+
+def run_directory_from_argv(directory: Path, prefix: str, position: int = 1) -> Path:
+    # Laufordner als Argument, sonst der neueste
+    explicit = sys.argv[position] if len(sys.argv) > position else None
+    return resolve_run_directory(directory, prefix, explicit)
+
+
+def optional_run_directory_from_argv(
+    directory: Path, prefix: str, position: int
+) -> Path | None:
+    # wie run_directory_from_argv, gibt es noch keinen Lauf, dann None statt Abbruch
+    if len(sys.argv) <= position and find_run_directory(directory, prefix) is None:
+        return None
+
+    return run_directory_from_argv(directory, prefix, position)
 
 
 def find_run_directory(

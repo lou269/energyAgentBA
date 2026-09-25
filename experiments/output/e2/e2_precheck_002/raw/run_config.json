@@ -1,0 +1,27 @@
+{
+  "code_version": {
+    "git_commit": "15a8a44277422006de3296d2cff679af082c2877",
+    "git_dirty": true
+  },
+  "e2_config": {
+    "active_absence_event_id": "vacation-2013-09",
+    "calendar_events_file": "/Users/maloustolzenberg/Uni/BA/energyAgentBA/experiments/e2_absence/calendar_events.json",
+    "channel_selection_subdir": "channel_selection",
+    "ctx_systems": {
+      "ctx0": {
+        "SYS1": "SYS1",
+        "SYS2": "SYS2"
+      }
+    },
+    "decision_time_margin_after_days": 30,
+    "decision_time_margin_before_days": 30,
+    "min_coverage_share_for_subtraction": 0.9,
+    "precheck_ctx_systems": {
+      "ctx0": {
+        "SYS1": "SYS1",
+        "SYS2": "SYS2"
+      }
+    },
+    "target_classification": "absence"
+  }
+}

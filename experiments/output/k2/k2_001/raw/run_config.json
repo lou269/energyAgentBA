@@ -3,7 +3,7 @@
     "git_commit": "a3ddf39eebcc9d930493c785e69d17d0b6350f95",
     "git_dirty": true
   },
-  "experiment_config": {
+  "k2_config": {
     "baseline_model_ids": [
       "B1",
       "B2",
