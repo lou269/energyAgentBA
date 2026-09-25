@@ -2,12 +2,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-# von Analysis und Data Preparation geteilt, damit beide nie auf unterschiedliche Kanaltypen laufen
+# von Diagnostics und Data Preparation geteilt, damit beide nie auf unterschiedliche Kanaltypen laufen
 CANONICAL_AC_TYPE = "active"
 
-''' ANALYSIS '''
+""" DIAGNOSTICS """
+
+
 @dataclass(frozen=True)
-class AnalysisConfig:
+class DiagnosticsConfig:
     canonical_ac_type: str = CANONICAL_AC_TYPE
 
     # Channel quality
@@ -16,7 +18,10 @@ class AnalysisConfig:
     # Auxiliary appliance selection
     min_auxiliary_window_coverage_share: float = 0.8
 
-''' DATA PREPARATION '''
+
+""" DATA PREPARATION """
+
+
 @dataclass(frozen=True)
 class DataPreparationConfig:
     selected_house_ids: list[int] = field(default_factory=lambda: [1])

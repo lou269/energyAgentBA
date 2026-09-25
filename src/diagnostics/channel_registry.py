@@ -17,6 +17,7 @@ CHANNEL_REGISTRY_COLUMNS = [
     "sample_period_seconds",
 ]
 
+
 def _get_appliance_names(meter) -> str:
     names = []
 
@@ -25,6 +26,7 @@ def _get_appliance_names(meter) -> str:
             names.append(str(appliance.identifier.type))
 
     return ", ".join(sorted(set(names)))
+
 
 def build_channel_registry(
     dataset: DataSet,
@@ -72,6 +74,6 @@ def build_channel_registry(
         logger.warning("Channel registry is empty.")
         return registry
 
-    return registry.sort_values(
-        ["house", "meter_type", "meter_instance"]
-    ).reset_index(drop=True)
+    return registry.sort_values(["house", "meter_type", "meter_instance"]).reset_index(
+        drop=True
+    )

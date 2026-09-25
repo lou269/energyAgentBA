@@ -8,7 +8,7 @@ from nilmtk import DataSet
 from experiments.common.standard_config import PROJECT_CONFIG
 from src.common.channel_tables import load_channel_tables
 from src.common.column_naming import treated_column
-from src.config.config_nilmtk import AnalysisConfig, DataPreparationConfig
+from src.config.config_nilmtk import DataPreparationConfig, DiagnosticsConfig
 from src.data_preparation.auxiliary_appliance_selection import (
     AuxiliaryApplianceSelection,
     build_auxiliary_appliance_selection,
@@ -60,7 +60,7 @@ def select_appliance_channels(
     window_start: pd.Timestamp,
     window_end: pd.Timestamp,
 ) -> AuxiliaryApplianceSelection:
-    analysis_config = AnalysisConfig()
+    diagnostics_config = DiagnosticsConfig()
     data_config = DataPreparationConfig()
 
     return build_auxiliary_appliance_selection(
@@ -73,5 +73,5 @@ def select_appliance_channels(
         window_end=window_end,
         canonical_ac_type=data_config.canonical_ac_type,
         min_coverage_share=data_config.min_coverage_share,
-        min_sampling_share=analysis_config.min_auxiliary_window_coverage_share,
+        min_sampling_share=diagnostics_config.min_auxiliary_window_coverage_share,
     )

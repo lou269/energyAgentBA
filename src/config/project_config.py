@@ -18,7 +18,7 @@ class ProjectConfig:
     # Outputs
     output_dir: Path = project_root / "output"
     meta_output_dir: Path = output_dir / "metadata"
-    analysis_output_dir: Path = output_dir / "analysis"
+    diagnostics_output_dir: Path = output_dir / "diagnostics"
     selection_output_dir: Path = output_dir / "selection"
     preparation_output_dir: Path = output_dir / "preparation"
     validation_output_dir: Path = output_dir / "validation"
@@ -68,7 +68,7 @@ def ensure_project_directories(config: ProjectConfig) -> None:
         config.processed_dir,
         config.output_dir,
         config.meta_output_dir,
-        config.analysis_output_dir,
+        config.diagnostics_output_dir,
         config.selection_output_dir,
         config.preparation_output_dir,
         config.validation_output_dir,

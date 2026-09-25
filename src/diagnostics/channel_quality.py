@@ -36,7 +36,7 @@ REQUIRED_REGISTRY_COLUMNS = {
     "meter_key",
     "meter_type",
     "has_canonical_ac_type",
-    "sample_period_seconds"
+    "sample_period_seconds",
 }
 
 
@@ -52,10 +52,11 @@ def build_channel_quality(
         channel_registry["has_canonical_ac_type"].fillna(False).astype(bool)
     ]
 
-    houses_with_mains = canonical.loc[canonical["meter_type"].eq("mains"), "house"].unique().tolist()
+    houses_with_mains = (
+        canonical.loc[canonical["meter_type"].eq("mains"), "house"].unique().tolist()
+    )
 
     registry = canonical.loc[canonical["house"].isin(houses_with_mains)]
-    
 
     quality_rows = []
 
@@ -68,9 +69,7 @@ def build_channel_quality(
         }
 
         try:
-            meter = dataset.buildings[
-                identity["house"]
-            ].elec[
+            meter = dataset.buildings[identity["house"]].elec[
                 identity["meter_instance"]
             ]
 
@@ -99,7 +98,7 @@ def build_channel_quality(
 
             quality_row = {
                 **identity,
-                "quality_error": f"{type(error).__name__}: {error}"
+                "quality_error": f"{type(error).__name__}: {error}",
             }
 
         quality_rows.append(quality_row)
@@ -115,7 +114,6 @@ def build_channel_quality(
             kind="mergesort",
         ).reset_index(drop=True)
 
-
     return quality
 
 
@@ -125,7 +123,7 @@ def _profile_meter(
     canonical_ac_type: str,
     sample_period: float | None,
     chunksize: int | None,
-) ->dict:
+) -> dict:
     load_kwargs = {
         "physical_quantity": "power",
         "ac_type": canonical_ac_type,
@@ -166,14 +164,8 @@ def _profile_meter(
                 start = first_valid
 
             end = last_valid
-            
 
-    if (
-        start is not None
-        and end is not None
-        and end > start
-        and sample_period
-    ):
+    if start is not None and end is not None and end > start and sample_period:
         duration_seconds = (end - start).total_seconds()
 
         expected_sample_count = int(duration_seconds // sample_period) + 1
@@ -190,9 +182,7 @@ def _profile_meter(
         "start": start,
         "end": end,
         "duration_days": (
-            duration_seconds / SECONDS_PER_DAY
-            if duration_seconds is not None
-            else None
+            duration_seconds / SECONDS_PER_DAY if duration_seconds is not None else None
         ),
         "valid_sample_count": valid_sample_count,
         "sampling_share": sampling_share,

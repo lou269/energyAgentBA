@@ -23,7 +23,7 @@ TEST_GROUPS = [
         environment="nilmtk-env",
         paths=(
             "tests/unit/ingestion",
-            "tests/unit/analysis",
+            "tests/unit/diagnostics",
             "tests/unit/data_preparation",
         ),
     ),

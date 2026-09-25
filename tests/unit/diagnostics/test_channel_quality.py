@@ -1,4 +1,4 @@
-# python -m pytest tests/unit/analysis/test_channel_quality.py -v
+# python -m pytest tests/unit/diagnostics/test_channel_quality.py -v
 
 from __future__ import annotations
 
@@ -7,7 +7,10 @@ from unittest.mock import Mock
 import pandas as pd
 import pytest
 
-from src.analysis.channel_quality import CHANNEL_QUALITY_COLUMNS, build_channel_quality
+from src.diagnostics.channel_quality import (
+    CHANNEL_QUALITY_COLUMNS,
+    build_channel_quality,
+)
 
 
 def _meter_with_series(series: pd.Series) -> Mock:
@@ -49,7 +52,9 @@ def _registry_row(
 
 
 def test_house_without_any_mains_row_is_excluded_entirely() -> None:
-    channel_registry = pd.DataFrame([_registry_row(1, 2, "submeter", has_canonical_ac_type=True)])
+    channel_registry = pd.DataFrame(
+        [_registry_row(1, 2, "submeter", has_canonical_ac_type=True)]
+    )
     dataset = _dataset_with_meters({})
 
     result = build_channel_quality(
@@ -110,7 +115,11 @@ def test_house_with_canonical_mains_keeps_mains_and_canonical_submeters() -> Non
 
 def test_profile_computes_sampling_share_and_dropout_rate() -> None:
     channel_registry = pd.DataFrame(
-        [_registry_row(1, 1, "mains", has_canonical_ac_type=True, sample_period_seconds=6.0)]
+        [
+            _registry_row(
+                1, 1, "mains", has_canonical_ac_type=True, sample_period_seconds=6.0
+            )
+        ]
     )
 
     index = pd.to_datetime(

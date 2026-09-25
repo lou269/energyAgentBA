@@ -35,14 +35,6 @@ class LLMEvaluationCase:
     reaches_llm: bool
 
 
-_BASE_EVENT = {
-    "end": "2015-12-22T00:00:00+00:00",
-    "event_id": "vacation-2015-12",
-    "event_type": "absence",
-    "known_at": "2015-11-15T00:00:00+00:00",
-    "start": "2015-12-15T00:00:00+00:00",
-}
-
 _PEAK_TIMESTAMP = "2015-12-15T10:00:00+00:00"
 
 
@@ -88,9 +80,9 @@ def _anomaly_block(
     }
 
 
-def _context_block(*, source_available: bool, with_event: bool) -> dict[str, object]:
+def _context_block(*, source_available: bool) -> dict[str, object]:
     return {
-        "events": [_BASE_EVENT] if with_event else [],
+        "events": [],
         "retrieved_at": "2015-12-15T11:00:00+00:00",
         "source": "simulated_calendar",
         "source_available": source_available,
@@ -140,7 +132,7 @@ def llm_relevant_cases() -> tuple[LLMEvaluationCase, ...]:
                 level="normal",
                 streak_days={"daily": 1.0, "weekly": 1.0, "long_term": 1.0},
             ),
-            context=_context_block(source_available=True, with_event=False),
+            context=_context_block(source_available=True),
         ),
         _case(
             case_id="peak",
@@ -153,20 +145,7 @@ def llm_relevant_cases() -> tuple[LLMEvaluationCase, ...]:
                 level="strong_anomaly",
                 streak_days={"daily": 1.0, "weekly": 1.0, "long_term": 1.0},
             ),
-            context=_context_block(source_available=True, with_event=False),
-        ),
-        _case(
-            case_id="absence",
-            expected="absence",
-            reasoning="Starke, anhaltende Abweichung nach unten auf der dominanten Skala plus passendes Kalender-Event.",
-            current_power_w=45.0,
-            value_implausible=False,
-            anomaly=_anomaly_block(
-                scores={"daily": -3.7, "weekly": -1.2, "long_term": -1.0},
-                level="strong_anomaly",
-                streak_days={"daily": 5.0, "weekly": 1.0, "long_term": 1.0},
-            ),
-            context=_context_block(source_available=True, with_event=True),
+            context=_context_block(source_available=True),
         ),
         _case(
             case_id="new_pattern",
@@ -182,7 +161,7 @@ def llm_relevant_cases() -> tuple[LLMEvaluationCase, ...]:
                 level="strong_anomaly",
                 streak_days={"daily": 8.0, "weekly": 7.0, "long_term": 1.0},
             ),
-            context=_context_block(source_available=True, with_event=False),
+            context=_context_block(source_available=True),
         ),
         _case(
             case_id="measurement_error",
@@ -195,7 +174,7 @@ def llm_relevant_cases() -> tuple[LLMEvaluationCase, ...]:
                 level="strong_anomaly",
                 streak_days={"daily": 1.0, "weekly": 1.0, "long_term": 1.0},
             ),
-            context=_context_block(source_available=True, with_event=False),
+            context=_context_block(source_available=True),
         ),
         _case(
             case_id="low_single_scale",
@@ -210,23 +189,7 @@ def llm_relevant_cases() -> tuple[LLMEvaluationCase, ...]:
                 level="unusual",
                 streak_days={"daily": 1.0},
             ),
-            context=_context_block(source_available=False, with_event=False),
-        ),
-        _case(
-            case_id="unknown_conflicting_scales",
-            expected="unknown",
-            reasoning=(
-                "Zwei verfügbare Skalen widersprechen sich in der Richtung (daily stark positiv, weekly stark negativ), keine sustained "
-                "-> keine der Regeln greift eindeutig, echte widersprüchliche Evidenz."
-            ),
-            current_power_w=700.0,
-            value_implausible=False,
-            anomaly=_anomaly_block(
-                scores={"daily": 3.0, "weekly": -3.2},
-                level="strong_anomaly",
-                streak_days={"daily": 1.0, "weekly": 1.0},
-            ),
-            context=_context_block(source_available=True, with_event=False),
+            context=_context_block(source_available=False),
         ),
         _case(
             case_id="peak_single_sustained_scale",
@@ -242,7 +205,7 @@ def llm_relevant_cases() -> tuple[LLMEvaluationCase, ...]:
                 level="strong_anomaly",
                 streak_days={"daily": 6.0, "weekly": 1.0, "long_term": 1.0},
             ),
-            context=_context_block(source_available=True, with_event=False),
+            context=_context_block(source_available=True),
         ),
         _case(
             case_id="new_pattern_at_min_scales_boundary",
@@ -258,23 +221,7 @@ def llm_relevant_cases() -> tuple[LLMEvaluationCase, ...]:
                 level="strong_anomaly",
                 streak_days={"daily": 6.0, "weekly": 6.0, "long_term": 1.0},
             ),
-            context=_context_block(source_available=True, with_event=False),
-        ),
-        _case(
-            case_id="absence_without_event",
-            expected="low",
-            reasoning=(
-                "Absence-artige Signatur (starker Rückgang auf der dominanten Skala, aber nicht sustained genug für new_pattern), "
-                "Kalender ist verfügbar aber ohne passendes Event - ohne Beleg keine absence -> low"
-            ),
-            current_power_w=48.0,
-            value_implausible=False,
-            anomaly=_anomaly_block(
-                scores={"daily": -3.7, "weekly": -1.2, "long_term": -1.0},
-                level="strong_anomaly",
-                streak_days={"daily": 5.0, "weekly": 1.0, "long_term": 1.0},
-            ),
-            context=_context_block(source_available=True, with_event=False),
+            context=_context_block(source_available=True),
         ),
         _case(
             case_id="measurement_error_weak_anomaly",
@@ -289,42 +236,34 @@ def llm_relevant_cases() -> tuple[LLMEvaluationCase, ...]:
                 level="unusual",
                 streak_days={"daily": 1.0, "weekly": 1.0, "long_term": 1.0},
             ),
-            context=_context_block(source_available=True, with_event=False),
+            context=_context_block(source_available=True),
         ),
     )
 
     return tuple(case for case in cases if case.reaches_llm)
 
 
+# was prompt_v13 je Klasse zu zitieren verlangt
+_SINGLE_DAY_PATHS = frozenset(
+    {"anomaly.sustained_drift", "anomaly.level", "anomaly.direction"}
+)
+_DRIFT_PATHS = frozenset(
+    {
+        "anomaly.sustained_drift",
+        "anomaly.level",
+        "anomaly.scale_anomaly_streak_days.daily",
+        "anomaly.scale_anomaly_streak_days.weekly",
+    }
+)
+
 EXPECTED_EVIDENCE_PATHS: dict[str, frozenset[str]] = {
-    "normal": frozenset({"anomaly.level"}),
-    "peak": frozenset(
-        {"anomaly.scale_scores.daily", "anomaly.scale_anomaly_streak_days.daily"}
-    ),
-    "absence": frozenset({"anomaly.direction", "context.events.0.event_type"}),
-    "new_pattern": frozenset(
-        {
-            "anomaly.scale_anomaly_streak_days.daily",
-            "anomaly.scale_anomaly_streak_days.weekly",
-        }
-    ),
+    "normal": frozenset({"anomaly.sustained_drift", "anomaly.level"}),
+    "peak": _SINGLE_DAY_PATHS,
+    "new_pattern": _DRIFT_PATHS,
     "measurement_error": frozenset({"observation.value_implausible"}),
-    "low_single_scale": frozenset({"anomaly.scale_scores.daily"}),
-    "unknown_conflicting_scales": frozenset(
-        {"anomaly.scale_scores.daily", "anomaly.scale_scores.weekly"}
-    ),
-    "peak_single_sustained_scale": frozenset(
-        {"anomaly.scale_scores.daily", "anomaly.scale_anomaly_streak_days.daily"}
-    ),
-    "new_pattern_at_min_scales_boundary": frozenset(
-        {
-            "anomaly.scale_anomaly_streak_days.daily",
-            "anomaly.scale_anomaly_streak_days.weekly",
-        }
-    ),
-    "absence_without_event": frozenset(
-        {"context.source_available", "anomaly.direction"}
-    ),
+    "low_single_scale": _SINGLE_DAY_PATHS,
+    "peak_single_sustained_scale": _SINGLE_DAY_PATHS,
+    "new_pattern_at_min_scales_boundary": _DRIFT_PATHS,
     "measurement_error_weak_anomaly": frozenset({"observation.value_implausible"}),
 }
 

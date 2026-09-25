@@ -1,11 +1,14 @@
-# python -m pytest tests/unit/analysis/test_channel_registry.py -v
+# python -m pytest tests/unit/diagnostics/test_channel_registry.py -v
 
 from __future__ import annotations
 
 from types import SimpleNamespace
 from unittest.mock import Mock
 
-from src.analysis.channel_registry import CHANNEL_REGISTRY_COLUMNS, build_channel_registry
+from src.diagnostics.channel_registry import (
+    CHANNEL_REGISTRY_COLUMNS,
+    build_channel_registry,
+)
 
 
 def _appliance(appliance_type: str | None) -> SimpleNamespace:
@@ -53,7 +56,9 @@ def test_empty_dataset_returns_empty_frame_with_columns() -> None:
 def test_meters_are_classified_and_sorted_by_house_meter_type_instance() -> None:
     mains = _meter(1, "H1-M1", is_site_meter=True, ac_types=["active"])
     submeter_canonical = _meter(2, "H1-M2", is_site_meter=False, ac_types=["active"])
-    submeter_non_canonical = _meter(3, "H1-M3", is_site_meter=False, ac_types=["apparent"])
+    submeter_non_canonical = _meter(
+        3, "H1-M3", is_site_meter=False, ac_types=["apparent"]
+    )
     dataset = _dataset([submeter_non_canonical, mains, submeter_canonical])
 
     result = build_channel_registry(dataset, canonical_ac_type="active")
@@ -87,5 +92,3 @@ def test_ac_type_lookup_failure_falls_back_to_empty_list() -> None:
 
     assert result.loc[0, "ac_types"] == ""
     assert result.loc[0, "has_canonical_ac_type"] == False
-
-
