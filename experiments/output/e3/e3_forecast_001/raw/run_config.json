@@ -1,0 +1,62 @@
+{
+  "code_version": {
+    "git_commit": "3bef76f1a29bacdee7340bc7707b711155215ac3",
+    "git_dirty": true
+  },
+  "e3_config": {
+    "comparisons": [
+      [
+        "S1",
+        "C2"
+      ],
+      [
+        "C2",
+        "C3_30"
+      ],
+      [
+        "S1",
+        "C3_30"
+      ]
+    ],
+    "experiment_id": "E3",
+    "forecast_days": 365,
+    "forecast_start_date": "2014-04-15",
+    "kinds": [
+      "control",
+      "scaled",
+      "ramp_28",
+      "ramp_56"
+    ],
+    "prophet_variants": [
+      {
+        "history_mode": "rolling",
+        "model_id": "C3_30",
+        "retraining_interval_days": 1,
+        "rolling_window_days": 30,
+        "weekly_seasonality": false,
+        "yearly_seasonality": false
+      },
+      {
+        "history_mode": "expanding",
+        "model_id": "C2",
+        "retraining_interval_days": 1,
+        "rolling_window_days": null,
+        "weekly_seasonality": false,
+        "yearly_seasonality": false
+      },
+      {
+        "history_mode": "expanding",
+        "model_id": "S1",
+        "retraining_interval_days": 1,
+        "rolling_window_days": null,
+        "weekly_seasonality": false,
+        "yearly_seasonality": true
+      }
+    ],
+    "split": "train",
+    "system_id": "SYS2"
+  },
+  "forecasting_config_version": "0.5",
+  "reference_baseline": "B2",
+  "seed": 42
+}

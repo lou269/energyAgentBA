@@ -9,8 +9,12 @@ import pandas as pd
 
 from src.config.config_forecasting import ComparisonConfig, LLMConfig, SYS_VARIANTS
 from src.config.project_config import ProjectConfig
-from src.llm.client import ModelMetadata
-from src.pipeline.comparison_harness import ScenarioData, build_scenario_from_split_manifest, run_comparison
+from src.llm.client import ModelMetadata, ToolCall
+from src.pipeline.comparison_harness import (
+    ScenarioData,
+    build_scenario_from_split_manifest,
+    run_comparison,
+)
 
 COMPARISON_CONFIG = ComparisonConfig()
 
@@ -46,6 +50,22 @@ class _AlwaysEmptyClient:
     ) -> str:
         return ""
 
+    def request_tool_calls(
+        self,
+        *,
+        model: str,
+        messages: list[dict[str, str]],
+        tools: list[dict[str, object]],
+        temperature: float,
+        presence_penalty: float,
+        seed: int | None,
+        num_predict: int,
+        num_ctx: int,
+        think: bool,
+        keep_alive: int | str,
+    ) -> list[ToolCall]:
+        return []
+
     def get_model_metadata(self, model: str) -> ModelMetadata:
         return {"name": model, "digest": None}
 
@@ -57,10 +77,7 @@ class _AlwaysEmptyClient:
 
 
 def _synthetic_scenario(
-    *,
-    hours: int = 360,
-    coldstart_days: int = 6,
-    decision_count: int = 2
+    *, hours: int = 360, coldstart_days: int = 6, decision_count: int = 2
 ) -> ScenarioData:
     index = pd.date_range("2024-01-01", periods=hours, freq="1h", tz="UTC")
     hour_of_day = index.hour.to_numpy()
@@ -90,9 +107,27 @@ def test_build_scenario_from_split_manifest_uses_given_coldstart_days() -> None:
     treated_hourly = pd.DataFrame({"target": range(100)}, index=index)
     split_manifest = pd.DataFrame(
         [
-            {"frequency": "hourly", "split": "train", "start": index[0], "end": index[69], "row_count": 70},
-            {"frequency": "hourly", "split": "validation", "start": index[70], "end": index[84], "row_count": 15},
-            {"frequency": "hourly", "split": "test", "start": index[85], "end": index[99], "row_count": 15},
+            {
+                "frequency": "hourly",
+                "split": "train",
+                "start": index[0],
+                "end": index[69],
+                "row_count": 70,
+            },
+            {
+                "frequency": "hourly",
+                "split": "validation",
+                "start": index[70],
+                "end": index[84],
+                "row_count": 15,
+            },
+            {
+                "frequency": "hourly",
+                "split": "test",
+                "start": index[85],
+                "end": index[99],
+                "row_count": 15,
+            },
         ]
     )
 
@@ -106,7 +141,10 @@ def test_build_scenario_from_split_manifest_uses_given_coldstart_days() -> None:
     # decision_times[0] einen vollen lokalen Kalendertag danach, sonst ist new_observations beim ersten Zyklus-Aufruf leer
     assert scenario.decision_times[0] == index[72]
     assert scenario.decision_times[-1] <= index[99]
-    assert all(second - first == pd.Timedelta(hours=24) for first, second in zip(scenario.decision_times, scenario.decision_times[1:]))
+    assert all(
+        second - first == pd.Timedelta(hours=24)
+        for first, second in zip(scenario.decision_times, scenario.decision_times[1:])
+    )
 
 
 def test_build_scenario_from_split_manifest_uses_local_calendar_days() -> None:
@@ -114,14 +152,36 @@ def test_build_scenario_from_split_manifest_uses_local_calendar_days() -> None:
     treated_hourly = pd.DataFrame({"target": range(120)}, index=index)
     split_manifest = pd.DataFrame(
         [
-            {"frequency": "hourly", "split": "train", "start": index[0], "end": index[89], "row_count": 90},
-            {"frequency": "hourly", "split": "validation", "start": index[90], "end": index[104], "row_count": 15},
-            {"frequency": "hourly", "split": "test", "start": index[105], "end": index[119], "row_count": 15},
+            {
+                "frequency": "hourly",
+                "split": "train",
+                "start": index[0],
+                "end": index[89],
+                "row_count": 90,
+            },
+            {
+                "frequency": "hourly",
+                "split": "validation",
+                "start": index[90],
+                "end": index[104],
+                "row_count": 15,
+            },
+            {
+                "frequency": "hourly",
+                "split": "test",
+                "start": index[105],
+                "end": index[119],
+                "row_count": 15,
+            },
         ]
     )
 
     scenario = build_scenario_from_split_manifest(
-        treated_hourly, split_manifest, "target", coldstart_days=2, local_timezone="America/New_York"
+        treated_hourly,
+        split_manifest,
+        "target",
+        coldstart_days=2,
+        local_timezone="America/New_York",
     )
 
     cycle_start_local = index[48].tz_convert("America/New_York")
@@ -129,10 +189,14 @@ def test_build_scenario_from_split_manifest_uses_local_calendar_days() -> None:
 
     assert cycle_start_local.hour == 0
     assert decision_time_local.hour == 0
-    assert scenario.decision_times[0] == cycle_start_local.tz_convert("UTC") + pd.Timedelta(hours=24)
+    assert scenario.decision_times[0] == cycle_start_local.tz_convert(
+        "UTC"
+    ) + pd.Timedelta(hours=24)
 
 
-def test_build_scenario_from_split_manifest_integrates_with_run_comparison(tmp_path: Path) -> None:
+def test_build_scenario_from_split_manifest_integrates_with_run_comparison(
+    tmp_path: Path,
+) -> None:
     # Regressionstest für einen echten Bug: decision_times[0] == cycle_start ließ new_observations
     # im ersten Zyklus leer sein, weil state.history schon bis cycle_start - 1h reicht
     hours = 480
@@ -144,7 +208,13 @@ def test_build_scenario_from_split_manifest_integrates_with_run_comparison(tmp_p
     train_end_idx, validation_end_idx = 399, 439
     split_manifest = pd.DataFrame(
         [
-            {"frequency": "hourly", "split": "train", "start": index[0], "end": index[train_end_idx], "row_count": train_end_idx + 1},
+            {
+                "frequency": "hourly",
+                "split": "train",
+                "start": index[0],
+                "end": index[train_end_idx],
+                "row_count": train_end_idx + 1,
+            },
             {
                 "frequency": "hourly",
                 "split": "validation",
@@ -163,7 +233,11 @@ def test_build_scenario_from_split_manifest_integrates_with_run_comparison(tmp_p
     )
 
     scenario = build_scenario_from_split_manifest(
-        treated_hourly, split_manifest, "target", coldstart_days=6, local_timezone="Europe/London"
+        treated_hourly,
+        split_manifest,
+        "target",
+        coldstart_days=6,
+        local_timezone="Europe/London",
     )
     result = run_comparison(
         scenario,
@@ -181,7 +255,9 @@ def test_build_scenario_from_split_manifest_integrates_with_run_comparison(tmp_p
     assert result["mae_w"].apply(math.isfinite).all()
 
 
-def test_run_comparison_produces_one_row_per_decision_and_config(tmp_path: Path) -> None:
+def test_run_comparison_produces_one_row_per_decision_and_config(
+    tmp_path: Path,
+) -> None:
     scenario = _synthetic_scenario()
     configs = {"SYS0": SYS_VARIANTS["SYS0"], "SYS1": SYS_VARIANTS["SYS1"]}
 
@@ -282,7 +358,9 @@ def test_run_comparison_mae_is_finite(tmp_path: Path) -> None:
         assert math.isfinite(mae_w)
 
 
-def test_run_comparison_with_target_imputed_shorter_than_forecast_horizon(tmp_path: Path) -> None:
+def test_run_comparison_with_target_imputed_shorter_than_forecast_horizon(
+    tmp_path: Path,
+) -> None:
     scenario_base = _synthetic_scenario()
     target_imputed = pd.Series(
         False,
@@ -306,12 +384,19 @@ def test_run_comparison_with_target_imputed_shorter_than_forecast_horizon(tmp_pa
     assert result["mae_w"].apply(math.isfinite).all()
 
 
-def _series_with_a_sustained_jump(hours: int, jump_hour: int, *, seed: int = 1) -> pd.Series:
-    
+def _series_with_a_sustained_jump(
+    hours: int, jump_hour: int, *, seed: int = 1
+) -> pd.Series:
     index = pd.date_range("2024-01-01", periods=hours, freq="1h", tz="UTC")
     day_of_series = np.arange(hours) // 24
-    jitter_by_day = np.random.default_rng(seed).normal(0.0, 5.0, size=day_of_series.max() + 1)
-    values = 200.0 + 50.0 * np.sin(2 * np.pi * index.hour.to_numpy() / 24) + jitter_by_day[day_of_series]
+    jitter_by_day = np.random.default_rng(seed).normal(
+        0.0, 5.0, size=day_of_series.max() + 1
+    )
+    values = (
+        200.0
+        + 50.0 * np.sin(2 * np.pi * index.hour.to_numpy() / 24)
+        + jitter_by_day[day_of_series]
+    )
     values[jump_hour:] += 300.0
     return pd.Series(values, index=index, name="target")
 
@@ -324,7 +409,11 @@ def test_run_comparison_survives_llm_inference_failures(tmp_path: Path) -> None:
         target_series=series,
         coldstart_days=coldstart_days,
         decision_times=tuple(
-            pd.date_range(start=series.index[0] + pd.Timedelta(days=coldstart_days + 1), periods=3, freq="24h")
+            pd.date_range(
+                start=series.index[0] + pd.Timedelta(days=coldstart_days + 1),
+                periods=3,
+                freq="24h",
+            )
         ),
         calendar_events=(),
         calendar_source_available=False,
@@ -371,7 +460,11 @@ def test_run_comparison_records_rule_based_explanation(tmp_path: Path) -> None:
         target_series=series,
         coldstart_days=coldstart_days,
         decision_times=tuple(
-            pd.date_range(start=series.index[0] + pd.Timedelta(days=coldstart_days + 1), periods=2, freq="24h")
+            pd.date_range(
+                start=series.index[0] + pd.Timedelta(days=coldstart_days + 1),
+                periods=2,
+                freq="24h",
+            )
         ),
         calendar_events=(),
         calendar_source_available=False,
@@ -381,7 +474,11 @@ def test_run_comparison_records_rule_based_explanation(tmp_path: Path) -> None:
     base_config = SYS_VARIANTS["SYS2"]
     config = replace(
         base_config,
-        numerical_analysis_config=replace(base_config.numerical_analysis_config, min_daily_reference_samples=5),
+        numerical_analysis_config=replace(
+            base_config.numerical_analysis_config,
+            min_daily_reference_samples=5,
+            min_weekday_reference_samples=1,
+        ),
     )
 
     result = run_comparison(

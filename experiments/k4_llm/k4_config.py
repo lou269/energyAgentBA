@@ -29,11 +29,9 @@ class K4Config:
         LLMModelVariant(model_id="MDL0", model="qwen3:4b"),
         LLMModelVariant(model_id="MDL1", model="qwen3:8b"),
         LLMModelVariant(model_id="MDL2", model="qwen3.5:9b"),
-        LLMModelVariant(model_id="MDL3", model="llama3.1:8b"),
-        LLMModelVariant(model_id="MDL4", model="gemma3:4b"),
-        LLMModelVariant(model_id="MDL5", model="gemma4:e4b"),
-        LLMModelVariant(model_id="MDL6", model="gemma4:e4b-mlx"),
-        LLMModelVariant(model_id="MDL7", model="ministral-3:8b"),
+        LLMModelVariant(model_id="MDL3", model="gemma4:e4b"),
+        LLMModelVariant(model_id="MDL4", model="gemma4:e4b-mlx"),
+        LLMModelVariant(model_id="MDL5", model="ministral-3:8b"),
     )
 
     include_rule_based_baseline: bool = True

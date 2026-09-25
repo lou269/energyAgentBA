@@ -1,7 +1,11 @@
 from dataclasses import replace
 
+import pandas as pd
+
 from experiments.common.scenarios import (
     add_constant_step,
+    add_linear_ramp,
+    add_single_day_peak,
     build_decision_times,
     crop_history_for_coldstart,
     load_target,
@@ -33,15 +37,43 @@ def build_standard_scenarios(
         history, decision_times, target_imputed, value_implausible
     )
 
-    # control unverändert, step = Dauerlast ab Cutover, scaled = alles ab Cutover mal scale_factor
-    series_by_kind = {
-        "control": history,
-        "step": add_constant_step(
-            history, cutover_time, STANDARD_CONFIG.step_injection_w
-        ),
-        "scaled": scale_from(history, cutover_time, STANDARD_CONFIG.scale_factor),
+    return {
+        kind: replace(
+            control, target_series=build_kind_series(history, cutover_time, kind)
+        )
+        for kind in kinds
     }
 
-    return {
-        kind: replace(control, target_series=series_by_kind[kind]) for kind in kinds
-    }
+
+def build_kind_series(
+    history: pd.Series, cutover_time: pd.Timestamp, kind: str
+) -> pd.Series:
+    # Stärke steckt im Namen: step_30 = +30 W ab Cutover, ramp_28 = in 28 Tagen auf scale_factor, peak_6 = 6 Stunden Spitze
+    name, _, strength = kind.partition("_")
+
+    if kind == "control":
+        return history
+    if kind == "step":
+        return add_constant_step(
+            history, cutover_time, STANDARD_CONFIG.step_injection_w
+        )
+    if name == "step":
+        return add_constant_step(history, cutover_time, float(strength))
+    if kind == "scaled":
+        return scale_from(history, cutover_time, STANDARD_CONFIG.scale_factor)
+    if name == "ramp":
+        return add_linear_ramp(
+            history,
+            cutover_time,
+            days=int(strength),
+            factor=STANDARD_CONFIG.scale_factor,
+        )
+    if name == "peak":
+        return add_single_day_peak(
+            history,
+            cutover_time + pd.Timedelta(hours=STANDARD_CONFIG.peak_start_hour),
+            hours=int(strength) if strength else STANDARD_CONFIG.peak_hours,
+            extra_w=STANDARD_CONFIG.peak_extra_w,
+        )
+
+    raise ValueError(f"Unknown scenario kind: {kind}")

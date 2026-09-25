@@ -21,6 +21,7 @@ MODEL_COLORS = {
     "C3_7": "#54A24B",
     "C3_30": "#3F7A38",
     "C3_60": "#2A5225",
+    "S1": "#B279A2",
 }
 COLDSTART_COLORS = {7: "#54A24B", 14: "#3F7A38", 30: "#2A5225"}
 REFERENCE_WINDOW_COLORS = {

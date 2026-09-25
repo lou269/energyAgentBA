@@ -1,81 +1,125 @@
 import pandas as pd
-import pytest
 
-from experiments.k3_detection.k3_evaluation import (
-    add_days_since_cutover,
-    pair_with_control,
-    summarize_closed_loop,
-    summarize_event_response,
-)
+from experiments.common.evaluation import pair_with_control
+from experiments.k3_detection.k3_evaluation import PAIR_KEYS, summarize_detection
 
 
-def _results(kind: str, scores: list[float], classifications: list[str], *, mode: str = "isolated") -> pd.DataFrame:
+def _results(
+    kind: str,
+    alarms: list[bool],
+    classifications: list[str],
+    *,
+    mode: str = "isolated",
+    cutover_date: str = "2014-04-15",
+) -> pd.DataFrame:
     frame = pd.DataFrame(
         {
             "mode": mode,
             "kind": kind,
-            "cutover_date": "2014-04-15",
+            "cutover_date": cutover_date,
             "variant": "REF_ROLL60",
-            "days_since_cutover": list(range(-1, len(scores) - 1)),
-            "anomaly_score": scores,
-            "daily_score": scores,
-            "weekday_score": scores,
-            "weekly_score": scores,
-            "long_term_score": [float("nan")] * len(scores),
+            "days_since_cutover": list(range(-1, len(alarms) - 1)),
+            "alarm": alarms,
+            "gate_open": alarms,
             "classification": classifications,
-            "mae_w": 100.0,
+            "dominant_scale": "daily",
+            "daily_sustained": False,
+            "weekday_sustained": False,
+            "weekly_sustained": True,
+            "long_term_sustained": True,
         }
     )
-    frame["alarm"] = frame["anomaly_score"].ge(2.0)
-    frame["gate_open"] = frame["alarm"]
     frame["new_pattern"] = frame["classification"].eq("new_pattern")
-    frame["reference_reset"] = frame["new_pattern"] & frame["mode"].eq("adaption")
     return frame
 
 
-def test_event_response_only_counts_what_the_control_run_did_not_see() -> None:
-    control = _results("control", [0.5, 2.5, 0.5, 2.5, 0.5, 0.5], ["normal", "peak", "normal", "peak", "normal", "normal"])
-    # Tag 2 ist auch im Kontrolllauf ein Alarm -> kein Ereignis-Alarm, erster echter Ereignis-Alarm ist Tag 3
-    step = _results("step", [0.5, 2.5, 1.0, 3.0, 3.0, 1.0], ["normal", "peak", "normal", "peak", "new_pattern", "normal"])
-
-    paired = pair_with_control(pd.concat([control, step], ignore_index=True))
-    response = summarize_event_response(paired, unusual_threshold=2.0).iloc[0]
-
-    assert response["days_after_cutover"] == 4
-    assert response["excess_alarm_rate"] == pytest.approx(2 / 4 - 1 / 4)
-    assert response["first_event_alarm_day"] == 3
-    assert response["first_event_new_pattern_day"] == 3
-    assert response["peak_score_shift"] == pytest.approx(2.5)
-    assert response["last_day_shift_above_threshold"] == 3
-
-
-def test_closed_loop_counts_resets_and_compares_mae_with_the_isolated_run() -> None:
-    classifications = ["normal", "new_pattern", "normal", "normal", "new_pattern", "normal"]
+def test_detection_counts_a_peak_only_on_its_own_day_and_a_step_at_its_reset() -> None:
+    normal = ["normal"] * 5
     runs = [
-        _results("control", [0.5] * 6, ["normal", "new_pattern", "normal", "normal", "normal", "normal"], mode="adaption"),
-        _results("step", [0.5] * 6, classifications, mode="adaption"),
-        _results("control", [0.5] * 6, ["normal"] * 6),
-        _results("step", [0.5] * 6, ["normal"] * 6),
+        _results("control", [False] * 5, normal, mode="adaption"),
+        _results(
+            "step_30",
+            [False] * 5,
+            ["normal", "normal", "normal", "new_pattern", "normal"],
+            mode="adaption",
+        ),
+        _results("peak", [False, False, True, False, False], normal, mode="adaption"),
+        # hier kommt der Alarm erst einen Tag nach dem Ereignistag
+        _results(
+            "control", [False] * 5, normal, mode="adaption", cutover_date="2014-01-15"
+        ),
+        _results(
+            "peak",
+            [False, False, False, True, False],
+            normal,
+            mode="adaption",
+            cutover_date="2014-01-15",
+        ),
+        _results(
+            "step_30", [False] * 5, normal, mode="adaption", cutover_date="2014-01-15"
+        ),
     ]
-    runs[1]["mae_w"] = 80.0
 
-    summary = summarize_closed_loop(pd.concat(runs, ignore_index=True)).iloc[0]
+    detection = summarize_detection(
+        pair_with_control(pd.concat(runs, ignore_index=True), PAIR_KEYS),
+        ("peak",),
+        control_reset_tolerance_days=7,
+        uncounted_cutovers=(),
+    ).set_index("kind")
 
-    # der Reset an Tag 0 ordnet noch den Tag vor dem Cutover ein und zählt im step-Lauf nicht als Treffer
-    assert summary["control_resets"] == 1
-    assert summary["step_resets_after_cutover"] == 1
-    assert summary["step_first_reset_day"] == 3
-    assert summary["step_mae_isolated_w"] == pytest.approx(100.0)
-    assert summary["step_mae_adaption_w"] == pytest.approx(80.0)
+    assert detection.loc["step_30", "detected"] == "1/2"
+    assert detection.loc["step_30", "2014-04-15"] == 2
+    assert detection.loc["step_30", "scales"] == "weekly+long_term"
+    assert detection.loc["peak", "detected"] == "1/2"
+    assert detection.loc["peak", "2014-04-15"] == 1
+    assert pd.isna(detection.loc["peak", "2014-01-15"])
+    assert detection.loc["peak", "scales"] == "daily"
 
 
-def test_days_since_cutover_count_the_decision_day() -> None:
-    results = pd.DataFrame(
-        {
-            # Mitternacht Ortszeit, der 15.04. ist schon Sommerzeit
-            "decision_time": ["2014-04-14T23:00:00+00:00", "2014-04-15T23:00:00+00:00"],
-            "cutover_date": "2014-04-15",
-        }
-    )
+def _reset_on(day: int, days: int = 12) -> list[str]:
+    # Tag -1 steht an Position 0
+    return [
+        "new_pattern" if position - 1 == day else "normal" for position in range(days)
+    ]
 
-    assert list(add_days_since_cutover(results)["days_since_cutover"]) == [0, 1]
+
+def test_detection_skips_shifted_control_resets_and_uncounted_cutovers() -> None:
+    quiet = [False] * 12
+    peak_alarm = [False, False, True] + [False] * 9
+    runs = [
+        _results("control", quiet, _reset_on(10), mode="adaption"),
+        # einen Tag vor dem Reset der Kontrolle, also derselbe natürliche Wechsel
+        _results("step_30", quiet, _reset_on(9), mode="adaption"),
+        _results("peak", peak_alarm, _reset_on(2), mode="adaption"),
+        _results(
+            "control",
+            quiet,
+            ["normal"] * 12,
+            mode="adaption",
+            cutover_date="2013-10-15",
+        ),
+        _results(
+            "step_30", quiet, _reset_on(5), mode="adaption", cutover_date="2013-10-15"
+        ),
+        _results(
+            "peak",
+            peak_alarm,
+            ["normal"] * 12,
+            mode="adaption",
+            cutover_date="2013-10-15",
+        ),
+    ]
+
+    detection = summarize_detection(
+        pair_with_control(pd.concat(runs, ignore_index=True), PAIR_KEYS),
+        ("peak",),
+        control_reset_tolerance_days=7,
+        uncounted_cutovers=("2013-10-15",),
+    ).set_index("kind")
+
+    assert pd.isna(detection.loc["step_30", "2014-04-15"])
+    assert detection.loc["step_30", "2013-10-15"] == 5
+    assert detection.loc["step_30", "detected"] == "0/1"
+    assert pd.isna(detection.loc["step_30", "single_day_resets"])
+    assert detection.loc["peak", "detected"] == "1/1"
+    assert detection.loc["peak", "single_day_resets"] == "1/2"

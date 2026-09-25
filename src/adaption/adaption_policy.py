@@ -24,10 +24,9 @@ def adaption_policy(
     context: StructuredState,
     *,
     streak_tolerance_window_days: int,
+    window_exclusion: bool,
     local_timezone: str,
 ) -> AdaptionAction:
-    # measurement_error braucht hier keine eigene Aktion: der Tag ist zu diesem Zeitpunkt schon durch
-    # exclude_incomplete_days() (Preprocessing) komplett aus history raus, nichts mehr zu excluden
     if classification == "new_pattern":
         decision_time = parse_utc_timestamp(context["decision_time"], "decision_time")
         new_history_start = pattern_change_start(
@@ -40,8 +39,11 @@ def adaption_policy(
             reason=f"new_pattern, cutting back {streak_tolerance_window_days} days to {local_isoformat(new_history_start, local_timezone)}",
         )
 
-    if classification == "absence":
+    if classification == "absence" and window_exclusion:
         return absence_action(context, local_timezone)
+
+    if classification == "measurement_error" and window_exclusion:
+        return measurement_error_action(context, local_timezone)
 
     return AdaptionAction(kind="none", reason=f"{classification}: no action")
 
@@ -67,7 +69,21 @@ def absence_action(context: StructuredState, local_timezone: str) -> AdaptionAct
     )
 
 
-# ausgeschlossene Tage werden zu Lücken wie bei measurement_error, ab keep_from bleibt alles drin (der analysierte Tag selbst)
+# nur der analysierte Tag, ein Festhänger über Mitternacht wird am Folgetag selbst nochmal erkannt
+def measurement_error_action(
+    context: StructuredState, local_timezone: str
+) -> AdaptionAction:
+    decision_time = parse_utc_timestamp(context["decision_time"], "decision_time")
+    day_start = shift_local_days(decision_time, -1, local_timezone)
+
+    return AdaptionAction(
+        kind="exclude_window",
+        excluded_window=(day_start, decision_time),
+        reason=f"measurement_error, excluding {local_isoformat(day_start, local_timezone)[:10]}",
+    )
+
+
+# ausgeschlossene Tage werden zu Lücken wie ein unvollständiger Tag, ab keep_from bleibt alles drin (der analysierte Tag selbst)
 def mask_excluded_windows(
     history: pd.Series,
     excluded_windows: tuple[tuple[pd.Timestamp, pd.Timestamp], ...],

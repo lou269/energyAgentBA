@@ -19,12 +19,11 @@ def _by_mode(table: pd.DataFrame, value: str) -> pd.DataFrame:
 
 def build_k3_plot(
     gate_open: pd.DataFrame,
-    notifications: pd.DataFrame,
     output_directory: Path,
     *,
     target_rate_pct: float,
 ) -> None:
-    figure, (rate_axis, notification_axis) = plt.subplots(1, 2, figsize=(11, 4))
+    figure, rate_axis = plt.subplots(figsize=(6, 4))
 
     grouped_bars(
         rate_axis, _by_mode(gate_open, "gate_open_pct"), RESET_MODE_COLORS, MODE_LABELS
@@ -40,13 +39,4 @@ def build_k3_plot(
     rate_axis.set_ylabel("Anteil Tage (%)")
     rate_axis.legend(fontsize=8)
 
-    grouped_bars(
-        notification_axis,
-        _by_mode(notifications, "extra_notifications"),
-        RESET_MODE_COLORS,
-        MODE_LABELS,
-    )
-    notification_axis.set_title("Zusätzliche Meldungen durch die Stufe", loc="left")
-    notification_axis.set_ylabel("Meldungen, alle Cutover zusammen")
-
-    save_figure(figure, output_directory, "k3_closed_loop")
+    save_figure(figure, output_directory, "k3_gate_open")

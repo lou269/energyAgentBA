@@ -47,11 +47,6 @@ STRATEGY_LABELS: dict[str, str] = {
     "cut": "cut, Historie ab t_c",
     "step_regressor": "Stufen-Regressor",
 }
-KIND_LABELS: dict[str, str] = {
-    "control": "keine Änderung",
-    "step": "Dauerlast",
-    "scaled": "proportional",
-}
 MASKING_PHASE_LABELS: dict[str, str] = {
     "before_cutover": "vor Cutover",
     "early": f"Tag 0-{K5Config.masking_early_days - 1}",

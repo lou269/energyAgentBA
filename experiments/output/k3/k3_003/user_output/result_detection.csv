@@ -1,0 +1,25 @@
+Referenzfenster,Ereignis,2013-10-15,2014-01-15,2014-04-15,2014-07-15,Mittel erkannter,erkannt,Skala bei Erkennung
+Statisch,Dauerlast +30 W,44.0,,,13.0,28.5,2/4,weekly+long_term
+Statisch,Dauerlast +50 W,,,,13.0,13.0,1/4,weekly+long_term
+Statisch,Dauerlast +100 W,,,13.0,8.0,10.5,2/4,weekly+long_term
+Statisch,Dauerlast +200 W,,27.0,10.0,8.0,15.0,3/4,weekly+long_term
+Statisch,Einzeltag-Spitze +1000 W über 3 h,1.0,1.0,,,1.0,2/4,daily
+Statisch,Einzeltag-Spitze +1000 W über 6 h,1.0,1.0,,1.0,1.0,3/4,daily
+Expanding,Dauerlast +30 W,6.0,,50.0,,28.0,2/4,weekly+long_term
+Expanding,Dauerlast +50 W,6.0,,,13.0,9.5,2/4,weekly+long_term
+Expanding,Dauerlast +100 W,6.0,,,8.0,7.0,2/4,weekly+long_term
+Expanding,Dauerlast +200 W,6.0,27.0,10.0,8.0,12.8,4/4,weekly+long_term
+Expanding,Einzeltag-Spitze +1000 W über 3 h,,1.0,,,1.0,1/4,daily
+Expanding,Einzeltag-Spitze +1000 W über 6 h,1.0,1.0,1.0,1.0,1.0,4/4,"daily, weekday"
+Rolling 60,Dauerlast +30 W,5.0,,,,5.0,1/4,weekly+long_term
+Rolling 60,Dauerlast +50 W,5.0,,50.0,13.0,22.7,3/4,weekly+long_term
+Rolling 60,Dauerlast +100 W,6.0,,12.0,8.0,8.7,3/4,weekly+long_term
+Rolling 60,Dauerlast +200 W,6.0,27.0,10.0,8.0,12.8,4/4,weekly+long_term
+Rolling 60,Einzeltag-Spitze +1000 W über 3 h,,1.0,,,1.0,1/4,daily
+Rolling 60,Einzeltag-Spitze +1000 W über 6 h,1.0,1.0,1.0,1.0,1.0,4/4,"daily, weekday"
+Rolling 35,Dauerlast +30 W,5.0,,,,5.0,1/4,weekly+long_term
+Rolling 35,Dauerlast +50 W,6.0,,,13.0,9.5,2/4,weekly+long_term
+Rolling 35,Dauerlast +100 W,6.0,29.0,49.0,8.0,23.0,4/4,weekly+long_term
+Rolling 35,Dauerlast +200 W,6.0,26.0,10.0,8.0,12.5,4/4,weekly+long_term
+Rolling 35,Einzeltag-Spitze +1000 W über 3 h,,1.0,,,1.0,1/4,daily
+Rolling 35,Einzeltag-Spitze +1000 W über 6 h,1.0,1.0,,1.0,1.0,3/4,"daily, weekday"

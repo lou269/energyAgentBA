@@ -1,68 +1,48 @@
-from __future__ import annotations
-
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from src.config.config_forecasting import (
-    ExperimentSplit,
-    ForecastingConfig,
+    C2_EXPANDING,
+    C3_ROLLING_30,
+    MODEL_LABELS as FORECAST_MODEL_LABELS,
     ProphetVariantConfig,
 )
 
+FORECAST_RUN_PREFIX = "e3_forecast"
+DRIFT_RUN_PREFIX = "e3_drift"
+# vom Runner geschrieben, vom Report gelesen
+ORIGIN_METRICS_FILE = "origin_metrics"
+DRIFT_RESULTS_FILE = "e3_drift_results"
 
-""" E3 - SAISONALE DRIFT """
+# unterscheidet sich von C2 nur in der Jahressaisonalität
+S1_EXPANDING_YEARLY = replace(C2_EXPANDING, model_id="S1", yearly_seasonality=True)
 
 
 @dataclass(frozen=True)
 class E3Config:
-    # Übergang Herbst -> Winter, liegt im produktiven Kandidaten (H1-M54-S2, 2013-04-01..2014-07-21)
-    observation_window_start_date: str = "2013-09-01"
-    observation_window_end_date: str = "2013-12-15"
-
-    margin_before_days: int = 7
-    margin_after_days: int = 0
-
-
-""" E3 - SAISONALITÄT (Teilfrage 1, Sommer/Winter-Prognosegüte) """
-
-
-@dataclass(frozen=True)
-class E3DataConfig:
-    # deckt Sommer 2013, Winter 2013/14 und Frühling/Sommer 2014 ab, kein volles zweites Jahr
-    # (Kandidat endet 2014-07-21) aber ein kompletter Saisonzyklus
-    test_window_start_date: str = "2013-06-01"
-    # exklusiv, letzter ausgewerteter Tag ist der 19.07.
-    test_window_end_date: str = "2014-07-20"
-
-
-# weekly fix auf True (wie produktives C2), nur yearly wird zwischen S0/S1 verglichen
-_S0 = ProphetVariantConfig(
-    model_id="S0",
-    history_mode="expanding",
-    rolling_window_days=None,
-    retraining_interval_days=1,
-    weekly_seasonality=True,
-    yearly_seasonality=False,
-)
-_S1 = ProphetVariantConfig(
-    model_id="S1",
-    history_mode="expanding",
-    rolling_window_days=None,
-    retraining_interval_days=1,
-    weekly_seasonality=True,
-    yearly_seasonality=True,
-)
-
-SEASONALITY_PROPHET_VARIANTS: tuple[ProphetVariantConfig, ...] = (_S0, _S1)
-
-
-@dataclass(frozen=True)
-class SeasonalityExperimentConfig(ForecastingConfig):
-    config_version: str = "seasonality-0.1"
     experiment_id: str = "E3"
-    split: ExperimentSplit = "test"
+    split: str = "train"
 
-    data: E3DataConfig = E3DataConfig()
+    # forecast: ein volles Jahr, davor gut ein Jahr Historie ab Datenbeginn (01.04.2013). Liegt ganz im Train-Split (bis 29.04.2015)
+    forecast_start_date: str = "2014-04-15"
+    forecast_days: int = 365
+    prophet_variants: tuple[ProphetVariantConfig, ...] = (
+        C3_ROLLING_30,
+        C2_EXPANDING,
+        S1_EXPANDING_YEARLY,
+    )
+    # (Variante, Referenz): Jahressaisonalität allein, längere Historie allein, beides gegen das produktive Modell
+    comparisons: tuple[tuple[str, str], ...] = (
+        ("S1", "C2"),
+        ("C2", "C3_30"),
+        ("S1", "C3_30"),
+    )
 
-    prophet_variants: tuple[ProphetVariantConfig, ...] = SEASONALITY_PROPHET_VARIANTS
+    # drift: abrupte Stufe und Rampen auf dasselbe Niveau (scale_factor), das System wie im Betrieb, nur Regel statt LLM.
+    # Rampen höchstens so lang wie margin_after_days der Standard-Szenarien (60), sonst endet der Lauf mitten im Anstieg
+    kinds: tuple[str, ...] = ("control", "scaled", "ramp_28", "ramp_56")
+    system_id: str = "SYS2"
 
-    output_subdir: str = "seasonality"
+
+MODEL_LABELS: dict[str, str] = FORECAST_MODEL_LABELS | {
+    "S1": "S1 expanding + Jahressaison"
+}

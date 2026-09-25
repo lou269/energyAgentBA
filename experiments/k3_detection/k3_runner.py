@@ -2,7 +2,7 @@
 # python -m experiments.k3_detection.k3_runner
 # danach: python -m experiments.k3_detection.k3_report
 
-# Referenzfenster der Anomalieerkennung, je Cutover control/step, einmal isoliert und einmal im Kreislauf mit Adaption (rule, ohne LLM).
+# Referenzfenster und Schwellen der Anomalieerkennung: je Cutover die Standard-Szenarien, isoliert und im Kreislauf mit Reset (rule, ohne LLM).
 # Am Ende die Kalibrierung der Schwellen auf den isolated-Läufen
 
 import logging
@@ -21,6 +21,7 @@ from experiments.k3_detection.k3_config import (
     RUN_PREFIX,
     K3Config,
     build_mode_configs,
+    kinds_by_mode,
 )
 from experiments.k3_detection.k3_evaluation import read_scenario_results
 from src.config.config_forecasting import NumericalAnalysisConfig
@@ -33,7 +34,12 @@ def run(k3_config: K3Config) -> Path:
     run_directory, raw_directory = create_experiment_run(
         PROJECT_CONFIG.k3_output_dir,
         RUN_PREFIX,
-        {"standard_config": asdict(STANDARD_CONFIG), "k3_config": asdict(k3_config)},
+        {
+            "standard_config": asdict(STANDARD_CONFIG),
+            "k3_config": asdict(k3_config),
+            # mit diesen Schwellen läuft der Kreislauf
+            "numerical_analysis_config": asdict(NumericalAnalysisConfig()),
+        },
     )
     scenario_results: list[pd.DataFrame] = []
 
@@ -41,12 +47,12 @@ def run(k3_config: K3Config) -> Path:
         scenarios = build_standard_scenarios(cutover_date, k3_config.kinds)
 
         for mode, variants in build_mode_configs(k3_config.reference_windows).items():
-            for kind, scenario in scenarios.items():
+            for kind in kinds_by_mode(k3_config)[mode]:
                 scenario_name = f"{kind}_{cutover_date}"
                 logger.info("K3 %s, %s", scenario_name, mode)
 
                 summary, anomaly = run_scenario_in_scratch(
-                    scenario,
+                    scenarios[kind],
                     variants,
                     run_id=f"{run_directory.name}_{scenario_name}_{mode}",
                 )

@@ -14,6 +14,11 @@ class ModelMetadata(TypedDict):
     digest: str | None
 
 
+class ToolCall(TypedDict):
+    name: str
+    arguments: dict[str, object]
+
+
 class LLMClient(Protocol):
     def generate_json(
         self,
@@ -29,6 +34,21 @@ class LLMClient(Protocol):
         think: bool,
         keep_alive: int | str,
     ) -> str: ...
+
+    def request_tool_calls(
+        self,
+        *,
+        model: str,
+        messages: list[dict[str, str]],
+        tools: list[dict[str, object]],
+        temperature: float,
+        presence_penalty: float,
+        seed: int | None,
+        num_predict: int,
+        num_ctx: int,
+        think: bool,
+        keep_alive: int | str,
+    ) -> list[ToolCall]: ...
 
     def get_model_metadata(self, model: str) -> ModelMetadata: ...
 
@@ -62,30 +82,53 @@ class OllamaClient:
         think: bool,
         keep_alive: int | str,
     ) -> str:
-        options: dict[str, float | int] = {
-            "temperature": temperature,
-            "presence_penalty": presence_penalty,
-            "num_predict": num_predict,
-            "num_ctx": num_ctx,
-        }
-
-        if seed is not None:
-            options["seed"] = seed
-
         response = self._client.chat(
             model=model,
             messages=messages,
             format=output_schema,
-            options=options,
+            options=_options(temperature, presence_penalty, seed, num_predict, num_ctx),
             think=think,
             stream=False,
             keep_alive=keep_alive,
         )
 
         if response.done_reason == "length":
-            logger.warning("Ollama response for model %s was cut off at the num_predict limit.", model)
+            logger.warning(
+                "Ollama response for model %s was cut off at the num_predict limit.",
+                model,
+            )
 
         return response.message.content or ""
+
+    # ohne format: mit JSON-Schema gibt Ollama keine Tool-Aufrufe zurück
+    def request_tool_calls(
+        self,
+        *,
+        model: str,
+        messages: list[dict[str, str]],
+        tools: list[dict[str, object]],
+        temperature: float,
+        presence_penalty: float,
+        seed: int | None,
+        num_predict: int,
+        num_ctx: int,
+        think: bool,
+        keep_alive: int | str,
+    ) -> list[ToolCall]:
+        response = self._client.chat(
+            model=model,
+            messages=messages,
+            tools=tools,
+            options=_options(temperature, presence_penalty, seed, num_predict, num_ctx),
+            think=think,
+            stream=False,
+            keep_alive=keep_alive,
+        )
+
+        return [
+            {"name": call.function.name, "arguments": dict(call.function.arguments)}
+            for call in response.message.tool_calls or []
+        ]
 
     def get_model_metadata(self, model: str) -> ModelMetadata:
         if not isinstance(model, str) or not model.strip():
@@ -113,3 +156,23 @@ class OllamaClient:
 
     def close(self) -> None:
         self._client.close()
+
+
+def _options(
+    temperature: float,
+    presence_penalty: float,
+    seed: int | None,
+    num_predict: int,
+    num_ctx: int,
+) -> dict[str, float | int]:
+    options: dict[str, float | int] = {
+        "temperature": temperature,
+        "presence_penalty": presence_penalty,
+        "num_predict": num_predict,
+        "num_ctx": num_ctx,
+    }
+
+    if seed is not None:
+        options["seed"] = seed
+
+    return options

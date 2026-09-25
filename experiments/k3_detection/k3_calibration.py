@@ -3,12 +3,13 @@ from itertools import product
 
 import pandas as pd
 
-from experiments.k3_detection.k3_config import K3Config
-from experiments.k3_detection.k3_evaluation import (
+from experiments.common.evaluation import (
     add_days_since_cutover,
     pair_with_control,
     summarize_event_response,
 )
+from experiments.k3_detection.k3_config import K3Config
+from experiments.k3_detection.k3_evaluation import PAIR_KEYS
 from src.config.config_forecasting import NumericalAnalysisConfig
 from src.numerical_analysis.anomaly_detection import anomaly_streak_days
 
@@ -65,9 +66,7 @@ def apply_gate(
     return gated.loc[series_position >= streak_tolerance_window_days - 1]
 
 
-def summarize_operating_point(
-    gated: pd.DataFrame, gate_threshold: float
-) -> pd.DataFrame:
+def summarize_operating_point(gated: pd.DataFrame) -> pd.DataFrame:
     control = gated.loc[gated["kind"] == "control"]
 
     # isolated bleibt eine Drift oft wochenlang stehen, deshalb zählt nur der erste Tag
@@ -83,8 +82,9 @@ def summarize_operating_point(
         false_new_pattern=("new_pattern_onset", "sum"),
     )
 
+    # isolated läuft nur step als Ereignis, eine Zeile je Fenster
     response = summarize_event_response(
-        pair_with_control(gated), unusual_threshold=gate_threshold
+        pair_with_control(gated, PAIR_KEYS), ["mode", "kind"] + WINDOW_KEYS
     )
 
     return summary.merge(
@@ -122,7 +122,7 @@ def build_grid_metrics(
                 min_sustained_scales=min_sustained_scales,
             )
 
-            point = summarize_operating_point(gated, gate_threshold)
+            point = summarize_operating_point(gated)
             point["gate_threshold"] = gate_threshold
             for scale, threshold in thresholds.items():
                 point[f"{scale}_threshold"] = threshold

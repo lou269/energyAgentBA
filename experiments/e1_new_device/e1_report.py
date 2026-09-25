@@ -54,20 +54,18 @@ def build_forecast_table(forecast: pd.DataFrame) -> pd.DataFrame:
     return table.rename(index=SYS_LABELS).rename_axis("System").reset_index()
 
 
-def build_adaption_table(adaption: pd.DataFrame, reference_config: str) -> pd.DataFrame:
-    adaption = adaption.set_index("config")
+def build_reset_table(after_reset: pd.DataFrame, reference_config: str) -> pd.DataFrame:
+    after_reset = after_reset.set_index("config")
 
     table = pd.DataFrame(
         {
-            "Adaption ab Prognosetag": adaption["adaption_forecast_day"].astype(
-                "Int64"
-            ),
-            "MAE ab Adaption [W]": adaption["mean_mae_w"],
-            f"{reference_config} im selben Zeitraum [W]": adaption[
+            "Reset ab Prognosetag": after_reset["reset_forecast_day"].astype("Int64"),
+            "MAE ab Reset [W]": after_reset["mean_mae_w"],
+            f"{reference_config} im selben Zeitraum [W]": after_reset[
                 "reference_mean_mae_w"
             ],
         }
-    ).join(paired_difference_columns(adaption, "Tage"))
+    ).join(paired_difference_columns(after_reset, "Tage"))
 
     return table.rename(index=SYS_LABELS).rename_axis("System").reset_index()
 
@@ -83,7 +81,7 @@ def build_detection_table(
         "control_target_days_after": f"{target_classification} ab Cutover, Kontrolle [Tage]",
         "adaptions_before": "Adaptionen vor Cutover",
         "adaptions_after": "Adaptionen ab Cutover",
-        "first_adaption_day": "erste Adaption [Tag]",
+        "first_reset_day": "erster Reset [Tag]",
     }
 
     return detection.assign(config=detection["config"].map(SYS_LABELS)).rename(
@@ -158,9 +156,9 @@ def build_notes(summary: E1Summary, *, has_control: bool) -> list[str]:
         "Tag = Entscheidungstag seit Cutover: an Tag n meldet das System, eingeordnet ist dabei Tag n-1 (Spalte Datum). Ab Cutover zählt deshalb erst ab Tag 1",
     ]
 
-    if summary.no_adaption:
+    if summary.no_reset:
         notes.append(
-            "Ab Cutover wurde in keinem System eine Adaption ausgelöst, die Tabelle Prognose ab Adaption bleibt deshalb leer"
+            "Ab Cutover wurde in keinem System ein Reset ausgelöst, die Tabelle Prognose ab Reset bleibt deshalb leer"
         )
 
     for row in summary.failed.to_dict("records"):
@@ -176,7 +174,7 @@ def build_notes(summary: E1Summary, *, has_control: bool) -> list[str]:
 
 def build_key_figures(
     detection: pd.DataFrame,
-    adaption_comparison: pd.DataFrame,
+    reset_comparison: pd.DataFrame,
     *,
     target_classification: str,
     reference_config: str,
@@ -191,11 +189,11 @@ def build_key_figures(
     ]
     rows += [
         (
-            f"{SYS_LABELS[row['config']]}: Adaption ausgelöst",
+            f"{SYS_LABELS[row['config']]}: Reset ausgelöst",
             (
                 "nein"
-                if pd.isna(row["first_adaption_day"])
-                else f"ja, ab Tag {row['first_adaption_day']}"
+                if pd.isna(row["first_reset_day"])
+                else f"ja, ab Tag {row['first_reset_day']}"
             ),
             f"{row['adaptions_after']} Adaptionstage ab Cutover",
         )
@@ -203,12 +201,12 @@ def build_key_figures(
     ]
     rows += [
         (
-            f"{SYS_LABELS[row['config']]}: MAE-Differenz zu {reference_config} ab Adaption [W]",
+            f"{SYS_LABELS[row['config']]}: MAE-Differenz zu {reference_config} ab Reset [W]",
             row["mean_delta"],
             f"±{format_number(2 * row['delta_standard_error'], DECIMALS)} W, {row['paired_count']} Tage, "
             f"belastbar: {'ja' if row['exceeds_noise'] else 'nein'}",
         )
-        for row in adaption_comparison.to_dict("records")
+        for row in reset_comparison.to_dict("records")
     ]
 
     return key_figures_table(rows)
@@ -247,7 +245,7 @@ def main() -> None:
             "Kennzahlen",
             build_key_figures(
                 summary.detection,
-                summary.adaption,
+                summary.after_reset,
                 target_classification=target_classification,
                 reference_config=reference_config,
             ),
@@ -256,9 +254,9 @@ def main() -> None:
             "Erkennung",
             build_detection_table(summary.detection, target_classification),
         ),
-        "result_forecast_after_adaption": (
-            f"Prognose ab Adaption, gepaart gegen {reference_config}",
-            build_adaption_table(summary.adaption, reference_config),
+        "result_forecast_after_reset": (
+            f"Prognose ab Reset, gepaart gegen {reference_config}",
+            build_reset_table(summary.after_reset, reference_config),
         ),
         "event_log": ("Ereignisprotokoll", build_event_log(summary.events)),
     }

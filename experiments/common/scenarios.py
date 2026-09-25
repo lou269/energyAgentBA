@@ -133,3 +133,27 @@ def scale_from(series: pd.Series, start: pd.Timestamp, factor: float) -> pd.Seri
     scaled.loc[scaled.index >= start] *= factor
 
     return scaled
+
+
+def add_linear_ramp(
+    series: pd.Series, start: pd.Timestamp, *, days: int, factor: float
+) -> pd.Series:
+    # Faktor steigt stündlich linear von 1 auf factor und bleibt nach days Tagen dort, vor start bleibt er 1
+    ramped = series.copy()
+    elapsed = ramped.index.to_series() - start
+    progress = (elapsed / pd.Timedelta(days=days)).clip(0.0, 1.0)
+    ramped *= 1 + (factor - 1) * progress.to_numpy()
+
+    return ramped
+
+
+def add_single_day_peak(
+    series: pd.Series, start: pd.Timestamp, *, hours: int, extra_w: float
+) -> pd.Series:
+    peaked = series.copy()
+    in_peak = (peaked.index >= start) & (
+        peaked.index < start + pd.Timedelta(hours=hours)
+    )
+    peaked.loc[in_peak] += extra_w
+
+    return peaked

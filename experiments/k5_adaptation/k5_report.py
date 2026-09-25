@@ -14,9 +14,8 @@ from experiments.common.report import (
     relabel,
     write_result_report,
 )
-from experiments.common.standard_config import DECIMALS, PROJECT_CONFIG
+from experiments.common.standard_config import DECIMALS, KIND_LABELS, PROJECT_CONFIG
 from experiments.k5_adaptation.k5_config import (
-    KIND_LABELS,
     MASKING_DECISIONS_FILE,
     MASKING_PHASE_LABELS,
     MASKING_RESULTS_FILE,

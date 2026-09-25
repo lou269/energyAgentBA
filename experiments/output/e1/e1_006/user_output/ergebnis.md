@@ -14,16 +14,17 @@
 | Kennzahl | Wert | Bezug |
 |---|---|---|
 | SYS2 Regel: erster new_pattern [Tag seit Cutover] | - | 0 Fehlalarme vor Cutover |
+| SYS2 Regel: Reset ausgelöst | nein | 0 Adaptionstage ab Cutover |
 
 ## Erkennung
 
-| System | erster new_pattern [Tag] | new_pattern ab Cutover [Tage] | new_pattern vor Cutover, Fehlalarm [Tage] | new_pattern ab Cutover, Kontrolle [Tage] | Adaptionen vor Cutover | Adaptionen ab Cutover |
-|---|---:|---:|---:|---:|---:|---:|
-| SYS2 Regel | - | 0 | 0 | 0 | 0 | 0 |
+| System | erster new_pattern [Tag] | new_pattern ab Cutover [Tage] | new_pattern vor Cutover, Fehlalarm [Tage] | new_pattern ab Cutover, Kontrolle [Tage] | Adaptionen vor Cutover | Adaptionen ab Cutover | erster Reset [Tag] |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| SYS2 Regel | - | 0 | 0 | 0 | 0 | 0 | - |
 
-## Prognose ab Adaption, gepaart gegen SYS1
+## Prognose ab Reset, gepaart gegen SYS1
 
-| System | Adaption ab Prognosetag | MAE ab Adaption [W] | SYS1 im selben Zeitraum [W] | Differenz [W] | 2 Standardfehler [W] | Tage | Tage besser [%] | belastbar |
+| System | Reset ab Prognosetag | MAE ab Reset [W] | SYS1 im selben Zeitraum [W] | Differenz [W] | 2 Standardfehler [W] | Tage | Tage besser [%] | belastbar |
 |---|---:|---|---|---|---|---:|---|---|
 
 ## Ereignisprotokoll
@@ -34,6 +35,8 @@
 ## Hinweise
 
 - belastbar: Betrag der Differenz größer als 2 Standardfehler der gepaarten Differenzen, grobe Faustregel
+- Tag = Entscheidungstag seit Cutover: an Tag n meldet das System, eingeordnet ist dabei Tag n-1 (Spalte Datum). Ab Cutover zählt deshalb erst ab Tag 1
+- Ab Cutover wurde in keinem System ein Reset ausgelöst, die Tabelle Prognose ab Reset bleibt deshalb leer
 
 ![e1_timeline.png](e1_timeline.png)
 

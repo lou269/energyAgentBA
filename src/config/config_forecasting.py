@@ -9,7 +9,9 @@ NegativeForecastHandling = Literal["raw", "clip_zero"]
 LLMMode = Literal["off", "rule", "real"]
 ExperimentSplit = Literal["validation", "test"]
 
-''' PREPROCESSING '''
+""" PREPROCESSING """
+
+
 @dataclass(frozen=True)
 class PreprocessingConfig:
     train_share: float = 0.7
@@ -17,14 +19,18 @@ class PreprocessingConfig:
 
     gap_treatment_method: ProductionGapMethod = "ffill"
     max_imputation_gap_15min: int = 4
-    max_imputation_gap_hourly: int = 3  # nicht das gleiche wie DataPreparationConfig.max_availability_gap_hours
+    max_imputation_gap_hourly: int = (
+        3  # nicht das gleiche wie DataPreparationConfig.max_availability_gap_hours
+    )
 
     stuck_value_min_hours: float = 6.0
 
     max_daily_missing_share: float = 0.10
 
 
-''' NUMERICAL ANALYSIS '''
+""" NUMERICAL ANALYSIS """
+
+
 @dataclass(frozen=True)
 class NumericalAnalysisConfig:
     sample_period_hours_15min: float = 0.25
@@ -54,12 +60,14 @@ class NumericalAnalysisConfig:
     sample_period_hours_daily: float = 24.0
     trend_window_days: int = 7  # unkalibriert, Startwert wie trend_threshold seinerzeit
     long_term_window_days: int = 30
-    weekly_window_days: int = 7  # eigenständig von trend_window_days, auch wenn aktuell derselbe Wert
+    weekly_window_days: int = (
+        7  # eigenständig von trend_window_days, auch wenn aktuell derselbe Wert
+    )
 
     # Mindestabdeckung für weekly_mean/long_term_window_mean (rolling): ein einzelner NaN-Tag (z.B. measurement_error)
     # soll die Skala nicht gleich für die ganze Fensterlänge lahmlegen, siehe anomalieerkennung_neu.md
     rolling_window_min_coverage: float = 0.8
-    
+
     # Rolling 60 statt eingefroren nach 60 Tagen (K3 Stufe 3/4), Statisch veraltet saisonal
     max_reference_window_growth_days: int | None = None
     reference_window_rolling_days: int | None = 60
@@ -77,7 +85,9 @@ class NumericalAnalysisConfig:
     sustained_anomaly_streak_days: int = 6
 
 
-''' PROPHET '''
+""" PROPHET """
+
+
 @dataclass(frozen=True)
 class ProphetVariantConfig:
     model_id: str
@@ -128,7 +138,7 @@ FORECAST_MODEL_PROPHET_VARIANTS: tuple[ProphetVariantConfig, ...] = (
     C2_EXPANDING,
     C3_ROLLING_7,
     C3_ROLLING_30,
-    C3_ROLLING_60
+    C3_ROLLING_60,
 )
 
 MODEL_LABELS: dict[str, str] = {
@@ -144,7 +154,9 @@ MODEL_LABELS: dict[str, str] = {
 
 selected_prophet_model = C3_ROLLING_30
 
-''' FORECASTING '''
+""" FORECASTING """
+
+
 @dataclass(frozen=True)
 class ForecastingConfig:
     config_version: str = "0.5"
@@ -185,11 +197,13 @@ class ForecastingConfig:
     mape_min_eligible_watts: float = 10.0
 
 
-''' LLM '''
+""" LLM """
+
+
 @dataclass(frozen=True)
 class LLMConfig:
     model: str
-    prompt_version: str = "v11"
+    prompt_version: str = "v12"
     temperature: float = 0.0
     # qwen3.5:9b liefert das selbst als Modelfile-Default, gegen Wiederholungsschleifen bei greedy decoding
     presence_penalty: float = 1.5
@@ -200,6 +214,9 @@ class LLMConfig:
     num_ctx: int = 8192
     think: bool = False
     keep_alive: int | str = "5m"
+    # CTX2: das LLM holt den Kalender per Function Calling selbst, höchstens so viele Tage vor und nach decision_time
+    calendar_tool: bool = False
+    calendar_tool_max_days: int = 14
 
 
 @dataclass(frozen=True)
@@ -217,6 +234,9 @@ class CycleConfig:
     event_adaptation: bool
     llm_mode: LLMMode
     llm_config: LLMConfig | None = None
+    # absence (Kalenderfenster) und measurement_error (Tag) aus Training und Referenz, aus nur für den E2-Vergleich
+    window_exclusion: bool = True
+
 
 SYS_VARIANTS: dict[str, CycleConfig] = {
     "SYS0": CycleConfig(
@@ -226,19 +246,25 @@ SYS_VARIANTS: dict[str, CycleConfig] = {
         llm_mode="off",
     ),
     "SYS1": CycleConfig(
-        forecasting_config=ForecastingConfig(selected_prophet_variant=selected_prophet_model),
+        forecasting_config=ForecastingConfig(
+            selected_prophet_variant=selected_prophet_model
+        ),
         numerical_analysis_config=NumericalAnalysisConfig(),
         event_adaptation=False,
         llm_mode="off",
     ),
     "SYS2": CycleConfig(
-        forecasting_config=ForecastingConfig(selected_prophet_variant=selected_prophet_model),
+        forecasting_config=ForecastingConfig(
+            selected_prophet_variant=selected_prophet_model
+        ),
         numerical_analysis_config=NumericalAnalysisConfig(),
         event_adaptation=True,
         llm_mode="rule",
     ),
     "SYS3": CycleConfig(
-        forecasting_config=ForecastingConfig(selected_prophet_variant=selected_prophet_model),
+        forecasting_config=ForecastingConfig(
+            selected_prophet_variant=selected_prophet_model
+        ),
         numerical_analysis_config=NumericalAnalysisConfig(),
         event_adaptation=True,
         llm_mode="real",

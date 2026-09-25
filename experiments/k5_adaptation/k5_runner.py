@@ -41,13 +41,17 @@ logger = logging.getLogger(__name__)
 
 
 def run_strategies(k5_config: K5Config) -> Path:
+    cycle_config = SYS_VARIANTS[k5_config.cycle_system]
     run_directory, raw_directory = create_experiment_run(
         PROJECT_CONFIG.k5_output_dir,
         RUN_PREFIX,
-        {"standard_config": asdict(STANDARD_CONFIG), "k5_config": asdict(k5_config)},
+        {
+            "standard_config": asdict(STANDARD_CONFIG),
+            "k5_config": asdict(k5_config),
+            "seed": cycle_config.forecasting_config.seed,
+        },
     )
 
-    cycle_config = SYS_VARIANTS[k5_config.cycle_system]
     runs: list[tuple[K5Strategy, int | None]] = [("none", None)]
     for action in k5_config.strategies:
         for day in k5_config.trigger_days:
@@ -89,12 +93,16 @@ def run_strategies(k5_config: K5Config) -> Path:
 
 
 def run_masking(k5_config: K5Config) -> Path:
+    cycle_config = SYS_VARIANTS[k5_config.cycle_system]
     run_directory, raw_directory = create_experiment_run(
         PROJECT_CONFIG.k5_output_dir,
         MASKING_RUN_PREFIX,
-        {"standard_config": asdict(STANDARD_CONFIG), "k5_config": asdict(k5_config)},
+        {
+            "standard_config": asdict(STANDARD_CONFIG),
+            "k5_config": asdict(k5_config),
+            "seed": cycle_config.forecasting_config.seed,
+        },
     )
-    cycle_config = SYS_VARIANTS[k5_config.cycle_system]
     # replay spielt nur die Resets nach, mask blendet zusätzlich die Tage aus
     masking_variants = {"replay": (), "mask": k5_config.masked_classifications}
     decisions: list[pd.DataFrame] = []

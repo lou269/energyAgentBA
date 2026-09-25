@@ -7,7 +7,7 @@ import pandas as pd
 from experiments.common.evaluation import (
     FIRST_ANALYZED_DAY,
     compare_mae_to_reference,
-    compare_mae_to_reference_after_adaption,
+    compare_mae_to_reference_after_reset,
     count_days_by_period,
     list_decision_events,
     summarize_mae_before_after,
@@ -32,7 +32,7 @@ def summarize_detection(
     days = _by_period(counts, configs)
     after_event = events.loc[events["day_since_event"].ge(FIRST_ANALYZED_DAY)]
     hits = after_event.loc[after_event["classification"].eq(target_classification)]
-    adaptions = after_event.loc[after_event["adaption_action"].ne("none")]
+    resets = after_event.loc[after_event["adaption_action"].eq("advance_history_start")]
 
     detection = pd.DataFrame(index=configs)
     detection["first_detection_day"] = hits.groupby("config")["day_since_event"].min()
@@ -47,9 +47,7 @@ def summarize_detection(
         )
     detection["adaptions_before"] = days[("adaption_days", "before_event")]
     detection["adaptions_after"] = days[("adaption_days", "after_event")]
-    detection["first_adaption_day"] = adaptions.groupby("config")[
-        "day_since_event"
-    ].min()
+    detection["first_reset_day"] = resets.groupby("config")["day_since_event"].min()
 
     return detection.astype("Int64").rename_axis("config").reset_index()
 
@@ -85,13 +83,13 @@ def _combine_classification_counts(
 @dataclass(frozen=True)
 class E1Summary:
     detection: pd.DataFrame
-    # ab Cutover vermischt Tage vor und nach dem Eingriff, hier nur die Tage mit adaptiertem Modell
-    adaption: pd.DataFrame
+    # ab Cutover vermischt Tage vor und nach dem Eingriff, hier nur die Tage ab dem Reset
+    after_reset: pd.DataFrame
     forecast: pd.DataFrame
     classifications: pd.DataFrame
     events: pd.DataFrame
     failed: pd.DataFrame
-    no_adaption: bool
+    no_reset: bool
     first_analyzed_day: str
     last_analyzed_day: str
     days_before: int
@@ -106,7 +104,7 @@ def summarize_e1(
     reference_config: str,
     target_classification: str,
 ) -> E1Summary:
-    """Alles, was der E1-Report zeigt: Erkennung, Prognose vor/ab Cutover und ab Adaption, Klassifikationen, Ereignisse"""
+    """Alles, was der E1-Report zeigt: Erkennung, Prognose vor/ab Cutover und ab Reset, Klassifikationen, Ereignisse"""
     configs = sorted(
         comparison.loc[comparison["classification"].notna(), "config"].unique()
     )
@@ -148,14 +146,14 @@ def summarize_e1(
 
     return E1Summary(
         detection=detection,
-        adaption=compare_mae_to_reference_after_adaption(
+        after_reset=compare_mae_to_reference_after_reset(
             comparison, cutover_time, reference_config
         ),
         forecast=forecast,
         classifications=_combine_classification_counts(counts, control_counts, configs),
         events=events,
         failed=failed.loc[failed["failed_days"] > 0],
-        no_adaption=bool(detection["adaptions_after"].fillna(0).eq(0).all()),
+        no_reset=bool(detection["first_reset_day"].isna().all()),
         first_analyzed_day=comparison["analyzed_day"].min(),
         last_analyzed_day=comparison["analyzed_day"].max(),
         days_before=reference_days["before_event"],

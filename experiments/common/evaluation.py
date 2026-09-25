@@ -41,6 +41,64 @@ def days_since_event(comparison: pd.DataFrame, event_time: pd.Timestamp) -> pd.I
     ).days
 
 
+def add_gate_flags(days: pd.DataFrame) -> pd.DataFrame:
+    """Einzeltag-Alarm (Level über normal) und Gate offen (Alarm oder Drift) wie in gate_classification, aus den Spalten von anomaly.csv"""
+    alarm = days["anomaly_level"].notna() & days["anomaly_level"].ne("normal")
+
+    return days.assign(alarm=alarm, gate_open=alarm | days["sustained_drift"].eq(True))
+
+
+def merge_cycle_days(summary: pd.DataFrame, anomaly: pd.DataFrame) -> pd.DataFrame:
+    """Je Tag und Config Einordnung und Reset aus comparison_summary neben den Spalten aus anomaly.csv, dazu Gate-Flags und new_pattern"""
+    # summary hat jeden Tag, anomaly.csv fehlt an Tagen ohne Analyse (z.B. direkt nach einem Reset)
+    summary = summary[["decision_time", "config", "classification", "reference_reset"]]
+    days = summary.merge(anomaly, on=["decision_time", "config"], how="left")
+
+    return add_gate_flags(days).assign(
+        new_pattern=days["classification"].eq("new_pattern")
+    )
+
+
+def add_days_since_cutover(results: pd.DataFrame) -> pd.DataFrame:
+    # Entscheidungstag wie days_since_event, hier mit eigenem Cutover je Zeile
+    return results.assign(
+        days_since_cutover=days_since_date(
+            results["decision_time"], results["cutover_date"]
+        )
+    )
+
+
+def pair_with_control(results: pd.DataFrame, keys: list[str]) -> pd.DataFrame:
+    """Jede Ereignis-Art tageweise neben control, keys enthält days_since_cutover. Im Kreislauf laufen die Reihen nach einem Reset auseinander, bis zur ersten Erkennung bleiben sie vergleichbar"""
+    control = results.loc[
+        results["kind"].eq("control"), keys + ["alarm", "gate_open", "new_pattern"]
+    ]
+    events = results.loc[results["kind"].ne("control")]
+
+    paired = events.merge(control, on=keys, suffixes=("", "_control"))
+
+    # Alarm, offenes Gate bzw. new_pattern, das es ohne Ereignis an diesem Tag nicht gegeben hätte
+    paired["event_alarm"] = paired["alarm"] & ~paired["alarm_control"]
+    paired["event_gate_open"] = paired["gate_open"] & ~paired["gate_open_control"]
+    paired["event_new_pattern"] = paired["new_pattern"] & ~paired["new_pattern_control"]
+
+    return paired
+
+
+def summarize_event_response(paired: pd.DataFrame, keys: list[str]) -> pd.DataFrame:
+    """Erster Tag ab Cutover je keys mit einem new_pattern, das der Kontrolllauf nicht hat, NaN = nie"""
+    after_cutover = paired.loc[paired["days_since_cutover"].ge(FIRST_ANALYZED_DAY)]
+    event_days = after_cutover["days_since_cutover"].where(
+        after_cutover["event_new_pattern"]
+    )
+
+    return (
+        after_cutover.assign(event_day=event_days)
+        .groupby(keys, as_index=False)
+        .agg(first_event_new_pattern_day=("event_day", "min"))
+    )
+
+
 def summarize_classification_detection(
     comparison: pd.DataFrame,
     event_time: pd.Timestamp,
@@ -210,32 +268,32 @@ def compare_mae_to_reference(
     )
 
 
-def compare_mae_to_reference_after_adaption(
+def compare_mae_to_reference_after_reset(
     comparison: pd.DataFrame,
     event_time: pd.Timestamp,
     reference_config: str,
 ) -> pd.DataFrame:
-    """Wie compare_mae_to_reference, aber je config erst ab ihrer ersten Adaption nach event_time"""
+    """Wie compare_mae_to_reference, aber je config erst ab ihrem ersten Reset (advance_history_start) nach event_time. Ausgeschlossene Tage (exclude_window) zählen nicht"""
     after_event = comparison.loc[
         days_since_event(comparison, event_time) >= FIRST_ANALYZED_DAY
     ]
-    adaptions = after_event.loc[after_event["adaption_action"].ne("none")].sort_values(
-        "decision_time"
-    )
-    # der Adaptions-Zyklus baut seine Prognose schon mit dem angepassten Modell, zählt also mit
-    first_adaptions = adaptions.groupby("config").head(1)
-    first_adaptions = first_adaptions.assign(
-        adaption_forecast_day=days_since_event(first_adaptions, event_time)
+    resets = after_event.loc[
+        after_event["adaption_action"].eq("advance_history_start")
+    ].sort_values("decision_time")
+    # der Reset-Zyklus baut seine Prognose schon mit dem angepassten Modell, zählt also mit
+    first_resets = resets.groupby("config").head(1)
+    first_resets = first_resets.assign(
+        reset_forecast_day=days_since_event(first_resets, event_time)
     )
 
     mae = comparison.pivot(index="decision_time", columns="config", values="mae_w")
     summaries = []
 
-    for row in first_adaptions.itertuples(index=False):
+    for row in first_resets.itertuples(index=False):
         phase = mae.loc[mae.index >= row.decision_time, [reference_config, row.config]]
         summaries.append(
             summarize_paired_differences(phase, reference_config).assign(
-                adaption_forecast_day=row.adaption_forecast_day,
+                reset_forecast_day=row.reset_forecast_day,
                 mean_mae_w=phase[row.config].mean(),
                 reference_mean_mae_w=phase[reference_config].mean(),
             )
@@ -250,7 +308,7 @@ def compare_mae_to_reference_after_adaption(
                 "delta_standard_error",
                 "better_share",
                 "exceeds_noise",
-                "adaption_forecast_day",
+                "reset_forecast_day",
                 "mean_mae_w",
                 "reference_mean_mae_w",
             ]
@@ -266,8 +324,11 @@ def spread_over_repeats(
     *,
     repeat: str = "cutover_date",
     count_same_direction: bool = False,
+    count_detected: bool = False,
 ) -> pd.DataFrame:
-    """Eine Spalte je Wiederholung (Cutover, Starttermin) plus Mittel, bei Differenzen optional die Zahl der Wiederholungen mit demselben Vorzeichen wie das Mittel"""
+    """Eine Spalte je Wiederholung (Cutover, Starttermin) plus Mittel, bei Differenzen optional die Zahl der Wiederholungen mit demselben Vorzeichen wie das Mittel,
+    bei Erkennungstagen optional die Zahl der Wiederholungen mit einem Tag (NaN = nicht erkannt)
+    """
     wide = summary.pivot(index=keys, columns=repeat, values=value).rename_axis(
         columns=None
     )
@@ -283,5 +344,10 @@ def spread_over_repeats(
             + "/"
             + wide[repeats].notna().sum(axis=1).astype(str)
         ).where(wide["mean"].ne(0))
+
+    if count_detected:
+        wide["detected"] = (
+            wide[repeats].notna().sum(axis=1).astype(str) + f"/{len(repeats)}"
+        )
 
     return wide.reset_index()

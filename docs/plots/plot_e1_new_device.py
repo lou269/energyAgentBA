@@ -37,7 +37,7 @@ def build_e1_plot(
             continue
 
         days = days_since_event(runs, cutover_time)
-        adapted = runs["adaption_action"].ne("none").to_numpy()
+        adapted = runs["adaption_action"].eq("advance_history_start").to_numpy()
         axis.plot(
             days, runs["mae_w"], color=color, linewidth=1.8, label=SYS_LABELS[config]
         )
@@ -53,7 +53,7 @@ def build_e1_plot(
     # Tag 0 ist der erste Prognosetag mit Gerät, die Linie liegt davor
     axis.axvline(-0.5, color="#333333", linewidth=1)
     axis.set_title(
-        "Tagesfehler der Prognose um den Cutover (x: erste Prognose nach einer Adaption)",
+        "Tagesfehler der Prognose um den Cutover (x: erste Prognose nach einem Reset)",
         loc="left",
     )
     axis.set_xlabel("Prognosetag seit Cutover (Ortszeit)")

@@ -17,6 +17,7 @@ from src.forecasting.prophet_model import (
     is_refit_required,
     select_prophet_history,
 )
+from src.llm.calendar_tool import CalendarLookup
 from src.llm.client import LLMClient
 from src.llm.gate import gate_classification
 from src.llm.inference import infer_llm_output
@@ -63,6 +64,7 @@ def run_cycle(
     llm_client: LLMClient | None = None,
     llm_prompt: str | None = None,
     calendar_context: CalendarContext | None = None,
+    calendar_lookup: CalendarLookup | None = None,
     new_value_implausible: pd.Series | None = None,
 ) -> tuple[CycleResult, CycleState]:
     if config.event_adaptation and config.llm_mode == "off":
@@ -153,8 +155,14 @@ def run_cycle(
             local_timezone=local_timezone,
         )
 
-        classification, llm_output, rule_output = _classify(
-            structured_state, config, local_timezone, llm_client, llm_prompt
+        # mit Kalender-Tool kommt der State mit dem geholten Kalender zurück, die Adaption braucht dessen Einträge
+        classification, llm_output, rule_output, structured_state = _classify(
+            structured_state,
+            config,
+            local_timezone,
+            llm_client,
+            llm_prompt,
+            calendar_lookup,
         )
 
         if config.event_adaptation:
@@ -162,6 +170,7 @@ def run_cycle(
                 classification,
                 structured_state,
                 streak_tolerance_window_days=config.numerical_analysis_config.streak_tolerance_window_days,
+                window_exclusion=config.window_exclusion,
                 local_timezone=local_timezone,
             )
 
@@ -224,16 +233,19 @@ def _classify(
     local_timezone: str,
     llm_client: LLMClient | None,
     llm_prompt: str | None,
-) -> tuple[Classification, LLMOutput | None, RuleClassificationResult | None]:
+    calendar_lookup: CalendarLookup | None,
+) -> tuple[
+    Classification, LLMOutput | None, RuleClassificationResult | None, StructuredState
+]:
     classification = gate_classification(structured_state)
     if classification is not None:
-        return classification, None, None
+        return classification, None, None, structured_state
 
     if config.llm_mode == "rule":
         rule_output = rule_based_classify(
             structured_state, local_timezone=local_timezone
         )
-        return rule_output.classification, None, rule_output
+        return rule_output.classification, None, rule_output, structured_state
 
     if llm_client is None or llm_prompt is None or config.llm_config is None:
         raise ValueError(
@@ -253,9 +265,15 @@ def _classify(
         num_ctx=config.llm_config.num_ctx,
         think=config.llm_config.think,
         keep_alive=config.llm_config.keep_alive,
+        calendar_lookup=calendar_lookup,
     )
 
-    return inference_result.output["classification"], inference_result.output, None
+    return (
+        inference_result.output["classification"],
+        inference_result.output,
+        None,
+        inference_result.state,
+    )
 
 
 def _build_forecast(

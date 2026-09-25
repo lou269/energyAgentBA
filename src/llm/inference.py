@@ -4,10 +4,15 @@ from dataclasses import dataclass
 from time import perf_counter
 from typing import cast
 
+from src.llm.calendar_tool import CALENDAR_TOOL, CalendarLookup, requested_window
 from src.llm.client import LLMClient
 from src.llm.llm_schema import LLMOutput, RawLLMOutput, build_llm_output_json_schema
-from src.llm.validation import collect_scalar_evidence_paths, validate_llm_output_against_state
+from src.llm.validation import (
+    collect_scalar_evidence_paths,
+    validate_llm_output_against_state,
+)
 from src.pipeline.schema_validation import is_real_number
+from src.structured_state.builder import context_state
 from src.structured_state.structured_state_schema import StructuredState
 
 
@@ -24,15 +29,12 @@ class LLMAttemptRecord:
 class LLMInferenceResult:
     output: LLMOutput
     attempts: tuple[LLMAttemptRecord, ...]
+    # mit Kalender-Tool steht hier der Kalender, den das LLM geholt hat, sonst der übergebene State
+    state: StructuredState
 
 
 class LLMInferenceError(ValueError):
-    def __init__(
-        self, 
-        message: str, 
-        *, 
-        attempts: tuple[LLMAttemptRecord, ...]
-    ) -> None:
+    def __init__(self, message: str, *, attempts: tuple[LLMAttemptRecord, ...]) -> None:
         super().__init__(message)
         self.attempts = attempts
 
@@ -51,6 +53,7 @@ def infer_llm_output(
     num_ctx: int,
     think: bool,
     keep_alive: int | str,
+    calendar_lookup: CalendarLookup | None = None,
 ) -> LLMInferenceResult:
     _validate_inference_parameters(
         prompt=prompt,
@@ -61,15 +64,26 @@ def infer_llm_output(
         max_attempts=max_attempts,
     )
 
+    if calendar_lookup is not None:
+        state = _fetch_calendar(
+            state,
+            calendar_lookup,
+            client=client,
+            prompt=prompt,
+            model=model.strip(),
+            temperature=float(temperature),
+            presence_penalty=float(presence_penalty),
+            seed=seed,
+            num_predict=num_predict,
+            num_ctx=num_ctx,
+            think=think,
+            keep_alive=keep_alive,
+        )
+
     allowed_evidence_paths = collect_scalar_evidence_paths(state)
     output_schema = build_llm_output_json_schema(allowed_evidence_paths)
 
-    state_json = json.dumps(state, ensure_ascii=False, allow_nan=False, separators=(",", ":"))
-
-    messages: list[dict[str, str]] = [
-        {"role": "system", "content": prompt.strip()},
-        {"role": "user", "content": state_json},
-    ]
+    messages = _state_messages(prompt, state)
 
     attempts: list[LLMAttemptRecord] = []
     last_error: Exception | None = None
@@ -116,7 +130,9 @@ def infer_llm_output(
             parsed_output = json.loads(content)
             raw_output = cast(RawLLMOutput, parsed_output)
 
-            output = validate_llm_output_against_state(raw_output, state, allowed_paths=allowed_evidence_paths)
+            output = validate_llm_output_against_state(
+                raw_output, state, allowed_paths=allowed_evidence_paths
+            )
 
         except (TypeError, ValueError) as error:
             last_error = error
@@ -150,10 +166,76 @@ def infer_llm_output(
             )
         )
 
-        return LLMInferenceResult(output=output, attempts=tuple(attempts))
+        return LLMInferenceResult(output=output, attempts=tuple(attempts), state=state)
 
-    raise LLMInferenceError(f"LLM returned no valid output after {max_attempts} attempt(s).", attempts=tuple(attempts)) from last_error
+    raise LLMInferenceError(
+        f"LLM returned no valid output after {max_attempts} attempt(s).",
+        attempts=tuple(attempts),
+    ) from last_error
 
+
+def _state_messages(prompt: str, state: StructuredState) -> list[dict[str, str]]:
+    state_json = json.dumps(
+        state, ensure_ascii=False, allow_nan=False, separators=(",", ":")
+    )
+
+    return [
+        {"role": "system", "content": prompt.strip()},
+        {"role": "user", "content": state_json},
+    ]
+
+
+# erster Aufruf: das LLM entscheidet, ob und wie weit es den Kalender abruft. Die Einträge kommen danach in context,
+# die eigentliche Einordnung läuft dann wie mit vorab gebautem Kalender und kann sie als Beleg nennen
+def _fetch_calendar(
+    state: StructuredState,
+    calendar_lookup: CalendarLookup,
+    *,
+    client: LLMClient,
+    prompt: str,
+    model: str,
+    temperature: float,
+    presence_penalty: float,
+    seed: int | None,
+    num_predict: int,
+    num_ctx: int,
+    think: bool,
+    keep_alive: int | str,
+) -> StructuredState:
+    started = perf_counter()
+
+    try:
+        tool_calls = client.request_tool_calls(
+            model=model,
+            messages=_state_messages(prompt, state),
+            tools=[CALENDAR_TOOL],
+            temperature=temperature,
+            presence_penalty=presence_penalty,
+            seed=seed,
+            num_predict=num_predict,
+            num_ctx=num_ctx,
+            think=think,
+            keep_alive=keep_alive,
+        )
+    except Exception as error:
+        failed = LLMAttemptRecord(
+            attempt_number=0,
+            raw_content="",
+            valid=False,
+            validation_error=f"calendar tool call: {type(error).__name__}: {error}",
+            generation_seconds=perf_counter() - started,
+        )
+        raise LLMInferenceError(
+            "Calendar tool call failed.", attempts=(failed,)
+        ) from error
+
+    window = requested_window(tool_calls)
+    if window is None:
+        return state
+
+    return cast(
+        StructuredState, {**state, "context": context_state(calendar_lookup(*window))}
+    )
 
 
 def _append_correction_messages(
@@ -189,7 +271,7 @@ def _validate_inference_parameters(
     temperature: float,
     presence_penalty: float,
     seed: int | None,
-    max_attempts: int
+    max_attempts: int,
 ) -> None:
     if not isinstance(prompt, str) or not prompt.strip():
         raise ValueError("prompt must be a non-empty string.")
@@ -200,7 +282,6 @@ def _validate_inference_parameters(
     if model != model.strip():
         raise ValueError("model must not contain surrounding whitespace.")
 
-
     if (
         not is_real_number(temperature)
         or not math.isfinite(float(temperature))
@@ -208,7 +289,9 @@ def _validate_inference_parameters(
     ):
         raise ValueError("temperature must be a finite non-negative number.")
 
-    if not is_real_number(presence_penalty) or not math.isfinite(float(presence_penalty)):
+    if not is_real_number(presence_penalty) or not math.isfinite(
+        float(presence_penalty)
+    ):
         raise ValueError("presence_penalty must be a finite number.")
 
     if seed is not None and (isinstance(seed, bool) or not isinstance(seed, int)):

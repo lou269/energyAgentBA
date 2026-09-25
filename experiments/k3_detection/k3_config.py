@@ -18,10 +18,27 @@ CALIBRATION_FILES = {
 }
 
 
-# Cutover, Zeitfenster und Stufe kommen aus StandardScenarioConfig
+# Cutover, Zeitfenster und Stärken kommen aus StandardScenarioConfig
 @dataclass(frozen=True)
 class K3Config:
-    kinds: tuple[str, ...] = ("control", "step")
+    # im Kreislauf laufen alle Arten, isolated nur, was die Kalibrierung braucht
+    kinds: tuple[str, ...] = (
+        "control",
+        "step_30",
+        "step_50",
+        "step",
+        "step_200",
+        "peak",
+        "peak_6",
+    )
+    isolated_kinds: tuple[str, ...] = ("control", "step")
+    # erkannt heißt hier Alarm am Ereignistag, nicht new_pattern
+    single_day_kinds: tuple[str, ...] = ("peak", "peak_6")
+    # eigener Reset nur, wenn die Kontrolle so viele Tage davor und danach keinen hat
+    control_reset_tolerance_days: int = 7
+    # Beginn der Heizperiode: die Kontrolle liegt knapp unter der Streak-Bedingung, jede Störung löst dort new_pattern aus.
+    # Steht in der Erkennungstabelle, zählt aber nicht
+    uncounted_cutovers: tuple[str, ...] = ("2013-10-15",)
 
     # Variante -> (max_reference_window_growth_days, reference_window_rolling_days)
     reference_windows: dict[str, tuple[int | None, int | None]] = field(
@@ -101,7 +118,7 @@ def _variant(
 def build_mode_configs(
     reference_windows: dict[str, tuple[int | None, int | None]],
 ) -> dict[str, dict[str, CycleConfig]]:
-    # isolated: nur der Detektor, adaption: geschlossener Kreislauf mit Regel-Klassifikation wie SYS2 (ohne LLM)
+    # isolated: nur der Detektor, darauf wird kalibriert. adaption: Gates wie im echten Betrieb, mit Reset durch die Regel wie SYS2 (ohne LLM)
     return {
         "isolated": {
             label: _variant(False, growth, rolling)
@@ -112,3 +129,7 @@ def build_mode_configs(
             for label, (growth, rolling) in reference_windows.items()
         },
     }
+
+
+def kinds_by_mode(k3_config: K3Config) -> dict[str, tuple[str, ...]]:
+    return {"isolated": k3_config.isolated_kinds, "adaption": k3_config.kinds}

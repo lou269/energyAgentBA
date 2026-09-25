@@ -80,6 +80,18 @@ FORECAST_COLUMNS = frozenset(
 TextType = TypeVar("TextType", bound=str)
 
 
+# der State trägt den Kalender ohne decision_time, die steht schon oben im State
+def context_state(calendar_context: CalendarContext) -> ContextState:
+    return {
+        "source_available": calendar_context["source_available"],
+        "source": calendar_context["source"],
+        "retrieved_at": calendar_context["retrieved_at"],
+        "window_start": calendar_context["window_start"],
+        "window_end": calendar_context["window_end"],
+        "events": list(calendar_context["events"]),
+    }
+
+
 def build_structured_state(
     *,
     decision_time: str | pd.Timestamp,
@@ -92,40 +104,70 @@ def build_structured_state(
 
     missing = ANALYSIS_FIELDS.difference(analysis_row.index)
     if missing:
-        raise ValueError("Analysis row is missing required fields: " + ", ".join(sorted(missing)))
+        raise ValueError(
+            "Analysis row is missing required fields: " + ", ".join(sorted(missing))
+        )
 
     missing = FORECAST_COLUMNS.difference(forecast_rows.columns)
     if missing:
-        raise ValueError("Forecast rows are missing required columns: " + ", ".join(sorted(missing)))
+        raise ValueError(
+            "Forecast rows are missing required columns: " + ", ".join(sorted(missing))
+        )
 
-    analysis_timestamp = parse_utc_timestamp(analysis_row["timestamp"], "analysis.timestamp")
+    analysis_timestamp = parse_utc_timestamp(
+        analysis_row["timestamp"], "analysis.timestamp"
+    )
 
     if analysis_timestamp >= decision_time:
         raise ValueError("Analysis timestamp must be before decision_time.")
 
-    context_decision_time = parse_utc_timestamp(calendar_context["decision_time"], "calendar_context.decision_time")
+    context_decision_time = parse_utc_timestamp(
+        calendar_context["decision_time"], "calendar_context.decision_time"
+    )
 
     if context_decision_time != decision_time:
         raise ValueError("Calendar context decision_time must match decision_time.")
 
     scale_scores: ScaleScores = {
         "daily": _nullable_float(analysis_row["daily_score"], "analysis.daily_score"),
-        "weekday": _nullable_float(analysis_row["weekday_score"], "analysis.weekday_score"),
-        "weekly": _nullable_float(analysis_row["weekly_score"], "analysis.weekly_score"),
-        "long_term": _nullable_float(analysis_row["long_term_score"], "analysis.long_term_score"),
+        "weekday": _nullable_float(
+            analysis_row["weekday_score"], "analysis.weekday_score"
+        ),
+        "weekly": _nullable_float(
+            analysis_row["weekly_score"], "analysis.weekly_score"
+        ),
+        "long_term": _nullable_float(
+            analysis_row["long_term_score"], "analysis.long_term_score"
+        ),
     }
 
     scale_streak_days: ScaleAnomalyStreakDays = {
-        "daily": _nullable_float(analysis_row["daily_anomaly_streak_days"], "analysis.daily_anomaly_streak_days"),
-        "weekday": _nullable_float(analysis_row["weekday_anomaly_streak_days"], "analysis.weekday_anomaly_streak_days"),
-        "weekly": _nullable_float(analysis_row["weekly_anomaly_streak_days"], "analysis.weekly_anomaly_streak_days"),
-        "long_term": _nullable_float(analysis_row["long_term_anomaly_streak_days"], "analysis.long_term_anomaly_streak_days"),
+        "daily": _nullable_float(
+            analysis_row["daily_anomaly_streak_days"],
+            "analysis.daily_anomaly_streak_days",
+        ),
+        "weekday": _nullable_float(
+            analysis_row["weekday_anomaly_streak_days"],
+            "analysis.weekday_anomaly_streak_days",
+        ),
+        "weekly": _nullable_float(
+            analysis_row["weekly_anomaly_streak_days"],
+            "analysis.weekly_anomaly_streak_days",
+        ),
+        "long_term": _nullable_float(
+            analysis_row["long_term_anomaly_streak_days"],
+            "analysis.long_term_anomaly_streak_days",
+        ),
     }
 
-    available_scales: list[ScaleName] = [scale for scale in SCALE_NAMES if scale_scores[scale] is not None]
+    available_scales: list[ScaleName] = [
+        scale for scale in SCALE_NAMES if scale_scores[scale] is not None
+    ]
 
     sustained_scales: list[ScaleName] = [
-        scale for scale in SCALE_NAMES if _bool(analysis_row[f"{scale}_sustained"], f"analysis.{scale}_sustained")
+        scale
+        for scale in SCALE_NAMES
+        if _bool(analysis_row[f"{scale}_sustained"], f"analysis.{scale}_sustained")
     ]
 
     forecast_state = _build_forecast_state(
@@ -134,59 +176,95 @@ def build_structured_state(
         local_timezone=local_timezone,
     )
 
-    context: ContextState = {
-        "source_available": calendar_context["source_available"],
-        "source": calendar_context["source"],
-        "retrieved_at": calendar_context["retrieved_at"],
-        "window_start": calendar_context["window_start"],
-        "window_end": calendar_context["window_end"],
-        "events": list(calendar_context["events"]),
-    }
-
     state: StructuredState = {
         "schema_version": SCHEMA_VERSION,
         "decision_time": local_isoformat(decision_time, local_timezone),
         "observation": {
             "observation_start": local_isoformat(analysis_timestamp, local_timezone),
             "observation_end": local_isoformat(decision_time, local_timezone),
-            "current_power_w": _nullable_float(analysis_row["today_mean"], "analysis.today_mean"),
-            "value_implausible": _bool(analysis_row["value_implausible"], "analysis.value_implausible"),
+            "current_power_w": _nullable_float(
+                analysis_row["today_mean"], "analysis.today_mean"
+            ),
+            "value_implausible": _bool(
+                analysis_row["value_implausible"], "analysis.value_implausible"
+            ),
         },
         "analysis": {
-            "daily_std": _nullable_float(analysis_row["daily_std"], "analysis.daily_std"),
-            "daily_std_expected": _nullable_float(analysis_row["daily_std_expected"], "analysis.daily_std_expected"),
-            "today_mean_expected_w": _nullable_float(analysis_row["today_mean_expected"], "analysis.today_mean_expected"),
-            "weekday_expected_w": _nullable_float(analysis_row["weekday_expected"], "analysis.weekday_expected"),
-            "weekly_mean_w": _nullable_float(analysis_row["weekly_mean"], "analysis.weekly_mean"),
-            "weekly_mean_expected_w": _nullable_float(analysis_row["weekly_mean_expected"], "analysis.weekly_mean_expected"),
-            "long_term_window_mean_w": _nullable_float(analysis_row["long_term_window_mean"], "analysis.long_term_window_mean"),
-            "long_term_expected_w": _nullable_float(analysis_row["long_term_expected"], "analysis.long_term_expected"),
-            "trend_slope_w_per_hour": _nullable_float( analysis_row["trend_slope_w_per_hour"], "analysis.trend_slope_w_per_hour"),
-            "trend_change": _nullable_float(analysis_row["trend_change"], "analysis.trend_change"),
-            "trend": _nullable_text(analysis_row["trend"], "analysis.trend", TREND_NAMES),
-            "weekday_deviation": _nullable_float(analysis_row["weekday_deviation"], "analysis.weekday_deviation"),
+            "daily_std": _nullable_float(
+                analysis_row["daily_std"], "analysis.daily_std"
+            ),
+            "daily_std_expected": _nullable_float(
+                analysis_row["daily_std_expected"], "analysis.daily_std_expected"
+            ),
+            "today_mean_expected_w": _nullable_float(
+                analysis_row["today_mean_expected"], "analysis.today_mean_expected"
+            ),
+            "weekday_expected_w": _nullable_float(
+                analysis_row["weekday_expected"], "analysis.weekday_expected"
+            ),
+            "weekly_mean_w": _nullable_float(
+                analysis_row["weekly_mean"], "analysis.weekly_mean"
+            ),
+            "weekly_mean_expected_w": _nullable_float(
+                analysis_row["weekly_mean_expected"], "analysis.weekly_mean_expected"
+            ),
+            "long_term_window_mean_w": _nullable_float(
+                analysis_row["long_term_window_mean"], "analysis.long_term_window_mean"
+            ),
+            "long_term_expected_w": _nullable_float(
+                analysis_row["long_term_expected"], "analysis.long_term_expected"
+            ),
+            "trend_slope_w_per_hour": _nullable_float(
+                analysis_row["trend_slope_w_per_hour"],
+                "analysis.trend_slope_w_per_hour",
+            ),
+            "trend_change": _nullable_float(
+                analysis_row["trend_change"], "analysis.trend_change"
+            ),
+            "trend": _nullable_text(
+                analysis_row["trend"], "analysis.trend", TREND_NAMES
+            ),
+            "weekday_deviation": _nullable_float(
+                analysis_row["weekday_deviation"], "analysis.weekday_deviation"
+            ),
         },
         "anomaly": {
-            "score": _nullable_float(analysis_row["anomaly_score"], "analysis.anomaly_score"),
-            "level": _nullable_text(analysis_row["anomaly_level"], "anomaly.level", ANOMALY_LEVELS),
-            "direction": _nullable_text(analysis_row["anomaly_direction"],"anomaly.direction", ANOMALY_DIRECTIONS),
-            "dominant_scale": _nullable_text(analysis_row["dominant_scale"], "anomaly.dominant_scale", SCALE_NAMES),
-            "peak_timestamp": _nullable_timestamp(analysis_row["anomaly_peak_timestamp"], "analysis.anomaly_peak_timestamp", local_timezone),
+            "score": _nullable_float(
+                analysis_row["anomaly_score"], "analysis.anomaly_score"
+            ),
+            "level": _nullable_text(
+                analysis_row["anomaly_level"], "anomaly.level", ANOMALY_LEVELS
+            ),
+            "direction": _nullable_text(
+                analysis_row["anomaly_direction"],
+                "anomaly.direction",
+                ANOMALY_DIRECTIONS,
+            ),
+            "dominant_scale": _nullable_text(
+                analysis_row["dominant_scale"], "anomaly.dominant_scale", SCALE_NAMES
+            ),
+            "peak_timestamp": _nullable_timestamp(
+                analysis_row["anomaly_peak_timestamp"],
+                "analysis.anomaly_peak_timestamp",
+                local_timezone,
+            ),
             "scale_scores": scale_scores,
             "scale_anomaly_streak_days": scale_streak_days,
             "sustained_scales": sustained_scales,
-            "sustained_drift": _bool(analysis_row["sustained_drift"], "analysis.sustained_drift"),
+            "sustained_drift": _bool(
+                analysis_row["sustained_drift"], "analysis.sustained_drift"
+            ),
             "available_scales": available_scales,
         },
         "forecast": forecast_state,
-        "context": context,
+        "context": context_state(calendar_context),
     }
 
     return state
 
 
 def _build_forecast_state(
-    *, 
+    *,
     forecast_rows: pd.DataFrame,
     decision_time: pd.Timestamp,
     local_timezone: str,
@@ -200,7 +278,9 @@ def _build_forecast_state(
     model_id = _single_text(forecast, "model_id")
     config_version = str(_single_value(forecast, "config_version"))
 
-    forecast_origin = parse_utc_timestamp(_single_value(forecast, "forecast_origin"), "forecast.forecast_origin")
+    forecast_origin = parse_utc_timestamp(
+        _single_value(forecast, "forecast_origin"), "forecast.forecast_origin"
+    )
 
     if forecast_origin != decision_time:
         raise ValueError("Forecast origin must equal decision_time.")
@@ -210,7 +290,9 @@ def _build_forecast_state(
     interval_widths: list[float] = []
 
     for index, row in forecast.iterrows():
-        timestamp = parse_utc_timestamp(row["target_timestamp"], f"forecast row {index} target_timestamp")
+        timestamp = parse_utc_timestamp(
+            row["target_timestamp"], f"forecast row {index} target_timestamp"
+        )
         prediction = _nullable_float(row["y_pred"], f"forecast row {index} y_pred")
 
         if prediction is None:
@@ -252,10 +334,7 @@ def _build_forecast_state(
     }
 
 
-def _single_value(
-    frame: pd.DataFrame, 
-    column: str
-) -> object:
+def _single_value(frame: pd.DataFrame, column: str) -> object:
     values = frame[column].drop_duplicates()
 
     if len(values) != 1:
@@ -268,10 +347,7 @@ def _single_value(
     return value
 
 
-def _single_text(
-    frame: pd.DataFrame,
-    column: str
-) -> str:
+def _single_text(frame: pd.DataFrame, column: str) -> str:
     value = _single_value(frame, column)
 
     if not isinstance(value, str):
@@ -280,10 +356,7 @@ def _single_text(
     return require_non_empty_string(value, f"Forecast column {column}")
 
 
-def _nullable_float(
-    value: object, 
-    field_name: str
-) -> float | None:
+def _nullable_float(value: object, field_name: str) -> float | None:
     if _is_missing(value):
         return None
 
@@ -299,9 +372,7 @@ def _nullable_float(
 
 
 def _nullable_text(
-    value: object, 
-    field_name: str, 
-    allowed: tuple[TextType, ...]
+    value: object, field_name: str, allowed: tuple[TextType, ...]
 ) -> TextType | None:
     if _is_missing(value):
         return None
