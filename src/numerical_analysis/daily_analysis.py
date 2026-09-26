@@ -36,7 +36,9 @@ def compute_reference_window_end(
 
     last_day = history_days.max()
     if max_growth_days is not None:
-        last_day = min(last_day, history_days.min() + pd.DateOffset(days=max_growth_days - 1))
+        last_day = min(
+            last_day, history_days.min() + pd.DateOffset(days=max_growth_days - 1)
+        )
 
     return shift_local_days(last_day, -(reference_window_days - 1), local_timezone)
 
@@ -104,8 +106,12 @@ def compute_analysis_row(
 
     day_implausible = False
     if raw_value_implausible is not None:
-        day_implausible = bool(raw_value_implausible[local_day_index(raw_value_implausible.index, local_timezone) == target_day].any())
+        day_implausible = bool(
+            raw_value_implausible[
+                local_day_index(raw_value_implausible.index, local_timezone)
+                == target_day
+            ].any()
+        )
     row["value_implausible"] = bool(pd.isna(row["today_mean"])) or day_implausible
-    row["anomaly_peak_timestamp"] = row["timestamp"] if pd.notna(row["anomaly_score"]) else pd.NaT
 
     return row

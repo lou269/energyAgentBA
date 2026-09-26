@@ -7,7 +7,10 @@ from typing import Any, cast
 from src.llm.inference import LLMAttemptRecord, LLMInferenceError, LLMInferenceResult
 from src.llm.llm_run_manifest import LLMRunStatus, build_llm_run_manifest
 from src.pipeline.io import find_run_directory, save_json, write_text_atomic
-from src.structured_state.structured_state_schema import StructuredState, validate_structured_state
+from src.structured_state.structured_state_schema import (
+    StructuredState,
+    validate_structured_state,
+)
 
 from src.llm.client import ModelMetadata
 
@@ -219,7 +222,6 @@ def _save_manifest(
         run_id=run_id,
         status=status,
         decision_time=state["decision_time"],
-        forecast_run_id=state["forecast"]["run_id"],
         config_values=config_values,
         model_metadata=dict(model_metadata),
         input_paths={"structured_state": state_file, "prompt": prompt_file},

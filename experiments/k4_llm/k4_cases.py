@@ -15,6 +15,7 @@ from src.llm.llm_schema import Classification
 from src.llm.rule_based_classifier import rule_based_classify
 from src.pipeline.io import append_csv, append_jsonl
 from src.structured_state.structured_state_schema import (
+    DEVIATION_SCALE_NAMES,
     AnomalyLevel,
     SCALE_NAMES,
     StructuredState,
@@ -35,16 +36,14 @@ class LLMEvaluationCase:
     reaches_llm: bool
 
 
-_PEAK_TIMESTAMP = "2015-12-15T10:00:00+00:00"
-
-
 def _anomaly_block(
     *,
     scores: dict[str, float],
     level: AnomalyLevel,
     streak_days: dict[str, float],
+    deviation_pct: dict[str, float],
 ) -> dict[str, object]:
-    # wie in build_anomaly_detection: Score und Richtung nur aus den Gate-Skalen
+    # wie in build_anomaly_detection: Richtung nur aus den Gate-Skalen
     gate_scores = {
         scale: value
         for scale, value in scores.items()
@@ -61,17 +60,17 @@ def _anomaly_block(
     ]
 
     return {
-        "score": abs(signed_score),
         "level": level,
         "direction": (
             "high" if signed_score > 0 else "low" if signed_score < 0 else None
         ),
-        "dominant_scale": dominant_scale,
-        "peak_timestamp": _PEAK_TIMESTAMP,
         "scale_scores": {scale: scores.get(scale) for scale in SCALE_NAMES},
         "scale_anomaly_streak_days": {
             scale: streak_days.get(scale) if scale in scores else None
             for scale in SCALE_NAMES
+        },
+        "scale_deviation_pct": {
+            scale: deviation_pct.get(scale) for scale in DEVIATION_SCALE_NAMES
         },
         "sustained_scales": sustained_scales,
         "sustained_drift": len(sustained_scales)
@@ -96,13 +95,11 @@ def _case(
     case_id: str,
     expected: Classification,
     reasoning: str,
-    current_power_w: float,
     value_implausible: bool,
     anomaly: dict[str, object],
     context: dict[str, object],
 ) -> LLMEvaluationCase:
     state = valid_structured_state()
-    state["observation"]["current_power_w"] = current_power_w
     state["observation"]["value_implausible"] = value_implausible
     state["anomaly"] = anomaly  # type: ignore[typeddict-item]
     state["context"] = context  # type: ignore[typeddict-item]
@@ -125,12 +122,12 @@ def llm_relevant_cases() -> tuple[LLMEvaluationCase, ...]:
             case_id="normal",
             expected="normal",
             reasoning="Alle Skalen nur leicht erhöht, level normal, kein Event -> kein Grund für eine Auffälligkeit.",
-            current_power_w=360.0,
             value_implausible=False,
             anomaly=_anomaly_block(
                 scores={"daily": 0.4, "weekly": 0.3, "long_term": 0.2},
                 level="normal",
                 streak_days={"daily": 1.0, "weekly": 1.0, "long_term": 1.0},
+                deviation_pct={"weekly": 4.0, "long_term": 2.0},
             ),
             context=_context_block(source_available=True),
         ),
@@ -138,12 +135,12 @@ def llm_relevant_cases() -> tuple[LLMEvaluationCase, ...]:
             case_id="peak",
             expected="peak",
             reasoning="Starke, einzelne Abweichung nach oben, aber Streak nur 1 Tag -> nicht sustained, also kein new_pattern.",
-            current_power_w=1319.9,
             value_implausible=False,
             anomaly=_anomaly_block(
                 scores={"daily": 3.77, "weekly": 3.73, "long_term": 3.26},
                 level="strong_anomaly",
                 streak_days={"daily": 1.0, "weekly": 1.0, "long_term": 1.0},
+                deviation_pct={"weekly": 45.0, "long_term": 28.0},
             ),
             context=_context_block(source_available=True),
         ),
@@ -154,12 +151,12 @@ def llm_relevant_cases() -> tuple[LLMEvaluationCase, ...]:
                 "Abweichung nach oben, auf 2 von 3 verfügbaren Skalen seit mehr als sustained_anomaly_streak_days=6 Tagen anhaltend"
                 "(min_sustained_scales=2) -> new_pattern."
             ),
-            current_power_w=980.0,
             value_implausible=False,
             anomaly=_anomaly_block(
                 scores={"daily": 3.5, "weekly": 3.1, "long_term": 1.1},
                 level="strong_anomaly",
                 streak_days={"daily": 8.0, "weekly": 7.0, "long_term": 1.0},
+                deviation_pct={"weekly": 38.0, "long_term": 9.0},
             ),
             context=_context_block(source_available=True),
         ),
@@ -167,12 +164,12 @@ def llm_relevant_cases() -> tuple[LLMEvaluationCase, ...]:
             case_id="measurement_error",
             expected="measurement_error",
             reasoning="value_implausible=true bei sonst peak-artiger Signatur -> Prompt verlangt measurement_error statt peak.",
-            current_power_w=1319.9,
             value_implausible=True,
             anomaly=_anomaly_block(
                 scores={"daily": 3.77, "weekly": 3.73, "long_term": 3.26},
                 level="strong_anomaly",
                 streak_days={"daily": 1.0, "weekly": 1.0, "long_term": 1.0},
+                deviation_pct={"weekly": 45.0, "long_term": 28.0},
             ),
             context=_context_block(source_available=True),
         ),
@@ -182,12 +179,12 @@ def llm_relevant_cases() -> tuple[LLMEvaluationCase, ...]:
             reasoning=(
                 "Nur eine Skala verfügbar, Abweichung nach unten, Streak zu kurz für new_pattern, Kalender nicht verfügbar (absence nicht belegbar) -> low."
             ),
-            current_power_w=180.0,
             value_implausible=False,
             anomaly=_anomaly_block(
                 scores={"daily": -2.2},
                 level="unusual",
                 streak_days={"daily": 1.0},
+                deviation_pct={},
             ),
             context=_context_block(source_available=False),
         ),
@@ -198,12 +195,12 @@ def llm_relevant_cases() -> tuple[LLMEvaluationCase, ...]:
                 "Nur eine von drei verfügbaren Skalen ist sustained (Streak=6 auf daily), "
                 "min_sustained_scales=2 verlangt aber mindestens zwei - bleibt peak trotz langer Einzel-Skalen-Streak."
             ),
-            current_power_w=1150.0,
             value_implausible=False,
             anomaly=_anomaly_block(
                 scores={"daily": 3.5, "weekly": 1.5, "long_term": 1.0},
                 level="strong_anomaly",
                 streak_days={"daily": 6.0, "weekly": 1.0, "long_term": 1.0},
+                deviation_pct={"weekly": 14.0, "long_term": 8.0},
             ),
             context=_context_block(source_available=True),
         ),
@@ -214,12 +211,12 @@ def llm_relevant_cases() -> tuple[LLMEvaluationCase, ...]:
                 "Exakt an der min_sustained_scales-Schwelle: genau 2 von 3 Skalen sustained "
                 "(daily+weekly), long_term nicht - reicht für new_pattern."
             ),
-            current_power_w=950.0,
             value_implausible=False,
             anomaly=_anomaly_block(
                 scores={"daily": 3.2, "weekly": 3.0, "long_term": 1.2},
                 level="strong_anomaly",
                 streak_days={"daily": 6.0, "weekly": 6.0, "long_term": 1.0},
+                deviation_pct={"weekly": 35.0, "long_term": 10.0},
             ),
             context=_context_block(source_available=True),
         ),
@@ -229,12 +226,12 @@ def llm_relevant_cases() -> tuple[LLMEvaluationCase, ...]:
             reasoning=(
                 "value_implausible bei nur unusual (nicht strong_anomaly) Signatur, value_implausible muss auch bei schwacher Anomalie Vorrang vor der Anomalie-Stärke haben."
             ),
-            current_power_w=620.0,
             value_implausible=True,
             anomaly=_anomaly_block(
                 scores={"daily": 2.1, "weekly": 1.8, "long_term": 1.5},
                 level="unusual",
                 streak_days={"daily": 1.0, "weekly": 1.0, "long_term": 1.0},
+                deviation_pct={"weekly": 17.0, "long_term": 12.0},
             ),
             context=_context_block(source_available=True),
         ),
@@ -243,7 +240,7 @@ def llm_relevant_cases() -> tuple[LLMEvaluationCase, ...]:
     return tuple(case for case in cases if case.reaches_llm)
 
 
-# was prompt_v13 je Klasse zu zitieren verlangt
+# was prompt_v14 je Klasse zu zitieren verlangt
 _SINGLE_DAY_PATHS = frozenset(
     {"anomaly.sustained_drift", "anomaly.level", "anomaly.direction"}
 )

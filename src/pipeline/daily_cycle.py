@@ -101,28 +101,6 @@ def run_cycle(
 
     excluded_windows = state.excluded_windows
 
-    if fit_required:
-        prophet_model, model_history = _fit_variant(
-            mask_excluded_windows(fixed_history, excluded_windows),
-            mask_excluded_windows(history, excluded_windows),
-            decision_time,
-            config,
-            variant,
-            local_timezone,
-            state.level_shift_start,
-        )
-        model_fitted_at = decision_time
-    else:
-        assert state.prophet_model is not None
-        assert state.model_history is not None
-        prophet_model = state.prophet_model
-        model_history = state.model_history
-        model_fitted_at = state.model_fitted_at
-
-    forecast = _build_forecast(
-        prophet_model, model_history, decision_time, config, variant, local_timezone
-    )
-
     # None, solange die History (z.B. direkt nach einem Reset) kürzer als reference_window_days ist.
     # Der analysierte Tag bleibt auch im ausgeschlossenen Fenster drin, sonst wäre er ein measurement_error
     analysis_row = compute_analysis_row(
@@ -150,7 +128,6 @@ def run_cycle(
         structured_state = build_structured_state(
             decision_time=decision_time,
             analysis_row=analysis_row,
-            forecast_rows=forecast,
             calendar_context=calendar_context,
             local_timezone=local_timezone,
         )
@@ -184,7 +161,11 @@ def run_cycle(
         assert adaption_action.excluded_window is not None
         excluded_windows = excluded_windows + (adaption_action.excluded_window,)
 
+    # erst nach der Einordnung prognostizieren, damit eine Adaption schon in die Prognose für heute eingeht
     if adaption_action is not None and adaption_action.kind != "none":
+        fit_required = True
+
+    if fit_required:
         prophet_model, model_history = _fit_variant(
             mask_excluded_windows(fixed_history, excluded_windows),
             mask_excluded_windows(history, excluded_windows),
@@ -195,11 +176,16 @@ def run_cycle(
             state.level_shift_start,
         )
         model_fitted_at = decision_time
-        forecast = _build_forecast(
-            prophet_model, model_history, decision_time, config, variant, local_timezone
-        )
+    else:
+        assert state.prophet_model is not None
+        assert state.model_history is not None
+        prophet_model = state.prophet_model
+        model_history = state.model_history
+        model_fitted_at = state.model_fitted_at
 
-        fit_required = True
+    forecast = _build_forecast(
+        prophet_model, model_history, decision_time, config, variant, local_timezone
+    )
 
     new_state = CycleState(
         history=history,

@@ -1,7 +1,13 @@
 from collections.abc import Collection, Mapping
 from typing import cast
 
-from src.llm.llm_schema import EvidenceReference, EvidenceValue, LLMOutput, RawLLMOutput, validate_llm_output
+from src.llm.llm_schema import (
+    EvidenceReference,
+    EvidenceValue,
+    LLMOutput,
+    RawLLMOutput,
+    validate_llm_output,
+)
 from src.structured_state.structured_state_schema import StructuredState
 
 
@@ -10,25 +16,9 @@ EvidenceScalar = str | int | float | bool | None
 
 ALLOWED_EVIDENCE_PATHS = frozenset(
     {
-        "observation.current_power_w",
         "observation.value_implausible",
-        "analysis.daily_std",
-        "analysis.daily_std_expected",
-        "analysis.today_mean_expected_w",
-        "analysis.weekday_expected_w",
-        "analysis.weekly_mean_w",
-        "analysis.weekly_mean_expected_w",
-        "analysis.long_term_window_mean_w",
-        "analysis.long_term_expected_w",
-        "analysis.trend_slope_w_per_hour",
-        "analysis.trend_change",
-        "analysis.trend",
-        "analysis.weekday_deviation",
-        "anomaly.score",
         "anomaly.level",
         "anomaly.direction",
-        "anomaly.dominant_scale",
-        "anomaly.peak_timestamp",
         "anomaly.scale_scores.daily",
         "anomaly.scale_scores.weekday",
         "anomaly.scale_scores.weekly",
@@ -37,11 +27,10 @@ ALLOWED_EVIDENCE_PATHS = frozenset(
         "anomaly.scale_anomaly_streak_days.weekday",
         "anomaly.scale_anomaly_streak_days.weekly",
         "anomaly.scale_anomaly_streak_days.long_term",
+        "anomaly.scale_deviation_pct.weekday",
+        "anomaly.scale_deviation_pct.weekly",
+        "anomaly.scale_deviation_pct.long_term",
         "anomaly.sustained_drift",
-        "forecast.summary.mean_w",
-        "forecast.summary.peak_w",
-        "forecast.summary.peak_timestamp",
-        "forecast.summary.mean_interval_width_w",
         "context.source_available",
     }
 )
@@ -49,9 +38,7 @@ ALLOWED_EVIDENCE_PATHS = frozenset(
 ALLOWED_EVENT_FIELDS = frozenset({"event_type", "start", "end"})
 
 
-def _is_allowed_evidence_path(
-    path: str
-) -> bool:
+def _is_allowed_evidence_path(path: str) -> bool:
     if path in ALLOWED_EVIDENCE_PATHS:
         return True
 
@@ -66,17 +53,16 @@ def _is_allowed_evidence_path(
     )
 
 
-def collect_scalar_evidence_paths(
-    state: StructuredState
-) -> tuple[str, ...]:
-
+def collect_scalar_evidence_paths(state: StructuredState) -> tuple[str, ...]:
     paths: set[str] = set()
     _collect_scalar_paths(value=state, prefix="", paths=paths)
 
     if not paths:
         raise ValueError("Structured State does not contain any scalar evidence paths.")
 
-    allowed_paths = tuple(sorted(path for path in paths if _is_allowed_evidence_path(path)))
+    allowed_paths = tuple(
+        sorted(path for path in paths if _is_allowed_evidence_path(path))
+    )
 
     if not allowed_paths:
         raise ValueError("Structured State does not contain usable LLM evidence.")
@@ -91,7 +77,11 @@ def validate_llm_output_against_state(
     allowed_paths: Collection[str] | None = None,
 ) -> LLMOutput:
     # value kommt nie vom Modell, sondern wird hier aus dem State nachgeschlagen
-    allowed_paths = frozenset(allowed_paths if allowed_paths is not None else collect_scalar_evidence_paths(state))
+    allowed_paths = frozenset(
+        allowed_paths
+        if allowed_paths is not None
+        else collect_scalar_evidence_paths(state)
+    )
     validate_llm_output(output)
 
     referenced_paths: set[str] = set()
@@ -102,22 +92,32 @@ def validate_llm_output_against_state(
         reference_name = f"evidence_references[{index}]"
 
         if path in referenced_paths:
-            raise ValueError(f"{reference_name}.path contains a duplicate evidence path: {path!r}.")
+            raise ValueError(
+                f"{reference_name}.path contains a duplicate evidence path: {path!r}."
+            )
 
         referenced_paths.add(path)
 
         if path not in allowed_paths:
-            raise ValueError(f"{reference_name}.path is not an existing scalar Structured-State path: {path!r}.")
+            raise ValueError(
+                f"{reference_name}.path is not an existing scalar Structured-State path: {path!r}."
+            )
 
         state_value = _resolve_path(state, path)
 
         if isinstance(state_value, (Mapping, list)):
-            raise ValueError(f"{reference_name}.path must reference a scalar value, not an object or list: {path!r}.")
+            raise ValueError(
+                f"{reference_name}.path must reference a scalar value, not an object or list: {path!r}."
+            )
 
         if not _is_json_scalar(state_value):
-            raise TypeError(f"Structured-State value at {path!r} is not a supported JSON scalar.")
+            raise TypeError(
+                f"Structured-State value at {path!r} is not a supported JSON scalar."
+            )
 
-        resolved_references.append({"path": path, "value": cast(EvidenceValue, state_value)})
+        resolved_references.append(
+            {"path": path, "value": cast(EvidenceValue, state_value)}
+        )
 
     return {
         "schema_version": output["schema_version"],
@@ -129,12 +129,7 @@ def validate_llm_output_against_state(
     }
 
 
-def _collect_scalar_paths(
-    *, 
-    value: object, 
-    prefix: str, 
-    paths: set[str]
-) -> None:
+def _collect_scalar_paths(*, value: object, prefix: str, paths: set[str]) -> None:
     if isinstance(value, Mapping):
         for key, nested_value in value.items():
             if not isinstance(key, str):
@@ -158,16 +153,14 @@ def _collect_scalar_paths(
         raise ValueError("Structured State root must be an object.")
 
     if not _is_json_scalar(value):
-        raise TypeError(f"Structured-State value at {prefix!r} is not a supported JSON scalar.")
+        raise TypeError(
+            f"Structured-State value at {prefix!r} is not a supported JSON scalar."
+        )
 
     paths.add(prefix)
 
 
-
-def _resolve_path(
-    state: StructuredState, 
-    path: str
-) -> object:
+def _resolve_path(state: StructuredState, path: str) -> object:
     parts = path.split(".")
 
     if any(not part for part in parts):
@@ -175,35 +168,38 @@ def _resolve_path(
 
     current: object = state
 
-
     for part in parts:
         if isinstance(current, Mapping):
             if part not in current:
-                raise ValueError(f"Evidence path does not exist in Structured State: {path!r}.")
+                raise ValueError(
+                    f"Evidence path does not exist in Structured State: {path!r}."
+                )
 
             current = current[part]
             continue
 
         if isinstance(current, list):
             if not part.isdigit():
-                raise ValueError(f"Evidence path requires a non-negative list index: {path!r}.")
+                raise ValueError(
+                    f"Evidence path requires a non-negative list index: {path!r}."
+                )
 
             index = int(part)
 
             if index >= len(current):
-                raise ValueError(f"Evidence path contains an invalid list index: {path!r}.")
+                raise ValueError(
+                    f"Evidence path contains an invalid list index: {path!r}."
+                )
 
             current = current[index]
             continue
 
-        raise ValueError(f"Evidence path continues after reaching a scalar Structured-State value: {path!r}.")
+        raise ValueError(
+            f"Evidence path continues after reaching a scalar Structured-State value: {path!r}."
+        )
 
     return current
 
 
-
-def _is_json_scalar(
-    value: object
-) -> bool:
+def _is_json_scalar(value: object) -> bool:
     return value is None or isinstance(value, (str, int, float, bool))
-

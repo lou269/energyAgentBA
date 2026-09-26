@@ -12,8 +12,8 @@ _BASE_OUTPUT = {
     "classification": "peak",
     "explanation": "Der aktuelle Verbrauch liegt deutlich über dem täglichen Erwartungswert.",
     "evidence_references": [
-        {"path": "observation.current_power_w"},
-        {"path": "analysis.daily_std_expected"},
+        {"path": "anomaly.scale_deviation_pct.weekday"},
+        {"path": "anomaly.direction"},
         {"path": "anomaly.level"},
     ],
     "user_recommendation": "Keine spezifische Aktion empfohlen.",

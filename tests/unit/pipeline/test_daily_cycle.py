@@ -6,6 +6,7 @@ import pytest
 
 from src.context.calendar_context import build_calendar_context
 from src.config.config_forecasting import SYS_VARIANTS
+from src.pipeline import daily_cycle
 from src.pipeline.daily_cycle import CycleState, run_cycle
 
 
@@ -276,7 +277,18 @@ def test_fixed_train_keeps_the_same_frozen_history_across_multiple_cycles() -> N
         assert len(state.history) > len(state.model_history)
 
 
-def test_measurement_error_day_is_excluded_from_the_fit_but_kept_in_history() -> None:
+def test_measurement_error_day_is_excluded_from_the_fit_but_kept_in_history(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fitted_histories: list[pd.Series] = []
+    fit_variant = daily_cycle._fit_variant
+
+    def counting_fit(fixed_history, available_history, *args):
+        fitted_histories.append(available_history)
+        return fit_variant(fixed_history, available_history, *args)
+
+    monkeypatch.setattr(daily_cycle, "_fit_variant", counting_fit)
+
     series = _calm_series(24 * 50)
     coldstart_hours = 24 * 48
     values = series.to_numpy().copy()
@@ -313,3 +325,7 @@ def test_measurement_error_day_is_excluded_from_the_fit_but_kept_in_history() ->
     assert (new_state.history.loc[day_start:] == 250.0).all()
     assert new_state.model_history is not None
     assert new_state.model_history.loc[day_start:].dropna().empty
+
+    # Erstfit und Adaption am selben Tag ergeben nur einen Fit, und der kennt das Fenster schon
+    assert len(fitted_histories) == 1
+    assert fitted_histories[0].loc[day_start:].dropna().empty

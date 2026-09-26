@@ -276,7 +276,7 @@ def test_fetched_calendar_replaces_the_context_and_can_ground_absence() -> None:
     output = valid_llm_output()
     output["classification"] = "absence"
     output["evidence_references"] = [
-        {"path": "observation.current_power_w"},
+        {"path": "anomaly.direction"},
         {"path": "context.events.0.event_type"},
     ]
     client = ScriptedClient(

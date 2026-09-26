@@ -21,7 +21,6 @@ def build_llm_run_manifest(
     run_id: str,
     status: LLMRunStatus,
     decision_time: str,
-    forecast_run_id: str,
     config_values: Mapping[str, Any],
     model_metadata: Mapping[str, Any],
     input_paths: Mapping[str, Path],
@@ -36,7 +35,9 @@ def build_llm_run_manifest(
             "valid": record["valid"],
             "validation_error": record["validation_error"],
             "generation_seconds": float(record["generation_seconds"]),
-            "raw_content_sha256": sha256(record["raw_content"].encode("utf-8")).hexdigest(),
+            "raw_content_sha256": sha256(
+                record["raw_content"].encode("utf-8")
+            ).hexdigest(),
         }
         for record in attempt_records
     ]
@@ -61,7 +62,6 @@ def build_llm_run_manifest(
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
         "status": status,
         "decision_time": decision_time,
-        "forecast": {"run_id": forecast_run_id},
         "model": model,
         "config": {"values": config, "sha256": json_sha256(config)},
         "inputs": inputs,
@@ -79,6 +79,8 @@ def build_llm_run_manifest(
             else {"type": type(error).__name__, "message": str(error)}
         ),
         "code_version": build_code_version(project_root),
-        "environment": build_environment_reference(project_root, project_root / "environment-forecasting.yml"),
+        "environment": build_environment_reference(
+            project_root, project_root / "environment-forecasting.yml"
+        ),
         "outputs": outputs,
     }

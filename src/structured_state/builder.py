@@ -5,21 +5,17 @@ from typing import TypeVar, cast
 import numpy as np
 import pandas as pd
 
-from src.common.forecast_summary import mean_and_peak, mean_interval_width
 from src.common.timestamps import local_isoformat, parse_utc_timestamp
-from src.common.validation import require_non_empty_string
 from src.context.calendar_schema import CalendarContext
 from src.pipeline.schema_validation import is_real_number
 from src.structured_state.structured_state_schema import (
     ANOMALY_DIRECTIONS,
     ANOMALY_LEVELS,
-    TREND_NAMES,
     SCALE_NAMES,
     SCHEMA_VERSION,
     ContextState,
-    ForecastPoint,
-    ForecastState,
     ScaleAnomalyStreakDays,
+    ScaleDeviationPct,
     ScaleName,
     ScaleScores,
     StructuredState,
@@ -29,19 +25,9 @@ from src.structured_state.structured_state_schema import (
 ANALYSIS_FIELDS = frozenset(
     {
         "timestamp",
-        "today_mean",
-        "daily_std",
-        "daily_std_expected",
-        "today_mean_expected",
-        "weekday_expected",
-        "weekly_mean",
-        "weekly_mean_expected",
-        "long_term_window_mean",
-        "long_term_expected",
-        "trend_slope_w_per_hour",
-        "trend_change",
-        "trend",
-        "weekday_deviation",
+        "weekday_deviation_pct",
+        "weekly_deviation_pct",
+        "long_term_deviation_pct",
         "daily_score",
         "weekday_score",
         "weekly_score",
@@ -55,25 +41,9 @@ ANALYSIS_FIELDS = frozenset(
         "weekly_sustained",
         "long_term_sustained",
         "sustained_drift",
-        "anomaly_score",
-        "dominant_scale",
         "anomaly_direction",
         "anomaly_level",
-        "anomaly_peak_timestamp",
         "value_implausible",
-    }
-)
-
-FORECAST_COLUMNS = frozenset(
-    {
-        "run_id",
-        "model_id",
-        "config_version",
-        "forecast_origin",
-        "target_timestamp",
-        "y_pred",
-        "y_lower",
-        "y_upper",
     }
 )
 
@@ -96,7 +66,6 @@ def build_structured_state(
     *,
     decision_time: str | pd.Timestamp,
     analysis_row: pd.Series,
-    forecast_rows: pd.DataFrame,
     calendar_context: CalendarContext,
     local_timezone: str,
 ) -> StructuredState:
@@ -106,12 +75,6 @@ def build_structured_state(
     if missing:
         raise ValueError(
             "Analysis row is missing required fields: " + ", ".join(sorted(missing))
-        )
-
-    missing = FORECAST_COLUMNS.difference(forecast_rows.columns)
-    if missing:
-        raise ValueError(
-            "Forecast rows are missing required columns: " + ", ".join(sorted(missing))
         )
 
     analysis_timestamp = parse_utc_timestamp(
@@ -160,6 +123,18 @@ def build_structured_state(
         ),
     }
 
+    scale_deviation_pct: ScaleDeviationPct = {
+        "weekday": _nullable_float(
+            analysis_row["weekday_deviation_pct"], "analysis.weekday_deviation_pct"
+        ),
+        "weekly": _nullable_float(
+            analysis_row["weekly_deviation_pct"], "analysis.weekly_deviation_pct"
+        ),
+        "long_term": _nullable_float(
+            analysis_row["long_term_deviation_pct"], "analysis.long_term_deviation_pct"
+        ),
+    }
+
     available_scales: list[ScaleName] = [
         scale for scale in SCALE_NAMES if scale_scores[scale] is not None
     ]
@@ -170,68 +145,17 @@ def build_structured_state(
         if _bool(analysis_row[f"{scale}_sustained"], f"analysis.{scale}_sustained")
     ]
 
-    forecast_state = _build_forecast_state(
-        forecast_rows=forecast_rows,
-        decision_time=decision_time,
-        local_timezone=local_timezone,
-    )
-
     state: StructuredState = {
         "schema_version": SCHEMA_VERSION,
         "decision_time": local_isoformat(decision_time, local_timezone),
         "observation": {
             "observation_start": local_isoformat(analysis_timestamp, local_timezone),
             "observation_end": local_isoformat(decision_time, local_timezone),
-            "current_power_w": _nullable_float(
-                analysis_row["today_mean"], "analysis.today_mean"
-            ),
             "value_implausible": _bool(
                 analysis_row["value_implausible"], "analysis.value_implausible"
             ),
         },
-        "analysis": {
-            "daily_std": _nullable_float(
-                analysis_row["daily_std"], "analysis.daily_std"
-            ),
-            "daily_std_expected": _nullable_float(
-                analysis_row["daily_std_expected"], "analysis.daily_std_expected"
-            ),
-            "today_mean_expected_w": _nullable_float(
-                analysis_row["today_mean_expected"], "analysis.today_mean_expected"
-            ),
-            "weekday_expected_w": _nullable_float(
-                analysis_row["weekday_expected"], "analysis.weekday_expected"
-            ),
-            "weekly_mean_w": _nullable_float(
-                analysis_row["weekly_mean"], "analysis.weekly_mean"
-            ),
-            "weekly_mean_expected_w": _nullable_float(
-                analysis_row["weekly_mean_expected"], "analysis.weekly_mean_expected"
-            ),
-            "long_term_window_mean_w": _nullable_float(
-                analysis_row["long_term_window_mean"], "analysis.long_term_window_mean"
-            ),
-            "long_term_expected_w": _nullable_float(
-                analysis_row["long_term_expected"], "analysis.long_term_expected"
-            ),
-            "trend_slope_w_per_hour": _nullable_float(
-                analysis_row["trend_slope_w_per_hour"],
-                "analysis.trend_slope_w_per_hour",
-            ),
-            "trend_change": _nullable_float(
-                analysis_row["trend_change"], "analysis.trend_change"
-            ),
-            "trend": _nullable_text(
-                analysis_row["trend"], "analysis.trend", TREND_NAMES
-            ),
-            "weekday_deviation": _nullable_float(
-                analysis_row["weekday_deviation"], "analysis.weekday_deviation"
-            ),
-        },
         "anomaly": {
-            "score": _nullable_float(
-                analysis_row["anomaly_score"], "analysis.anomaly_score"
-            ),
             "level": _nullable_text(
                 analysis_row["anomaly_level"], "anomaly.level", ANOMALY_LEVELS
             ),
@@ -240,120 +164,19 @@ def build_structured_state(
                 "anomaly.direction",
                 ANOMALY_DIRECTIONS,
             ),
-            "dominant_scale": _nullable_text(
-                analysis_row["dominant_scale"], "anomaly.dominant_scale", SCALE_NAMES
-            ),
-            "peak_timestamp": _nullable_timestamp(
-                analysis_row["anomaly_peak_timestamp"],
-                "analysis.anomaly_peak_timestamp",
-                local_timezone,
-            ),
             "scale_scores": scale_scores,
             "scale_anomaly_streak_days": scale_streak_days,
+            "scale_deviation_pct": scale_deviation_pct,
             "sustained_scales": sustained_scales,
             "sustained_drift": _bool(
                 analysis_row["sustained_drift"], "analysis.sustained_drift"
             ),
             "available_scales": available_scales,
         },
-        "forecast": forecast_state,
         "context": context_state(calendar_context),
     }
 
     return state
-
-
-def _build_forecast_state(
-    *,
-    forecast_rows: pd.DataFrame,
-    decision_time: pd.Timestamp,
-    local_timezone: str,
-) -> ForecastState:
-    if forecast_rows.empty:
-        raise ValueError("Forecast rows must not be empty.")
-
-    forecast = forecast_rows.sort_values("target_timestamp").reset_index(drop=True)
-
-    run_id = _single_text(forecast, "run_id")
-    model_id = _single_text(forecast, "model_id")
-    config_version = str(_single_value(forecast, "config_version"))
-
-    forecast_origin = parse_utc_timestamp(
-        _single_value(forecast, "forecast_origin"), "forecast.forecast_origin"
-    )
-
-    if forecast_origin != decision_time:
-        raise ValueError("Forecast origin must equal decision_time.")
-
-    forecast_points: list[ForecastPoint] = []
-    predictions: list[float] = []
-    interval_widths: list[float] = []
-
-    for index, row in forecast.iterrows():
-        timestamp = parse_utc_timestamp(
-            row["target_timestamp"], f"forecast row {index} target_timestamp"
-        )
-        prediction = _nullable_float(row["y_pred"], f"forecast row {index} y_pred")
-
-        if prediction is None:
-            raise ValueError(f"forecast row {index} y_pred must not be missing.")
-
-        lower = _nullable_float(row["y_lower"], f"forecast row {index} y_lower")
-        upper = _nullable_float(row["y_upper"], f"forecast row {index} y_upper")
-
-        if lower is not None and upper is not None:
-            interval_widths.append(upper - lower)
-
-        predictions.append(prediction)
-
-        forecast_points.append(
-            {
-                "timestamp": local_isoformat(timestamp, local_timezone),
-                "predicted_power_w": prediction,
-                "lower_w": lower,
-                "upper_w": upper,
-            }
-        )
-
-    mean_w, peak_w = mean_and_peak(predictions)
-    peak_index = predictions.index(peak_w)
-
-    return {
-        "run_id": run_id,
-        "model_id": model_id,
-        "config_version": config_version,
-        "origin": local_isoformat(forecast_origin, local_timezone),
-        "horizon_hours": len(forecast_points),
-        "points": forecast_points,
-        "summary": {
-            "mean_w": mean_w,
-            "peak_w": peak_w,
-            "peak_timestamp": forecast_points[peak_index]["timestamp"],
-            "mean_interval_width_w": mean_interval_width(interval_widths),
-        },
-    }
-
-
-def _single_value(frame: pd.DataFrame, column: str) -> object:
-    values = frame[column].drop_duplicates()
-
-    if len(values) != 1:
-        raise ValueError(f"Forecast column {column} must contain exactly one value.")
-
-    value = values.iloc[0]
-    if _is_missing(value):
-        raise ValueError(f"Forecast column {column} must not be missing.")
-
-    return value
-
-
-def _single_text(frame: pd.DataFrame, column: str) -> str:
-    value = _single_value(frame, column)
-
-    if not isinstance(value, str):
-        raise ValueError(f"Forecast column {column} must contain a non-empty string.")
-
-    return require_non_empty_string(value, f"Forecast column {column}")
 
 
 def _nullable_float(value: object, field_name: str) -> float | None:
@@ -384,17 +207,6 @@ def _nullable_text(
         raise ValueError(f"{field_name} contains an unsupported value.")
 
     return cast(TextType, value)
-
-
-def _nullable_timestamp(
-    value: object,
-    field_name: str,
-    local_timezone: str,
-) -> str | None:
-    if _is_missing(value):
-        return None
-
-    return local_isoformat(parse_utc_timestamp(value, field_name), local_timezone)
 
 
 def _bool(

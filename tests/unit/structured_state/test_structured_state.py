@@ -10,7 +10,10 @@ from src.context.calendar_context import build_calendar_context
 from src.context.calendar_schema import CalendarContext
 from src.pipeline.io import save_json
 from src.structured_state.builder import build_structured_state
-from src.structured_state.structured_state_schema import StructuredState, validate_structured_state
+from src.structured_state.structured_state_schema import (
+    StructuredState,
+    validate_structured_state,
+)
 
 
 DECISION_TIME = pd.Timestamp("2013-09-02T00:00:00+00:00")
@@ -20,20 +23,10 @@ def _analysis_row() -> pd.Series:
     return pd.Series(
         {
             "timestamp": DECISION_TIME - pd.Timedelta(hours=1),
-            "today_mean": 120.0,
             "value_implausible": False,
-            "daily_std": 12.0,
-            "daily_std_expected": 8.0,
-            "today_mean_expected": 100.0,
-            "weekday_expected": 105.0,
-            "weekly_mean": 110.0,
-            "weekly_mean_expected": 108.0,
-            "long_term_window_mean": 112.0,
-            "long_term_expected": 108.0,
-            "trend_slope_w_per_hour": 1.5,
-            "trend_change": 0.2,
-            "trend": "increasing",
-            "weekday_deviation": (120.0 - 105.0) / 105.0,
+            "weekday_deviation_pct": 14.3,
+            "weekly_deviation_pct": None,
+            "long_term_deviation_pct": 3.7,
             "daily_score": 2.0,
             "weekday_score": 1.8,
             "weekly_score": None,
@@ -47,33 +40,9 @@ def _analysis_row() -> pd.Series:
             "weekly_sustained": False,
             "long_term_sustained": False,
             "sustained_drift": False,
-            "anomaly_score": 2.0,
-            "dominant_scale": "daily",
             "anomaly_direction": "high",
             "anomaly_level": "unusual",
-            "anomaly_peak_timestamp": DECISION_TIME - pd.Timedelta(hours=1),
         }
-    )
-
-
-def _forecast_rows() -> pd.DataFrame:
-    return pd.DataFrame(
-        [
-            {
-                "run_id": "validation-run",
-                "split": "validation",
-                "model_id": "B3",
-                "config_version": "0.5",
-                "forecast_origin": DECISION_TIME,
-                "target_timestamp": DECISION_TIME + pd.Timedelta(hours=index),
-                "y_pred": 100.0 + index,
-                "y_lower": 90.0 + index,
-                "y_upper": 110.0 + index,
-                "y_true": 200.0 + index,
-                "scenario_id": "vacation",
-            }
-            for index in range(24)
-        ]
     )
 
 
@@ -93,15 +62,14 @@ def _calendar_context() -> CalendarContext:
 def _build_state(
     *,
     analysis_row: pd.Series | None = None,
-    forecast_rows: pd.DataFrame | None = None,
     calendar_context: CalendarContext | None = None,
 ) -> StructuredState:
-    
     return build_structured_state(
         decision_time=DECISION_TIME,
         analysis_row=analysis_row if analysis_row is not None else _analysis_row(),
-        forecast_rows=forecast_rows if forecast_rows is not None else _forecast_rows(),
-        calendar_context=calendar_context if calendar_context is not None else _calendar_context(),
+        calendar_context=calendar_context
+        if calendar_context is not None
+        else _calendar_context(),
         local_timezone="UTC",
     )
 
@@ -111,23 +79,19 @@ def test_complete_structured_state_is_valid() -> None:
 
     validate_structured_state(state)
 
-    assert state["observation"]["observation_start"]== (DECISION_TIME - pd.Timedelta(hours=1)).isoformat()
-    assert len(state["forecast"]["points"]) == 24
+    assert (
+        state["observation"]["observation_start"]
+        == (DECISION_TIME - pd.Timedelta(hours=1)).isoformat()
+    )
     assert state["anomaly"]["available_scales"] == ["daily", "weekday", "long_term"]
     assert state["anomaly"]["sustained_scales"] == []
-
-    serialized = json.dumps(state)
-    assert "y_true" not in serialized
-    assert "scenario_id" not in serialized
 
 
 def test_timestamp_accepts_zulu_suffix() -> None:
     state = _build_state()
     state["decision_time"] = state["decision_time"].replace("+00:00", "Z")
-    state["forecast"]["points"][0]["timestamp"] = state["forecast"]["points"][0]["timestamp"].replace("+00:00", "Z")
 
     validate_structured_state(state)
-
 
 
 def test_analysis_timestamp_must_precede_decision_time() -> None:
@@ -136,36 +100,6 @@ def test_analysis_timestamp_must_precede_decision_time() -> None:
 
     with pytest.raises(ValueError, match="before decision_time"):
         _build_state(analysis_row=analysis_row)
-
-
-def test_forecast_requires_consecutive_points_matching_horizon_hours() -> None:
-    state = _build_state()
-    state["forecast"]["points"].pop()
-
-    with pytest.raises(ValueError, match="horizon_hours must equal"):
-        validate_structured_state(state)
-
-    state = _build_state()
-    state["forecast"]["points"][1]["timestamp"] = (DECISION_TIME + pd.Timedelta(hours=2)).isoformat()
-
-    with pytest.raises(ValueError, match="consecutive hourly timestamps"):
-        validate_structured_state(state)
-
-
-def test_prediction_must_be_inside_available_interval() -> None:
-    state = _build_state()
-    state["forecast"]["points"][0]["predicted_power_w"] = 120.0
-
-    with pytest.raises(ValueError):
-        validate_structured_state(state)
-
-
-def test_forecast_summary_must_match_points() -> None:
-    state = _build_state()
-    state["forecast"]["summary"]["mean_w"] = 0.0
-
-    with pytest.raises(ValueError, match="mean_w must match"):
-        validate_structured_state(state)
 
 
 def test_partial_and_missing_scale_scores_are_explicit() -> None:
@@ -182,11 +116,8 @@ def test_partial_and_missing_scale_scores_are_explicit() -> None:
         "weekday_anomaly_streak_days",
         "weekly_anomaly_streak_days",
         "long_term_anomaly_streak_days",
-        "anomaly_score",
-        "dominant_scale",
         "anomaly_direction",
         "anomaly_level",
-        "anomaly_peak_timestamp",
     ):
         analysis_row[field] = None
 
@@ -194,19 +125,8 @@ def test_partial_and_missing_scale_scores_are_explicit() -> None:
     validate_structured_state(missing_state)
 
     assert missing_state["anomaly"]["available_scales"] == []
-    assert missing_state["anomaly"]["score"] is None
     assert missing_state["anomaly"]["level"] is None
     assert missing_state["anomaly"]["direction"] is None
-    assert missing_state["anomaly"]["dominant_scale"] is None
-    assert missing_state["anomaly"]["peak_timestamp"] is None
-
-
-def test_peak_timestamp_after_the_analyzed_hour_is_rejected() -> None:
-    state = _build_state()
-    state["anomaly"]["peak_timestamp"] = DECISION_TIME.isoformat()
-
-    with pytest.raises(ValueError, match="analyzed hour"):
-        validate_structured_state(state)
 
 
 def test_invalid_calendar_context_is_rejected() -> None:
@@ -219,15 +139,15 @@ def test_invalid_calendar_context_is_rejected() -> None:
 
 def test_nan_becomes_null_and_infinity_is_rejected() -> None:
     analysis_row = _analysis_row()
-    analysis_row["today_mean"] = float("nan")
+    analysis_row["weekday_deviation_pct"] = float("nan")
 
     state = _build_state(analysis_row=analysis_row)
     validate_structured_state(state)
 
-    assert state["observation"]["current_power_w"] is None
+    assert state["anomaly"]["scale_deviation_pct"]["weekday"] is None
     assert "NaN" not in json.dumps(state)
 
-    analysis_row["today_mean"] = float("inf")
+    analysis_row["weekday_deviation_pct"] = float("inf")
 
     with pytest.raises(ValueError, match="must be finite"):
         _build_state(analysis_row=analysis_row)
@@ -270,9 +190,7 @@ def test_value_implausible_must_not_be_missing_from_analysis_row() -> None:
 
 
 @pytest.mark.parametrize("field", ["y_true", "scenario_id", "additional"])
-def test_structured_state_rejects_additional_fields(
-    field: str
-) -> None:
+def test_structured_state_rejects_additional_fields(field: str) -> None:
     state = _build_state()
     state[field] = "forbidden"  # type: ignore[literal-required]
 
@@ -280,9 +198,7 @@ def test_structured_state_rejects_additional_fields(
         validate_structured_state(state)
 
 
-def test_structured_state_survives_json_roundtrip(
-    tmp_path: Path
-) -> None:
+def test_structured_state_survives_json_roundtrip(tmp_path: Path) -> None:
     state = _build_state()
     output_file = tmp_path / "structured_state.json"
 

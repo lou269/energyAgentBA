@@ -63,16 +63,16 @@ def test_evidence_references_must_not_be_empty() -> None:
 
 def test_evidence_reference_with_value_is_rejected() -> None:
     output = valid_llm_output()
-    output["evidence_references"] = [{"path": "observation.current_power_w", "value": 1319.8837}]
+    output["evidence_references"] = [
+        {"path": "anomaly.level", "value": "strong_anomaly"}
+    ]
 
     with pytest.raises(ValueError, match="unexpected fields"):
         validate_llm_output(output)
 
 
 @pytest.mark.parametrize("path", ["", "a..b"])
-def test_evidence_path_syntax_is_rejected(
-    path: str
-) -> None:
+def test_evidence_path_syntax_is_rejected(path: str) -> None:
     output = valid_llm_output()
     output["evidence_references"] = [{"path": path}]
 
@@ -89,10 +89,11 @@ def test_measurement_error_classification_is_accepted() -> None:
 
 
 def test_build_output_json_schema_sorts_and_deduplicates_paths() -> None:
-    schema = cast(dict[str, Any], build_llm_output_json_schema(["b.path", "a.path", "a.path"]))
+    schema = cast(
+        dict[str, Any], build_llm_output_json_schema(["b.path", "a.path", "a.path"])
+    )
 
-    path_schema = schema["properties"]["evidence_references"]["items"]["properties"]["path"]
+    path_schema = schema["properties"]["evidence_references"]["items"]["properties"][
+        "path"
+    ]
     assert path_schema["enum"] == ["a.path", "b.path"]
-    
-    
-    
