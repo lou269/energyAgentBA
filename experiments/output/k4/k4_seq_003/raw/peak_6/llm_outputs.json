@@ -1,0 +1,698 @@
+{
+  "llm_outputs": [
+    {
+      "classification": "peak",
+      "config": "MDL0",
+      "decision_time": "2014-03-02T00:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        }
+      ],
+      "explanation": "Am heutigen Tag war die Stromverbrauchshöhe signifikant höher als gewöhnlich, wie durch mehrere Skalen (Tages-, Wochen- und Langzeitverhalten) belegt.",
+      "schema_version": "1.3",
+      "uncertainty": "Keine",
+      "user_recommendation": "Keine besondere Maßnahme nötig."
+    },
+    {
+      "classification": "low",
+      "config": "MDL0",
+      "decision_time": "2014-04-12T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "low"
+        }
+      ],
+      "explanation": "Die Verbrauchsdaten zeigen eine signifikante Senkung des Stromverbrauchs im Vergleich zur gewöhnlichen Nutzung. Der Anomalielevel ist 'strong_anomaly' und die Richtung ist 'low', was auf einen deutlich geringeren Verbrauch am aktuellen Tag hindeutet.",
+      "schema_version": "1.3",
+      "uncertainty": "Die Verbrauchsdaten sind für den aktuellen Tag signifikant niedriger, aber es gibt keine kalenderbasierte Erklärung für die Senkung.",
+      "user_recommendation": "Keine besondere Maßnahme nötig."
+    },
+    {
+      "classification": "normal",
+      "config": "MDL0",
+      "decision_time": "2014-04-15T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.sustained_drift",
+          "value": false
+        },
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        }
+      ],
+      "explanation": "Die verfügbaren Daten zeigen keine ungewöhnlichen Verbrauchsmuster, da die Anomalie nicht auf mehrere Tage hinweist und es keine relevanten Kalenderereignisse gibt, um eine Erklärung für reduzierte Verbrauch zu finden.",
+      "schema_version": "1.3",
+      "uncertainty": "Die Daten sind nicht ausreichend, um eine klare Anomalie zu bestätigen.",
+      "user_recommendation": "Keine besondere Maßnahme nötig."
+    },
+    {
+      "classification": "normal",
+      "config": "MDL0",
+      "decision_time": "2014-05-27T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.sustained_drift",
+          "value": false
+        },
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        }
+      ],
+      "explanation": "Die verfügbaren Daten zeigen keine ungewöhnlichen Verbrauchsmuster, da die Anomalie nicht persistiert und keine relevanten Kalenderereignisse für eine reduzierte Konsumtion vorliegen.",
+      "schema_version": "1.3",
+      "uncertainty": "Die Analyse basiert auf den verfügbaren Daten, die keine klaren Anomalien zeigen.",
+      "user_recommendation": "Keine besondere Maßnahme nötig."
+    },
+    {
+      "classification": "new_pattern",
+      "config": "MDL0",
+      "decision_time": "2014-05-31T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.sustained_drift",
+          "value": true
+        },
+        {
+          "path": "anomaly.level",
+          "value": "normal"
+        },
+        {
+          "path": "anomaly.scale_anomaly_streak_days.weekly",
+          "value": 6.0
+        },
+        {
+          "path": "anomaly.scale_anomaly_streak_days.long_term",
+          "value": 6.0
+        }
+      ],
+      "explanation": "Die Verbrauchsdaten zeigen eine mehrere Tage anhaltende Abweichung auf mehreren Skalen (wöchentlich und langfristig), die nicht durch einen vorherigen Kalenderereignis erklärt werden kann. Der aktuelle Tag liegt innerhalb der gewöhnlichen Verbrauchsbereiche, aber die Abweichung bleibt bestehen.",
+      "schema_version": "1.3",
+      "uncertainty": "Die Abweichung bleibt bestehen, aber die Ursache ist nicht bekannt.",
+      "user_recommendation": "Keine besondere Maßnahme nötig."
+    },
+    {
+      "classification": "peak",
+      "config": "MDL1",
+      "decision_time": "2014-03-02T00:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        },
+        {
+          "path": "anomaly.scale_scores.daily",
+          "value": 3.2114468364817093
+        },
+        {
+          "path": "anomaly.scale_scores.weekly",
+          "value": 0.45422288324302135
+        },
+        {
+          "path": "anomaly.scale_scores.long_term",
+          "value": 4.134728982234636
+        }
+      ],
+      "explanation": "Die Stromverbrauchsmessung zeigt einen starken Anstieg im Vergleich zur üblichen Nutzung. Dies könnte auf eine ungewöhnliche Nutzung oder ein technisches Problem hinweisen.",
+      "schema_version": "1.3",
+      "uncertainty": "Es ist nicht sicher, ob der Anstieg auf einen technischen Fehler oder eine ungewöhnliche Nutzung zurückgeht.",
+      "user_recommendation": "Überprüfen Sie die Stromgeräte auf mögliche Störungen oder Überlastung. Falls nichts auffällt, kontaktieren Sie den Stromversorger."
+    },
+    {
+      "classification": "low",
+      "config": "MDL1",
+      "decision_time": "2014-04-12T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "low"
+        },
+        {
+          "path": "anomaly.scale_scores.weekday",
+          "value": -3.561545244898526
+        },
+        {
+          "path": "anomaly.scale_scores.weekly",
+          "value": -1.297921516165013
+        },
+        {
+          "path": "anomaly.scale_deviation_pct.weekday",
+          "value": -66.1996324858746
+        },
+        {
+          "path": "anomaly.scale_deviation_pct.weekly",
+          "value": -12.648687141128793
+        }
+      ],
+      "explanation": "Die Stromverbrauchsmessung zeigt einen deutlichen Rückgang im Vergleich zur üblichen Nutzung. Dies könnte auf eine geringere Nutzung oder eine ungewöhnliche Situation hinweisen, aber es gibt keine Hinweise auf ein geplantes Absenken der Nutzung.",
+      "schema_version": "1.3",
+      "uncertainty": "Es ist nicht bekannt, warum der Verbrauch so niedrig ist. Es könnte eine ungewöhnliche Nutzung oder ein technisches Problem sein.",
+      "user_recommendation": "Keine besondere Maßnahme nötig."
+    },
+    {
+      "classification": "peak",
+      "config": "MDL1",
+      "decision_time": "2014-04-15T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        },
+        {
+          "path": "anomaly.scale_scores.weekday",
+          "value": 3.0852242597133217
+        },
+        {
+          "path": "anomaly.scale_deviation_pct.weekday",
+          "value": 88.92114245769476
+        }
+      ],
+      "explanation": "Die Stromverbrauchsmessung zeigt einen starken Anstieg im Vergleich zur üblichen Nutzung. Dies könnte auf eine ungewöhnliche Nutzung oder ein technisches Problem hinweisen.",
+      "schema_version": "1.3",
+      "uncertainty": "Es ist nicht sicher, ob der Anstieg auf ein technisches Problem oder eine ungewöhnliche Nutzung zurückgeht.",
+      "user_recommendation": "Überprüfen Sie die Stromgeräte auf mögliche Störungen oder Überlastung. Falls nichts auffällt, kontaktieren Sie den Stromversorger."
+    },
+    {
+      "classification": "low",
+      "config": "MDL1",
+      "decision_time": "2014-05-27T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "low"
+        },
+        {
+          "path": "anomaly.scale_deviation_pct.weekday",
+          "value": -64.95766683989311
+        },
+        {
+          "path": "anomaly.scale_deviation_pct.weekly",
+          "value": -24.44382133306324
+        },
+        {
+          "path": "anomaly.scale_deviation_pct.long_term",
+          "value": -9.744563844913424
+        }
+      ],
+      "explanation": "Die Stromverbrauchsmessung zeigt einen deutlichen Rückgang im Vergleich zur üblichen Nutzung. Dies könnte auf eine geringere Nutzung oder eine ungewöhnliche Situation hinweisen, aber es gibt keine Hinweise auf ein geplantes Absenken der Nutzung.",
+      "schema_version": "1.3",
+      "uncertainty": "Es ist nicht bekannt, warum der Verbrauch so niedrig ist. Es könnte eine ungewöhnliche Nutzung oder ein technisches Problem sein.",
+      "user_recommendation": "Keine besondere Maßnahme nötig."
+    },
+    {
+      "classification": "new_pattern",
+      "config": "MDL1",
+      "decision_time": "2014-05-31T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.sustained_drift",
+          "value": true
+        },
+        {
+          "path": "anomaly.scale_anomaly_streak_days.weekly",
+          "value": 6.0
+        },
+        {
+          "path": "anomaly.scale_anomaly_streak_days.long_term",
+          "value": 6.0
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "low"
+        }
+      ],
+      "explanation": "Die Stromverbrauchsmuster zeigen eine deutliche Abweichung, die sich über mehrere Tage hinweg auf verschiedenen Zeitskalen erstreckt. Dies deutet auf einen neuen Verbrauchspfad hin, dessen Ursache noch nicht bekannt ist.",
+      "schema_version": "1.3",
+      "uncertainty": "Die Ursache der Verbrauchsmusteränderung ist noch nicht bekannt.",
+      "user_recommendation": "Keine besondere Maßnahme nötig."
+    },
+    {
+      "classification": "peak",
+      "config": "MDL2",
+      "decision_time": "2014-03-02T00:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        }
+      ],
+      "explanation": "Der Stromverbrauch an diesem Tag war ungewöhnlich hoch.",
+      "schema_version": "1.3",
+      "uncertainty": "Die Kalenderevents sind nicht verfügbar, daher kann auf geplante Abwesenheiten nicht eingegangen werden.",
+      "user_recommendation": "Keine besondere Maßnahme nötig."
+    },
+    {
+      "classification": "low",
+      "config": "MDL2",
+      "decision_time": "2014-04-12T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "low"
+        },
+        {
+          "path": "context.source_available",
+          "value": false
+        }
+      ],
+      "explanation": "Der Stromverbrauch ist heute ungewöhnlich niedrig gesunken (um etwa 66 % unter dem üblichen Niveau am Wochentag). Da keine relevanten Kalenderereignisse vorliegen, die diesen Rückgang erklären könnten, handelt es sich um einen unklaren Verbrauchsrückgang.",
+      "schema_version": "1.3",
+      "uncertainty": "Der genaue Grund für den starken Rückgang des Verbrauchs ist unbekannt.",
+      "user_recommendation": "Keine besondere Maßnahme nötig."
+    },
+    {
+      "classification": "peak",
+      "config": "MDL2",
+      "decision_time": "2014-04-15T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        }
+      ],
+      "explanation": "Der Stromverbrauch an diesem Tag war ungewöhnlich hoch.",
+      "schema_version": "1.3",
+      "uncertainty": "Die Quelle der Daten ist nicht verfügbar.",
+      "user_recommendation": "Keine besondere Maßnahme nötig."
+    },
+    {
+      "classification": "low",
+      "config": "MDL2",
+      "decision_time": "2014-05-27T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "low"
+        }
+      ],
+      "explanation": "Der Stromverbrauch ist heute ungewöhnlich niedrig. Es liegen keine relevanten Kalenderereignisse vor, die diese Reduktion erklären könnten.",
+      "schema_version": "1.3",
+      "uncertainty": "Die Quellenverfügbarkeit ist eingeschränkt (source: none), was die Prüfung auf geplante Abwesenheiten verhindert.",
+      "user_recommendation": "Keine besondere Maßnahme nötig."
+    },
+    {
+      "classification": "new_pattern",
+      "config": "MDL2",
+      "decision_time": "2014-06-02T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.sustained_drift",
+          "value": true
+        },
+        {
+          "path": "anomaly.level",
+          "value": "normal"
+        },
+        {
+          "path": "anomaly.scale_anomaly_streak_days.weekly",
+          "value": 7.0
+        },
+        {
+          "path": "anomaly.scale_anomaly_streak_days.long_term",
+          "value": 7.0
+        }
+      ],
+      "explanation": "Der Stromverbrauch zeigt eine anhaltende Abweichung über mehrere Tage hinweg, die sich auf wöchentliche und langfristige Zeitskalen erstreckt. Dies deutet auf ein neues Verbrauchsverhalten hin, dessen Ursache noch unbekannt ist.",
+      "schema_version": "1.3",
+      "uncertainty": "Die genaue Ursache für die veränderte Verbrauchsstruktur ist unbekannt.",
+      "user_recommendation": "Keine besondere Maßnahme nötig."
+    },
+    {
+      "classification": "peak",
+      "config": "MDL3",
+      "decision_time": "2014-03-02T00:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        }
+      ],
+      "explanation": "Der Stromverbrauch ist im Vergleich zu den üblichen Werten deutlich erhöht.",
+      "schema_version": "1.3",
+      "uncertainty": "Die Ursache für den erhöhten Verbrauch ist nicht ersichtlich.",
+      "user_recommendation": "Keine besondere Maßnahme nötig."
+    },
+    {
+      "classification": "low",
+      "config": "MDL3",
+      "decision_time": "2014-04-12T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "low"
+        }
+      ],
+      "explanation": "Der Verbrauch liegt im Vergleich zu den üblichen Werten deutlich unter dem Normalniveau, was auf einen ungewöhnlich geringen Energieverbrauch an diesem Tag hindeutet.",
+      "schema_version": "1.3",
+      "uncertainty": "Die Ursache für den niedrigen Verbrauch ist nicht ersichtlich.",
+      "user_recommendation": "Keine besondere Maßnahme nötig."
+    },
+    {
+      "classification": "peak",
+      "config": "MDL3",
+      "decision_time": "2014-04-15T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        }
+      ],
+      "explanation": "Der Stromverbrauch ist im Vergleich zu den üblichen Mustern ungewöhnlich hoch, insbesondere an Wochentagen.",
+      "schema_version": "1.3",
+      "uncertainty": "Die Analyse basiert auf einem einzelnen Messpunkt ohne verfügbare Kalenderdaten.",
+      "user_recommendation": "Keine besondere Maßnahme nötig."
+    },
+    {
+      "classification": "low",
+      "config": "MDL3",
+      "decision_time": "2014-05-27T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "low"
+        }
+      ],
+      "explanation": "Der Verbrauch liegt im Vergleich zu den üblichen Mustern deutlich unter dem erwarteten Niveau, was auf einen ungewöhnlich niedrigen Verbrauch hindeutet.",
+      "schema_version": "1.3",
+      "uncertainty": "Die Ursache für den niedrigen Verbrauch ist nicht ersichtlich.",
+      "user_recommendation": "Keine besondere Maßnahme nötig."
+    },
+    {
+      "classification": "new_pattern",
+      "config": "MDL3",
+      "decision_time": "2014-05-31T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.sustained_drift",
+          "value": true
+        },
+        {
+          "path": "anomaly.scale_anomaly_streak_days.weekly",
+          "value": 6.0
+        },
+        {
+          "path": "anomaly.scale_anomaly_streak_days.long_term",
+          "value": 6.0
+        }
+      ],
+      "explanation": "Es gibt einen anhaltenden Abfall des Verbrauchs, der über mehrere Zeiträume hinweg beobachtet wird. Der genaue Grund für diesen Musterwechsel ist unbekannt.",
+      "schema_version": "1.3",
+      "uncertainty": "Die Ursache des Verbrauchsabfalls ist unklar.",
+      "user_recommendation": "Keine besondere Maßnahme nötig."
+    },
+    {
+      "classification": "peak",
+      "config": "MDL4",
+      "decision_time": "2014-03-02T00:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        }
+      ],
+      "explanation": "Der aktuelle Verbrauch ist als stark anomales Hoch eingestuft worden, was auf einen ungewöhnlich hohen Energieverbrauch hindeutet.",
+      "schema_version": "1.3",
+      "uncertainty": "Die Anomalie ist nicht durch eine anhaltende Veränderung über mehrere Tage belegt.",
+      "user_recommendation": "Überprüfen Sie die Nutzung der Haushaltsgeräte an diesem Tag, um den Grund für den erhöhten Verbrauch zu ermitteln."
+    },
+    {
+      "classification": "low",
+      "config": "MDL4",
+      "decision_time": "2014-04-12T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "low"
+        }
+      ],
+      "explanation": "Der Verbrauch ist im Vergleich zu den üblichen Werten deutlich niedriger.",
+      "schema_version": "1.3",
+      "uncertainty": "Die Daten reichen nicht aus, um eine längere Musteränderung festzustellen.",
+      "user_recommendation": "Keine besondere Maßnahme nötig."
+    },
+    {
+      "classification": "peak",
+      "config": "MDL4",
+      "decision_time": "2014-04-15T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        }
+      ],
+      "explanation": "Der aktuelle Verbrauch ist als stark anomales Hoch eingestuft worden, was auf einen ungewöhnlich hohen Verbrauch hindeutet.",
+      "schema_version": "1.3",
+      "uncertainty": "Die Anomalie ist nicht durch eine anhaltende Veränderung belegt.",
+      "user_recommendation": "Überprüfen Sie die Geräteeinrichtung oder den Nutzungsverhalten an diesem Tag, um den Grund für den erhöhten Verbrauch zu ermitteln."
+    },
+    {
+      "classification": "low",
+      "config": "MDL4",
+      "decision_time": "2014-05-27T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "low"
+        }
+      ],
+      "explanation": "Die aktuelle Messung zeigt eine ungewöhnlich niedrige Verbrauchsmenge im Vergleich zu den üblichen Werten, was durch die starke Abweichung in verschiedenen Skalen belegt wird.",
+      "schema_version": "1.3",
+      "uncertainty": "Die Daten reichen nicht aus, um eine längere Musteränderung festzustellen.",
+      "user_recommendation": "Keine besondere Maßnahme nötig."
+    },
+    {
+      "classification": "new_pattern",
+      "config": "MDL4",
+      "decision_time": "2014-05-31T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.sustained_drift",
+          "value": true
+        },
+        {
+          "path": "anomaly.scale_anomaly_streak_days.weekly",
+          "value": 6.0
+        },
+        {
+          "path": "anomaly.scale_anomaly_streak_days.long_term",
+          "value": 6.0
+        }
+      ],
+      "explanation": "Es wurde ein anhaltender Abfall des Verbrauchs über mehrere Tage und Skalen festgestellt, was auf einen unbekannten, sich entwickelnden Verbrauchsmuster hindeutet.",
+      "schema_version": "1.3",
+      "uncertainty": "Die Ursache des veränderten Verbrauchs ist unbekannt.",
+      "user_recommendation": "Keine besondere Maßnahme nötig."
+    },
+    {
+      "classification": "peak",
+      "config": "MDL5",
+      "decision_time": "2014-03-02T00:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        },
+        {
+          "path": "anomaly.scale_deviation_pct.long_term",
+          "value": 13.404137715630368
+        }
+      ],
+      "explanation": "Der Stromverbrauch war gestern deutlich höher als üblich, besonders über einen längeren Zeitraum betrachtet.",
+      "schema_version": "1.3",
+      "uncertainty": "Der genaue Grund für den Spitzenverbrauch ist nicht bekannt.",
+      "user_recommendation": "Keine besondere Maßnahme nötig, da der erhöhte Verbrauch nur kurzfristig aufgetreten ist."
+    },
+    {
+      "classification": "unknown",
+      "config": "MDL5",
+      "decision_time": "2014-04-12T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.value_implausible",
+          "value": false
+        },
+        {
+          "path": "anomaly.sustained_drift",
+          "value": false
+        },
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "low"
+        }
+      ],
+      "explanation": "Der gemessene Stromverbrauch ist stark reduziert, aber es gibt keine ausreichenden Hinweise oder Informationen, um die Ursache zu bestimmen.",
+      "schema_version": "1.3",
+      "uncertainty": "Die Datenlage ist unzureichend, um eine sichere Einschätzung zu treffen.",
+      "user_recommendation": "Keine spezifische Maßnahme möglich, da die Ursache unklar ist. Überprüfen Sie ggf. manuell, ob der Stromzähler oder die Anlage funktioniert."
+    },
+    {
+      "classification": "peak",
+      "config": "MDL5",
+      "decision_time": "2014-04-15T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        },
+        {
+          "path": "anomaly.scale_scores.weekday",
+          "value": 3.0852242597133217
+        },
+        {
+          "path": "anomaly.scale_deviation_pct.weekday",
+          "value": 88.92114245769476
+        }
+      ],
+      "explanation": "Der Stromverbrauch war gestern deutlich höher als üblich, insbesondere unter der Woche.",
+      "schema_version": "1.3",
+      "uncertainty": "Der genaue Grund des erhöhten Verbrauchs ist nicht bekannt.",
+      "user_recommendation": "Keine besondere Maßnahme nötig, da der erhöhte Verbrauch nur für einen Tag auftrat."
+    },
+    {
+      "classification": "unknown",
+      "config": "MDL5",
+      "decision_time": "2014-05-27T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.value_implausible",
+          "value": false
+        },
+        {
+          "path": "anomaly.sustained_drift",
+          "value": false
+        },
+        {
+          "path": "anomaly.level",
+          "value": "strong_anomaly"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "low"
+        }
+      ],
+      "explanation": "Der gemessene Stromverbrauch ist stark reduziert, aber es gibt keine ausreichenden Hinweise oder Informationen, um die Ursache zu bestimmen.",
+      "schema_version": "1.3",
+      "uncertainty": "Die genauen Umstände sind nicht ausreichend geklärt.",
+      "user_recommendation": "Keine spezifische Maßnahme möglich, da die Ursache unklar ist. Überprüfen Sie ggf. manuell, ob der Stromzähler oder Geräte korrekt funktionieren."
+    },
+    {
+      "classification": "new_pattern",
+      "config": "MDL5",
+      "decision_time": "2014-05-31T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.sustained_drift",
+          "value": true
+        },
+        {
+          "path": "anomaly.level",
+          "value": "normal"
+        },
+        {
+          "path": "anomaly.scale_anomaly_streak_days.weekly",
+          "value": 6.0
+        },
+        {
+          "path": "anomaly.scale_anomaly_streak_days.long_term",
+          "value": 6.0
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "low"
+        }
+      ],
+      "explanation": "Der Stromverbrauch ist seit mehreren Tagen deutlich niedriger als üblich. Diese Veränderung hält bereits über eine Woche hinweg an und betrifft sowohl den wöchentlichen als auch den langfristigen Verbrauch.",
+      "schema_version": "1.3",
+      "uncertainty": "Die genaue Ursache des dauerhaft niedrigeren Stromverbrauchs ist unbekannt.",
+      "user_recommendation": "Keine besondere Maßnahme nötig, da die Ursache für den ungewöhnlich niedrigen Verbrauch unklar ist. Eine Überprüfung der Messgeräte oder ein Blick auf mögliche Änderungen im Haushalt könnte jedoch sinnvoll sein."
+    }
+  ]
+}
