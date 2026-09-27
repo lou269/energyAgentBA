@@ -18,6 +18,7 @@ DRIFT_RESULT_COLUMNS = [
     "kind",
     "cutover_date",
     "decision_time",
+    "analyzed_day",
     "classification",
     "anomaly_level",
     "dominant_scale",

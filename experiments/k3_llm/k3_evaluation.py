@@ -15,6 +15,7 @@ from experiments.common.standard_config import (
     NOTIFICATION_PERIOD_DAYS,
 )
 from experiments.k3_llm.k3_cases import EXPECTED_EVIDENCE_PATHS
+from experiments.k3_llm.k3_config import BASELINE_ID, CORRECT_ANSWER_LABEL
 from src.llm.llm_schema import CLASSIFICATIONS
 
 # Ebene 2: jedes Modell läuft als eigene Config, gepaart wird mit seinem eigenen Kontrolllauf
@@ -25,6 +26,7 @@ SEQUENCE_RESULT_COLUMNS = [
     "cutover_date",
     "config",
     "decision_time",
+    "analyzed_day",
     "classification",
     "anomaly_level",
     "sustained_drift",
@@ -39,7 +41,8 @@ SEQUENCE_RESULT_COLUMNS = [
 
 
 def _grounding_coverage(row: pd.Series) -> float | None:
-    if not row["valid"]:
+    # die Regel zitiert keine Felder
+    if not row["valid"] or row["model_id"] == BASELINE_ID:
         return None
 
     expected_paths = EXPECTED_EVIDENCE_PATHS.get(row["case_id"])
@@ -54,7 +57,7 @@ def _grounding_coverage(row: pd.Series) -> float | None:
     return len(cited_paths & expected_paths) / len(expected_paths)
 
 
-def summarize_classes(results: pd.DataFrame) -> pd.DataFrame:
+def _summarize_classes(results: pd.DataFrame) -> pd.DataFrame:
     rows = []
 
     for model_id, subset in results.groupby("model_id"):
@@ -98,20 +101,16 @@ def summarize_classes(results: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def summarize_models(results: pd.DataFrame) -> pd.DataFrame:
+def _summarize_models(results: pd.DataFrame) -> pd.DataFrame:
     results = results.copy()
     results["grounding_coverage"] = results.apply(_grounding_coverage, axis=1)
 
     summary = results.groupby(["model_id", "model"], as_index=False).agg(
         n_attempts=("case_id", "count"),
-        valid_rate=("valid", "mean"),
-        accuracy=("correct", "mean"),
+        correct=("correct", "sum"),
+        invalid=("valid", lambda values: values.eq(False).sum()),
         mean_attempt_count=("attempt_count", "mean"),
         mean_generation_seconds=("generation_seconds", "mean"),
-        p50_generation_seconds=(
-            "generation_seconds",
-            lambda values: values.quantile(0.5),
-        ),
         p95_generation_seconds=(
             "generation_seconds",
             lambda values: values.quantile(0.95),
@@ -120,14 +119,14 @@ def summarize_models(results: pd.DataFrame) -> pd.DataFrame:
     )
 
     macro_f1 = (
-        summarize_classes(results).groupby("model_id")["f1"].mean().rename("macro_f1")
+        _summarize_classes(results).groupby("model_id")["f1"].mean().rename("macro_f1")
     )
     summary = summary.merge(macro_f1, on="model_id", how="left")
 
     return summary.sort_values("macro_f1", ascending=False)
 
 
-def summarize_cases(results: pd.DataFrame) -> pd.DataFrame:
+def _summarize_cases(results: pd.DataFrame) -> pd.DataFrame:
     return results.groupby(
         ["model_id", "case_id", "expected_classification"], as_index=False
     ).agg(
@@ -221,23 +220,89 @@ def summarize_sequence(results: pd.DataFrame) -> SequenceSummary:
     return SequenceSummary(events=events, models=models)
 
 
-def summarize_combined(
-    single_case_summary: pd.DataFrame, sequence_models: pd.DataFrame
-) -> pd.DataFrame:
-    """Beide Ebenen je Modell nebeneinander"""
-    sequence_summary = sequence_models.rename(columns={"config": "model_id"})
+def _case_answers(cases: pd.DataFrame, model_order: list[str]) -> pd.DataFrame:
+    # Fall x Modell, nur falsche Antworten stehen als Klasse drin, ungültige bleiben leer
+    answers = (
+        cases["classifications"]
+        .where(cases["accuracy"].lt(1), CORRECT_ANSWER_LABEL)
+        .replace("", pd.NA)
+    )
 
-    single_case_columns = single_case_summary[
-        [
-            "model_id",
-            "model",
-            "accuracy",
-            "macro_f1",
-            "mean_grounding_coverage",
-            "mean_generation_seconds",
-        ]
+    return (
+        cases.assign(answer=answers)
+        .pivot(
+            index=["case_id", "expected_classification"],
+            columns="model_id",
+            values="answer",
+        )[model_order]
+        .reset_index()
+        .rename_axis(columns=None)
+    )
+
+
+def _rule_deviations(sequence_results: pd.DataFrame) -> pd.DataFrame:
+    # vor dem Cutover sind alle Arten gleich, ein Tag steht deshalb einmal mit allen Arten, in denen er abweicht
+    rule = sequence_results.loc[
+        sequence_results["config"].eq(BASELINE_ID),
+        ["kind", "analyzed_day", "classification"],
     ]
+    paired = sequence_results.loc[sequence_results["config"].ne(BASELINE_ID)].merge(
+        rule, on=["kind", "analyzed_day"], suffixes=("", "_rule")
+    )
+    differs = (
+        paired["classification"].fillna("").ne(paired["classification_rule"].fillna(""))
+    )
 
-    return single_case_columns.merge(
-        sequence_summary, on="model_id", how="outer"
-    ).sort_values("macro_f1", ascending=False)
+    return (
+        paired.loc[differs]
+        .groupby(
+            ["config", "analyzed_day", "classification_rule", "classification"],
+            as_index=False,
+            dropna=False,
+            sort=False,
+        )
+        .agg(kinds=("kind", ", ".join))
+        .sort_values(["config", "analyzed_day"], kind="stable")
+        .rename(columns={"config": "model_id"})
+    )
+
+
+@dataclass(frozen=True)
+class K3Summary:
+    models: pd.DataFrame
+    cases: pd.DataFrame
+    case_answers: pd.DataFrame
+    classes: pd.DataFrame
+    sequence_models: pd.DataFrame
+    events: pd.DataFrame
+    rule_deviations: pd.DataFrame
+
+
+def summarize_k3(results: pd.DataFrame, sequence_results: pd.DataFrame) -> K3Summary:
+    single_case = _summarize_models(results)
+    cases = _summarize_cases(results)
+    sequence = summarize_sequence(sequence_results)
+    rule_deviations = _rule_deviations(sequence_results)
+
+    deviation_days = (
+        rule_deviations.groupby("model_id")["analyzed_day"]
+        .nunique()
+        .reindex(sequence.models["config"], fill_value=0)
+        .rename("rule_deviation_days")
+    )
+    sequence_models = sequence.models.merge(
+        deviation_days, left_on="config", right_index=True
+    ).rename(columns={"config": "model_id"})
+    models = single_case.merge(sequence_models, on="model_id", how="outer").sort_values(
+        "macro_f1", ascending=False
+    )
+
+    return K3Summary(
+        models=models,
+        cases=cases,
+        case_answers=_case_answers(cases, models["model_id"].tolist()),
+        classes=_summarize_classes(results),
+        sequence_models=sequence_models,
+        events=sequence.events,
+        rule_deviations=rule_deviations,
+    )

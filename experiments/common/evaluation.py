@@ -52,9 +52,18 @@ def merge_cycle_days(summary: pd.DataFrame, anomaly: pd.DataFrame) -> pd.DataFra
     """Je Tag und Config Einordnung und Reset aus comparison_summary neben den Spalten aus anomaly.csv, dazu Gate-Flags und new_pattern"""
     # summary hat jeden Tag, anomaly.csv fehlt an Tagen ohne Analyse (z.B. direkt nach einem Reset)
     summary = summary[
-        ["decision_time", "config", "classification", "reference_reset", "error"]
+        [
+            "decision_time",
+            "analyzed_day",
+            "config",
+            "classification",
+            "reference_reset",
+            "error",
+        ]
     ]
-    days = summary.merge(anomaly, on=["decision_time", "config"], how="left")
+    days = summary.merge(
+        anomaly, on=["decision_time", "analyzed_day", "config"], how="left"
+    )
 
     return add_gate_flags(days).assign(
         new_pattern=days["classification"].eq("new_pattern")

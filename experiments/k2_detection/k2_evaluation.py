@@ -23,6 +23,7 @@ RESULT_COLUMNS = (
         "cutover_date",
         "variant",
         "decision_time",
+        "analyzed_day",
         "anomaly_level",
         "anomaly_score",
         "dominant_scale",

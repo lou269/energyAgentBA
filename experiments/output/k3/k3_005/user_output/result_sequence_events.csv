@@ -1,0 +1,15 @@
+config,Ereignis,erwartet,Gate-Tage durch das Ereignis,davon richtig,erster richtiger Tag,Resets
+BASELINE,Einzeltag-Spitze +1000 W über 6 h,peak,2,1,1.0,1
+BASELINE,Dauerlast +100 W,new_pattern,4,2,12.0,2
+MDL0,Einzeltag-Spitze +1000 W über 6 h,peak,2,0,,1
+MDL0,Dauerlast +100 W,new_pattern,4,2,12.0,2
+MDL1,Einzeltag-Spitze +1000 W über 6 h,peak,2,1,1.0,1
+MDL1,Dauerlast +100 W,new_pattern,4,2,12.0,2
+MDL2,Einzeltag-Spitze +1000 W über 6 h,peak,2,1,1.0,1
+MDL2,Dauerlast +100 W,new_pattern,4,2,12.0,2
+MDL3,Einzeltag-Spitze +1000 W über 6 h,peak,2,1,1.0,1
+MDL3,Dauerlast +100 W,new_pattern,4,2,12.0,2
+MDL4,Einzeltag-Spitze +1000 W über 6 h,peak,2,1,1.0,1
+MDL4,Dauerlast +100 W,new_pattern,4,2,12.0,2
+MDL5,Einzeltag-Spitze +1000 W über 6 h,peak,2,1,1.0,1
+MDL5,Dauerlast +100 W,new_pattern,4,2,12.0,2

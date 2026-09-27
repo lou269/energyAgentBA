@@ -1,0 +1,8 @@
+Fall,erwartet,ministral-3:8b,Regel,qwen3:8b,qwen3.5:9b,gemma4:e4b,gemma4:e4b-mlx,qwen3:4b
+absence_drift_down,absence,✓,new_pattern,new_pattern,new_pattern,new_pattern,new_pattern,new_pattern
+low_single_scale,low,✓,✓,✓,✓,✓,✓,normal
+new_pattern,new_pattern,✓,✓,peak,peak,peak,peak,✓
+new_pattern_at_min_scales_boundary,new_pattern,✓,✓,peak,peak,peak,peak,✓
+new_pattern_drift_down,new_pattern,✓,✓,✓,✓,✓,✓,✓
+peak,peak,✓,✓,✓,✓,✓,✓,normal
+peak_single_sustained_scale,peak,✓,✓,✓,✓,✓,✓,✓

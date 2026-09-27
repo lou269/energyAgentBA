@@ -1,0 +1,8 @@
+Modell,analysierter Tag,Regel,Modell sagt,in Arten
+qwen3:4b,2014-03-01,peak,normal,"control, step, peak_6"
+qwen3:4b,2014-04-12,low,normal,"control, step, peak_6"
+qwen3:4b,2014-04-15,peak,normal,peak_6
+qwen3:4b,2014-05-25,low,normal,step
+qwen3:4b,2014-05-26,low,normal,step
+qwen3:4b,2014-05-27,low,normal,"control, step, peak_6"
+qwen3:4b,2014-05-28,low,normal,control

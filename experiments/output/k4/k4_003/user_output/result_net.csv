@@ -1,0 +1,9 @@
+Ereignis,Trigger-Tag,Aktion,2013-10-15,2014-01-15,2014-04-15,2014-07-15,Mittel,gleiche Richtung,Mittel [%]
+"proportional ×1,3",6,"cut, Historie ab t_c",-0.7,-3.1,-1.4,1.0,-1.0,3/4,-0.6
+"proportional ×1,3",6,Stufen-Regressor,-0.8,-1.0,-0.6,-1.0,-0.8,4/4,-0.5
+"proportional ×1,3",12,"cut, Historie ab t_c",-0.4,-2.0,-0.3,0.9,-0.4,3/4,-0.3
+"proportional ×1,3",12,Stufen-Regressor,0.3,-0.7,0.4,0.2,0.0,3/4,0.0
+Dauerlast +100 W,6,"cut, Historie ab t_c",-2.7,-3.5,-3.9,-3.1,-3.3,4/4,-2.4
+Dauerlast +100 W,6,Stufen-Regressor,-1.2,-1.2,-0.4,-1.2,-1.0,4/4,-0.7
+Dauerlast +100 W,12,"cut, Historie ab t_c",-0.5,-1.0,-0.2,-0.7,-0.6,4/4,-0.4
+Dauerlast +100 W,12,Stufen-Regressor,0.8,-0.6,0.6,0.4,0.3,3/4,0.2

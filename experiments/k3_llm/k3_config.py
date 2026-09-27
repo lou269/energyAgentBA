@@ -9,6 +9,8 @@ RESULTS_FILE = "results"
 SEQUENCE_RESULTS_FILE = "sequence_results"
 # die Regel läuft in beiden Ebenen unter diesem Namen neben den Modellen mit
 BASELINE_ID = "BASELINE"
+# in der Tabelle "Antwort je Fall" statt der Klasse, wenn sie stimmt
+CORRECT_ANSWER_LABEL = "✓"
 
 
 @dataclass(frozen=True)
