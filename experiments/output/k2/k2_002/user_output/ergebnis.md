@@ -1,71 +1,109 @@
-# K2 Retraining-Vergleich, Lauf k2_002
+# K2 Referenzfenster und Schwellen der Anomalieerkennung, Lauf k2_002
 
 ## Setup
 
-- Split: validation, 2015-04-30 bis 2015-10-08, 162 Prognosetage (Ortszeit)
-- Modus rolling: 60 Tage Historie vor Split-Start, wie der Online-Zyklus
-- Modus macro: gesamte Historie vor Split-Start
-- Naive Referenz: rolling B2, macro B2
-- Prognose: 1 Tag ab lokaler Mitternacht, Intervall 80 %
-- Konfiguration: forecast-model-0.1, Seed 42
+- Cutover: 2013-10-15, 2014-01-15, 2014-04-15, 2014-07-15
+- Zeitraum je Cutover: Kaltstart, 60 Tage Überwachung vor dem Cutover, 60 Tage danach
+- Ereignisse ab Cutover: Dauerlast +30 W, Dauerlast +50 W, Dauerlast +100 W, Dauerlast +200 W, Einzeltag-Spitze +3 kWh, jeweils gepaart mit unverändertem Kontrolllauf
+- Modi: ohne Reset = nur Detektor, darauf wird kalibriert (nur keine Änderung, Dauerlast +100 W). Mit Reset = Betrieb mit Regel wie SYS2, alle Ereignisse
+- Schwellen im Lauf (Gate / weekly / long_term): 2,6 / 1,25 / 1
+- Produktiv-Referenzfenster: Rolling 60
 - Commit: 3bef76f (mit lokalen Änderungen)
 
 ## Kennzahlen
 
 | Kennzahl | Wert | Bezug |
 |---|---|---|
-| rolling: MAE bestes Modell C3_30 rolling 30 Tage [W] | 131,7 | B2 173,5 W |
-| rolling: Skill der Prophet-Varianten ggü. B2 [%] | 24,1 | Spanne 21,4 bis 24,1 % |
-| rolling: Varianten belastbar schlechter als das beste Modell | 0 | von 4 |
-| macro: MAE bestes Modell C3_30 rolling 30 Tage [W] | 131,7 | B2 173,5 W |
-| macro: Skill der Prophet-Varianten ggü. B2 [%] | 24,1 | Spanne 21,4 bis 24,1 % |
-| macro: Varianten belastbar schlechter als das beste Modell | 0 | von 4 |
+| Kalibrierung: bestes Referenzfenster bei höchstens 5 % Einzeltag-Alarmen | Rolling 60 | Gate-Schwelle 2,6, im Leave-one-out 4/4 Durchgänge vorn |
+| Rolling 60: kalibrierte Schwellen (Gate / weekly / long_term) | 2,6 / 1,25 / 1 | im Lauf 2,6 / 1,25 / 1 |
+| Rolling 60: Gate offen ohne Ereignis, mit Reset [%] | 5,0 | ohne Reset 7,9 %, Ziel 5 % |
+| Rolling 60: Einzeltag-Spitze +3 kWh erkannt, mit Reset | 1/4 | Skala daily |
+| Rolling 60: Dauerlast +100 W erkannt, mit Reset | 3/4 | Skala weekly+long_term |
+| Rolling 60: Dauerlast +200 W erkannt, mit Reset | 4/4 | Skala weekly+long_term |
+| Rolling 60: Dauerlast +30 W erkannt, mit Reset | 1/4 | Skala weekly+long_term |
+| Rolling 60: Dauerlast +50 W erkannt, mit Reset | 3/4 | Skala weekly+long_term |
 
-## Gesamtfehler rolling
+## Ohne Ereignis: Kontrolllauf über das ganze Fenster, Mittel über Cutover
 
-| Modell | MAE [W] | RMSE [W] | MAPE [%] | Skill ggü. B2 [%] | Intervall-Abdeckung [%], Soll 80 | Refit-Zeit gesamt [s] |
-|---|---:|---:|---:|---:|---:|---:|
-| C3_30 rolling 30 Tage | 131,7 | 235,3 | 39,2 | 24,1 | 80,0 | 8,1 |
-| C2 expanding | 132,8 | 238,5 | 39,5 | 23,5 | 82,6 | 32,8 |
-| C3_60 rolling 60 Tage | 132,8 | 236,9 | 39,7 | 23,4 | 80,8 | 14,3 |
-| C1 statisch | 135,9 | 245,5 | 38,6 | 21,7 | 83,2 | 0,2 |
-| C3_7 rolling 7 Tage | 136,3 | 239,9 | 41,4 | 21,4 | 75,8 | 4,2 |
-| B2 naiv, Vortag | 173,5 | 314,3 | 54,8 | - | - | 0,0 |
-| B3 naiv, Vorwoche | 185,7 | 321,4 | 61,2 | - | - | 0,0 |
-| B1 naiv, letzter Wert | 326,0 | 500,4 | 127,9 | - | - | 0,0 |
+| Referenzfenster | Gate offen ohne Reset [%] | Gate offen mit Reset [%] | davon Einzeltag mit Reset [%] | Resets je Fenster |
+|---|---:|---:|---:|---:|
+| Statisch | 28,3 | 3,7 | 2,7 | 1,2 |
+| Expanding | 8,7 | 4,5 | 3,5 | 1,5 |
+| Rolling 60 | 7,9 | 5,0 | 3,7 | 1,5 |
+| Rolling 35 | 11,8 | 7,4 | 6,4 | 1,5 |
 
-## Gesamtfehler macro
+## Kalibrierung: Arbeitspunkt je Referenzfenster bei gleicher Fehlalarmrate, ohne Reset
 
-| Modell | MAE [W] | RMSE [W] | MAPE [%] | Skill ggü. B2 [%] | Intervall-Abdeckung [%], Soll 80 | Refit-Zeit gesamt [s] |
-|---|---:|---:|---:|---:|---:|---:|
-| C3_30 rolling 30 Tage | 131,7 | 235,3 | 39,2 | 24,1 | 80,2 | 8,5 |
-| C2 expanding | 132,0 | 242,8 | 37,3 | 23,9 | 84,5 | 364,4 |
-| C3_60 rolling 60 Tage | 132,8 | 236,9 | 39,7 | 23,4 | 81,0 | 14,8 |
-| C1 statisch | 133,4 | 240,0 | 40,1 | 23,1 | 83,6 | 1,4 |
-| C3_7 rolling 7 Tage | 136,3 | 239,9 | 41,4 | 21,4 | 75,8 | 4,3 |
-| B2 naiv, Vortag | 173,5 | 314,3 | 54,8 | - | - | 0,0 |
-| B3 naiv, Vorwoche | 185,7 | 321,4 | 61,2 | - | - | 0,0 |
-| B1 naiv, letzter Wert | 326,0 | 500,4 | 127,9 | - | - | 0,0 |
+| Rang | Referenzfenster | Gate-Schwelle | Streak-Schwelle weekly | Streak-Schwelle long_term | Einzeltag-Alarme Kontrolle [%] | falsche new_pattern je Fenster | Stufe erkannt | Erkennungstag im Mittel |
+|---:|---|---|---|---|---:|---:|---|---:|
+| 3 | Statisch | 2,7 | 2,5 | 5 | 5,0 | 0,5 | 3/4 | 18,0 |
+| 2 | Expanding | 2,6 | 1,25 | 1,5 | 3,9 | 1,0 | 4/4 | 13,8 |
+| 1 | Rolling 60 | 2,6 | 1,25 | 1 | 3,7 | 1,0 | 4/4 | 11,5 |
+| 4 | Rolling 35 | 3,8 | 1,75 | 2,5 | 3,9 | 0,8 | 2/4 | 5,5 |
 
-## Abstand zum besten Prophet-Modell, gepaart je Origin
+## Kalibrierung: Leave-one-cutover-out, auf den übrigen Cutovern gewählt und auf dem zurückgehaltenen geprüft
 
-| Modus | Modell | Referenz | Differenz [W] | 2 Standardfehler [W] | Origins | Origins besser [%] | belastbar |
-|---|---|---|---:|---:|---:|---:|---|
-| rolling | C2 expanding | C3_30 rolling 30 Tage | 1,1 | 3,7 | 161 | 41,0 | nein |
-| rolling | C3_60 rolling 60 Tage | C3_30 rolling 30 Tage | 1,2 | 2,6 | 161 | 41,6 | nein |
-| rolling | C1 statisch | C3_30 rolling 30 Tage | 4,3 | 4,9 | 161 | 40,4 | nein |
-| rolling | C3_7 rolling 7 Tage | C3_30 rolling 30 Tage | 4,7 | 5,3 | 161 | 45,3 | nein |
-| macro | C2 expanding | C3_30 rolling 30 Tage | 0,4 | 4,4 | 161 | 50,3 | nein |
-| macro | C3_60 rolling 60 Tage | C3_30 rolling 30 Tage | 1,2 | 2,6 | 161 | 41,6 | nein |
-| macro | C1 statisch | C3_30 rolling 30 Tage | 1,7 | 5,1 | 161 | 51,6 | nein |
-| macro | C3_7 rolling 7 Tage | C3_30 rolling 30 Tage | 4,7 | 5,3 | 161 | 45,3 | nein |
+| zurückgehaltener Cutover | Referenzfenster | Gate-Schwelle | Streak-Schwelle weekly | Streak-Schwelle long_term | Einzeltag-Alarme zurückgehalten [%] | falsche new_pattern zurückgehalten | Erkennungstag zurückgehalten |
+|---|---|---|---|---|---:|---:|---:|
+| 2013-10-15 | Rolling 60 | 2,6 | 1,25 | 1 | 2,6 | 1 | 5 |
+| 2014-01-15 | Rolling 60 | 2,5 | 1,25 | 1 | 9,6 | 1 | 25 |
+| 2014-04-15 | Rolling 60 | 2,6 | 1,25 | 1 | 3,5 | 1 | 13 |
+| 2014-07-15 | Rolling 60 | 2,6 | 1,25 | 1 | 1,7 | 1 | 3 |
+
+## Erkennung je Ereignis im Betrieb mit Reset, Tag seit Cutover je Cutover
+
+| Referenzfenster | Ereignis | 2013-10-15 | 2014-01-15 | 2014-04-15 | 2014-07-15 | Mittel erkannter | erkannt | Skala bei Erkennung |
+|---|---|---:|---:|---:|---:|---:|---|---|
+| Statisch | Dauerlast +30 W | 44 | - | - | 13 | 28,5 | 2/4 | weekly+long_term |
+| Statisch | Dauerlast +50 W | - | - | - | 13 | 13,0 | 1/4 | weekly+long_term |
+| Statisch | Dauerlast +100 W | - | - | 13 | 8 | 10,5 | 2/4 | weekly+long_term |
+| Statisch | Dauerlast +200 W | - | 27 | 10 | 8 | 15,0 | 3/4 | weekly+long_term |
+| Statisch | Einzeltag-Spitze +3 kWh | 1 | 1 | - | - | 1,0 | 2/4 | daily |
+| Expanding | Dauerlast +30 W | 6 | - | 50 | - | 28,0 | 2/4 | weekly+long_term |
+| Expanding | Dauerlast +50 W | 6 | - | - | 13 | 9,5 | 2/4 | weekly+long_term |
+| Expanding | Dauerlast +100 W | 6 | - | - | 8 | 7,0 | 2/4 | weekly+long_term |
+| Expanding | Dauerlast +200 W | 6 | 27 | 10 | 8 | 12,8 | 4/4 | weekly+long_term |
+| Expanding | Einzeltag-Spitze +3 kWh | - | 1 | - | - | 1,0 | 1/4 | daily |
+| Rolling 60 | Dauerlast +30 W | 5 | - | - | - | 5,0 | 1/4 | weekly+long_term |
+| Rolling 60 | Dauerlast +50 W | 5 | - | 50 | 13 | 22,7 | 3/4 | weekly+long_term |
+| Rolling 60 | Dauerlast +100 W | 6 | - | 12 | 8 | 8,7 | 3/4 | weekly+long_term |
+| Rolling 60 | Dauerlast +200 W | 6 | 27 | 10 | 8 | 12,8 | 4/4 | weekly+long_term |
+| Rolling 60 | Einzeltag-Spitze +3 kWh | - | 1 | - | - | 1,0 | 1/4 | daily |
+| Rolling 35 | Dauerlast +30 W | 5 | - | - | - | 5,0 | 1/4 | weekly+long_term |
+| Rolling 35 | Dauerlast +50 W | 6 | - | - | 13 | 9,5 | 2/4 | weekly+long_term |
+| Rolling 35 | Dauerlast +100 W | 6 | 29 | 49 | 8 | 23,0 | 4/4 | weekly+long_term |
+| Rolling 35 | Dauerlast +200 W | 6 | 26 | 10 | 8 | 12,5 | 4/4 | weekly+long_term |
+| Rolling 35 | Einzeltag-Spitze +3 kWh | - | 1 | - | - | 1,0 | 1/4 | daily |
 
 ## Hinweise
 
-- belastbar: Betrag der Differenz größer als 2 Standardfehler der gepaarten Differenzen, grobe Faustregel
-- rolling: 25 von 3888 Zielstunden nicht bewertet (Messwert fehlt 24, imputiert 1)
-- macro: 25 von 3888 Zielstunden nicht bewertet (Messwert fehlt 24, imputiert 1)
+- Tag seit Cutover = Entscheidungstag: an Tag n meldet das System, eingeordnet ist dabei Tag n-1. Ab Cutover zählt deshalb erst ab Tag 1
+- Kalibrierung: je Referenzfenster die niedrigste Gate-Schwelle mit höchstens 5 % Einzeltag-Alarmen im Kontrolllauf, dann die Streak-Schwellen mit höchstens 1 falschen new_pattern je Fenster und möglichst vielen, frühen Erkennungen. Offline auf den Läufen ohne Reset, im Kreislauf hinge jeder Reset selbst an den Schwellen
+- mit Reset läuft mit den Schwellen im Lauf (Aufbau). Weichen die kalibrierten Schwellen des Produktivfensters davon ab, Config anpassen und K2 neu laufen lassen, erst dann zeigt der Kreislauf die kalibrierten Schwellen
+- erkannt, im Betrieb mit Reset: dauerhafte Änderung = erster Reset (new_pattern) nach dem Cutover, den der Kontrolllauf am selben Tag nicht hat. Einzeltag-Spitze = Alarm am Ereignistag, den der Kontrolllauf nicht hat. Ohne Reset steht die Erkennung der Stufe in der Kalibrierung
+- Skala bei Erkennung: bei new_pattern die Skalen mit Streak, bei der Spitze die Gate-Skala mit dem höchsten Score
 
-![rolling/forecast_model_comparison.png](rolling/forecast_model_comparison.png)
+![k2_gate_open.png](k2_gate_open.png)
 
-![macro/forecast_model_comparison.png](macro/forecast_model_comparison.png)
+## Anhang
+
+### Kalibrierung: Arbeitspunkte je Cutover
+
+| Referenzfenster | Rang | Gate-Schwelle | Streak-Schwelle weekly | Streak-Schwelle long_term | Cutover | Einzeltag-Alarme Kontrolle [%] | falsche new_pattern je Fenster | Erkennungstag |
+|---|---:|---|---|---|---|---:|---:|---:|
+| Statisch | 3 | 2,7 | 2,5 | 5 | 2013-10-15 | 7,0 | 1 | 7 |
+| Statisch | 3 | 2,7 | 2,5 | 5 | 2014-01-15 | 6,1 | 1 | 10 |
+| Statisch | 3 | 2,7 | 2,5 | 5 | 2014-04-15 | 0,0 | 0 | - |
+| Statisch | 3 | 2,7 | 2,5 | 5 | 2014-07-15 | 7,0 | 0 | 37 |
+| Expanding | 2 | 2,6 | 1,25 | 1,5 | 2013-10-15 | 5,2 | 1 | 6 |
+| Expanding | 2 | 2,6 | 1,25 | 1,5 | 2014-01-15 | 8,7 | 1 | 27 |
+| Expanding | 2 | 2,6 | 1,25 | 1,5 | 2014-04-15 | 0,9 | 1 | 13 |
+| Expanding | 2 | 2,6 | 1,25 | 1,5 | 2014-07-15 | 0,9 | 1 | 9 |
+| Rolling 60 | 1 | 2,6 | 1,25 | 1 | 2013-10-15 | 2,6 | 1 | 5 |
+| Rolling 60 | 1 | 2,6 | 1,25 | 1 | 2014-01-15 | 7,0 | 1 | 25 |
+| Rolling 60 | 1 | 2,6 | 1,25 | 1 | 2014-04-15 | 3,5 | 1 | 13 |
+| Rolling 60 | 1 | 2,6 | 1,25 | 1 | 2014-07-15 | 1,7 | 1 | 3 |
+| Rolling 35 | 4 | 3,8 | 1,75 | 2,5 | 2013-10-15 | 1,7 | 0 | 3 |
+| Rolling 35 | 4 | 3,8 | 1,75 | 2,5 | 2014-01-15 | 9,6 | 1 | - |
+| Rolling 35 | 4 | 3,8 | 1,75 | 2,5 | 2014-04-15 | 1,7 | 1 | - |
+| Rolling 35 | 4 | 3,8 | 1,75 | 2,5 | 2014-07-15 | 2,6 | 1 | 8 |

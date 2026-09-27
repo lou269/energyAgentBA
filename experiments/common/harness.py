@@ -35,7 +35,7 @@ def run_scenario(
     run_id: str,
     llm_prompt: str | None = None,
 ) -> pd.DataFrame:
-    # sonst eine Logzeile je Zyklus und System, bei K3 wären das gut 5.000
+    # sonst eine Logzeile je Zyklus und System, bei K2 wären das gut 5.000
     logging.getLogger("src.pipeline.comparison_harness").setLevel(logging.WARNING)
 
     return run_comparison(
@@ -59,7 +59,7 @@ def run_scenario_in_scratch(
     *,
     run_id: str,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
-    # run_comparison schreibt Forecasts, States und Manifeste mit, K3 und K5 brauchen davon nur Summary und Anomalie-Zeilen
+    # run_comparison schreibt Forecasts, States und Manifeste mit, K2 und K4 brauchen davon nur Summary und Anomalie-Zeilen
     with TemporaryDirectory() as scratch:
         run_scenario(scenario, configs, Path(scratch), run_id=run_id)
 

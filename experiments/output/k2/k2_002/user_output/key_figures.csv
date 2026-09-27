@@ -1,7 +1,9 @@
 Kennzahl,Wert,Bezug
-rolling: MAE bestes Modell C3_30 rolling 30 Tage [W],131.7,"B2 173,5 W"
-rolling: Skill der Prophet-Varianten ggü. B2 [%],24.1,"Spanne 21,4 bis 24,1 %"
-rolling: Varianten belastbar schlechter als das beste Modell,0.0,von 4
-macro: MAE bestes Modell C3_30 rolling 30 Tage [W],131.7,"B2 173,5 W"
-macro: Skill der Prophet-Varianten ggü. B2 [%],24.1,"Spanne 21,4 bis 24,1 %"
-macro: Varianten belastbar schlechter als das beste Modell,0.0,von 4
+Kalibrierung: bestes Referenzfenster bei höchstens 5 % Einzeltag-Alarmen,Rolling 60,"Gate-Schwelle 2,6, im Leave-one-out 4/4 Durchgänge vorn"
+Rolling 60: kalibrierte Schwellen (Gate / weekly / long_term),"2,6 / 1,25 / 1","im Lauf 2,6 / 1,25 / 1"
+"Rolling 60: Gate offen ohne Ereignis, mit Reset [%]",5.0,"ohne Reset 7,9 %, Ziel 5 %"
+"Rolling 60: Einzeltag-Spitze +3 kWh erkannt, mit Reset",1/4,Skala daily
+"Rolling 60: Dauerlast +100 W erkannt, mit Reset",3/4,Skala weekly+long_term
+"Rolling 60: Dauerlast +200 W erkannt, mit Reset",4/4,Skala weekly+long_term
+"Rolling 60: Dauerlast +30 W erkannt, mit Reset",1/4,Skala weekly+long_term
+"Rolling 60: Dauerlast +50 W erkannt, mit Reset",3/4,Skala weekly+long_term

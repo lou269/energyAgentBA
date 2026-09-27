@@ -1,71 +1,61 @@
-# K2 Retraining-Vergleich, Lauf k2_001
+# K2 Referenzfenster der Anomalieerkennung, Lauf k2_001
 
 ## Setup
 
-- Split: validation, 2015-04-30 bis 2015-10-08, 162 Prognosetage (Ortszeit)
-- Modus rolling: 60 Tage Historie vor Split-Start, wie der Online-Zyklus
-- Modus macro: gesamte Historie vor Split-Start
-- Naive Referenz: rolling B2, macro B2
-- Prognose: 1 Tag ab lokaler Mitternacht, Intervall 80 %
-- Konfiguration: forecast-model-0.1, Seed 42
+- Cutover: 2013-10-15, 2014-01-15, 2014-04-15, 2014-07-15
+- Zeitraum je Cutover: Kaltstart, 60 Tage Überwachung vor dem Cutover, 60 Tage danach
+- Ereignis: Dauerlast +100 W ab Cutover, gepaart mit unverändertem Kontrolllauf
+- Modi: ohne Reset = nur Detektor, mit Reset = Kreislauf mit Regel wie SYS2
+- Produktiv-Referenzfenster: Rolling 60
 - Commit: a3ddf39 (mit lokalen Änderungen)
 
 ## Kennzahlen
 
 | Kennzahl | Wert | Bezug |
 |---|---|---|
-| rolling: MAE bestes Modell C3_30 rolling 30 Tage [W] | 131,7 | B2 173,5 W |
-| rolling: Skill der Prophet-Varianten ggü. B2 [%] | 24,1 | Spanne 21,4 bis 24,1 % |
-| rolling: Varianten belastbar schlechter als das beste Modell | 0 | von 4 |
-| macro: MAE bestes Modell C3_30 rolling 30 Tage [W] | 131,7 | B2 173,5 W |
-| macro: Skill der Prophet-Varianten ggü. B2 [%] | 24,1 | Spanne 21,4 bis 24,1 % |
-| macro: Varianten belastbar schlechter als das beste Modell | 0 | von 4 |
+| Rolling 60: Gate offen ohne Ereignis, mit Reset [%] | 5,0 | ohne Reset 7,9 %, Ziel 5 % |
+| Rolling 60: Stufe erkannt mit Reset | 3/4 | ohne Reset 4/4 |
+| Rolling 60: zusätzliche Meldungen durch die Stufe, mit Reset | 3 | ohne Reset 26 |
 
-## Gesamtfehler rolling
+## Ohne Ereignis: Kontrolllauf über das ganze Fenster, Mittel über Cutover
 
-| Modell | MAE [W] | RMSE [W] | MAPE [%] | Skill ggü. B2 [%] | Intervall-Abdeckung [%], Soll 80 | Refit-Zeit gesamt [s] |
+| Referenzfenster | Gate offen ohne Reset [%] | Gate offen mit Reset [%] | davon Einzeltag mit Reset [%] | Resets je Fenster | MAE ohne Reset [W] | MAE mit Reset [W] |
 |---|---:|---:|---:|---:|---:|---:|
-| C3_30 rolling 30 Tage | 131,7 | 235,3 | 39,2 | 24,1 | 80,0 | 8,8 |
-| C2 expanding | 132,8 | 238,5 | 39,5 | 23,5 | 82,6 | 32,5 |
-| C3_60 rolling 60 Tage | 132,8 | 236,9 | 39,7 | 23,4 | 80,8 | 15,0 |
-| C1 statisch | 135,9 | 245,5 | 38,6 | 21,7 | 83,2 | 0,2 |
-| C3_7 rolling 7 Tage | 136,3 | 239,9 | 41,4 | 21,4 | 75,8 | 4,7 |
-| B2 naiv, Vortag | 173,5 | 314,3 | 54,8 | - | - | 0,0 |
-| B3 naiv, Vorwoche | 185,7 | 321,4 | 61,2 | - | - | 0,0 |
-| B1 naiv, letzter Wert | 326,0 | 500,4 | 127,9 | - | - | 0,0 |
+| Statisch | 28,3 | 3,7 | 2,7 | 1,2 | 133,9 | 134,5 |
+| Expanding | 8,7 | 4,5 | 3,5 | 1,5 | 133,9 | 134,4 |
+| Rolling 60 | 7,9 | 5,0 | 3,7 | 1,5 | 133,9 | 134,3 |
+| Rolling 35 | 11,8 | 7,4 | 6,4 | 1,5 | 133,9 | 134,5 |
 
-## Gesamtfehler macro
+## Erkennung der Stufe, Tag seit Cutover je Cutover
 
-| Modell | MAE [W] | RMSE [W] | MAPE [%] | Skill ggü. B2 [%] | Intervall-Abdeckung [%], Soll 80 | Refit-Zeit gesamt [s] |
-|---|---:|---:|---:|---:|---:|---:|
-| C3_30 rolling 30 Tage | 131,7 | 235,3 | 39,2 | 24,1 | 80,2 | 8,7 |
-| C2 expanding | 132,0 | 242,8 | 37,3 | 23,9 | 84,5 | 364,4 |
-| C3_60 rolling 60 Tage | 132,8 | 236,9 | 39,7 | 23,4 | 81,0 | 15,1 |
-| C1 statisch | 133,4 | 240,0 | 40,1 | 23,1 | 83,6 | 1,4 |
-| C3_7 rolling 7 Tage | 136,3 | 239,9 | 41,4 | 21,4 | 75,8 | 4,4 |
-| B2 naiv, Vortag | 173,5 | 314,3 | 54,8 | - | - | 0,0 |
-| B3 naiv, Vorwoche | 185,7 | 321,4 | 61,2 | - | - | 0,0 |
-| B1 naiv, letzter Wert | 326,0 | 500,4 | 127,9 | - | - | 0,0 |
+| Referenzfenster | Modus | 2013-10-15 | 2014-01-15 | 2014-04-15 | 2014-07-15 | Mittel erkannter | erkannt | MAE nach Cutover [W] |
+|---|---|---:|---:|---:|---:|---:|---|---:|
+| Statisch | ohne Reset | 16 | 8 | 12 | 14 | 12,5 | 4/4 | 140,1 |
+| Statisch | mit Reset | 0 | - | 12 | 7 | 6,3 | 3/4 | 140,7 |
+| Expanding | ohne Reset | 5 | 25 | - | 7 | 12,3 | 3/4 | 140,1 |
+| Expanding | mit Reset | 5 | - | - | 7 | 6,0 | 2/4 | 140,6 |
+| Rolling 60 | ohne Reset | 5 | 25 | 11 | 2 | 10,8 | 4/4 | 140,1 |
+| Rolling 60 | mit Reset | 5 | - | 11 | 7 | 7,7 | 3/4 | 140,7 |
+| Rolling 35 | ohne Reset | 5 | 26 | - | 7 | 12,7 | 3/4 | 140,1 |
+| Rolling 35 | mit Reset | 5 | 28 | 48 | 7 | 22,0 | 4/4 | 140,7 |
 
-## Abstand zum besten Prophet-Modell, gepaart je Origin
+## Meldungen an den Nutzer
 
-| Modus | Modell | Referenz | Differenz [W] | 2 Standardfehler [W] | Origins | Origins besser [%] | belastbar |
-|---|---|---|---:|---:|---:|---:|---|
-| rolling | C2 expanding | C3_30 rolling 30 Tage | 1,1 | 3,7 | 161 | 41,0 | nein |
-| rolling | C3_60 rolling 60 Tage | C3_30 rolling 30 Tage | 1,2 | 2,6 | 161 | 41,6 | nein |
-| rolling | C1 statisch | C3_30 rolling 30 Tage | 4,3 | 4,9 | 161 | 40,4 | nein |
-| rolling | C3_7 rolling 7 Tage | C3_30 rolling 30 Tage | 4,7 | 5,3 | 161 | 45,3 | nein |
-| macro | C2 expanding | C3_30 rolling 30 Tage | 0,4 | 4,4 | 161 | 50,3 | nein |
-| macro | C3_60 rolling 60 Tage | C3_30 rolling 30 Tage | 1,2 | 2,6 | 161 | 41,6 | nein |
-| macro | C1 statisch | C3_30 rolling 30 Tage | 1,7 | 5,1 | 161 | 51,6 | nein |
-| macro | C3_7 rolling 7 Tage | C3_30 rolling 30 Tage | 4,7 | 5,3 | 161 | 45,3 | nein |
+| Referenzfenster | Modus | ohne Ereignis je 30 Tage | unknown ohne Ereignis | mit Stufe je 30 Tage | unknown mit Stufe | zusätzlich durch die Stufe, alle Cutover | new_pattern ohne Ereignis je Fenster |
+|---|---|---:|---:|---:|---:|---:|---:|
+| Statisch | ohne Reset | 8,5 | 0,0 | 12,5 | 0,0 | 65 | 29,8 |
+| Statisch | mit Reset | 1,1 | 0,9 | 1,6 | 1,5 | 8 | 1,2 |
+| Expanding | ohne Reset | 2,6 | 0,0 | 6,4 | 0,0 | 61 | 6,8 |
+| Expanding | mit Reset | 1,4 | 1,1 | 1,2 | 1,2 | -3 | 1,5 |
+| Rolling 60 | ohne Reset | 2,4 | 0,0 | 4,0 | 0,0 | 26 | 5,2 |
+| Rolling 60 | mit Reset | 1,5 | 1,1 | 1,7 | 1,5 | 3 | 1,5 |
+| Rolling 35 | ohne Reset | 3,5 | 0,0 | 4,6 | 0,0 | 17 | 4,2 |
+| Rolling 35 | mit Reset | 2,2 | 1,1 | 2,2 | 1,5 | 0 | 1,5 |
 
 ## Hinweise
 
-- belastbar: Betrag der Differenz größer als 2 Standardfehler der gepaarten Differenzen, grobe Faustregel
-- rolling: 25 von 3888 Zielstunden nicht bewertet (Messwert fehlt 24, imputiert 1)
-- macro: 25 von 3888 Zielstunden nicht bewertet (Messwert fehlt 24, imputiert 1)
+- Tag seit Cutover zählt den ausgewerteten Tag, nicht den prognostizierten (anders als in K4)
+- Meldung = Tag mit peak, low, new_pattern, absence, in SYS3 jeweils ein LLM-Aufruf. unknown getrennt, dort reicht die Referenz nicht
+- mit Reset: ein Reset am Cutover-Tag kann auch im Kontrolllauf auftreten und ist dann kein Treffer, Kontrolllauf-Resets stehen in der ersten Tabelle
 
-![rolling/forecast_model_vergleich.png](rolling/forecast_model_vergleich.png)
-
-![macro/forecast_model_vergleich.png](macro/forecast_model_vergleich.png)
+![k2_closed_loop.png](k2_closed_loop.png)

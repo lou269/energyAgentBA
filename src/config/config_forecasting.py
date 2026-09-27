@@ -19,9 +19,7 @@ class PreprocessingConfig:
 
     gap_treatment_method: ProductionGapMethod = "ffill"
     max_imputation_gap_15min: int = 4
-    max_imputation_gap_hourly: int = (
-        3  # nicht das gleiche wie DataPreparationConfig.max_availability_gap_hours
-    )
+    max_imputation_gap_hourly: int = 3
 
     stuck_value_min_hours: float = 6.0
 
@@ -49,7 +47,7 @@ class NumericalAnalysisConfig:
 
     strong_anomaly_threshold: float = 3.0
 
-    # kalibriert in K3 Stufe 3
+    # kalibriert in K2 Stufe 3
     unusual_threshold: float = 2.6
     weekly_streak_threshold: float = 1.25
     long_term_streak_threshold: float = 1.0
@@ -60,15 +58,13 @@ class NumericalAnalysisConfig:
     sample_period_hours_daily: float = 24.0
     trend_window_days: int = 7  # unkalibriert, Startwert wie trend_threshold seinerzeit
     long_term_window_days: int = 30
-    weekly_window_days: int = (
-        7  # eigenständig von trend_window_days, auch wenn aktuell derselbe Wert
-    )
+    weekly_window_days: int = 7  # eigenständig von trend_window_days
 
     # Mindestabdeckung für weekly_mean/long_term_window_mean (rolling): ein einzelner NaN-Tag (z.B. measurement_error)
     # soll die Skala nicht gleich für die ganze Fensterlänge lahmlegen, siehe anomalieerkennung_neu.md
     rolling_window_min_coverage: float = 0.8
 
-    # Rolling 60 statt eingefroren nach 60 Tagen (K3 Stufe 3/4), Statisch veraltet saisonal
+    # Rolling 60 statt eingefroren nach 60 Tagen (K2 Stufe 3/4), Statisch veraltet saisonal
     max_reference_window_growth_days: int | None = None
     reference_window_rolling_days: int | None = 60
 
@@ -189,7 +185,7 @@ class ForecastingConfig:
     uncertainty_samples: int = 1000
     seed: int = 42
 
-    # aus dem K2-Validierungslauf übertragen, gilt für Test-Split und E4
+    # aus dem K1-Validierungslauf übertragen, gilt für Test-Split und E4
     primary_naive_reference: str | None = "B2"
     negative_forecast_handling: NegativeForecastHandling = "raw"
 

@@ -1,0 +1,90 @@
+{
+  "code_version": {
+    "git_commit": "a3ddf39eebcc9d930493c785e69d17d0b6350f95",
+    "git_dirty": true
+  },
+  "k1_config": {
+    "baseline_model_ids": [
+      "B1",
+      "B2",
+      "B3"
+    ],
+    "comparison_modes": [
+      "rolling",
+      "macro"
+    ],
+    "config_version": "forecast-model-0.1",
+    "country_holidays": "UK",
+    "cycle_coldstart_days": 60,
+    "daily_seasonality": true,
+    "experiment_id": "K1_forecast_model",
+    "forecast_origin_step_days": 1,
+    "frequency": "1h",
+    "growth": "linear",
+    "horizon_days": 1,
+    "interval_width": 0.8,
+    "log_transform": true,
+    "mape_min_eligible_watts": 10.0,
+    "negative_forecast_handling": "raw",
+    "primary_naive_reference": "B2",
+    "prophet_variants": [
+      {
+        "history_mode": "fixed_train",
+        "model_id": "C1",
+        "retraining_interval_days": null,
+        "rolling_window_days": null,
+        "weekly_seasonality": false,
+        "yearly_seasonality": false
+      },
+      {
+        "history_mode": "expanding",
+        "model_id": "C2",
+        "retraining_interval_days": 1,
+        "rolling_window_days": null,
+        "weekly_seasonality": false,
+        "yearly_seasonality": false
+      },
+      {
+        "history_mode": "rolling",
+        "model_id": "C3_7",
+        "retraining_interval_days": 1,
+        "rolling_window_days": 7,
+        "weekly_seasonality": false,
+        "yearly_seasonality": false
+      },
+      {
+        "history_mode": "rolling",
+        "model_id": "C3_30",
+        "retraining_interval_days": 1,
+        "rolling_window_days": 30,
+        "weekly_seasonality": false,
+        "yearly_seasonality": false
+      },
+      {
+        "history_mode": "rolling",
+        "model_id": "C3_60",
+        "retraining_interval_days": 1,
+        "rolling_window_days": 60,
+        "weekly_seasonality": false,
+        "yearly_seasonality": false
+      }
+    ],
+    "reference_model_ids": [
+      "B1",
+      "B2",
+      "B3",
+      "C1"
+    ],
+    "seed": 42,
+    "selected_prophet_variant": {
+      "history_mode": "rolling",
+      "model_id": "C3_30",
+      "retraining_interval_days": 1,
+      "rolling_window_days": 30,
+      "weekly_seasonality": false,
+      "yearly_seasonality": false
+    },
+    "split": "validation",
+    "uncertainty_samples": 1000
+  }
+}

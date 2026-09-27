@@ -23,7 +23,7 @@ NOTIFICATION_CLASSIFICATIONS: tuple[str, ...] = (
 NOTIFICATION_PERIOD_DAYS = 30
 
 
-# Standard-Szenarien, auf denen K3, K4 (Ebene 2), K5 und später E3/E5 laufen
+# Standard-Szenarien, auf denen K2, K3 (Ebene 2), K4 und später E3/E5 laufen
 @dataclass(frozen=True)
 class StandardScenarioConfig:
     # lokale Kalendertage, je eine Jahreszeit, alle im Train-Split und ohne bekannte Kalenderereignisse im Fenster
@@ -42,7 +42,7 @@ class StandardScenarioConfig:
     step_injection_w: float = 100.0
 
     # alles ab Cutover um 30 % höher, im Mittel nach den Cutovern etwa ebenfalls +100 W.
-    # Additiv gegen multiplikativ, der Stufen-Regressor in K5 lernt wegen log_transform einen Faktor.
+    # Additiv gegen multiplikativ, der Stufen-Regressor in K4 lernt wegen log_transform einen Faktor.
     # Zugleich Endniveau der Rampen (ramp_28 = in 28 Tagen auf diesen Faktor)
     scale_factor: float = 1.3
 

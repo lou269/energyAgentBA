@@ -30,16 +30,16 @@ class ProjectConfig:
     # llm_output_dir: Path = output_dir / "llm"
     cycle_output_dir: Path = output_dir / "cycle"
 
-    # je Experiment ein Unterordner (e1, k2, ...), darin je Lauf die Ergebnisse oben und die Rohdaten in raw/
+    # je Experiment ein Unterordner (e1, k1, ...), darin je Lauf die Ergebnisse oben und die Rohdaten in raw/
     experiment_output_dir: Path = project_root / "experiments" / "output"
     e1_output_dir: Path = experiment_output_dir / "e1"
     e2_output_dir: Path = experiment_output_dir / "e2"
     e3_output_dir: Path = experiment_output_dir / "e3"
     e4_output_dir: Path = experiment_output_dir / "e4"
+    k1_output_dir: Path = experiment_output_dir / "k1"
     k2_output_dir: Path = experiment_output_dir / "k2"
     k3_output_dir: Path = experiment_output_dir / "k3"
     k4_output_dir: Path = experiment_output_dir / "k4"
-    k5_output_dir: Path = experiment_output_dir / "k5"
     result_decimals: int = 1
 
     timezone: str = "Europe/London"

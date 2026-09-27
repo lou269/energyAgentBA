@@ -12,7 +12,7 @@ class E4Config:
     # alle Starttermine liegen im Train-Split
     split: str = "train"
 
-    # je eine Jahreszeit im Train-Split, wie K3, nur Winter einen Monat später: ab 15.01. läge Weihnachten in der CS30-Historie, nicht aber in CS7
+    # je eine Jahreszeit im Train-Split, wie K2, nur Winter einen Monat später: ab 15.01. läge Weihnachten in der CS30-Historie, nicht aber in CS7
     start_dates: tuple[str, ...] = (
         "2013-10-15",
         "2014-02-15",

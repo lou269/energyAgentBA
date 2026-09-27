@@ -1,0 +1,17 @@
+run_id,split,model_id,target_exclusion_reason,excluded_target_count,excluded_target_share
+k1_001_macro_validation,validation,B1,missing_target,24,0.006172839506172839
+k1_001_macro_validation,validation,B1,target_imputed,1,0.000257201646090535
+k1_001_macro_validation,validation,B2,missing_target,24,0.006172839506172839
+k1_001_macro_validation,validation,B2,target_imputed,1,0.000257201646090535
+k1_001_macro_validation,validation,B3,missing_target,24,0.006172839506172839
+k1_001_macro_validation,validation,B3,target_imputed,1,0.000257201646090535
+k1_001_macro_validation,validation,C1,missing_target,24,0.006172839506172839
+k1_001_macro_validation,validation,C1,target_imputed,1,0.000257201646090535
+k1_001_macro_validation,validation,C2,missing_target,24,0.006172839506172839
+k1_001_macro_validation,validation,C2,target_imputed,1,0.000257201646090535
+k1_001_macro_validation,validation,C3_30,missing_target,24,0.006172839506172839
+k1_001_macro_validation,validation,C3_30,target_imputed,1,0.000257201646090535
+k1_001_macro_validation,validation,C3_60,missing_target,24,0.006172839506172839
+k1_001_macro_validation,validation,C3_60,target_imputed,1,0.000257201646090535
+k1_001_macro_validation,validation,C3_7,missing_target,24,0.006172839506172839
+k1_001_macro_validation,validation,C3_7,target_imputed,1,0.000257201646090535

@@ -1,9 +1,0 @@
-Kennzahl,Wert,Bezug
-Kalibrierung: bestes Referenzfenster bei höchstens 5 % Einzeltag-Alarmen,Rolling 60,"Gate-Schwelle 2,6, im Leave-one-out 4/4 Durchgänge vorn"
-Rolling 60: kalibrierte Schwellen (Gate / weekly / long_term),"2,6 / 1,25 / 1","im Lauf 2,6 / 1,25 / 1"
-"Rolling 60: Gate offen ohne Ereignis, mit Reset [%]",5.0,"ohne Reset 7,9 %, Ziel 5 %"
-"Rolling 60: Einzeltag-Spitze +3 kWh erkannt, mit Reset",1/4,Skala daily
-"Rolling 60: Dauerlast +100 W erkannt, mit Reset",3/4,Skala weekly+long_term
-"Rolling 60: Dauerlast +200 W erkannt, mit Reset",4/4,Skala weekly+long_term
-"Rolling 60: Dauerlast +30 W erkannt, mit Reset",1/4,Skala weekly+long_term
-"Rolling 60: Dauerlast +50 W erkannt, mit Reset",3/4,Skala weekly+long_term

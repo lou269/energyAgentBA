@@ -27,7 +27,7 @@ class E2Config:
     # Kanalauswahl aus e2_select_channels (nilmtk-env), Eingabe für das Szenario, liegt unter e2_output_dir
     channel_selection_subdir: Path = Path("channel_selection")
 
-    # 14 Tage, davor 30 und danach 28 ruhige Tage in der K3-Kontrolle (Gate zu, keine Drift, kein Reset)
+    # 14 Tage, davor 30 und danach 28 ruhige Tage in der K2-Kontrolle (Gate zu, keine Drift, kein Reset)
     active_absence_event_id: str = "vacation-2013-09"
 
     decision_time_margin_before_days: int = 30
