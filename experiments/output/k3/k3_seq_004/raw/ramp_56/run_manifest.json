@@ -1,0 +1,613 @@
+{
+  "code_version": {
+    "git_commit": "b2705edc951f9a5c7a4f347148323384337df3c3",
+    "git_dirty": true
+  },
+  "configs": {
+    "labels": [
+      "MDL0",
+      "MDL1",
+      "MDL2",
+      "MDL3",
+      "MDL4",
+      "MDL5",
+      "BASELINE"
+    ],
+    "sha256": "22a95c5696e05ed3b86a009d49700cacca7ebdffe3ba718e8fda65f6304bce02",
+    "values": {
+      "BASELINE": {
+        "event_adaptation": true,
+        "forecasting_config": {
+          "baseline_model_ids": [
+            "B1",
+            "B2",
+            "B3"
+          ],
+          "config_version": "0.5",
+          "country_holidays": "UK",
+          "cycle_coldstart_days": 60,
+          "daily_seasonality": true,
+          "experiment_id": "forecasting",
+          "forecast_origin_step_days": 1,
+          "frequency": "1h",
+          "growth": "linear",
+          "horizon_days": 1,
+          "interval_width": 0.8,
+          "log_transform": true,
+          "mape_min_eligible_watts": 10.0,
+          "negative_forecast_handling": "raw",
+          "primary_naive_reference": "B2",
+          "seed": 42,
+          "selected_prophet_variant": {
+            "history_mode": "rolling",
+            "model_id": "C3_30",
+            "retraining_interval_days": 1,
+            "rolling_window_days": 30,
+            "weekly_seasonality": false,
+            "yearly_seasonality": false
+          },
+          "uncertainty_samples": 1000
+        },
+        "llm_config": null,
+        "llm_mode": "rule",
+        "numerical_analysis_config": {
+          "gate_scales": [
+            "daily",
+            "weekday"
+          ],
+          "long_term_streak_threshold": 1.0,
+          "long_term_window_days": 30,
+          "max_reference_window_growth_days": null,
+          "min_daily_reference_samples": 7,
+          "min_longterm_reference_samples": 1,
+          "min_reference_power_w": 10.0,
+          "min_residual_std_w": 1.0,
+          "min_sustained_scales": 2,
+          "min_weekday_reference_samples": 4,
+          "min_weekly_reference_samples": 1,
+          "reference_window_days": 3,
+          "reference_window_rolling_days": 60,
+          "rolling_window_min_coverage": 0.8,
+          "sample_period_hours_15min": 0.25,
+          "sample_period_hours_daily": 24.0,
+          "sample_period_hours_hourly": 1.0,
+          "streak_tolerance_window_days": 7,
+          "strong_anomaly_threshold": 3.0,
+          "sustained_anomaly_streak_days": 6,
+          "trend_threshold": 0.3,
+          "trend_window_days": 7,
+          "unusual_threshold": 2.6,
+          "weekly_streak_threshold": 1.25,
+          "weekly_window_days": 7
+        },
+        "window_exclusion": true
+      },
+      "MDL0": {
+        "event_adaptation": true,
+        "forecasting_config": {
+          "baseline_model_ids": [
+            "B1",
+            "B2",
+            "B3"
+          ],
+          "config_version": "0.5",
+          "country_holidays": "UK",
+          "cycle_coldstart_days": 60,
+          "daily_seasonality": true,
+          "experiment_id": "forecasting",
+          "forecast_origin_step_days": 1,
+          "frequency": "1h",
+          "growth": "linear",
+          "horizon_days": 1,
+          "interval_width": 0.8,
+          "log_transform": true,
+          "mape_min_eligible_watts": 10.0,
+          "negative_forecast_handling": "raw",
+          "primary_naive_reference": "B2",
+          "seed": 42,
+          "selected_prophet_variant": {
+            "history_mode": "rolling",
+            "model_id": "C3_30",
+            "retraining_interval_days": 1,
+            "rolling_window_days": 30,
+            "weekly_seasonality": false,
+            "yearly_seasonality": false
+          },
+          "uncertainty_samples": 1000
+        },
+        "llm_config": {
+          "calendar_tool": false,
+          "calendar_tool_max_days": 14,
+          "keep_alive": -1,
+          "max_attempts": 2,
+          "model": "qwen3:4b",
+          "num_ctx": 8192,
+          "num_predict": 1024,
+          "presence_penalty": 1.5,
+          "prompt_version": "v15",
+          "request_timeout_seconds": 120.0,
+          "seed": 42,
+          "temperature": 0.0,
+          "think": false
+        },
+        "llm_mode": "real",
+        "numerical_analysis_config": {
+          "gate_scales": [
+            "daily",
+            "weekday"
+          ],
+          "long_term_streak_threshold": 1.0,
+          "long_term_window_days": 30,
+          "max_reference_window_growth_days": null,
+          "min_daily_reference_samples": 7,
+          "min_longterm_reference_samples": 1,
+          "min_reference_power_w": 10.0,
+          "min_residual_std_w": 1.0,
+          "min_sustained_scales": 2,
+          "min_weekday_reference_samples": 4,
+          "min_weekly_reference_samples": 1,
+          "reference_window_days": 3,
+          "reference_window_rolling_days": 60,
+          "rolling_window_min_coverage": 0.8,
+          "sample_period_hours_15min": 0.25,
+          "sample_period_hours_daily": 24.0,
+          "sample_period_hours_hourly": 1.0,
+          "streak_tolerance_window_days": 7,
+          "strong_anomaly_threshold": 3.0,
+          "sustained_anomaly_streak_days": 6,
+          "trend_threshold": 0.3,
+          "trend_window_days": 7,
+          "unusual_threshold": 2.6,
+          "weekly_streak_threshold": 1.25,
+          "weekly_window_days": 7
+        },
+        "window_exclusion": true
+      },
+      "MDL1": {
+        "event_adaptation": true,
+        "forecasting_config": {
+          "baseline_model_ids": [
+            "B1",
+            "B2",
+            "B3"
+          ],
+          "config_version": "0.5",
+          "country_holidays": "UK",
+          "cycle_coldstart_days": 60,
+          "daily_seasonality": true,
+          "experiment_id": "forecasting",
+          "forecast_origin_step_days": 1,
+          "frequency": "1h",
+          "growth": "linear",
+          "horizon_days": 1,
+          "interval_width": 0.8,
+          "log_transform": true,
+          "mape_min_eligible_watts": 10.0,
+          "negative_forecast_handling": "raw",
+          "primary_naive_reference": "B2",
+          "seed": 42,
+          "selected_prophet_variant": {
+            "history_mode": "rolling",
+            "model_id": "C3_30",
+            "retraining_interval_days": 1,
+            "rolling_window_days": 30,
+            "weekly_seasonality": false,
+            "yearly_seasonality": false
+          },
+          "uncertainty_samples": 1000
+        },
+        "llm_config": {
+          "calendar_tool": false,
+          "calendar_tool_max_days": 14,
+          "keep_alive": -1,
+          "max_attempts": 2,
+          "model": "qwen3:8b",
+          "num_ctx": 8192,
+          "num_predict": 1024,
+          "presence_penalty": 1.5,
+          "prompt_version": "v15",
+          "request_timeout_seconds": 120.0,
+          "seed": 42,
+          "temperature": 0.0,
+          "think": false
+        },
+        "llm_mode": "real",
+        "numerical_analysis_config": {
+          "gate_scales": [
+            "daily",
+            "weekday"
+          ],
+          "long_term_streak_threshold": 1.0,
+          "long_term_window_days": 30,
+          "max_reference_window_growth_days": null,
+          "min_daily_reference_samples": 7,
+          "min_longterm_reference_samples": 1,
+          "min_reference_power_w": 10.0,
+          "min_residual_std_w": 1.0,
+          "min_sustained_scales": 2,
+          "min_weekday_reference_samples": 4,
+          "min_weekly_reference_samples": 1,
+          "reference_window_days": 3,
+          "reference_window_rolling_days": 60,
+          "rolling_window_min_coverage": 0.8,
+          "sample_period_hours_15min": 0.25,
+          "sample_period_hours_daily": 24.0,
+          "sample_period_hours_hourly": 1.0,
+          "streak_tolerance_window_days": 7,
+          "strong_anomaly_threshold": 3.0,
+          "sustained_anomaly_streak_days": 6,
+          "trend_threshold": 0.3,
+          "trend_window_days": 7,
+          "unusual_threshold": 2.6,
+          "weekly_streak_threshold": 1.25,
+          "weekly_window_days": 7
+        },
+        "window_exclusion": true
+      },
+      "MDL2": {
+        "event_adaptation": true,
+        "forecasting_config": {
+          "baseline_model_ids": [
+            "B1",
+            "B2",
+            "B3"
+          ],
+          "config_version": "0.5",
+          "country_holidays": "UK",
+          "cycle_coldstart_days": 60,
+          "daily_seasonality": true,
+          "experiment_id": "forecasting",
+          "forecast_origin_step_days": 1,
+          "frequency": "1h",
+          "growth": "linear",
+          "horizon_days": 1,
+          "interval_width": 0.8,
+          "log_transform": true,
+          "mape_min_eligible_watts": 10.0,
+          "negative_forecast_handling": "raw",
+          "primary_naive_reference": "B2",
+          "seed": 42,
+          "selected_prophet_variant": {
+            "history_mode": "rolling",
+            "model_id": "C3_30",
+            "retraining_interval_days": 1,
+            "rolling_window_days": 30,
+            "weekly_seasonality": false,
+            "yearly_seasonality": false
+          },
+          "uncertainty_samples": 1000
+        },
+        "llm_config": {
+          "calendar_tool": false,
+          "calendar_tool_max_days": 14,
+          "keep_alive": -1,
+          "max_attempts": 2,
+          "model": "qwen3.5:9b",
+          "num_ctx": 8192,
+          "num_predict": 1024,
+          "presence_penalty": 1.5,
+          "prompt_version": "v15",
+          "request_timeout_seconds": 120.0,
+          "seed": 42,
+          "temperature": 0.0,
+          "think": false
+        },
+        "llm_mode": "real",
+        "numerical_analysis_config": {
+          "gate_scales": [
+            "daily",
+            "weekday"
+          ],
+          "long_term_streak_threshold": 1.0,
+          "long_term_window_days": 30,
+          "max_reference_window_growth_days": null,
+          "min_daily_reference_samples": 7,
+          "min_longterm_reference_samples": 1,
+          "min_reference_power_w": 10.0,
+          "min_residual_std_w": 1.0,
+          "min_sustained_scales": 2,
+          "min_weekday_reference_samples": 4,
+          "min_weekly_reference_samples": 1,
+          "reference_window_days": 3,
+          "reference_window_rolling_days": 60,
+          "rolling_window_min_coverage": 0.8,
+          "sample_period_hours_15min": 0.25,
+          "sample_period_hours_daily": 24.0,
+          "sample_period_hours_hourly": 1.0,
+          "streak_tolerance_window_days": 7,
+          "strong_anomaly_threshold": 3.0,
+          "sustained_anomaly_streak_days": 6,
+          "trend_threshold": 0.3,
+          "trend_window_days": 7,
+          "unusual_threshold": 2.6,
+          "weekly_streak_threshold": 1.25,
+          "weekly_window_days": 7
+        },
+        "window_exclusion": true
+      },
+      "MDL3": {
+        "event_adaptation": true,
+        "forecasting_config": {
+          "baseline_model_ids": [
+            "B1",
+            "B2",
+            "B3"
+          ],
+          "config_version": "0.5",
+          "country_holidays": "UK",
+          "cycle_coldstart_days": 60,
+          "daily_seasonality": true,
+          "experiment_id": "forecasting",
+          "forecast_origin_step_days": 1,
+          "frequency": "1h",
+          "growth": "linear",
+          "horizon_days": 1,
+          "interval_width": 0.8,
+          "log_transform": true,
+          "mape_min_eligible_watts": 10.0,
+          "negative_forecast_handling": "raw",
+          "primary_naive_reference": "B2",
+          "seed": 42,
+          "selected_prophet_variant": {
+            "history_mode": "rolling",
+            "model_id": "C3_30",
+            "retraining_interval_days": 1,
+            "rolling_window_days": 30,
+            "weekly_seasonality": false,
+            "yearly_seasonality": false
+          },
+          "uncertainty_samples": 1000
+        },
+        "llm_config": {
+          "calendar_tool": false,
+          "calendar_tool_max_days": 14,
+          "keep_alive": -1,
+          "max_attempts": 2,
+          "model": "gemma4:e4b",
+          "num_ctx": 8192,
+          "num_predict": 1024,
+          "presence_penalty": 1.5,
+          "prompt_version": "v15",
+          "request_timeout_seconds": 120.0,
+          "seed": 42,
+          "temperature": 0.0,
+          "think": false
+        },
+        "llm_mode": "real",
+        "numerical_analysis_config": {
+          "gate_scales": [
+            "daily",
+            "weekday"
+          ],
+          "long_term_streak_threshold": 1.0,
+          "long_term_window_days": 30,
+          "max_reference_window_growth_days": null,
+          "min_daily_reference_samples": 7,
+          "min_longterm_reference_samples": 1,
+          "min_reference_power_w": 10.0,
+          "min_residual_std_w": 1.0,
+          "min_sustained_scales": 2,
+          "min_weekday_reference_samples": 4,
+          "min_weekly_reference_samples": 1,
+          "reference_window_days": 3,
+          "reference_window_rolling_days": 60,
+          "rolling_window_min_coverage": 0.8,
+          "sample_period_hours_15min": 0.25,
+          "sample_period_hours_daily": 24.0,
+          "sample_period_hours_hourly": 1.0,
+          "streak_tolerance_window_days": 7,
+          "strong_anomaly_threshold": 3.0,
+          "sustained_anomaly_streak_days": 6,
+          "trend_threshold": 0.3,
+          "trend_window_days": 7,
+          "unusual_threshold": 2.6,
+          "weekly_streak_threshold": 1.25,
+          "weekly_window_days": 7
+        },
+        "window_exclusion": true
+      },
+      "MDL4": {
+        "event_adaptation": true,
+        "forecasting_config": {
+          "baseline_model_ids": [
+            "B1",
+            "B2",
+            "B3"
+          ],
+          "config_version": "0.5",
+          "country_holidays": "UK",
+          "cycle_coldstart_days": 60,
+          "daily_seasonality": true,
+          "experiment_id": "forecasting",
+          "forecast_origin_step_days": 1,
+          "frequency": "1h",
+          "growth": "linear",
+          "horizon_days": 1,
+          "interval_width": 0.8,
+          "log_transform": true,
+          "mape_min_eligible_watts": 10.0,
+          "negative_forecast_handling": "raw",
+          "primary_naive_reference": "B2",
+          "seed": 42,
+          "selected_prophet_variant": {
+            "history_mode": "rolling",
+            "model_id": "C3_30",
+            "retraining_interval_days": 1,
+            "rolling_window_days": 30,
+            "weekly_seasonality": false,
+            "yearly_seasonality": false
+          },
+          "uncertainty_samples": 1000
+        },
+        "llm_config": {
+          "calendar_tool": false,
+          "calendar_tool_max_days": 14,
+          "keep_alive": -1,
+          "max_attempts": 2,
+          "model": "gemma4:e4b-mlx",
+          "num_ctx": 8192,
+          "num_predict": 1024,
+          "presence_penalty": 1.5,
+          "prompt_version": "v15",
+          "request_timeout_seconds": 120.0,
+          "seed": 42,
+          "temperature": 0.0,
+          "think": false
+        },
+        "llm_mode": "real",
+        "numerical_analysis_config": {
+          "gate_scales": [
+            "daily",
+            "weekday"
+          ],
+          "long_term_streak_threshold": 1.0,
+          "long_term_window_days": 30,
+          "max_reference_window_growth_days": null,
+          "min_daily_reference_samples": 7,
+          "min_longterm_reference_samples": 1,
+          "min_reference_power_w": 10.0,
+          "min_residual_std_w": 1.0,
+          "min_sustained_scales": 2,
+          "min_weekday_reference_samples": 4,
+          "min_weekly_reference_samples": 1,
+          "reference_window_days": 3,
+          "reference_window_rolling_days": 60,
+          "rolling_window_min_coverage": 0.8,
+          "sample_period_hours_15min": 0.25,
+          "sample_period_hours_daily": 24.0,
+          "sample_period_hours_hourly": 1.0,
+          "streak_tolerance_window_days": 7,
+          "strong_anomaly_threshold": 3.0,
+          "sustained_anomaly_streak_days": 6,
+          "trend_threshold": 0.3,
+          "trend_window_days": 7,
+          "unusual_threshold": 2.6,
+          "weekly_streak_threshold": 1.25,
+          "weekly_window_days": 7
+        },
+        "window_exclusion": true
+      },
+      "MDL5": {
+        "event_adaptation": true,
+        "forecasting_config": {
+          "baseline_model_ids": [
+            "B1",
+            "B2",
+            "B3"
+          ],
+          "config_version": "0.5",
+          "country_holidays": "UK",
+          "cycle_coldstart_days": 60,
+          "daily_seasonality": true,
+          "experiment_id": "forecasting",
+          "forecast_origin_step_days": 1,
+          "frequency": "1h",
+          "growth": "linear",
+          "horizon_days": 1,
+          "interval_width": 0.8,
+          "log_transform": true,
+          "mape_min_eligible_watts": 10.0,
+          "negative_forecast_handling": "raw",
+          "primary_naive_reference": "B2",
+          "seed": 42,
+          "selected_prophet_variant": {
+            "history_mode": "rolling",
+            "model_id": "C3_30",
+            "retraining_interval_days": 1,
+            "rolling_window_days": 30,
+            "weekly_seasonality": false,
+            "yearly_seasonality": false
+          },
+          "uncertainty_samples": 1000
+        },
+        "llm_config": {
+          "calendar_tool": false,
+          "calendar_tool_max_days": 14,
+          "keep_alive": -1,
+          "max_attempts": 2,
+          "model": "ministral-3:8b",
+          "num_ctx": 8192,
+          "num_predict": 1024,
+          "presence_penalty": 1.5,
+          "prompt_version": "v15",
+          "request_timeout_seconds": 120.0,
+          "seed": 42,
+          "temperature": 0.0,
+          "think": false
+        },
+        "llm_mode": "real",
+        "numerical_analysis_config": {
+          "gate_scales": [
+            "daily",
+            "weekday"
+          ],
+          "long_term_streak_threshold": 1.0,
+          "long_term_window_days": 30,
+          "max_reference_window_growth_days": null,
+          "min_daily_reference_samples": 7,
+          "min_longterm_reference_samples": 1,
+          "min_reference_power_w": 10.0,
+          "min_residual_std_w": 1.0,
+          "min_sustained_scales": 2,
+          "min_weekday_reference_samples": 4,
+          "min_weekly_reference_samples": 1,
+          "reference_window_days": 3,
+          "reference_window_rolling_days": 60,
+          "rolling_window_min_coverage": 0.8,
+          "sample_period_hours_15min": 0.25,
+          "sample_period_hours_daily": 24.0,
+          "sample_period_hours_hourly": 1.0,
+          "streak_tolerance_window_days": 7,
+          "strong_anomaly_threshold": 3.0,
+          "sustained_anomaly_streak_days": 6,
+          "trend_threshold": 0.3,
+          "trend_window_days": 7,
+          "unusual_threshold": 2.6,
+          "weekly_streak_threshold": 1.25,
+          "weekly_window_days": 7
+        },
+        "window_exclusion": true
+      }
+    }
+  },
+  "created_at_utc": "2026-09-27T17:56:42.324795+00:00",
+  "environment": {
+    "file": "environment-forecasting.yml",
+    "sha256": "00cd8649e33135385246495241a8a4708564d2426ab7e2337cb2fe2517f850dd"
+  },
+  "llm_failures": {
+    "count": 0,
+    "file": null
+  },
+  "outputs": {
+    "comparison_summary": {
+      "path": "experiments/output/k3/k3_seq_004/raw/ramp_56/comparison_summary.csv",
+      "sha256": "86f5e37271a975dab39d43b39576643e0ce2940a8ef523e3d38a9103dea3ab71",
+      "size_bytes": 107416
+    },
+    "evaluation_summary": {
+      "path": "experiments/output/k3/k3_seq_004/raw/ramp_56/evaluation_summary.csv",
+      "sha256": "2163816f719e1387ba45130e5745a219160ef5ddf7a4947390e5c5f6db8fd9cb",
+      "size_bytes": 356
+    },
+    "forecasts": {
+      "path": "experiments/output/k3/k3_seq_004/raw/ramp_56/forecasts.csv",
+      "sha256": "aa8050ce686417aabe149cef597114759fdf3188a475d46b6823bc97377f2523",
+      "size_bytes": 2634924
+    },
+    "llm_outputs": {
+      "path": "experiments/output/k3/k3_seq_004/raw/ramp_56/llm_outputs.json",
+      "sha256": "7bfb76640df940bca58d721715d19b8e51051bd0035859d5df751e24f359c8c8",
+      "size_bytes": 19042
+    }
+  },
+  "row_count": 847,
+  "run_id": "k3_seq_004_ramp_56",
+  "runtime_seconds": 419.3733177079994,
+  "scenario": {
+    "coldstart_days": 60,
+    "decision_time_count": 121,
+    "decision_time_end": "2014-06-13T23:00:00+00:00",
+    "decision_time_start": "2014-02-14T00:00:00+00:00"
+  }
+}
