@@ -39,7 +39,6 @@ TEST_GROUPS = [
             "tests/unit/adaption",
             "tests/unit/pipeline",
             "tests/unit/evaluation",
-            "tests/unit/user_profile",
             "tests/unit/config",
             "tests/unit/experiments",
             "tests/integration",

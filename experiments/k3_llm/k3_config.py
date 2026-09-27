@@ -20,7 +20,7 @@ class LLMModelVariant:
 @dataclass(frozen=True)
 class K3Config:
     experiment_id: str = "K3_1_llm_model"
-    config_version: str = "llm-model-0.5"
+    config_version: str = "llm-model-0.6"
 
     base_llm_config: LLMConfig = LLMConfig(model="", keep_alive=-1)
 
@@ -38,10 +38,10 @@ class K3Config:
 
     include_rule_based_baseline: bool = True
 
-    # Ebene 2: ein Cutover der Standard-Szenarien mit den Arten aus E5, nur für die Modellwahl.
-    # Die erwartete Klasse je Art steht in GOLDSTANDARD_EXPECTED
+    # Ebene 2: ein Cutover der Standard-Szenarien, nur für die Modellwahl.
+    # Die erwartete Klasse je Art steht in GOLDSTANDARD_EXPECTED, ramp_56 aus E5 fehlt, sie öffnet hier kein Gate und das LLM wird nie gefragt
     sequence_cutover_date: str = "2014-04-15"
-    sequence_kinds: tuple[str, ...] = ("control", "step", "peak_6", "ramp_56")
+    sequence_kinds: tuple[str, ...] = ("control", "step", "peak_6")
 
 
 def build_sequence_configs(

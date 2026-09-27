@@ -199,7 +199,7 @@ class ForecastingConfig:
 @dataclass(frozen=True)
 class LLMConfig:
     model: str
-    prompt_version: str = "v15"
+    prompt_version: str = "v16"
     temperature: float = 0.0
     # qwen3.5:9b liefert das selbst als Modelfile-Default, gegen Wiederholungsschleifen bei greedy decoding
     presence_penalty: float = 1.5
@@ -264,7 +264,7 @@ SYS_VARIANTS: dict[str, CycleConfig] = {
         numerical_analysis_config=NumericalAnalysisConfig(),
         event_adaptation=True,
         llm_mode="real",
-        llm_config=LLMConfig(model="qwen3:8b"),
+        llm_config=LLMConfig(model="ministral-3:8b"),
     ),
 }
 
