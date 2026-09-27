@@ -402,7 +402,8 @@ def _series_with_a_sustained_jump(
 
 
 def test_run_comparison_survives_llm_inference_failures(tmp_path: Path) -> None:
-    # Ollama liefert gelegentlich ungültige Ausgaben -> Fehlschlag darf Vergleichslauf nciht abbrechen
+    # Ollama liefert gelegentlich ungültige Ausgaben -> Fehlschlag darf Vergleichslauf nicht abbrechen,
+    # der Tag bleibt ohne Einordnung, wird aber prognostiziert und bewertet
     hours, coldstart_days = 24 * 30, 24
     series = _series_with_a_sustained_jump(hours, 24 * coldstart_days)
     scenario = ScenarioData(
@@ -449,7 +450,8 @@ def test_run_comparison_survives_llm_inference_failures(tmp_path: Path) -> None:
     assert len(result) == len(scenario.decision_times)
     assert (result["error"] != "").all()
     assert result["classification"].isna().all()
-    assert result["mae_w"].isna().all()
+    assert (result["adaption_action"] == "none").all()
+    assert result["mae_w"].notna().all()
 
 
 def test_run_comparison_records_rule_based_explanation(tmp_path: Path) -> None:

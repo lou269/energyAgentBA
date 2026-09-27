@@ -26,6 +26,15 @@ logger = logging.getLogger(__name__)
 # die Fälle sollen so aussehen, wie build_anomaly_detection sie mit der Pipeline-Konfiguration baut
 ANALYSIS_CONFIG = NumericalAnalysisConfig()
 
+# Urlaub seit einer Woche, deckt den eingeordneten Tag (15.12.) aus valid_structured_state ab
+_ABSENCE_EVENT = {
+    "end": "2015-12-22T00:00:00+00:00",
+    "event_id": "vacation-2015-12",
+    "event_type": "absence",
+    "known_at": "2015-11-15T00:00:00+00:00",
+    "start": "2015-12-08T00:00:00+00:00",
+}
+
 
 @dataclass(frozen=True)
 class LLMEvaluationCase:
@@ -79,9 +88,11 @@ def _anomaly_block(
     }
 
 
-def _context_block(*, source_available: bool) -> dict[str, object]:
+def _context_block(
+    *, source_available: bool, with_event: bool = False
+) -> dict[str, object]:
     return {
-        "events": [],
+        "events": [_ABSENCE_EVENT] if with_event else [],
         "retrieved_at": "2015-12-15T11:00:00+00:00",
         "source": "simulated_calendar",
         "source_available": source_available,
@@ -235,12 +246,44 @@ def llm_relevant_cases() -> tuple[LLMEvaluationCase, ...]:
             ),
             context=_context_block(source_available=True),
         ),
+        _case(
+            case_id="new_pattern_drift_down",
+            expected="new_pattern",
+            reasoning=(
+                "weekly und long_term seit Tagen deutlich niedriger, der Tag selbst leicht höher (direction=high). "
+                "Die Erklärung muss von weniger Verbrauch sprechen, die Richtung der Änderung steht in scale_deviation_pct."
+            ),
+            value_implausible=False,
+            anomaly=_anomaly_block(
+                scores={"daily": 0.8, "weekly": -3.2, "long_term": -1.4},
+                level="normal",
+                streak_days={"daily": 1.0, "weekly": 7.0, "long_term": 6.0},
+                deviation_pct={"weekly": -40.0, "long_term": -15.0},
+            ),
+            context=_context_block(source_available=True),
+        ),
+        _case(
+            case_id="absence_drift_down",
+            expected="absence",
+            reasoning=(
+                "Wie new_pattern_drift_down, dazu ein Urlaub, der den Tag abdeckt. Die Rückgänge in scale_deviation_pct "
+                "machen die Ausnahme in Schritt 2 greifbar, obwohl direction=high ist."
+            ),
+            value_implausible=False,
+            anomaly=_anomaly_block(
+                scores={"daily": 0.8, "weekly": -3.2, "long_term": -1.4},
+                level="normal",
+                streak_days={"daily": 1.0, "weekly": 7.0, "long_term": 6.0},
+                deviation_pct={"weekly": -40.0, "long_term": -15.0},
+            ),
+            context=_context_block(source_available=True, with_event=True),
+        ),
     )
 
     return tuple(case for case in cases if case.reaches_llm)
 
 
-# was prompt_v14 je Klasse zu zitieren verlangt
+# was der Prompt (seit v14) je Klasse zu zitieren verlangt
 _SINGLE_DAY_PATHS = frozenset(
     {"anomaly.sustained_drift", "anomaly.level", "anomaly.direction"}
 )
@@ -262,6 +305,21 @@ EXPECTED_EVIDENCE_PATHS: dict[str, frozenset[str]] = {
     "peak_single_sustained_scale": _SINGLE_DAY_PATHS,
     "new_pattern_at_min_scales_boundary": _DRIFT_PATHS,
     "measurement_error_weak_anomaly": frozenset({"observation.value_implausible"}),
+    "new_pattern_drift_down": frozenset(
+        {
+            "anomaly.sustained_drift",
+            "anomaly.level",
+            "anomaly.scale_anomaly_streak_days.weekly",
+            "anomaly.scale_anomaly_streak_days.long_term",
+        }
+    ),
+    "absence_drift_down": frozenset(
+        {
+            "anomaly.sustained_drift",
+            "anomaly.level",
+            "context.events.0.event_type",
+        }
+    ),
 }
 
 

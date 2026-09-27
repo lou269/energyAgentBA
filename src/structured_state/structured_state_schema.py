@@ -179,9 +179,10 @@ def validate_structured_state(state: Mapping[str, object]) -> None:
             f"anomaly.scale_anomaly_streak_days.{scale}",
             nullable=True,
         )
-        if (streak_days is not None) != (scale in validated_scale_scores):
+        # umgekehrt erlaubt: Score da, aber zu wenige gültige Tage im Streak-Fenster
+        if streak_days is not None and scale not in validated_scale_scores:
             raise ValueError(
-                f"anomaly.scale_anomaly_streak_days.{scale} must be null exactly when anomaly.scale_scores.{scale} is null."
+                f"anomaly.scale_anomaly_streak_days.{scale} must be null when anomaly.scale_scores.{scale} is null."
             )
 
         if streak_days is not None and streak_days < 0:

@@ -23,7 +23,7 @@ NOTIFICATION_CLASSIFICATIONS: tuple[str, ...] = (
 NOTIFICATION_PERIOD_DAYS = 30
 
 
-# Standard-Szenarien, auf denen K2, K3 (Ebene 2), K4 und später E3/E5 laufen
+# Standard-Szenarien der Komponentenstudien K2, K3 (Ebene 2) und K4. Experimente laufen nicht auf diesen Cutovern, weil K2 und K3 darauf eingestellt wurden
 @dataclass(frozen=True)
 class StandardScenarioConfig:
     # lokale Kalendertage, je eine Jahreszeit, alle im Train-Split und ohne bekannte Kalenderereignisse im Fenster

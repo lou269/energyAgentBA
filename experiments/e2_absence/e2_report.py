@@ -6,10 +6,11 @@ from pathlib import Path
 
 import pandas as pd
 
-from experiments.common.harness import read_anomaly_rows
+from experiments.common.harness import read_anomaly_rows, read_llm_outputs
 from experiments.common.report import (
     format_commit,
     key_figures_table,
+    write_explanation_rating_template,
     write_result_report,
 )
 from experiments.common.standard_config import DECIMALS, LOCAL_TIMEZONE, PROJECT_CONFIG
@@ -226,6 +227,9 @@ def write_full_report(run_directory: Path) -> None:
                 build_reduction_table(summary.reduction),
             ),
         },
+    )
+    write_explanation_rating_template(
+        read_llm_outputs(run_directory / RAW_SUBDIR), output_directory
     )
 
     print(f"Result written to {output_directory / 'ergebnis.md'}")

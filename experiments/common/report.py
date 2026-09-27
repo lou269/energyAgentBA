@@ -5,6 +5,8 @@ import pandas as pd
 
 from src.pipeline.io import df_to_csv, write_text_atomic
 
+# Vorlage für die Erklärungsbewertung, Texte aus E2 und E5
+EXPLANATION_RATING_FILE = "explanation_ratings_template"
 NOISE_RULE_NOTE = "belastbar: Betrag der Differenz größer als 2 Standardfehler der gepaarten Differenzen, grobe Faustregel"
 
 
@@ -112,4 +114,13 @@ def paired_difference_columns(paired: pd.DataFrame, unit: str) -> pd.DataFrame:
             f"{unit} besser [%]": paired["better_share"] * 100,
             "belastbar": paired["exceeds_noise"].map({True: "ja", False: "nein"}),
         }
+    )
+
+
+def write_explanation_rating_template(
+    llm_outputs: pd.DataFrame, output_directory: Path
+) -> None:
+    # rubric_score füllen die Bewertenden aus
+    df_to_csv(
+        llm_outputs.assign(rubric_score=""), output_directory, EXPLANATION_RATING_FILE
     )

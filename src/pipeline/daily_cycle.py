@@ -20,7 +20,7 @@ from src.forecasting.prophet_model import (
 from src.llm.calendar_tool import CalendarLookup
 from src.llm.client import LLMClient
 from src.llm.gate import gate_classification
-from src.llm.inference import infer_llm_output
+from src.llm.inference import LLMInferenceError, infer_llm_output
 from src.llm.llm_schema import Classification, LLMOutput
 from src.llm.rule_based_classifier import RuleClassificationResult, rule_based_classify
 from src.numerical_analysis.daily_analysis import compute_analysis_row
@@ -52,6 +52,7 @@ class CycleResult:
     llm_output: LLMOutput | None
     rule_output: RuleClassificationResult | None
     adaption_action: AdaptionAction | None
+    llm_error: LLMInferenceError | None = None
 
 
 def run_cycle(
@@ -120,6 +121,7 @@ def run_cycle(
     llm_output: LLMOutput | None = None
     rule_output: RuleClassificationResult | None = None
     adaption_action: AdaptionAction | None = None
+    llm_error: LLMInferenceError | None = None
 
     if analysis_row is not None and config.llm_mode != "off":
         if calendar_context is None:
@@ -133,16 +135,21 @@ def run_cycle(
         )
 
         # mit Kalender-Tool kommt der State mit dem geholten Kalender zurück, die Adaption braucht dessen Einträge
-        classification, llm_output, rule_output, structured_state = _classify(
-            structured_state,
-            config,
-            local_timezone,
-            llm_client,
-            llm_prompt,
-            calendar_lookup,
-        )
+        # scheitert das LLM, bleibt der Tag ohne Einordnung und ohne Adaption, prognostiziert wird trotzdem,
+        # sonst fehlt der Tag nur in SYS3 und die Systeme werden auf verschiedenen Tagen verglichen
+        try:
+            classification, llm_output, rule_output, structured_state = _classify(
+                structured_state,
+                config,
+                local_timezone,
+                llm_client,
+                llm_prompt,
+                calendar_lookup,
+            )
+        except LLMInferenceError as error:
+            llm_error = error
 
-        if config.event_adaptation:
+        if config.event_adaptation and classification is not None:
             adaption_action = adaption_policy(
                 classification,
                 structured_state,
@@ -159,7 +166,14 @@ def run_cycle(
 
     if adaption_action is not None and adaption_action.kind == "exclude_window":
         assert adaption_action.excluded_window is not None
-        excluded_windows = excluded_windows + (adaption_action.excluded_window,)
+        # ein laufender Urlaub wird jeden Tag wieder als absence eingeordnet, das Fenster ist dann schon draußen
+        if adaption_action.excluded_window in excluded_windows:
+            adaption_action = AdaptionAction(
+                kind="none",
+                reason=f"{adaption_action.reason}, already excluded: no action",
+            )
+        else:
+            excluded_windows = excluded_windows + (adaption_action.excluded_window,)
 
     # erst nach der Einordnung prognostizieren, damit eine Adaption schon in die Prognose für heute eingeht
     if adaption_action is not None and adaption_action.kind != "none":
@@ -208,6 +222,7 @@ def run_cycle(
         llm_output=llm_output,
         rule_output=rule_output,
         adaption_action=adaption_action,
+        llm_error=llm_error,
     )
 
     return result, new_state

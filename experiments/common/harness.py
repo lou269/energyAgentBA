@@ -1,3 +1,4 @@
+import json
 import logging
 from collections.abc import Mapping
 from pathlib import Path
@@ -21,6 +22,7 @@ COMPARISON_CONFIG = ComparisonConfig()
 # so benennt run_comparison seine Ausgaben
 COMPARISON_SUMMARY_FILE = "comparison_summary.csv"
 ANOMALY_FILE = "anomaly.csv"
+LLM_OUTPUTS_FILE = "llm_outputs.jsonl"
 
 
 def read_llm_prompt(prompt_version: str) -> str:
@@ -77,6 +79,35 @@ def read_anomaly_rows(output_directory: Path) -> pd.DataFrame:
             for file in sorted(output_directory.glob(f"*/{ANOMALY_FILE}"))
         ],
         ignore_index=True,
+    )
+
+
+def read_llm_outputs(raw_directory: Path) -> pd.DataFrame:
+    # alle LLM-Antworten eines Laufs, scenario ist der Ordner über dem System (ctx0 in E2, Szenario in E5)
+    rows = []
+    for output_file in sorted(raw_directory.rglob(LLM_OUTPUTS_FILE)):
+        scenario = output_file.parent.parent.relative_to(raw_directory).as_posix()
+        for line in output_file.read_text(encoding="utf-8").splitlines():
+            record = json.loads(line)
+            rows.append(
+                {
+                    "scenario": scenario,
+                    "config": record["config"],
+                    "decision_time": record["decision_time"],
+                    "classification": record["classification"],
+                    "explanation": record["explanation"],
+                }
+            )
+
+    return pd.DataFrame(
+        rows,
+        columns=[
+            "scenario",
+            "config",
+            "decision_time",
+            "classification",
+            "explanation",
+        ],
     )
 
 

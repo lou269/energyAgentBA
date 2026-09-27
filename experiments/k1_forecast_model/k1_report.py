@@ -1,9 +1,13 @@
 # conda activate forecasting-env
-# python -m experiments.k1_forecast_model.k1_report [run_directory]
+# python -m experiments.k1_forecast_model.k1_report [retraining|seasonality] [run_directory]
+
+import sys
+from pathlib import Path
 
 import pandas as pd
 
 from docs.plots.plot_k1_forecast_model import build_forecast_model_plot
+from docs.plots.plot_k1_seasonality import build_seasonality_plot
 from experiments.common.report import (
     NOISE_RULE_NOTE,
     format_commit,
@@ -16,8 +20,11 @@ from experiments.common.standard_config import DECIMALS, PROJECT_CONFIG
 from experiments.k1_forecast_model.k1_config import (
     EXCLUSION_LABELS,
     MODE_DESCRIPTIONS,
+    MODEL_LABELS,
     REFERENCE_FILE,
     RUN_PREFIX,
+    SEASONALITY_METRICS_FILE,
+    SEASONALITY_RUN_PREFIX,
     SPLIT_DIRECTORY_SUFFIX,
 )
 from experiments.k1_forecast_model.k1_evaluation import (
@@ -25,8 +32,8 @@ from experiments.k1_forecast_model.k1_evaluation import (
     compare_to_best_variant,
     summarize_modes,
     summarize_overall,
+    summarize_seasonal_forecast,
 )
-from src.config.config_forecasting import MODEL_LABELS
 from src.pipeline.io import (
     RAW_SUBDIR,
     read_raw_json,
@@ -143,8 +150,7 @@ def build_key_figures(modes: list[ModeSummary]) -> pd.DataFrame:
     return key_figures_table(rows)
 
 
-def main() -> None:
-    run_directory = run_directory_from_argv(PROJECT_CONFIG.k1_output_dir, RUN_PREFIX)
+def report_retraining(run_directory: Path) -> Path:
     run_config = read_raw_json(run_directory, "run_config")
     config = run_config["k1_config"]
     variant_ids = tuple(variant["model_id"] for variant in config["prophet_variants"])
@@ -200,6 +206,115 @@ def main() -> None:
         images=[f"{mode}/forecast_model_comparison.png" for mode in mode_directories],
         decimals=DECIMALS,
     )
+
+    return output_directory
+
+
+def report_seasonality(run_directory: Path) -> Path:
+    run_config = read_raw_json(run_directory, "run_config")
+    config = run_config["k1_config"]
+    reference_model_id = config["primary_naive_reference"]
+    model_ids = [variant["model_id"] for variant in config["seasonality_variants"]]
+
+    origin_metrics = pd.read_csv(
+        run_directory / RAW_SUBDIR / f"{SEASONALITY_METRICS_FILE}.csv",
+        dtype={"forecast_day": str},
+    )
+    summary = summarize_seasonal_forecast(
+        origin_metrics,
+        tuple(
+            (variant, reference)
+            for variant, reference in config["seasonality_comparisons"]
+        ),
+    )
+
+    comparisons = [
+        f"{variant} − {reference}"
+        for variant, reference in zip(
+            summary.paired["variant"], summary.paired["reference"]
+        )
+    ]
+    by_month = summary.by_month[["month"] + model_ids + [reference_model_id]]
+
+    tables = {
+        "key_figures": (
+            "Kennzahlen",
+            key_figures_table(
+                [
+                    (
+                        f"{comparison}: MAE-Differenz über das Jahr [W]",
+                        delta,
+                        "negativ = Variante besser, belastbar "
+                        + ("ja" if exceeds_noise else "nein"),
+                    )
+                    for comparison, delta, exceeds_noise in zip(
+                        comparisons,
+                        summary.paired["mean_delta"],
+                        summary.paired["exceeds_noise"],
+                    )
+                ]
+            ),
+        ),
+        "result_by_month": (
+            "MAE je Monat [W]",
+            by_month.rename(columns={"month": "Monat"} | MODEL_LABELS),
+        ),
+        "result_paired": (
+            "Gepaarte Differenzen über das Jahr, je Prognosetag",
+            pd.concat(
+                [
+                    pd.DataFrame({"Vergleich": comparisons}),
+                    paired_difference_columns(summary.paired, "Tage"),
+                ],
+                axis=1,
+            ),
+        ),
+    }
+
+    output_directory = user_output_directory(run_directory)
+    build_seasonality_plot(
+        summary.by_month,
+        output_directory,
+        model_ids=model_ids,
+        reference_model_id=reference_model_id,
+    )
+
+    write_result_report(
+        output_directory,
+        title=f"K1 Prognose mit und ohne Jahressaisonalität, Lauf {run_directory.name}",
+        setup={
+            "Auswertung": f"{config['seasonality_days']} Tage ab {config['seasonality_start_date']} "
+            f"({config['seasonality_split']}), je Tag eine 24-h-Prognose, Historie ab Datenbeginn",
+            "Varianten": ", ".join(MODEL_LABELS[model_id] for model_id in model_ids),
+            "Naive Referenz": MODEL_LABELS[reference_model_id],
+            "Commit": format_commit(run_config["code_version"]),
+        },
+        tables=tables,
+        notes=[
+            "S1 − C2 ist der Effekt der Jahressaisonalität allein, C2 − C3_30 der der längeren Historie",
+            "Monat 2014-04 und 2015-04 sind je ein halber Monat",
+            NOISE_RULE_NOTE,
+        ],
+        images=["k1_mae_by_month.png"],
+        decimals=DECIMALS,
+    )
+
+    return output_directory
+
+
+def main() -> None:
+    part = sys.argv[1] if len(sys.argv) > 1 else "retraining"
+
+    if part == "seasonality":
+        output_directory = report_seasonality(
+            run_directory_from_argv(
+                PROJECT_CONFIG.k1_output_dir, SEASONALITY_RUN_PREFIX, 2
+            )
+        )
+    else:
+        output_directory = report_retraining(
+            run_directory_from_argv(PROJECT_CONFIG.k1_output_dir, RUN_PREFIX, 2)
+        )
 
     print(f"Result written to {output_directory / 'ergebnis.md'}")
 

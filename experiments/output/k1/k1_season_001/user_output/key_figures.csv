@@ -1,0 +1,4 @@
+Kennzahl,Wert,Bezug
+S1 − C2: MAE-Differenz über das Jahr [W],0.5,"negativ = Variante besser, belastbar nein"
+C2 − C3_30: MAE-Differenz über das Jahr [W],0.7,"negativ = Variante besser, belastbar nein"
+S1 − C3_30: MAE-Differenz über das Jahr [W],1.2,"negativ = Variante besser, belastbar nein"

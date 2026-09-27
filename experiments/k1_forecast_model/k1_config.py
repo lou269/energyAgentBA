@@ -1,16 +1,24 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 from experiments.common.standard_config import COLDSTART_DAYS
 from src.config.config_forecasting import (
+    C2_EXPANDING,
+    C3_ROLLING_30,
     ExperimentSplit,
     FORECAST_MODEL_PROPHET_VARIANTS,
+    MODEL_LABELS as FORECAST_MODEL_LABELS,
     ForecastingConfig,
     ProphetVariantConfig,
 )
 
 RUN_PREFIX = "k1"
+SEASONALITY_RUN_PREFIX = "k1_season"
 # vom Runner geschrieben, vom Report gelesen, die übrigen Ergebnisdateien kommen aus run_forecast_comparison
 REFERENCE_FILE = "primary_naive_reference"
+SEASONALITY_METRICS_FILE = "origin_metrics"
+
+# unterscheidet sich von C2 nur in der Jahressaisonalität
+S1_EXPANDING_YEARLY = replace(C2_EXPANDING, model_id="S1", yearly_seasonality=True)
 
 # Ordnerendung je Split, k1_001 liegt schon unter rolling_val/macro_val
 SPLIT_DIRECTORY_SUFFIX: dict[str, str] = {"validation": "val", "test": "test"}
@@ -33,6 +41,23 @@ class K1Config(ForecastingConfig):
     # C1 als Referenz dazu, damit der Skill auch zeigt, was Retraining gegenüber dem statischen Modell bringt
     reference_model_ids: tuple[str, ...] = ("B1", "B2", "B3", "C1")
 
+    # Jahressaisonalität (früher E3 Teil A): ein volles Jahr Prognose, davor gut ein Jahr Historie ab Datenbeginn (01.04.2013).
+    # Liegt ganz im Train-Split (bis 29.04.2015), auf der Validierung reicht die Länge nicht für ein Jahr
+    seasonality_split: str = "train"
+    seasonality_start_date: str = "2014-04-15"
+    seasonality_days: int = 365
+    seasonality_variants: tuple[ProphetVariantConfig, ...] = (
+        C3_ROLLING_30,
+        C2_EXPANDING,
+        S1_EXPANDING_YEARLY,
+    )
+    # (Variante, Referenz): Jahressaisonalität allein, längere Historie allein, beides gegen das produktive Modell
+    seasonality_comparisons: tuple[tuple[str, str], ...] = (
+        ("S1", "C2"),
+        ("C2", "C3_30"),
+        ("S1", "C3_30"),
+    )
+
 
 MODE_DESCRIPTIONS: dict[str, str] = {
     "rolling": "{coldstart_days} Tage Historie vor Split-Start, wie der Online-Zyklus",
@@ -41,4 +66,7 @@ MODE_DESCRIPTIONS: dict[str, str] = {
 EXCLUSION_LABELS: dict[str, str] = {
     "missing_target": "Messwert fehlt",
     "target_imputed": "imputiert",
+}
+MODEL_LABELS: dict[str, str] = FORECAST_MODEL_LABELS | {
+    "S1": "S1 expanding + Jahressaison"
 }

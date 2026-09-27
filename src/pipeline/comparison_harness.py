@@ -15,7 +15,7 @@ from src.context.calendar_schema import CalendarContext
 from src.forecasting.evaluation import score_cycle_forecast
 from src.llm.calendar_tool import lookup_calendar
 from src.llm.client import LLMClient, OllamaClient
-from src.llm.inference import LLMAttemptRecord, LLMInferenceError
+from src.llm.inference import LLMAttemptRecord
 from src.pipeline.cycle_run_manifest import build_cycle_run_manifest
 from src.config.config_forecasting import CycleConfig
 from src.pipeline.daily_cycle import CycleResult, CycleState, run_cycle
@@ -199,24 +199,23 @@ def run_comparison(
                         else None
                     )
 
-                    try:
-                        result, state = run_cycle(
-                            state,
-                            new_observations,
-                            decision_time,
-                            config,
-                            local_timezone=local_timezone,
-                            llm_client=active_llm_client,
-                            llm_prompt=llm_prompt,
-                            calendar_context=calendar_context,
-                            calendar_lookup=calendar_lookup,
-                            new_value_implausible=new_value_implausible,
-                        )
-                    except LLMInferenceError as error:
-                        # Ollama liefert gelegentlich ungültige/inkonsistente Ausgaben -> ein einzelner
-                        # Fehlschlag soll nicht den ganzen Vergleichslauf (andere Configs/Tage) kosten
-                        # state bleibt unverändert, die übersprungenen Stunden landen beim nächsten
-                        # Zyklus mit in new_observations
+                    result, state = run_cycle(
+                        state,
+                        new_observations,
+                        decision_time,
+                        config,
+                        local_timezone=local_timezone,
+                        llm_client=active_llm_client,
+                        llm_prompt=llm_prompt,
+                        calendar_context=calendar_context,
+                        calendar_lookup=calendar_lookup,
+                        new_value_implausible=new_value_implausible,
+                    )
+
+                    if result.llm_error is None:
+                        consecutive_llm_failures = 0
+                    else:
+                        # Ollama liefert ungültige Ausgaben run_cycle lässt den Tag dann ohne Einordnung weiterlaufen, Prognose und MAE gibt es trotzdem
                         consecutive_llm_failures += 1
                         total_llm_failures += 1
                         logger.warning(
@@ -225,9 +224,9 @@ def run_comparison(
                             decision_time,
                             consecutive_llm_failures,
                             total_llm_failures,
-                            error,
+                            result.llm_error,
                         )
-                        for attempt in error.attempts:
+                        for attempt in result.llm_error.attempts:
                             _append_failed_attempt(
                                 run_directory,
                                 config_directory,
@@ -240,47 +239,6 @@ def run_comparison(
                                 attempt.attempt_number,
                                 attempt.validation_error,
                             )
-
-                        error_row = {
-                            "decision_time": decision_time,
-                            "analyzed_day": analyzed_date,
-                            "config": config_label,
-                            "classification": None,
-                            "explanation": "",
-                            "adaption_action": "none",
-                            "adaption_reason": "",
-                            "retrained": False,
-                            "reference_reset": False,
-                            "mae_w": float("nan"),
-                            "mape_pct": float("nan"),
-                            "error": str(error),
-                        }
-                        rows.append(error_row)
-                        append_csv(
-                            pd.DataFrame([error_row]), config_directory / "summary.csv"
-                        )
-
-                        if consecutive_llm_failures >= max_consecutive_llm_failures:
-                            logger.error(
-                                "Aborting %s after %d consecutive LLM failures at %s - remaining decision times skipped.",
-                                config_label,
-                                consecutive_llm_failures,
-                                decision_time,
-                            )
-                            break
-
-                        if total_llm_failures >= max_total_llm_failures:
-                            logger.error(
-                                "Aborting %s after %d total LLM failures (not necessarily consecutive) at %s - remaining decision times skipped.",
-                                config_label,
-                                total_llm_failures,
-                                decision_time,
-                            )
-                            break
-
-                        continue
-                    else:
-                        consecutive_llm_failures = 0
 
                     mae_w, mape_pct = score_cycle_forecast(
                         result.forecast,
@@ -356,7 +314,9 @@ def run_comparison(
                         "reference_reset": result.reference_reset,
                         "mae_w": mae_w,
                         "mape_pct": mape_pct,
-                        "error": "",
+                        "error": str(result.llm_error)
+                        if result.llm_error is not None
+                        else "",
                     }
                     rows.append(summary_row)
                     append_csv(
@@ -380,6 +340,24 @@ def run_comparison(
                         summary_row["adaption_action"],
                         result.retrained,
                     )
+
+                    if consecutive_llm_failures >= max_consecutive_llm_failures:
+                        logger.error(
+                            "Aborting %s after %d consecutive LLM failures at %s - remaining decision times skipped.",
+                            config_label,
+                            consecutive_llm_failures,
+                            decision_time,
+                        )
+                        break
+
+                    if total_llm_failures >= max_total_llm_failures:
+                        logger.error(
+                            "Aborting %s after %d total LLM failures (not necessarily consecutive) at %s - remaining decision times skipped.",
+                            config_label,
+                            total_llm_failures,
+                            decision_time,
+                        )
+                        break
             except KeyboardInterrupt:
                 interrupted = True
                 logger.warning(
@@ -426,11 +404,9 @@ def run_comparison(
 
     output_paths = {"comparison_summary": run_directory / "comparison_summary.csv"}
 
-    # aggregiert die pro Tag schon berechneten mae_w/mape_pct je Config
-    evaluated = comparison.loc[comparison["error"].eq("")]
-
-    if not evaluated.empty:
-        evaluation_summary = evaluated.groupby("config", as_index=False).agg(
+    # aggregiert die pro Tag schon berechneten mae_w/mape_pct je Config, Tage mit LLM-Fehlschlag haben auch eine Prognose
+    if not comparison.empty:
+        evaluation_summary = comparison.groupby("config", as_index=False).agg(
             evaluated_days=("mae_w", "count"),
             mae_w=("mae_w", "mean"),
             mape_pct=("mape_pct", "mean"),

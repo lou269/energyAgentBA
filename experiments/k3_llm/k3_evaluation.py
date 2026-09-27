@@ -124,15 +124,6 @@ def summarize_models(results: pd.DataFrame) -> pd.DataFrame:
     )
     summary = summary.merge(macro_f1, on="model_id", how="left")
 
-    valid_results = results[results["valid"]]
-    per_case_agreement = valid_results.groupby(["model_id", "case_id"])[
-        "classification"
-    ].nunique()
-    stability_rate = (
-        (per_case_agreement == 1).groupby("model_id").mean().rename("stability_rate")
-    )
-    summary = summary.merge(stability_rate, on="model_id", how="left")
-
     return summary.sort_values("macro_f1", ascending=False)
 
 
@@ -243,7 +234,6 @@ def summarize_combined(
             "accuracy",
             "macro_f1",
             "mean_grounding_coverage",
-            "stability_rate",
             "mean_generation_seconds",
         ]
     ]

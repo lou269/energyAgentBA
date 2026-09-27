@@ -24,7 +24,8 @@ class K3Config:
 
     base_llm_config: LLMConfig = LLMConfig(model="", keep_alive=-1)
 
-    repetitions: int = 2
+    # bei temperature=0 praktisch deterministisch, eine zweite Wiederholung wäre fast eine Kopie
+    repetitions: int = 1
 
     model_variants: tuple[LLMModelVariant, ...] = (
         LLMModelVariant(model_id="MDL0", model="qwen3:4b"),

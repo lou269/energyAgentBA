@@ -5,16 +5,11 @@ import pandas as pd
 from experiments.common.evaluation import (
     FIRST_ANALYZED_DAY,
     add_days_since_cutover,
-    add_overall_rows,
     merge_cycle_days,
     pair_with_control,
     spread_over_repeats,
     summarize_event_response,
-    summarize_paired_differences,
 )
-
-# steht in der Monatstabelle als letzte Zeile, sortiert hinter "2015-04"
-WHOLE_YEAR = "Jahr"
 
 PAIR_KEYS = ["cutover_date", "days_since_cutover"]
 EVENT_KEYS = ["cutover_date", "kind"]
@@ -32,40 +27,6 @@ DRIFT_RESULT_COLUMNS = [
     "new_pattern",
     "reference_reset",
 ]
-
-
-@dataclass(frozen=True)
-class SeasonalForecastSummary:
-    by_month: pd.DataFrame
-    paired: pd.DataFrame
-
-
-def summarize_seasonal_forecast(
-    origin_metrics: pd.DataFrame, comparisons: tuple[tuple[str, str], ...]
-) -> SeasonalForecastSummary:
-    """MAE je Kalendermonat und Modell, dazu die gepaarten Differenzen über das ganze Jahr je (Variante, Referenz)"""
-    months = origin_metrics.assign(month=origin_metrics["forecast_day"].str[:7])
-    by_month = (
-        add_overall_rows(months, "month", WHOLE_YEAR)
-        .pivot_table(index="month", columns="model_id", values="mae_w")
-        .rename_axis(columns=None)
-        .reset_index()
-    )
-
-    mae = origin_metrics.pivot(
-        index="forecast_origin", columns="model_id", values="mae_w"
-    )
-    paired = pd.concat(
-        [
-            summarize_paired_differences(mae[[reference, variant]], reference).assign(
-                reference=reference
-            )
-            for variant, reference in comparisons
-        ],
-        ignore_index=True,
-    )
-
-    return SeasonalForecastSummary(by_month=by_month, paired=paired)
 
 
 def read_drift_results(

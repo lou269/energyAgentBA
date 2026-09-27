@@ -4,11 +4,11 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from docs.plots.plot_style import MODEL_COLORS, save_figure
-from experiments.e3_saisonality.e3_config import MODEL_LABELS
-from experiments.e3_saisonality.e3_evaluation import WHOLE_YEAR
+from experiments.k1_forecast_model.k1_config import MODEL_LABELS
+from experiments.k1_forecast_model.k1_evaluation import WHOLE_YEAR
 
 
-def build_e3_forecast_plot(
+def build_seasonality_plot(
     by_month: pd.DataFrame,
     output_directory: Path,
     *,
@@ -43,4 +43,4 @@ def build_e3_forecast_plot(
     axis.grid(axis="y", alpha=0.25)
     axis.legend(fontsize=8)
 
-    save_figure(figure, output_directory, "e3_mae_by_month")
+    save_figure(figure, output_directory, "k1_mae_by_month")

@@ -2,8 +2,14 @@ from dataclasses import dataclass
 
 import pandas as pd
 
-from experiments.common.evaluation import summarize_paired_differences
+from experiments.common.evaluation import (
+    add_overall_rows,
+    summarize_paired_differences,
+)
 from src.forecasting.evaluation import select_primary_naive_reference
+
+# steht in der Monatstabelle als letzte Zeile, sortiert hinter "2015-04"
+WHOLE_YEAR = "Jahr"
 
 
 def choose_primary_naive_reference(
@@ -137,3 +143,37 @@ def summarize_modes(
         )
 
     return summaries
+
+
+@dataclass(frozen=True)
+class SeasonalForecastSummary:
+    by_month: pd.DataFrame
+    paired: pd.DataFrame
+
+
+def summarize_seasonal_forecast(
+    origin_metrics: pd.DataFrame, comparisons: tuple[tuple[str, str], ...]
+) -> SeasonalForecastSummary:
+    """MAE je Kalendermonat und Modell, dazu die gepaarten Differenzen über das ganze Jahr je (Variante, Referenz)"""
+    months = origin_metrics.assign(month=origin_metrics["forecast_day"].str[:7])
+    by_month = (
+        add_overall_rows(months, "month", WHOLE_YEAR)
+        .pivot_table(index="month", columns="model_id", values="mae_w")
+        .rename_axis(columns=None)
+        .reset_index()
+    )
+
+    mae = origin_metrics.pivot(
+        index="forecast_origin", columns="model_id", values="mae_w"
+    )
+    paired = pd.concat(
+        [
+            summarize_paired_differences(mae[[reference, variant]], reference).assign(
+                reference=reference
+            )
+            for variant, reference in comparisons
+        ],
+        ignore_index=True,
+    )
+
+    return SeasonalForecastSummary(by_month=by_month, paired=paired)

@@ -14,10 +14,15 @@ def anomaly_streak_days(
 ) -> pd.Series:
     elevated = (score.abs() >= threshold).where(score.notna())
 
-    streak_min_periods = math.ceil(streak_tolerance_window_days * rolling_window_min_coverage)
-    streak_raw = elevated.rolling(window=streak_tolerance_window_days, min_periods=streak_min_periods).sum()
+    streak_min_periods = math.ceil(
+        streak_tolerance_window_days * rolling_window_min_coverage
+    )
+    streak_raw = elevated.rolling(
+        window=streak_tolerance_window_days, min_periods=streak_min_periods
+    ).sum()
 
-    return streak_raw.fillna(0).where(elevated.notna(), np.nan)
+    # zu wenige gültige Tage im Fenster bleiben NaN (unbekannt), nicht 0 auffällige Tage
+    return streak_raw.where(elevated.notna(), np.nan)
 
 
 def build_anomaly_detection(
@@ -57,7 +62,11 @@ def build_anomaly_detection(
         residual_std = train_residuals.std()
 
         # zu wenig Referenz oder fast keine Streuung -> lieber kein Score als ein riesiger, unzuverlässiger
-        if len(train_residuals) < min_reference_samples[scale] or pd.isna(residual_std) or residual_std < min_residual_std_w:
+        if (
+            len(train_residuals) < min_reference_samples[scale]
+            or pd.isna(residual_std)
+            or residual_std < min_residual_std_w
+        ):
             result[score_column] = np.nan
             result[streak_days_column] = np.nan
             result[sustained_column] = False
@@ -72,11 +81,15 @@ def build_anomaly_detection(
             rolling_window_min_coverage=rolling_window_min_coverage,
         )
 
-        result[sustained_column] = result[streak_days_column] >= sustained_anomaly_streak_days
+        result[sustained_column] = (
+            result[streak_days_column] >= sustained_anomaly_streak_days
+        )
 
     # öffnet das Gate auch an einem sonst unauffälligen Tag und ist zugleich die new_pattern-Bedingung der Regel
     sustained_columns = [f"{scale}_sustained" for scale in reference_columns]
-    result["sustained_drift"] = result[sustained_columns].sum(axis=1) >= min_sustained_scales
+    result["sustained_drift"] = (
+        result[sustained_columns].sum(axis=1) >= min_sustained_scales
+    )
 
     score_columns = [f"{scale}_score" for scale in gate_scales]
 
@@ -102,7 +115,9 @@ def build_anomaly_detection(
 
         if scale in direction_override_columns:
             observed_column, expected_column = direction_override_columns[scale]
-            direction_values.loc[mask] = result.loc[mask, observed_column] - result.loc[mask, expected_column]
+            direction_values.loc[mask] = (
+                result.loc[mask, observed_column] - result.loc[mask, expected_column]
+            )
         else:
             direction_values.loc[mask] = result.loc[mask, f"{scale}_score"]
 

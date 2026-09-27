@@ -1,9 +1,6 @@
 # conda activate forecasting-env
 # python -m experiments.k3_llm.k3_report [run_directory] [sequence_run_directory]
 
-import json
-from pathlib import Path
-
 import pandas as pd
 
 from experiments.common.standard_config import PROJECT_CONFIG
@@ -28,34 +25,6 @@ from src.pipeline.io import (
 )
 
 
-def export_explanations_for_rating(run_dir: Path) -> Path:
-    rows = []
-
-    for raw_file in sorted((run_dir / RAW_SUBDIR).glob("*.jsonl")):
-        for line in raw_file.read_text().splitlines():
-            record = json.loads(line)
-
-            if record["output"] is None:
-                continue
-
-            rows.append(
-                {
-                    "model": record["model"],
-                    "case_id": record["case_id"],
-                    "repetition": record["repetition"],
-                    "expected_classification": record["expected_classification"],
-                    "classification": record["output"]["classification"],
-                    "explanation": record["output"]["explanation"],
-                    "rubric_score": "",
-                }
-            )
-
-    output_directory = user_output_directory(run_dir)
-    df_to_csv(pd.DataFrame(rows), output_directory, "explanation_ratings_template")
-
-    return output_directory / "explanation_ratings_template.csv"
-
-
 def main() -> None:
     k3_output_dir = PROJECT_CONFIG.k3_output_dir
 
@@ -70,7 +39,6 @@ def main() -> None:
         df_to_csv(single_case_summary, single_output_dir, "model_comparison")
         df_to_csv(summarize_cases(results), single_output_dir, "case_breakdown")
         df_to_csv(summarize_classes(results), single_output_dir, "class_breakdown")
-        export_explanations_for_rating(single_run_dir)
 
         print("=== Single-case comparison ===")
         print(single_case_summary.to_string(index=False))

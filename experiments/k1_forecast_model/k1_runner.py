@@ -1,8 +1,12 @@
 # conda activate forecasting-env
-# python -m experiments.k1_forecast_model.k1_runner
-# danach: python -m experiments.k1_forecast_model.k1_report
+# python -m experiments.k1_forecast_model.k1_runner [retraining|seasonality]
+# danach: python -m experiments.k1_forecast_model.k1_report [retraining|seasonality] [run_directory]
+
+# retraining: Prophet-Varianten und Baselines auf der Validierung, wählt die produktive Variante
+# seasonality: ein Jahr Prognose, Prophet mit und ohne Jahressaisonalität neben dem produktiven C3_30
 
 import logging
+import sys
 from dataclasses import asdict
 from pathlib import Path
 
@@ -10,11 +14,17 @@ import numpy as np
 import pandas as pd
 
 from experiments.common.harness import run_forecast_models
-from experiments.common.scenarios import load_target, slice_history_window
+from experiments.common.scenarios import (
+    load_target,
+    local_day_window,
+    slice_history_window,
+)
 from experiments.common.standard_config import PROJECT_CONFIG
 from experiments.k1_forecast_model.k1_config import (
     REFERENCE_FILE,
     RUN_PREFIX,
+    SEASONALITY_METRICS_FILE,
+    SEASONALITY_RUN_PREFIX,
     SPLIT_DIRECTORY_SUFFIX,
     K1Config,
 )
@@ -24,7 +34,7 @@ from src.pipeline.io import create_experiment_run, df_to_csv, read_split_bounds
 logger = logging.getLogger(__name__)
 
 
-def run(k1_config: K1Config) -> Path:
+def run_retraining(k1_config: K1Config) -> Path:
     np.random.seed(k1_config.seed)
 
     target_series, target_imputed, _target_value_implausible = load_target()
@@ -93,9 +103,55 @@ def run(k1_config: K1Config) -> Path:
     return run_directory
 
 
+def run_seasonality(k1_config: K1Config) -> Path:
+    np.random.seed(k1_config.seed)
+
+    target_series, target_imputed, _target_value_implausible = load_target()
+    start, end = local_day_window(
+        k1_config.seasonality_start_date, k1_config.seasonality_days
+    )
+    # die ganze Historie vor dem Start, C3_30 schneidet sich davon selbst die letzten 30 Tage ab
+    history, targets, targets_imputed = slice_history_window(
+        target_series, target_imputed, start=start, end=end, history_days=None
+    )
+
+    run_directory, raw_directory = create_experiment_run(
+        PROJECT_CONFIG.k1_output_dir,
+        SEASONALITY_RUN_PREFIX,
+        {"k1_config": asdict(k1_config)},
+    )
+    logger.info("K1 seasonality %s, %d days", start, k1_config.seasonality_days)
+
+    _forecasts, evaluation_results = run_forecast_models(
+        k1_config.baseline_model_ids + k1_config.seasonality_variants,
+        history,
+        targets,
+        targets_imputed,
+        k1_config,
+        run_id=run_directory.name,
+        experiment_id=k1_config.experiment_id,
+        split=k1_config.seasonality_split,
+        comparison_model_ids=tuple(
+            variant.model_id for variant in k1_config.seasonality_variants
+        ),
+        reference_model_ids=k1_config.baseline_model_ids,
+    )
+    df_to_csv(
+        evaluation_results["origin_metrics"], raw_directory, SEASONALITY_METRICS_FILE
+    )
+
+    logger.info("K1 seasonality completed, see %s.", run_directory)
+    return run_directory
+
+
 def main() -> None:
+    part = sys.argv[1] if len(sys.argv) > 1 else "retraining"
     logging.basicConfig(level=logging.INFO)
-    run(K1Config())
+
+    if part == "seasonality":
+        run_seasonality(K1Config())
+    else:
+        run_retraining(K1Config())
 
 
 if __name__ == "__main__":

@@ -199,7 +199,7 @@ class ForecastingConfig:
 @dataclass(frozen=True)
 class LLMConfig:
     model: str
-    prompt_version: str = "v14"
+    prompt_version: str = "v15"
     temperature: float = 0.0
     # qwen3.5:9b liefert das selbst als Modelfile-Default, gegen Wiederholungsschleifen bei greedy decoding
     presence_penalty: float = 1.5
