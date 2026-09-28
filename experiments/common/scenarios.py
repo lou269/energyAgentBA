@@ -3,11 +3,7 @@ from functools import cache
 
 import pandas as pd
 
-from experiments.common.standard_config import (
-    COLDSTART_DAYS,
-    LOCAL_TIMEZONE,
-    PROJECT_CONFIG,
-)
+from experiments.common.standard_config import LOCAL_TIMEZONE, PROJECT_CONFIG
 from src.common.target_series import read_preprocessed_target
 from src.common.timestamps import (
     local_calendar_range,
@@ -37,24 +33,24 @@ def build_decision_times(
 
 
 def crop_history_for_coldstart(
-    series: pd.Series, first_decision_time: pd.Timestamp
+    series: pd.Series, first_decision_time: pd.Timestamp, coldstart_days: int
 ) -> pd.Series:
-    # Kaltstart-Historie plus der Tag vor first_decision_time, der im ersten Zyklus als new_observations kommt
-    crop_start = shift_local_days(
-        first_decision_time, -(COLDSTART_DAYS + 1), LOCAL_TIMEZONE
-    )
+    # der Tag vor first_decision_time kommt im ersten Zyklus als new_observations und zählt zu den coldstart_days,
+    # am ersten Entscheidungstag liegen also genau coldstart_days Tage vor, wie nach einem Reset
+    crop_start = shift_local_days(first_decision_time, -coldstart_days, LOCAL_TIMEZONE)
     return series.loc[crop_start:]
 
 
 def scenario_without_calendar(
     target_series: pd.Series,
     decision_times: tuple[pd.Timestamp, ...],
+    coldstart_days: int,
     target_imputed: pd.Series | None = None,
     value_implausible: pd.Series | None = None,
 ) -> ScenarioData:
     return ScenarioData(
         target_series=target_series,
-        coldstart_days=COLDSTART_DAYS,
+        coldstart_days=coldstart_days,
         decision_times=decision_times,
         calendar_events=(),
         calendar_source_available=False,

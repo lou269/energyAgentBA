@@ -23,7 +23,13 @@ MODEL_COLORS = {
     "C3_60": "#2A5225",
     "S1": "#B279A2",
 }
-COLDSTART_COLORS = {7: "#54A24B", 14: "#3F7A38", 30: "#2A5225"}
+COLDSTART_COLORS = {7: "#54A24B", 14: "#3F7A38", 30: "#2A5225", 60: "#16301A"}
+SCALE_COLORS = {
+    "daily": "#4C78A8",
+    "weekday": "#F58518",
+    "weekly": "#B279A2",
+    "long_term": "#54A24B",
+}
 
 CONTEXT_COLORS = {
     "SYS1": SYSTEM_COLORS["SYS1"],

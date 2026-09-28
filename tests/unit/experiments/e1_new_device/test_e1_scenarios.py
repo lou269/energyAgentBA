@@ -86,6 +86,7 @@ def test_run_comparison_completes_across_the_cutover(tmp_path: Path) -> None:
             mains, device.to_frame(), [DEVICE_METER_KEY], cutover_time
         ),
         decision_times,
+        coldstart_days,
     )
 
     config = {"SYS2": SYS_VARIANTS["SYS2"]}

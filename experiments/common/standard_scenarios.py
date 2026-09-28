@@ -12,8 +12,12 @@ from experiments.common.scenarios import (
     scale_from,
     scenario_without_calendar,
 )
-from experiments.common.standard_config import LOCAL_TIMEZONE, STANDARD_CONFIG
-from src.common.timestamps import local_midnight_utc
+from experiments.common.standard_config import (
+    COLDSTART_DAYS,
+    LOCAL_TIMEZONE,
+    STANDARD_CONFIG,
+)
+from src.common.timestamps import local_day_hours, local_midnight_utc
 from src.pipeline.comparison_harness import ScenarioData
 
 
@@ -36,9 +40,11 @@ def build_standard_scenarios(
         margin_before_days=margin_before_days,
         margin_after_days=margin_after_days,
     )
-    history = crop_history_for_coldstart(mains_series, decision_times[0])
+    history = crop_history_for_coldstart(
+        mains_series, decision_times[0], COLDSTART_DAYS
+    )
     control = scenario_without_calendar(
-        history, decision_times, target_imputed, value_implausible
+        history, decision_times, COLDSTART_DAYS, target_imputed, value_implausible
     )
 
     return {
@@ -52,7 +58,8 @@ def build_standard_scenarios(
 def build_kind_series(
     history: pd.Series, cutover_time: pd.Timestamp, kind: str
 ) -> pd.Series:
-    # Stärke steckt im Namen: step_30 = +30 W ab Cutover, ramp_28 = in 28 Tagen auf scale_factor, peak_6 = 6 Stunden Spitze
+    # Stärke steckt im Namen: step_30 = +30 W ab Cutover, ramp_28 = in 28 Tagen auf scale_factor, peak_6 = 6 Stunden Spitze,
+    # level_250 = der ganze Cutover-Tag +250 W
     name, _, strength = kind.partition("_")
 
     if kind == "control":
@@ -78,6 +85,14 @@ def build_kind_series(
             cutover_time + pd.Timedelta(hours=STANDARD_CONFIG.peak_start_hour),
             hours=int(strength) if strength else STANDARD_CONFIG.peak_hours,
             extra_w=STANDARD_CONFIG.peak_extra_w,
+        )
+    if name == "level":
+        # gleichmäßig über den Tag, die Schwankung im Tag (daily) bleibt, nur das Tagesmittel (weekday) steigt
+        return add_single_day_peak(
+            history,
+            cutover_time,
+            hours=len(local_day_hours(cutover_time, 1, "1h", LOCAL_TIMEZONE)),
+            extra_w=float(strength),
         )
 
     raise ValueError(f"Unknown scenario kind: {kind}")

@@ -4,6 +4,7 @@ import pandas as pd
 
 from experiments.common.scenarios import (
     build_decision_times,
+    crop_history_for_coldstart,
     slice_history_window,
     subtract_channels_in_window,
 )
@@ -102,3 +103,16 @@ def test_slice_history_window_without_history_days_keeps_everything_before_start
 
     assert history.index[0] == series.index[0]
     assert len(history) == 24 * 5
+
+
+def test_coldstart_history_counts_local_days_across_the_clock_change() -> None:
+    index = pd.date_range("2014-03-01", "2014-04-30", freq="1h", tz="UTC")
+    series = pd.Series(300.0, index=index)
+    # Mitternacht Ortszeit am 03.04., Sommerzeit
+    first_decision_time = pd.Timestamp("2014-04-02T23:00:00+00:00")
+
+    history = crop_history_for_coldstart(series, first_decision_time, 7)
+
+    # 7 Tage inklusive Vortag, über die Umstellung am 30.03. also 167 statt 168 Stunden
+    assert history.index[0] == pd.Timestamp("2014-03-27T00:00:00+00:00")
+    assert len(history.loc[: first_decision_time - pd.Timedelta(hours=1)]) == 167

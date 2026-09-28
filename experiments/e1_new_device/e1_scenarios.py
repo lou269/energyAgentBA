@@ -9,7 +9,11 @@ from experiments.common.scenarios import (
     scenario_without_calendar,
     subtract_channels_in_window,
 )
-from experiments.common.standard_config import LOCAL_TIMEZONE, PROJECT_CONFIG
+from experiments.common.standard_config import (
+    COLDSTART_DAYS,
+    LOCAL_TIMEZONE,
+    PROJECT_CONFIG,
+)
 from experiments.e1_new_device.e1_config import DEVICES_HOURLY_FILE, E1Config
 from src.common.timestamps import local_midnight_utc
 from src.pipeline.comparison_harness import ScenarioData
@@ -57,7 +61,9 @@ def build_e1_scenario(
         margin_before_days=e1_config.margin_before_days,
         margin_after_days=e1_config.margin_after_days,
     )
-    history = crop_history_for_coldstart(mains_series, decision_times[0])
+    history = crop_history_for_coldstart(
+        mains_series, decision_times[0], COLDSTART_DAYS
+    )
 
     # Kontrolllauf: dieselben Tage, das Gerät ist durchgehend drin
     if apply_device_injection:
@@ -69,5 +75,5 @@ def build_e1_scenario(
         )
 
     return scenario_without_calendar(
-        history, decision_times, target_imputed, value_implausible
+        history, decision_times, COLDSTART_DAYS, target_imputed, value_implausible
     )

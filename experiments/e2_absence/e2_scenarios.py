@@ -11,7 +11,7 @@ from experiments.common.scenarios import (
     scenario_without_calendar,
     subtract_channels_in_window,
 )
-from experiments.common.standard_config import PROJECT_CONFIG
+from experiments.common.standard_config import COLDSTART_DAYS, PROJECT_CONFIG
 from experiments.e2_absence.e2_config import (
     CHANNEL_DATA_FILE,
     CHANNEL_RANKING_FILE,
@@ -30,7 +30,7 @@ def build_ctx_scenarios(
     value_implausible: pd.Series | None = None,
 ) -> dict[str, ScenarioData]:
     ctx0 = scenario_without_calendar(
-        target_series, decision_times, target_imputed, value_implausible
+        target_series, decision_times, COLDSTART_DAYS, target_imputed, value_implausible
     )
     ctx1 = replace(
         ctx0,
@@ -82,7 +82,7 @@ def build_absence_scenarios(
         margin_after_days=e2_config.decision_time_margin_after_days,
     )
     absence_adjusted_series = subtract_channels_in_window(
-        crop_history_for_coldstart(mains_series, decision_times[0]),
+        crop_history_for_coldstart(mains_series, decision_times[0], COLDSTART_DAYS),
         appliance_data_hourly,
         selected_channels,
         window_start=window_start,

@@ -201,7 +201,7 @@ def count_notifications(
         notification=results["classification"].isin(notification_classes),
         unknown=results["classification"].eq("unknown"),
     )
-    counts = flagged.groupby(keys, as_index=False).agg(
+    counts = flagged.groupby(keys, observed=True, as_index=False).agg(
         days=("classification", "size"),
         notification_days=("notification", "sum"),
         unknown_days=("unknown", "sum"),
@@ -214,7 +214,9 @@ def count_notifications(
     return counts
 
 
-def summarize_paired_differences(values: pd.DataFrame, reference: str) -> pd.DataFrame:
+def summarize_paired_differences(
+    values: pd.DataFrame, reference: str | int
+) -> pd.DataFrame:
     """values: eine Zeile je Paarung (Tag, Origin), eine Spalte je Variante. Differenz jeder Variante zu reference"""
     differences = values.drop(columns=reference).sub(values[reference], axis=0)
 
@@ -228,7 +230,7 @@ def summarize_paired_differences(values: pd.DataFrame, reference: str) -> pd.Dat
     )
     # grobe Faustregel, aufeinanderfolgende Tage sind nicht unabhängig, der Standardfehler also eher zu klein
     summary["exceeds_noise"] = (
-        summary["mean_delta"].abs() > 2 * summary["delta_standard_error"]
+        summary["mean_delta"].abs() > 2 * summary["delta_standard_error"]  # type: ignore
     )
 
     return summary.rename_axis("variant").reset_index()

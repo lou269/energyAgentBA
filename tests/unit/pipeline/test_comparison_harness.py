@@ -137,9 +137,8 @@ def test_build_scenario_from_split_manifest_uses_given_coldstart_days() -> None:
 
     assert scenario.coldstart_days == 2
     assert scenario.target_series.index[-1] == index[99]
-    # cycle_start liegt 2 Kalendertage nach Datenbeginn (index[48]),
-    # decision_times[0] einen vollen lokalen Kalendertag danach, sonst ist new_observations beim ersten Zyklus-Aufruf leer
-    assert scenario.decision_times[0] == index[72]
+    # erster Entscheidungstag nach 2 Kalendertagen Kaltstart, der zweite kommt im ersten Zyklus als new_observations
+    assert scenario.decision_times[0] == index[48]
     assert scenario.decision_times[-1] <= index[99]
     assert all(
         second - first == pd.Timedelta(hours=24)
@@ -189,16 +188,12 @@ def test_build_scenario_from_split_manifest_uses_local_calendar_days() -> None:
 
     assert cycle_start_local.hour == 0
     assert decision_time_local.hour == 0
-    assert scenario.decision_times[0] == cycle_start_local.tz_convert(
-        "UTC"
-    ) + pd.Timedelta(hours=24)
+    assert scenario.decision_times[0] == cycle_start_local.tz_convert("UTC")
 
 
 def test_build_scenario_from_split_manifest_integrates_with_run_comparison(
     tmp_path: Path,
 ) -> None:
-    # Regressionstest für einen echten Bug: decision_times[0] == cycle_start ließ new_observations
-    # im ersten Zyklus leer sein, weil state.history schon bis cycle_start - 1h reicht
     hours = 480
     index = pd.date_range("2024-01-01", periods=hours, freq="1h", tz="UTC")
     hour_of_day = index.hour.to_numpy()

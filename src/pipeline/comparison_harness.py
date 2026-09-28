@@ -64,11 +64,10 @@ def build_scenario_from_split_manifest(
         target_series.index[0], coldstart_days, local_timezone
     )
 
-    # state.history endet bereits bei cycle_start - 1h -> der erste decision_time liegt einen vollen lokalen Kalendertag danach, sonst ist new_observations
-    # in run_comparison leer
+    # erster Entscheidungstag direkt nach den coldstart_days, deren letzter Tag kommt im ersten Zyklus als new_observations (coldstart_history)
     decision_times = tuple(
         local_calendar_range(cycle_start, 1, cycle_end, local_timezone)
-    )[1:]
+    )
 
     return ScenarioData(
         target_series=target_series,

@@ -71,6 +71,7 @@ KIND_LABELS: dict[str, str] = {
     ),
     "peak": f"Einzeltag-Spitze +{STANDARD_CONFIG.peak_extra_w:g} W über {STANDARD_CONFIG.peak_hours} h",
     "peak_6": f"Einzeltag-Spitze +{STANDARD_CONFIG.peak_extra_w:g} W über 6 h",
+    "level_250": "ganzer Einzeltag +250 W",
 }
 
 # Szenario-Art (ohne Stärke) -> erwartete Klasse, vor den Läufen festgelegt. absence (G2) kommt aus E2, measurement_error (G5) nur aus E5.

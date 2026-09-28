@@ -63,10 +63,12 @@ def run_scenario_in_scratch(
     configs: Mapping[str, CycleConfig],
     *,
     run_id: str,
+    llm_prompt: str | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
-    # run_comparison schreibt Forecasts, States und Manifeste mit, K2 und K4 brauchen davon nur Summary und Anomalie-Zeilen
     with TemporaryDirectory() as scratch:
-        run_scenario(scenario, configs, Path(scratch), run_id=run_id)
+        run_scenario(
+            scenario, configs, Path(scratch), run_id=run_id, llm_prompt=llm_prompt
+        )
 
         summary = pd.read_csv(Path(scratch) / COMPARISON_SUMMARY_FILE)
         anomaly = read_anomaly_rows(Path(scratch))
