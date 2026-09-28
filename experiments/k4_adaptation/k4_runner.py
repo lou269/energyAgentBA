@@ -60,7 +60,10 @@ def run_strategies(k4_config: K4Config) -> Path:
 
     for cutover_date in STANDARD_CONFIG.cutover_dates:
         for kind, scenario in build_standard_scenarios(
-            cutover_date, k4_config.kinds
+            cutover_date,
+            k4_config.kinds,
+            margin_before_days=STANDARD_CONFIG.monitoring_before_cutover_days,
+            margin_after_days=STANDARD_CONFIG.margin_after_days,
         ).items():
             for strategy, trigger_day in runs:
                 logger.info(
@@ -110,7 +113,10 @@ def run_masking(k4_config: K4Config) -> Path:
 
     for cutover_date in STANDARD_CONFIG.cutover_dates:
         for kind, scenario in build_standard_scenarios(
-            cutover_date, k4_config.masking_kinds
+            cutover_date,
+            k4_config.masking_kinds,
+            margin_before_days=STANDARD_CONFIG.monitoring_before_cutover_days,
+            margin_after_days=STANDARD_CONFIG.margin_after_days,
         ).items():
             logger.info("K4 masking %s_%s", kind, cutover_date)
 

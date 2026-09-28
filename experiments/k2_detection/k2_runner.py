@@ -44,7 +44,12 @@ def run(k2_config: K2Config) -> Path:
     scenario_results: list[pd.DataFrame] = []
 
     for cutover_date in STANDARD_CONFIG.cutover_dates:
-        scenarios = build_standard_scenarios(cutover_date, k2_config.kinds)
+        scenarios = build_standard_scenarios(
+            cutover_date,
+            k2_config.kinds,
+            margin_before_days=STANDARD_CONFIG.monitoring_before_cutover_days,
+            margin_after_days=STANDARD_CONFIG.margin_after_days,
+        )
 
         for mode, variants in build_mode_configs(k2_config.reference_windows).items():
             for kind in kinds_by_mode(k2_config)[mode]:

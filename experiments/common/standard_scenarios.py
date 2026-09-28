@@ -18,7 +18,11 @@ from src.pipeline.comparison_harness import ScenarioData
 
 
 def build_standard_scenarios(
-    cutover_date: str, kinds: tuple[str, ...]
+    cutover_date: str,
+    kinds: tuple[str, ...],
+    *,
+    margin_before_days: int,
+    margin_after_days: int,
 ) -> dict[str, ScenarioData]:
     # Szenarien für einen Cutover, alle mit denselben decision_times, also tageweise gepaart auswertbar
     mains_series, target_imputed, value_implausible = load_target()
@@ -29,8 +33,8 @@ def build_standard_scenarios(
     decision_times = build_decision_times(
         cutover_time,
         cutover_time,
-        margin_before_days=STANDARD_CONFIG.monitoring_before_cutover_days,
-        margin_after_days=STANDARD_CONFIG.margin_after_days,
+        margin_before_days=margin_before_days,
+        margin_after_days=margin_after_days,
     )
     history = crop_history_for_coldstart(mains_series, decision_times[0])
     control = scenario_without_calendar(

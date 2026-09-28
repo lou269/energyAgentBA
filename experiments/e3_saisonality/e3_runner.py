@@ -47,7 +47,12 @@ def run(e3_config: E3Config) -> Path:
     scenario_results: list[pd.DataFrame] = []
 
     for cutover_date in STANDARD_CONFIG.cutover_dates:
-        scenarios = build_standard_scenarios(cutover_date, e3_config.kinds)
+        scenarios = build_standard_scenarios(
+            cutover_date,
+            e3_config.kinds,
+            margin_before_days=STANDARD_CONFIG.monitoring_before_cutover_days,
+            margin_after_days=STANDARD_CONFIG.margin_after_days,
+        )
 
         for kind, scenario in scenarios.items():
             scenario_name = f"{kind}_{cutover_date}"

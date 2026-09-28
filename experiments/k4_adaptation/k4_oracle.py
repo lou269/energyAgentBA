@@ -28,7 +28,8 @@ def run_oracle(
     actions: Mapping[pd.Timestamp, K4Strategy],
     masked_days: pd.DatetimeIndex | None = None,
 ) -> pd.DataFrame:
-    # Zyklus wie cycle_config, Adaptionen kommen von außen (actions je decision_time) statt vom Detektor
+    # Zyklus wie cycle_config, Adaptionen kommen von außen (actions je decision_time) statt vom Detektor.
+    cycle_config = replace(cycle_config, llm_mode="off")
     np.random.seed(cycle_config.forecasting_config.seed)
 
     # ausgeblendet wird nur, was der Zyklus zu sehen bekommt, der MAE rechnet weiter gegen die echten Werte

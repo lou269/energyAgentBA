@@ -98,7 +98,7 @@ def test_run_cycle_survives_less_than_72_hours_of_history() -> None:
     history = _hourly("2024-01-01", [100.0] * 24)
     new_observations = _hourly(history.index[-1] + pd.Timedelta(hours=1), [100.0] * 24)
     decision_time = new_observations.index[-1] + pd.Timedelta(hours=1)
-    config = replace(SYS_VARIANTS["SYS1"], llm_mode="rule")
+    config = SYS_VARIANTS["SYS1"]
 
     result, new_state = run_cycle(
         _state(history),
@@ -134,7 +134,7 @@ def _run_single_cycle(series: pd.Series, coldstart_hours: int, config) -> tuple:
 
 def test_classification_is_unknown_when_reference_is_insufficient() -> None:
     series = _calm_series(24 * 6)
-    config = replace(SYS_VARIANTS["SYS1"], llm_mode="rule")
+    config = SYS_VARIANTS["SYS1"]
 
     result, _ = _run_single_cycle(series, coldstart_hours=100, config=config)
 
@@ -144,7 +144,7 @@ def test_classification_is_unknown_when_reference_is_insufficient() -> None:
 
 def test_classification_is_normal_without_calling_the_rule_classifier() -> None:
     series = _calm_series(24 * 50)
-    config = replace(SYS_VARIANTS["SYS1"], llm_mode="rule")
+    config = SYS_VARIANTS["SYS1"]
 
     result, _ = _run_single_cycle(series, coldstart_hours=24 * 48, config=config)
 
@@ -159,7 +159,7 @@ def test_isolated_single_hour_spike_is_diluted_by_the_daily_mean() -> None:
     values = series.to_numpy().copy()
     values[coldstart_hours] = 300.0
     series = pd.Series(values, index=series.index, name="target")
-    config = replace(SYS_VARIANTS["SYS1"], llm_mode="rule")
+    config = SYS_VARIANTS["SYS1"]
 
     result, _ = _run_single_cycle(
         series, coldstart_hours=coldstart_hours, config=config
@@ -200,7 +200,7 @@ def test_fully_missing_target_day_is_classified_as_measurement_error() -> None:
     values = series.to_numpy().copy()
     values[coldstart_hours : coldstart_hours + 24] = np.nan
     series = pd.Series(values, index=series.index, name="target")
-    config = replace(SYS_VARIANTS["SYS1"], llm_mode="rule")
+    config = SYS_VARIANTS["SYS1"]
 
     result, _ = _run_single_cycle(
         series, coldstart_hours=coldstart_hours, config=config

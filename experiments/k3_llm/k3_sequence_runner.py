@@ -35,7 +35,10 @@ logger = logging.getLogger(__name__)
 
 def run(k3_config: K3Config) -> Path:
     scenarios = build_standard_scenarios(
-        k3_config.sequence_cutover_date, k3_config.sequence_kinds
+        k3_config.sequence_cutover_date,
+        k3_config.sequence_kinds,
+        margin_before_days=STANDARD_CONFIG.monitoring_before_cutover_days,
+        margin_after_days=STANDARD_CONFIG.margin_after_days,
     )
 
     configs = build_sequence_configs(

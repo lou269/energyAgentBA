@@ -1,6 +1,5 @@
 # python -m pytest tests/unit/experiments/e2_absence -v
 
-from dataclasses import replace
 from pathlib import Path
 
 import numpy as np
@@ -108,7 +107,7 @@ def test_ctx1_structured_state_carries_the_calendar_event_through_run_cycle() ->
         local_timezone="Europe/London",
     )
 
-    config = replace(SYS_VARIANTS["SYS1"], llm_mode="rule")
+    config = SYS_VARIANTS["SYS1"]
 
     result, _ = run_cycle(
         state,

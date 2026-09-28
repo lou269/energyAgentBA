@@ -23,7 +23,10 @@ def _constant_mains(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_all_kinds_share_decision_times_and_differ_only_from_the_cutover() -> None:
     scenarios = standard_scenarios.build_standard_scenarios(
-        CUTOVER, ("control", "step", "scaled")
+        CUTOVER,
+        ("control", "step", "scaled"),
+        margin_before_days=14,
+        margin_after_days=30,
     )
     cutover_time = local_midnight_utc(CUTOVER, LOCAL_TIMEZONE)
     control = scenarios["control"].target_series
@@ -36,6 +39,9 @@ def test_all_kinds_share_decision_times_and_differ_only_from_the_cutover() -> No
         == scenarios["control"].decision_times
         == scenarios["scaled"].decision_times
     )
+    decision_times = scenarios["control"].decision_times
+    assert decision_times[0] == cutover_time - pd.Timedelta(days=14)
+    assert decision_times[-1] == cutover_time + pd.Timedelta(days=30)
 
     before = control.index < cutover_time
     assert (step[before] == control[before]).all()
@@ -50,13 +56,15 @@ def test_all_kinds_share_decision_times_and_differ_only_from_the_cutover() -> No
 
 def test_only_the_requested_kinds_are_built() -> None:
     assert list(
-        standard_scenarios.build_standard_scenarios(CUTOVER, ("control", "step"))
+        standard_scenarios.build_standard_scenarios(
+            CUTOVER, ("control", "step"), margin_before_days=14, margin_after_days=30
+        )
     ) == ["control", "step"]
 
 
 def test_strength_in_the_name_sets_the_step_and_the_ramp_length() -> None:
     scenarios = standard_scenarios.build_standard_scenarios(
-        CUTOVER, ("step_30", "ramp_28")
+        CUTOVER, ("step_30", "ramp_28"), margin_before_days=14, margin_after_days=30
     )
     cutover_time = local_midnight_utc(CUTOVER, LOCAL_TIMEZONE)
     step = scenarios["step_30"].target_series
@@ -78,7 +86,10 @@ def test_strength_in_the_name_sets_the_step_and_the_ramp_length() -> None:
 
 def test_peak_adds_the_extra_power_on_the_cutover_day_only() -> None:
     scenarios = standard_scenarios.build_standard_scenarios(
-        CUTOVER, ("control", "peak", "peak_6")
+        CUTOVER,
+        ("control", "peak", "peak_6"),
+        margin_before_days=14,
+        margin_after_days=30,
     )
     extra = scenarios["peak"].target_series - scenarios["control"].target_series
     longer = scenarios["peak_6"].target_series - scenarios["control"].target_series

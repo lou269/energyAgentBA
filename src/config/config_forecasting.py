@@ -241,13 +241,14 @@ SYS_VARIANTS: dict[str, CycleConfig] = {
         event_adaptation=False,
         llm_mode="off",
     ),
+    # ordnet wie SYS2 ein, adaptiert nie
     "SYS1": CycleConfig(
         forecasting_config=ForecastingConfig(
             selected_prophet_variant=selected_prophet_model
         ),
         numerical_analysis_config=NumericalAnalysisConfig(),
         event_adaptation=False,
-        llm_mode="off",
+        llm_mode="rule",
     ),
     "SYS2": CycleConfig(
         forecasting_config=ForecastingConfig(
