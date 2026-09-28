@@ -1,0 +1,9 @@
+scenario,config,decision_time,classification,explanation,rubric_score
+ctx0,SYS3_CTX0,2013-09-26T23:00:00+00:00,new_pattern,Der Stromverbrauch ist seit mehreren Tagen deutlich niedriger als üblich. Dies zeigt sich sowohl im wöchentlichen als auch im langfristigen Vergleich.,
+ctx0,SYS3_CTX0,2013-09-30T23:00:00+00:00,peak,Der Stromverbrauch war gestern deutlich höher als üblich. Der Verbrauch lag etwa 34 % über dem Wochenmittelwert.,
+ctx0,SYS3_CTX0,2013-10-26T23:00:00+00:00,peak,Der Stromverbrauch war gestern deutlich höher als üblich. Besonders auffällig ist der Anstieg im Vergleich zum üblichen Tages- und Wochenverlauf.,
+ctx1,SYS3_CTX1,2013-09-26T23:00:00+00:00,absence,"Der Stromverbrauch ist seit mehreren Tagen deutlich niedriger als üblich, was auf den geplanten Urlaub vom 14. September bis 28. September zurückzuführen ist.",
+ctx1,SYS3_CTX1,2013-10-26T23:00:00+00:00,peak,"Der Stromverbrauch war heute deutlich höher als üblich, was auf einen ungewöhnlich hohen Verbrauch hindeutet.",
+ctx2,SYS3_CTX2,2013-09-26T23:00:00+00:00,new_pattern,Der Stromverbrauch ist seit mehreren Tagen deutlich niedriger als üblich. Dies zeigt sich sowohl im wöchentlichen als auch im langfristigen Vergleich.,
+ctx2,SYS3_CTX2,2013-09-30T23:00:00+00:00,peak,Der Stromverbrauch war am analysierten Tag deutlich höher als üblich.,
+ctx2,SYS3_CTX2,2013-10-26T23:00:00+00:00,peak,Der Stromverbrauch war heute deutlich höher als üblich. Besonders auffällig ist der Anstieg im Vergleich zum üblichen Tages- und Wochenverlauf.,

@@ -1,0 +1,89 @@
+System,Urlaubstag,Datum,Phase,Tagesmittel [W],erwartet Wochentag [W],z daily,z weekday,z weekly,z long_term,Streak weekly,Streak long_term,Level,Drift,Einordnung,Adaption,MAE [W]
+SYS1,0,2013-09-14,Urlaub,162.5,259.1,-1.3,-2.0,-0.7,1.2,0.0,6.0,normal,False,normal,none,55.1
+SYS1,1,2013-09-15,Urlaub,145.8,252.7,-1.9,-2.0,-1.0,0.8,0.0,5.0,normal,False,normal,none,41.1
+SYS1,2,2013-09-16,Urlaub,177.4,283.0,-1.4,-2.2,-1.5,0.8,1.0,5.0,normal,False,normal,none,52.7
+SYS1,3,2013-09-17,Urlaub,191.8,254.5,-1.6,-1.4,-2.1,0.5,2.0,3.0,normal,False,normal,none,29.7
+SYS1,4,2013-09-18,Urlaub,152.4,280.7,-2.0,-2.4,-2.4,0.2,3.0,2.0,normal,False,normal,none,40.3
+SYS1,5,2013-09-19,Urlaub,168.9,282.9,-1.6,-2.0,-2.6,-0.0,4.0,1.0,normal,False,normal,none,106.8
+SYS1,6,2013-09-20,Urlaub,239.3,273.6,0.1,-0.7,-2.7,-0.4,5.0,0.0,normal,False,normal,none,45.0
+SYS1,7,2013-09-21,Urlaub,181.8,261.1,-1.3,-1.3,-2.6,-0.7,6.0,0.0,normal,False,normal,none,32.5
+SYS1,8,2013-09-22,Urlaub,144.9,252.9,-1.7,-1.5,-2.5,-1.1,7.0,1.0,normal,False,normal,none,24.8
+SYS1,9,2013-09-23,Urlaub,166.2,285.6,-1.7,-1.6,-2.4,-1.5,7.0,2.0,normal,False,normal,none,19.0
+SYS1,10,2013-09-24,Urlaub,160.9,259.3,-1.7,-1.2,-2.4,-1.9,7.0,4.0,normal,False,normal,none,28.6
+SYS1,11,2013-09-25,Urlaub,166.4,280.4,-1.4,-1.3,-2.2,-2.6,7.0,5.0,normal,False,normal,none,37.0
+SYS1,12,2013-09-26,Urlaub,165.6,285.4,-1.4,-1.3,-2.1,-3.2,7.0,6.0,normal,True,new_pattern,none,50.4
+SYS1,13,2013-09-27,Urlaub,181.7,284.2,-0.9,-1.0,-2.1,-3.4,7.0,7.0,normal,True,new_pattern,none,101.2
+SYS1,14,2013-09-28,nach der Rückkehr,251.6,255.0,0.1,0.4,-1.8,-3.6,7.0,7.0,normal,True,new_pattern,none,183.6
+SYS1,15,2013-09-29,nach der Rückkehr,366.6,234.4,2.0,2.1,-1.0,-3.2,6.0,7.0,normal,True,new_pattern,none,144.8
+SYS1,16,2013-09-30,nach der Rückkehr,333.3,261.2,2.3,1.4,-0.4,-2.9,5.0,7.0,normal,False,normal,none,98.8
+SYS1,17,2013-10-01,nach der Rückkehr,294.6,249.2,0.5,1.2,0.2,-2.5,4.0,7.0,normal,False,normal,none,128.2
+SYS1,18,2013-10-02,nach der Rückkehr,284.2,258.1,0.6,0.8,0.6,-2.3,3.0,7.0,normal,False,normal,none,116.3
+SYS1,19,2013-10-03,nach der Rückkehr,244.3,260.1,0.1,0.2,0.9,-2.2,2.0,7.0,normal,False,normal,none,166.6
+SYS1,20,2013-10-04,nach der Rückkehr,331.2,272.8,1.7,1.2,1.5,-2.1,2.0,7.0,normal,False,normal,none,146.9
+SYS1,21,2013-10-05,nach der Rückkehr,343.7,244.1,1.1,1.7,1.7,-1.8,2.0,7.0,normal,False,normal,none,118.0
+SYS1,22,2013-10-06,nach der Rückkehr,349.8,244.7,0.9,1.7,1.6,-1.7,3.0,7.0,normal,False,normal,none,137.6
+SYS1,23,2013-10-07,nach der Rückkehr,307.0,263.5,1.0,0.9,1.5,-1.6,4.0,7.0,normal,False,normal,none,97.3
+SYS1,24,2013-10-08,nach der Rückkehr,253.1,255.6,-0.4,0.3,1.3,-1.5,5.0,7.0,normal,False,normal,none,106.7
+SYS1,25,2013-10-09,nach der Rückkehr,326.8,253.4,0.7,1.2,1.3,-1.4,4.0,7.0,normal,False,normal,none,117.0
+SYS1,26,2013-10-10,nach der Rückkehr,363.7,256.4,0.6,1.5,1.6,-1.3,4.0,7.0,normal,False,normal,none,103.5
+SYS1,27,2013-10-11,nach der Rückkehr,333.6,274.0,0.5,1.0,1.5,-1.1,4.0,7.0,normal,False,normal,none,117.4
+SYS1,28,2013-10-12,nach der Rückkehr,325.2,251.6,0.6,1.1,1.4,-0.9,4.0,6.0,normal,False,normal,none,96.5
+SYS1,29,2013-10-13,nach der Rückkehr,392.1,256.1,0.2,1.7,1.4,-0.6,4.0,5.0,normal,False,normal,none,101.7
+SYS1,30,2013-10-14,nach der Rückkehr,348.1,279.6,0.1,1.0,1.5,-0.2,4.0,4.0,normal,False,normal,none,129.7
+SYS1,31,2013-10-15,nach der Rückkehr,273.4,265.9,-0.1,0.4,1.4,0.0,5.0,3.0,normal,False,normal,none,128.3
+SYS1,32,2013-10-16,nach der Rückkehr,368.0,269.7,0.7,1.3,1.5,0.4,4.0,1.0,normal,False,normal,none,96.5
+SYS1,33,2013-10-17,nach der Rückkehr,314.0,260.5,0.4,0.7,1.3,0.6,4.0,0.0,normal,False,normal,none,95.5
+SYS1,34,2013-10-18,nach der Rückkehr,320.5,280.5,-0.0,0.6,1.2,1.0,3.0,0.0,normal,False,normal,none,124.0
+SYS1,35,2013-10-19,nach der Rückkehr,320.3,271.0,1.0,0.6,1.2,1.3,2.0,2.0,normal,False,normal,none,108.9
+SYS1,36,2013-10-20,nach der Rückkehr,321.4,268.6,0.8,0.6,1.0,1.5,2.0,3.0,normal,False,normal,none,91.2
+SYS1,37,2013-10-21,nach der Rückkehr,314.3,292.8,0.2,0.2,0.9,1.8,2.0,4.0,normal,False,normal,none,92.2
+SYS1,38,2013-10-22,nach der Rückkehr,278.5,268.8,-0.5,0.0,0.9,2.1,1.0,5.0,normal,False,normal,none,171.0
+SYS1,39,2013-10-23,nach der Rückkehr,423.4,272.7,1.5,1.6,1.0,2.6,0.0,6.0,normal,False,normal,none,129.3
+SYS1,40,2013-10-24,nach der Rückkehr,290.7,263.9,0.6,0.1,0.9,2.9,0.0,7.0,normal,False,normal,none,85.4
+SYS1,41,2013-10-25,nach der Rückkehr,320.7,288.4,0.4,0.1,0.9,3.1,0.0,7.0,normal,False,normal,none,214.4
+SYS1,42,2013-10-26,nach der Rückkehr,475.8,275.5,3.5,2.1,1.2,3.5,0.0,7.0,strong_anomaly,False,peak,none,115.1
+SYS1,43,2013-10-27,nach der Rückkehr,263.3,276.7,0.6,-0.6,1.1,3.4,0.0,7.0,normal,False,normal,none,104.0
+SYS2,0,2013-09-14,Urlaub,162.5,259.1,-1.3,-2.0,-0.7,1.2,0.0,6.0,normal,False,normal,none,55.1
+SYS2,1,2013-09-15,Urlaub,145.8,252.7,-1.9,-2.0,-1.0,0.8,0.0,5.0,normal,False,normal,none,41.1
+SYS2,2,2013-09-16,Urlaub,177.4,283.0,-1.4,-2.2,-1.5,0.8,1.0,5.0,normal,False,normal,none,52.7
+SYS2,3,2013-09-17,Urlaub,191.8,254.5,-1.6,-1.4,-2.1,0.5,2.0,3.0,normal,False,normal,none,29.7
+SYS2,4,2013-09-18,Urlaub,152.4,280.7,-2.0,-2.4,-2.4,0.2,3.0,2.0,normal,False,normal,none,40.3
+SYS2,5,2013-09-19,Urlaub,168.9,282.9,-1.6,-2.0,-2.6,-0.0,4.0,1.0,normal,False,normal,none,106.8
+SYS2,6,2013-09-20,Urlaub,239.3,273.6,0.1,-0.7,-2.7,-0.4,5.0,0.0,normal,False,normal,none,45.0
+SYS2,7,2013-09-21,Urlaub,181.8,261.1,-1.3,-1.3,-2.6,-0.7,6.0,0.0,normal,False,normal,none,32.5
+SYS2,8,2013-09-22,Urlaub,144.9,252.9,-1.7,-1.5,-2.5,-1.1,7.0,1.0,normal,False,normal,none,24.8
+SYS2,9,2013-09-23,Urlaub,166.2,285.6,-1.7,-1.6,-2.4,-1.5,7.0,2.0,normal,False,normal,none,19.0
+SYS2,10,2013-09-24,Urlaub,160.9,259.3,-1.7,-1.2,-2.4,-1.9,7.0,4.0,normal,False,normal,none,28.6
+SYS2,11,2013-09-25,Urlaub,166.4,280.4,-1.4,-1.3,-2.2,-2.6,7.0,5.0,normal,False,normal,none,37.0
+SYS2,12,2013-09-26,Urlaub,165.6,285.4,-1.4,-1.3,-2.1,-3.2,7.0,6.0,normal,True,new_pattern,advance_history_start,46.7
+SYS2,13,2013-09-27,Urlaub,181.7,,,,,,,,,False,unknown,none,95.4
+SYS2,14,2013-09-28,nach der Rückkehr,251.6,,,,,,,,,False,unknown,none,154.5
+SYS2,15,2013-09-29,nach der Rückkehr,366.6,,,,,,,,,False,unknown,none,179.4
+SYS2,16,2013-09-30,nach der Rückkehr,333.3,,7.5,,12.3,,,,strong_anomaly,False,peak,none,118.3
+SYS2,17,2013-10-01,nach der Rückkehr,294.6,,2.3,,12.3,,3.0,,normal,False,normal,none,135.2
+SYS2,18,2013-10-02,nach der Rückkehr,284.2,,1.0,,4.2,,4.0,,normal,False,normal,none,102.0
+SYS2,19,2013-10-03,nach der Rückkehr,244.3,,0.2,,2.9,,4.0,,normal,False,normal,none,166.7
+SYS2,20,2013-10-04,nach der Rückkehr,331.2,,1.3,,2.6,,4.0,,normal,False,normal,none,143.3
+SYS2,21,2013-10-05,nach der Rückkehr,343.7,,0.8,,2.4,,3.0,,normal,False,normal,none,110.4
+SYS2,22,2013-10-06,nach der Rückkehr,349.8,,0.7,,1.8,,3.0,,normal,False,normal,none,129.7
+SYS2,23,2013-10-07,nach der Rückkehr,307.0,,0.6,,1.2,,3.0,,normal,False,normal,none,92.6
+SYS2,24,2013-10-08,nach der Rückkehr,253.1,,-0.6,,0.7,,0.0,,normal,False,normal,none,109.7
+SYS2,25,2013-10-09,nach der Rückkehr,326.8,,0.3,,0.6,,0.0,,normal,False,normal,none,119.5
+SYS2,26,2013-10-10,nach der Rückkehr,363.7,,0.1,,0.9,,0.0,,normal,False,normal,none,100.6
+SYS2,27,2013-10-11,nach der Rückkehr,333.6,,0.1,,0.8,,0.0,,normal,False,normal,none,112.8
+SYS2,28,2013-10-12,nach der Rückkehr,325.2,,0.1,,0.6,,0.0,,normal,False,normal,none,96.6
+SYS2,29,2013-10-13,nach der Rückkehr,392.1,,-0.2,,0.6,,0.0,,normal,False,normal,none,101.7
+SYS2,30,2013-10-14,nach der Rückkehr,348.1,,-0.3,,0.6,,0.0,,normal,False,normal,none,131.4
+SYS2,31,2013-10-15,nach der Rückkehr,273.4,,-0.6,,0.6,,0.0,,normal,False,normal,none,127.1
+SYS2,32,2013-10-16,nach der Rückkehr,368.0,,0.1,,0.7,,0.0,,normal,False,normal,none,94.0
+SYS2,33,2013-10-17,nach der Rückkehr,314.0,,-0.0,,0.3,,0.0,,normal,False,normal,none,94.0
+SYS2,34,2013-10-18,nach der Rückkehr,320.5,271.5,-0.4,,0.1,4.4,0.0,,normal,False,normal,none,122.8
+SYS2,35,2013-10-19,nach der Rückkehr,320.3,275.6,0.4,,-0.0,3.0,0.0,4.0,normal,False,normal,none,108.9
+SYS2,36,2013-10-20,nach der Rückkehr,321.4,313.3,0.3,,-0.5,4.0,0.0,4.0,normal,False,normal,none,91.2
+SYS2,37,2013-10-21,nach der Rückkehr,314.3,288.6,-0.3,,-0.8,6.1,0.0,4.0,normal,False,normal,none,92.2
+SYS2,38,2013-10-22,nach der Rückkehr,278.5,245.5,-1.1,,-0.8,8.1,0.0,4.0,normal,False,normal,none,171.0
+SYS2,39,2013-10-23,nach der Rückkehr,423.4,286.3,1.1,,-0.6,10.2,0.0,4.0,normal,False,normal,none,129.3
+SYS2,40,2013-10-24,nach der Rückkehr,290.7,271.9,0.0,-0.7,-0.7,7.5,0.0,4.0,normal,False,normal,none,85.4
+SYS2,41,2013-10-25,nach der Rückkehr,320.7,281.3,-0.2,0.5,-0.7,6.1,0.0,5.0,normal,False,normal,none,214.4
+SYS2,42,2013-10-26,nach der Rückkehr,475.8,284.5,3.4,3.1,0.1,5.2,0.0,5.0,strong_anomaly,False,peak,none,115.1
+SYS2,43,2013-10-27,nach der Rückkehr,263.3,314.9,-0.0,-2.3,-0.2,4.1,0.0,5.0,normal,False,normal,none,104.0

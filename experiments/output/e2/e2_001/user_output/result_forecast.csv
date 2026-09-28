@@ -1,0 +1,16 @@
+System,Phase,MAE [W],Differenz zu SYS1 [W],Standardfehler [W],Anteil Tage besser,gepaarte Tage
+SYS1,vor dem Urlaub,110.1,,,,
+SYS1,Urlaub,47.5,,,,
+SYS1,nach der Rückkehr,122.2,,,,
+SYS2,vor dem Urlaub,110.1,0.0,0.0,0.0,31.0
+SYS2,Urlaub,46.8,-0.7,0.5,0.1,14.0
+SYS2,nach der Rückkehr,121.8,-0.4,1.8,0.4,30.0
+SYS3_CTX0,vor dem Urlaub,110.1,0.0,0.0,0.0,31.0
+SYS3_CTX0,Urlaub,46.8,-0.7,0.5,0.1,14.0
+SYS3_CTX0,nach der Rückkehr,121.8,-0.4,1.8,0.4,30.0
+SYS3_CTX1,vor dem Urlaub,110.1,0.0,0.0,0.0,31.0
+SYS3_CTX1,Urlaub,52.8,5.3,5.3,0.0,14.0
+SYS3_CTX1,nach der Rückkehr,118.9,-3.3,1.4,0.6,30.0
+SYS3_CTX2,vor dem Urlaub,110.1,0.0,0.0,0.0,31.0
+SYS3_CTX2,Urlaub,46.8,-0.7,0.5,0.1,14.0
+SYS3_CTX2,nach der Rückkehr,121.8,-0.4,1.8,0.4,30.0

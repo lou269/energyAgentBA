@@ -1,0 +1,11 @@
+System,Phase,eingeordnete Tage,davon Kalender im State
+SYS1,Urlaub,2,0
+SYS1,nach der Rückkehr,3,0
+SYS2,Urlaub,1,0
+SYS2,nach der Rückkehr,2,0
+SYS3_CTX0,Urlaub,1,0
+SYS3_CTX0,nach der Rückkehr,2,0
+SYS3_CTX1,Urlaub,1,1
+SYS3_CTX1,nach der Rückkehr,1,1
+SYS3_CTX2,Urlaub,1,0
+SYS3_CTX2,nach der Rückkehr,2,0
