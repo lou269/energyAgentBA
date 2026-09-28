@@ -1,0 +1,7 @@
+Kennzahl,Wert,Bezug
+SYS1: erster Treffer absence [Urlaubstag],,"0 von 7 Urlaubstagen mit offenem Gate, 0 × absence ohne Beleg"
+SYS2: erster Treffer absence [Urlaubstag],,"0 von 1 Urlaubstagen mit offenem Gate, 0 × absence ohne Beleg"
+SYS3_CTX0: erster Treffer absence [Urlaubstag],,"0 von 1 Urlaubstagen mit offenem Gate, 0 × absence ohne Beleg"
+SYS3_CTX1: erster Treffer absence [Urlaubstag],12.0,"2 von 2 Urlaubstagen mit offenem Gate, 0 × absence ohne Beleg"
+SYS3_CTX2: erster Treffer absence [Urlaubstag],12.0,"2 von 2 Urlaubstagen mit offenem Gate, 0 × absence ohne Beleg"
+Absenkung durch das Herausrechnen im Mittel [W],123.1,je Tag im Urlaubsfenster

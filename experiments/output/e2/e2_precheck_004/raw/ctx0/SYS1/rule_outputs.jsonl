@@ -1,0 +1,9 @@
+{"classification": "new_pattern", "config": "SYS1", "decision_time": "2013-09-26T23:00:00+00:00", "reasoning": "sustained deviation across multiple scales at once (weekly, long_term), on a weekday."}
+{"classification": "new_pattern", "config": "SYS1", "decision_time": "2013-09-27T23:00:00+00:00", "reasoning": "sustained deviation across multiple scales at once (weekly, long_term), on a weekday."}
+{"classification": "new_pattern", "config": "SYS1", "decision_time": "2013-09-28T23:00:00+00:00", "reasoning": "sustained deviation across multiple scales at once (weekly, long_term), on a weekend."}
+{"classification": "new_pattern", "config": "SYS1", "decision_time": "2013-09-29T23:00:00+00:00", "reasoning": "sustained deviation across multiple scales at once (weekly, long_term), on a weekend."}
+{"classification": "new_pattern", "config": "SYS1", "decision_time": "2013-09-30T23:00:00+00:00", "reasoning": "sustained deviation across multiple scales at once (weekly, long_term), on a weekday."}
+{"classification": "new_pattern", "config": "SYS1", "decision_time": "2013-10-01T23:00:00+00:00", "reasoning": "sustained deviation across multiple scales at once (weekly, long_term), on a weekday."}
+{"classification": "new_pattern", "config": "SYS1", "decision_time": "2013-10-02T23:00:00+00:00", "reasoning": "sustained deviation across multiple scales at once (weekly, long_term), on a weekday."}
+{"classification": "peak", "config": "SYS1", "decision_time": "2013-10-06T23:00:00+00:00", "reasoning": "unusual (unusual), but no sustained multi-scale signature (weekend)."}
+{"classification": "peak", "config": "SYS1", "decision_time": "2013-10-26T23:00:00+00:00", "reasoning": "unusual (strong_anomaly), but no sustained multi-scale signature (weekend)."}
