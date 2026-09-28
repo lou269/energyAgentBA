@@ -19,6 +19,12 @@ class ToolCall(TypedDict):
     arguments: dict[str, object]
 
 
+# content bleibt drin, damit sich nachlesen lässt, was das Modell statt eines Aufrufs geantwortet hat
+class ToolCallResponse(TypedDict):
+    content: str
+    tool_calls: list[ToolCall]
+
+
 class LLMClient(Protocol):
     def generate_json(
         self,
@@ -48,7 +54,7 @@ class LLMClient(Protocol):
         num_ctx: int,
         think: bool,
         keep_alive: int | str,
-    ) -> list[ToolCall]: ...
+    ) -> ToolCallResponse: ...
 
     def get_model_metadata(self, model: str) -> ModelMetadata: ...
 
@@ -114,7 +120,7 @@ class OllamaClient:
         num_ctx: int,
         think: bool,
         keep_alive: int | str,
-    ) -> list[ToolCall]:
+    ) -> ToolCallResponse:
         response = self._client.chat(
             model=model,
             messages=messages,
@@ -125,10 +131,13 @@ class OllamaClient:
             keep_alive=keep_alive,
         )
 
-        return [
-            {"name": call.function.name, "arguments": dict(call.function.arguments)}
-            for call in response.message.tool_calls or []
-        ]
+        return {
+            "content": response.message.content or "",
+            "tool_calls": [
+                {"name": call.function.name, "arguments": dict(call.function.arguments)}
+                for call in response.message.tool_calls or []
+            ],
+        }
 
     def get_model_metadata(self, model: str) -> ModelMetadata:
         if not isinstance(model, str) or not model.strip():

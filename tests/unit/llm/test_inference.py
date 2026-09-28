@@ -6,10 +6,9 @@ from typing import Any
 import pytest
 
 from src.config.config_forecasting import LLMConfig
-import pandas as pd
 
-from src.llm.calendar_tool import lookup_calendar
-from src.llm.client import ModelMetadata, ToolCall
+from src.context.calendar_context import build_calendar_context
+from src.llm.client import ModelMetadata, ToolCall, ToolCallResponse
 from src.llm.inference import LLMInferenceError, LLMInferenceResult, infer_llm_output
 
 from tests.unit.llm._state_fixture import valid_llm_output, valid_structured_state
@@ -76,9 +75,9 @@ class ScriptedClient:
         num_ctx: int,
         think: bool,
         keep_alive: int | str,
-    ) -> list[ToolCall]:
+    ) -> ToolCallResponse:
         self.tool_requests.append([dict(message) for message in messages])
-        return self._tool_calls
+        return {"content": "kein Aufruf", "tool_calls": self._tool_calls}
 
     def get_model_metadata(self, model: str) -> ModelMetadata:
         return {"name": model, "digest": None}
@@ -259,15 +258,15 @@ VACATION = {
 }
 
 
-def _calendar(days_back: int, days_ahead: int):
-    return lookup_calendar(
-        (VACATION,),
-        pd.Timestamp("2015-12-15T11:00:00+00:00"),
-        days_back,
-        days_ahead,
+def _calendar():
+    return build_calendar_context(
+        [VACATION],
         source_available=True,
         source="calendar_tool",
-        max_days=14,
+        retrieved_at="2015-12-15T11:00:00+00:00",
+        decision_time="2015-12-15T11:00:00+00:00",
+        window_start="2015-12-14T11:00:00+00:00",
+        window_end="2015-12-16T11:00:00+00:00",
         local_timezone="UTC",
     )
 
@@ -282,10 +281,7 @@ def test_fetched_calendar_replaces_the_context_and_can_ground_absence() -> None:
     client = ScriptedClient(
         [json.dumps(output)],
         tool_calls=[
-            {
-                "name": "get_calendar_events",
-                "arguments": {"days_back": 30, "days_ahead": "2"},
-            }
+            {"name": "get_calendar_events", "arguments": {}},
         ],
     )
 
@@ -294,8 +290,6 @@ def test_fetched_calendar_replaces_the_context_and_can_ground_absence() -> None:
     context = result.state["context"]
     assert context["source"] == "calendar_tool"
     assert [event["event_id"] for event in context["events"]] == ["vacation"]
-    # 30 Tage zurück auf max_days gekappt
-    assert context["window_start"] == "2015-12-01T11:00:00+00:00"
     assert result.output["classification"] == "absence"
     assert json.loads(client.calls[0]["messages"][1]["content"])["context"] == context
 
@@ -308,3 +302,4 @@ def test_without_a_tool_call_the_state_stays_as_it_was() -> None:
 
     assert len(client.tool_requests) == 1
     assert result.state == state
+    assert result.calendar_tool_response == {"content": "kein Aufruf", "tool_calls": []}

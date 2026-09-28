@@ -210,9 +210,8 @@ class LLMConfig:
     num_ctx: int = 8192
     think: bool = False
     keep_alive: int | str = "5m"
-    # CTX2: das LLM holt den Kalender per Function Calling selbst, höchstens so viele Tage vor und nach decision_time
+    # CTX2: das LLM holt den Kalender per Function Calling selbst, im selben Fenster wie CTX1
     calendar_tool: bool = False
-    calendar_tool_max_days: int = 14
 
 
 @dataclass(frozen=True)

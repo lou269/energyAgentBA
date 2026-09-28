@@ -13,7 +13,6 @@ from src.common.timestamps import analyzed_day, local_calendar_range, shift_loca
 from src.context.calendar_context import build_calendar_context
 from src.context.calendar_schema import CalendarContext
 from src.forecasting.evaluation import score_cycle_forecast
-from src.llm.calendar_tool import lookup_calendar
 from src.llm.client import LLMClient, OllamaClient
 from src.llm.inference import LLMAttemptRecord
 from src.pipeline.cycle_run_manifest import build_cycle_run_manifest
@@ -174,12 +173,12 @@ def run_comparison(
 
                     calendar_lookup = (
                         partial(
-                            lookup_calendar,
-                            scenario.calendar_events,
+                            _build_calendar_context,
+                            scenario,
                             decision_time,
-                            source_available=scenario.calendar_source_available,
-                            source=scenario.calendar_source,
-                            max_days=config.llm_config.calendar_tool_max_days,
+                            calendar_tool=False,
+                            lookback_days=calendar_lookback_days,
+                            lookahead_days=calendar_lookahead_days,
                             local_timezone=local_timezone,
                         )
                         if config.llm_config is not None
@@ -286,6 +285,16 @@ def run_comparison(
                         llm_output_records.append(llm_output_record)
                         append_jsonl(
                             llm_output_record, config_directory / "llm_outputs.jsonl"
+                        )
+
+                    if result.calendar_tool_response is not None:
+                        append_jsonl(
+                            {
+                                "config": config_label,
+                                "decision_time": decision_time.isoformat(),
+                                **result.calendar_tool_response,
+                            },
+                            config_directory / "calendar_tool_calls.jsonl",
                         )
 
                     if result.rule_output is not None:

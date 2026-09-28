@@ -19,7 +19,7 @@ from src.forecasting.prophet_model import (
     select_prophet_history,
 )
 from src.llm.calendar_tool import CalendarLookup
-from src.llm.client import LLMClient
+from src.llm.client import LLMClient, ToolCallResponse
 from src.llm.gate import gate_classification
 from src.llm.inference import LLMInferenceError, infer_llm_output
 from src.llm.llm_schema import Classification, LLMOutput
@@ -54,6 +54,7 @@ class CycleResult:
     rule_output: RuleClassificationResult | None
     adaption_action: AdaptionAction | None
     llm_error: LLMInferenceError | None = None
+    calendar_tool_response: ToolCallResponse | None = None
 
 
 def run_cycle(
@@ -123,6 +124,7 @@ def run_cycle(
     rule_output: RuleClassificationResult | None = None
     adaption_action: AdaptionAction | None = None
     llm_error: LLMInferenceError | None = None
+    calendar_tool_response: ToolCallResponse | None = None
 
     if analysis_row is not None and config.llm_mode != "off":
         if calendar_context is None:
@@ -139,7 +141,13 @@ def run_cycle(
         # scheitert das LLM, bleibt der Tag ohne Einordnung und ohne Adaption, prognostiziert wird trotzdem,
         # sonst fehlt der Tag nur in SYS3 und die Systeme werden auf verschiedenen Tagen verglichen
         try:
-            classification, llm_output, rule_output, structured_state = _classify(
+            (
+                classification,
+                llm_output,
+                rule_output,
+                structured_state,
+                calendar_tool_response,
+            ) = _classify(
                 structured_state,
                 config,
                 local_timezone,
@@ -225,6 +233,7 @@ def run_cycle(
         rule_output=rule_output,
         adaption_action=adaption_action,
         llm_error=llm_error,
+        calendar_tool_response=calendar_tool_response,
     )
 
     return result, new_state
@@ -238,17 +247,21 @@ def _classify(
     llm_prompt: str | None,
     calendar_lookup: CalendarLookup | None,
 ) -> tuple[
-    Classification, LLMOutput | None, RuleClassificationResult | None, StructuredState
+    Classification,
+    LLMOutput | None,
+    RuleClassificationResult | None,
+    StructuredState,
+    ToolCallResponse | None,
 ]:
     classification = gate_classification(structured_state)
     if classification is not None:
-        return classification, None, None, structured_state
+        return classification, None, None, structured_state, None
 
     if config.llm_mode == "rule":
         rule_output = rule_based_classify(
             structured_state, local_timezone=local_timezone
         )
-        return rule_output.classification, None, rule_output, structured_state
+        return rule_output.classification, None, rule_output, structured_state, None
 
     if llm_client is None or llm_prompt is None or config.llm_config is None:
         raise ValueError(
@@ -276,6 +289,7 @@ def _classify(
         inference_result.output,
         None,
         inference_result.state,
+        inference_result.calendar_tool_response,
     )
 
 

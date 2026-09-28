@@ -9,7 +9,7 @@ import pandas as pd
 
 from src.config.config_forecasting import ComparisonConfig, LLMConfig, SYS_VARIANTS
 from src.config.project_config import ProjectConfig
-from src.llm.client import ModelMetadata, ToolCall
+from src.llm.client import ModelMetadata, ToolCallResponse
 from src.pipeline.comparison_harness import (
     ScenarioData,
     build_scenario_from_split_manifest,
@@ -63,8 +63,8 @@ class _AlwaysEmptyClient:
         num_ctx: int,
         think: bool,
         keep_alive: int | str,
-    ) -> list[ToolCall]:
-        return []
+    ) -> ToolCallResponse:
+        return {"content": "", "tool_calls": []}
 
     def get_model_metadata(self, model: str) -> ModelMetadata:
         return {"name": model, "digest": None}

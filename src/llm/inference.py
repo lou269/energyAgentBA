@@ -4,8 +4,13 @@ from dataclasses import dataclass
 from time import perf_counter
 from typing import cast
 
-from src.llm.calendar_tool import CALENDAR_TOOL, CalendarLookup, requested_window
-from src.llm.client import LLMClient
+from src.llm.calendar_tool import (
+    CALENDAR_TOOL,
+    CALENDAR_TOOL_PROMPT,
+    CalendarLookup,
+    calendar_requested,
+)
+from src.llm.client import LLMClient, ToolCallResponse
 from src.llm.llm_schema import LLMOutput, RawLLMOutput, build_llm_output_json_schema
 from src.llm.validation import (
     collect_scalar_evidence_paths,
@@ -31,6 +36,7 @@ class LLMInferenceResult:
     attempts: tuple[LLMAttemptRecord, ...]
     # mit Kalender-Tool steht hier der Kalender, den das LLM geholt hat, sonst der übergebene State
     state: StructuredState
+    calendar_tool_response: ToolCallResponse | None = None
 
 
 class LLMInferenceError(ValueError):
@@ -64,12 +70,12 @@ def infer_llm_output(
         max_attempts=max_attempts,
     )
 
+    calendar_tool_response: ToolCallResponse | None = None
     if calendar_lookup is not None:
-        state = _fetch_calendar(
+        state, calendar_tool_response = _fetch_calendar(
             state,
             calendar_lookup,
             client=client,
-            prompt=prompt,
             model=model.strip(),
             temperature=float(temperature),
             presence_penalty=float(presence_penalty),
@@ -166,7 +172,12 @@ def infer_llm_output(
             )
         )
 
-        return LLMInferenceResult(output=output, attempts=tuple(attempts), state=state)
+        return LLMInferenceResult(
+            output=output,
+            attempts=tuple(attempts),
+            state=state,
+            calendar_tool_response=calendar_tool_response,
+        )
 
     raise LLMInferenceError(
         f"LLM returned no valid output after {max_attempts} attempt(s).",
@@ -185,14 +196,13 @@ def _state_messages(prompt: str, state: StructuredState) -> list[dict[str, str]]
     ]
 
 
-# erster Aufruf: das LLM entscheidet, ob und wie weit es den Kalender abruft. Die Einträge kommen danach in context,
+# erster Aufruf: das LLM entscheidet, ob es den Kalender abruft. Die Einträge kommen danach in context,
 # die eigentliche Einordnung läuft dann wie mit vorab gebautem Kalender und kann sie als Beleg nennen
 def _fetch_calendar(
     state: StructuredState,
     calendar_lookup: CalendarLookup,
     *,
     client: LLMClient,
-    prompt: str,
     model: str,
     temperature: float,
     presence_penalty: float,
@@ -201,13 +211,13 @@ def _fetch_calendar(
     num_ctx: int,
     think: bool,
     keep_alive: int | str,
-) -> StructuredState:
+) -> tuple[StructuredState, ToolCallResponse]:
     started = perf_counter()
 
     try:
-        tool_calls = client.request_tool_calls(
+        response = client.request_tool_calls(
             model=model,
-            messages=_state_messages(prompt, state),
+            messages=_state_messages(CALENDAR_TOOL_PROMPT, state),
             tools=[CALENDAR_TOOL],
             temperature=temperature,
             presence_penalty=presence_penalty,
@@ -229,13 +239,13 @@ def _fetch_calendar(
             "Calendar tool call failed.", attempts=(failed,)
         ) from error
 
-    window = requested_window(tool_calls)
-    if window is None:
-        return state
+    if not calendar_requested(response["tool_calls"]):
+        return state, response
 
-    return cast(
-        StructuredState, {**state, "context": context_state(calendar_lookup(*window))}
+    fetched_state = cast(
+        StructuredState, {**state, "context": context_state(calendar_lookup())}
     )
+    return fetched_state, response
 
 
 def _append_correction_messages(
