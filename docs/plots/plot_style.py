@@ -24,6 +24,21 @@ MODEL_COLORS = {
     "S1": "#B279A2",
 }
 COLDSTART_COLORS = {7: "#54A24B", 14: "#3F7A38", 30: "#2A5225"}
+
+CONTEXT_COLORS = {
+    "SYS1": SYSTEM_COLORS["SYS1"],
+    "SYS2": SYSTEM_COLORS["SYS2"],
+    "SYS3_CTX0": "#E45756",
+    "SYS3_CTX1": SYSTEM_COLORS["SYS3"],
+    "SYS3_CTX2": "#B279A2",
+}
+CLASSIFICATION_COLORS = {
+    "absence": "#54A24B",
+    "new_pattern": "#E45756",
+    "low": "#4C78A8",
+    "peak": "#F58518",
+    "unknown": "#B0B0B0",
+}
 REFERENCE_WINDOW_COLORS = {
     "REF_STATIC": "#4C78A8",
     "REF_EXPANDING": "#F58518",

@@ -12,7 +12,6 @@ from experiments.common.evaluation import (
     days_since_event,
     pair_with_control,
     spread_over_repeats,
-    summarize_classification_detection,
     summarize_event_response,
 )
 from src.common.timestamps import local_calendar_range, local_midnight_utc
@@ -82,25 +81,6 @@ def test_count_days_by_period_counts_the_event_from_the_first_analyzed_day() -> 
         "normal": 0,
         "adaption_days": 1,
     }
-
-
-def test_first_detection_is_counted_as_decision_day_from_the_event_on() -> None:
-    comparison = _comparison(
-        "SYS2",
-        [100.0] * 5,
-        ["absence", "normal", "absence", "normal", "absence"],
-        ["none", "none", "none", "none", "reset"],
-    )
-
-    detection = summarize_classification_detection(
-        comparison, EVENT_TIME, "absence"
-    ).iloc[0]
-
-    # Tag 0 ordnet noch den Vortag ein und zählt nicht, der erste Treffer danach ist Tag 2
-    assert detection["post_event_days"] == 2
-    assert detection["target_classification_days"] == 1
-    assert detection["first_detection_day"] == 2
-    assert detection["adaption_count"] == 1
 
 
 def test_compare_mae_to_reference_pairs_days_from_event_on() -> None:

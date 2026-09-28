@@ -6,6 +6,7 @@ from prophet import Prophet
 from src.adaption.adaption_policy import (
     AdaptionAction,
     adaption_policy,
+    ended_windows,
     mask_excluded_windows,
 )
 from src.common.timestamps import local_day_hours, shift_local_days
@@ -180,9 +181,10 @@ def run_cycle(
         fit_required = True
 
     if fit_required:
+        training_windows = ended_windows(excluded_windows, decision_time)
         prophet_model, model_history = _fit_variant(
-            mask_excluded_windows(fixed_history, excluded_windows),
-            mask_excluded_windows(history, excluded_windows),
+            mask_excluded_windows(fixed_history, training_windows),
+            mask_excluded_windows(history, training_windows),
             decision_time,
             config,
             variant,

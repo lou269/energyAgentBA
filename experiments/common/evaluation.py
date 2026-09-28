@@ -110,39 +110,6 @@ def summarize_event_response(paired: pd.DataFrame, keys: list[str]) -> pd.DataFr
     )
 
 
-def summarize_classification_detection(
-    comparison: pd.DataFrame,
-    event_time: pd.Timestamp,
-    target_classification: str,
-) -> pd.DataFrame:
-    """Ab welchem Tag seit event_time ordnet jede Config als target_classification ein, wie oft, wie oft wird adaptiert"""
-    days = days_since_event(comparison, event_time)
-    post_event = comparison.assign(day_since_event=days).loc[days >= FIRST_ANALYZED_DAY]
-
-    rows: list[dict[str, object]] = []
-
-    for config, group in post_event.groupby("config"):
-        matches = group.loc[group["classification"] == target_classification]
-
-        rows.append(
-            {
-                "config": config,
-                "post_event_days": len(group),
-                "target_classification": target_classification,
-                "target_classification_days": len(matches),
-                "first_detection_day": matches["day_since_event"].min(),
-                "adaption_count": int((group["adaption_action"] != "none").sum()),
-            }
-        )
-
-    return (
-        pd.DataFrame(rows)
-        .astype({"first_detection_day": "Int64"})
-        .sort_values("config")
-        .reset_index(drop=True)
-    )
-
-
 def count_days_by_period(
     comparison: pd.DataFrame, event_time: pd.Timestamp
 ) -> pd.DataFrame:

@@ -39,7 +39,8 @@ def build_ctx_scenarios(
         calendar_source="user_calendar",
     )
 
-    return {"ctx0": ctx0, "ctx1": ctx1}
+    # ctx2 hat dieselben Einträge, das LLM holt sie sich per Tool, den State ohne Kalender baut der Harness
+    return {"ctx0": ctx0, "ctx1": ctx1, "ctx2": ctx1}
 
 
 def read_channel_selection(e2_config: E2Config) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -63,7 +64,7 @@ def build_absence_scenarios(
     window_start: pd.Timestamp,
     window_end: pd.Timestamp,
 ) -> dict[str, ScenarioData]:
-    # Urlaubswoche: die gewählten Kanäle im Fenster aus Mains herausgerechnet, einmal ohne (CTX0) und einmal mit Kalender (CTX1)
+    # Urlaubswoche: die gewählten Kanäle im Fenster aus Mains herausgerechnet, ohne (CTX0), mit (CTX1) und per Tool (CTX2) Kalender
     mains_series, target_imputed, value_implausible = load_target()
     ranking, appliance_data_hourly = read_channel_selection(e2_config)
     # die Auswahl hat e2_select_channels schon getroffen

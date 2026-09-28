@@ -6,7 +6,13 @@ from pathlib import Path
 
 import pandas as pd
 
-from experiments.common.harness import read_anomaly_rows, read_llm_outputs
+from docs.plots.plot_e2_absence import build_e2_plot
+from experiments.common.harness import (
+    FORECASTS_FILE,
+    read_anomaly_rows,
+    read_calendar_availability,
+    read_llm_outputs,
+)
 from experiments.common.report import (
     format_commit,
     key_figures_table,
@@ -39,26 +45,56 @@ from src.pipeline.io import (
 )
 
 
-def build_detection_table(
-    detection: pd.DataFrame, target_classification: str
+def read_ctx_anomaly(raw_directory: Path, ctx_systems: dict) -> pd.DataFrame:
+    return pd.concat(
+        [read_anomaly_rows(raw_directory / ctx) for ctx in ctx_systems],
+        ignore_index=True,
+    )
+
+
+def build_absence_table(
+    absence_classification: pd.DataFrame, target_classification: str
 ) -> pd.DataFrame:
     return pd.DataFrame(
         {
-            "System": detection["config"],
-            "Tage ab Beginn": detection["post_event_days"],
-            f"{target_classification} [Tage]": detection["target_classification_days"],
-            f"erster {target_classification} [Tag]": detection["first_detection_day"],
-            "Adaptionen": detection["adaption_count"],
+            "System": absence_classification["config"],
+            "Urlaubstage": absence_classification["absence_days"],
+            "Treffer": [
+                f"{hits} von {gate_open}"
+                for hits, gate_open in zip(
+                    absence_classification["hit_days"],
+                    absence_classification["gate_open_days"],
+                )
+            ],
+            "erster Treffer [Urlaubstag]": absence_classification["first_hit_day"],
+            f"{target_classification} ohne Beleg": absence_classification[
+                "unsupported_absence_days"
+            ],
         }
     )
 
 
-def build_forecast_table(forecast: pd.DataFrame) -> pd.DataFrame:
+def build_calendar_table(calendar_use: pd.DataFrame) -> pd.DataFrame:
+    return pd.DataFrame(
+        {
+            "System": calendar_use["config"],
+            "Phase": calendar_use["phase"].map(PHASE_LABELS),
+            "eingeordnete Tage": calendar_use["classified_days"],
+            "davon Kalender im State": calendar_use["calendar_days"],
+        }
+    )
+
+
+def build_forecast_table(forecast: pd.DataFrame, reference_config: str) -> pd.DataFrame:
     return pd.DataFrame(
         {
             "System": forecast["config"],
-            "MAE vor Beginn [W]": forecast["mae_before_w"],
-            "MAE ab Beginn [W]": forecast["mae_after_w"],
+            "Phase": forecast["phase"].map(PHASE_LABELS),
+            "MAE [W]": forecast["mean_mae_w"],
+            f"Differenz zu {reference_config} [W]": forecast["mean_delta"],
+            "Standardfehler [W]": forecast["delta_standard_error"],
+            "Anteil Tage besser": forecast["better_share"],
+            "gepaarte Tage": forecast["paired_count"],
         }
     )
 
@@ -99,11 +135,12 @@ def build_setup(
 def build_key_figures(summary: E2Summary, target_classification: str) -> pd.DataFrame:
     rows = [
         (
-            f"{row['config']}: erster {target_classification} [Tag seit Beginn]",
-            row["first_detection_day"],
-            f"{row['target_classification_days']} von {row['post_event_days']} Tagen, {row['adaption_count']} Adaptionen",
+            f"{row['config']}: erster Treffer {target_classification} [Urlaubstag]",
+            row["first_hit_day"],
+            f"{row['hit_days']} von {row['gate_open_days']} Urlaubstagen mit offenem Gate, "
+            f"{row['unsupported_absence_days']} × {target_classification} ohne Beleg",
         )
-        for row in summary.detection.to_dict("records")
+        for row in summary.absence_classification.to_dict("records")
     ]
     rows.append(
         (
@@ -127,21 +164,22 @@ def build_precheck_first_days_table(summary: GatePrecheckSummary) -> pd.DataFram
     )
 
 
-def build_precheck_phase_table(summary: GatePrecheckSummary) -> pd.DataFrame:
-    phases = summary.phases
+def build_phase_table(phases: pd.DataFrame, target_classification: str) -> pd.DataFrame:
     return pd.DataFrame(
         {
             "System": phases["config"],
             "Phase": phases["phase"].map(PHASE_LABELS),
             "Tage": phases["days"],
             "Gate offen": phases["gate_open_days"],
-            "davon Einzeltag": phases["single_day_gate_days"],
+            "davon Einzeltag": phases["alarm_days"],
             "davon Drift": phases["drift_gate_days"],
             "new_pattern": phases["new_pattern_days"],
             "low": phases["low_days"],
             "peak": phases["peak_days"],
+            target_classification: phases["absence_classified_days"],
             "Resets": phases["reset_days"],
             "Meldungen": phases["notification_days"],
+            "Ausfalltage": phases["failed_days"],
             "MAE [W]": phases["mean_mae_w"],
         }
     )
@@ -182,19 +220,42 @@ def write_full_report(run_directory: Path) -> None:
         calendar_events, e2_config["active_absence_event_id"]
     )
 
+    raw_directory = run_directory / RAW_SUBDIR
     comparison = pd.read_csv(
-        run_directory / RAW_SUBDIR / f"{COMPARISON_FILE}.csv",
-        parse_dates=["decision_time"],
+        raw_directory / f"{COMPARISON_FILE}.csv", parse_dates=["decision_time"]
     )
-    reduction = pd.read_csv(run_directory / RAW_SUBDIR / f"{REDUCTION_FILE}.csv")
+    reduction = pd.read_csv(raw_directory / f"{REDUCTION_FILE}.csv")
     summary = summarize_e2(
         comparison,
+        read_ctx_anomaly(raw_directory, e2_config["ctx_systems"]),
+        pd.concat(
+            [
+                read_calendar_availability(raw_directory / ctx)
+                for ctx in e2_config["ctx_systems"]
+            ],
+            ignore_index=True,
+        ),
+        pd.concat(
+            [
+                pd.read_csv(raw_directory / ctx / FORECASTS_FILE)
+                for ctx in e2_config["ctx_systems"]
+            ],
+            ignore_index=True,
+        ),
         reduction,
         window_start=window_start,
+        window_end=window_end,
         target_classification=target_classification,
+        absence_event_id=e2_config["active_absence_event_id"],
+        reference_config=e2_config["reference_config"],
     )
 
     output_directory = user_output_directory(run_directory)
+    build_e2_plot(
+        summary.timeline,
+        output_directory,
+        configs=tuple(e2_config["plot_configs"]),
+    )
     write_result_report(
         output_directory,
         title=f"E2 Abwesenheit, Lauf {run_directory.name}",
@@ -206,20 +267,36 @@ def write_full_report(run_directory: Path) -> None:
                 "Kennzahlen",
                 build_key_figures(summary, target_classification),
             ),
-            "result_detection": (
-                "Erkennung der Abwesenheit",
-                build_detection_table(summary.detection, target_classification),
+            "result_phases": (
+                "Einordnung je Phase",
+                build_phase_table(summary.phases, target_classification),
+            ),
+            "result_absence": (
+                "Einordnung im Urlaub",
+                build_absence_table(
+                    summary.absence_classification, target_classification
+                ),
+            ),
+            "result_calendar": (
+                "Kalender im State",
+                build_calendar_table(summary.calendar_use),
             ),
             "result_forecast": (
-                "Prognose vor und ab Beginn",
-                build_forecast_table(summary.forecast),
+                "Prognose je Phase",
+                build_forecast_table(summary.forecast, e2_config["reference_config"]),
             ),
         },
         notes=[
-            "Tag = Entscheidungstag seit Beginn: an Tag n meldet das System, eingeordnet ist dabei Tag n-1. Ab Beginn zählt deshalb erst ab Tag 1",
-            "ctx0 ohne, ctx1 mit Kalenderkontext, SYS1 als adaptionsfreie Referenz nur in ctx0",
+            "Urlaubstag = analysierter Tag seit Beginn der Abwesenheit, 0 = erster Urlaubstag",
+            f"Treffer = {target_classification} mit passendem Kalendereintrag. {target_classification} ohne Beleg (ohne Kalender, "
+            "Kalender nicht abgerufen oder nach der Rückkehr) zählt als Fehlklassifikation, über alle Phasen",
+            "Treffer: von den Urlaubstagen mit offenem Gate, an den übrigen wird nicht eingeordnet. Wenige Tage, deshalb als Anzahl",
+            "Einordnung je Phase: im Urlaub ist jede Meldung außer einem Treffer ein Fehlalarm, Ausfalltage = LLM ohne gültige Antwort",
+            f"Differenz zu {e2_config['reference_config']}: gepaart am selben Tag, negativ = besser",
+            "ctx0 ohne, ctx1 mit Kalender im State, ctx2 Kalender per Tool. SYS1 und SYS2 lesen keinen Kalender und laufen nur in ctx0",
+            "Kalender im State: bei ctx2 hat das LLM an diesen Tagen nachgeschaut, jeder ctx2-Tag mit LLM kostet einen zusätzlichen Aufruf für die Tool-Entscheidung",
         ],
-        images=[],
+        images=["e2_timeline.png"],
         decimals=DECIMALS,
         appendix={
             "result_reduction": (
@@ -246,12 +323,13 @@ def write_precheck_report(run_directory: Path) -> None:
 
     raw_directory = run_directory / RAW_SUBDIR
     comparison = pd.read_csv(raw_directory / f"{COMPARISON_FILE}.csv")
-    anomaly = pd.concat(
-        [read_anomaly_rows(raw_directory / ctx) for ctx in e2_config["ctx_systems"]],
-        ignore_index=True,
-    )
     summary = summarize_gate_precheck(
-        comparison, anomaly, window_start=window_start, window_end=window_end
+        comparison,
+        read_ctx_anomaly(raw_directory, e2_config["ctx_systems"]),
+        window_start=window_start,
+        window_end=window_end,
+        target_classification=e2_config["target_classification"],
+        absence_event_id=e2_config["active_absence_event_id"],
     )
 
     output_directory = user_output_directory(run_directory)
@@ -274,7 +352,7 @@ def write_precheck_report(run_directory: Path) -> None:
             ),
             "precheck_phases": (
                 "Gate und Einordnung je Phase",
-                build_precheck_phase_table(summary),
+                build_phase_table(summary.phases, e2_config["target_classification"]),
             ),
         },
         notes=[

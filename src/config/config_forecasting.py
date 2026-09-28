@@ -198,7 +198,7 @@ class ForecastingConfig:
 
 @dataclass(frozen=True)
 class LLMConfig:
-    model: str
+    model: str = "ministral-3:8b"  # in K3 gewählt
     prompt_version: str = "v16"
     temperature: float = 0.0
     # qwen3.5:9b liefert das selbst als Modelfile-Default, gegen Wiederholungsschleifen bei greedy decoding
@@ -265,7 +265,17 @@ SYS_VARIANTS: dict[str, CycleConfig] = {
         numerical_analysis_config=NumericalAnalysisConfig(),
         event_adaptation=True,
         llm_mode="real",
-        llm_config=LLMConfig(model="ministral-3:8b"),
+        llm_config=LLMConfig(),
+    ),
+    # holt den Kalender per Function Calling selbst (E2, CTX2)
+    "SYS3_TOOL": CycleConfig(
+        forecasting_config=ForecastingConfig(
+            selected_prophet_variant=selected_prophet_model
+        ),
+        numerical_analysis_config=NumericalAnalysisConfig(),
+        event_adaptation=True,
+        llm_mode="real",
+        llm_config=LLMConfig(calendar_tool=True),
     ),
 }
 
@@ -274,4 +284,5 @@ SYS_LABELS: dict[str, str] = {
     "SYS1": "SYS1 ohne Adaption",
     "SYS2": "SYS2 Regel",
     "SYS3": "SYS3 LLM",
+    "SYS3_TOOL": "SYS3 LLM, Kalender per Tool",
 }

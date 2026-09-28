@@ -70,6 +70,8 @@ def test_ctx0_and_ctx1_share_identical_series_and_timing() -> None:
 
     assert ctx0.target_series.equals(ctx1.target_series)
     assert ctx0.decision_times == ctx1.decision_times
+    # ctx2 unterscheidet sich nur in Kalender-Tool
+    assert scenarios["ctx2"] == ctx1
 
 
 def test_ctx1_structured_state_carries_the_calendar_event_through_run_cycle() -> None:

@@ -83,6 +83,16 @@ def measurement_error_action(
     )
 
 
+# fürs Training zählen nur Fenster, die schon vorbei sind
+def ended_windows(
+    excluded_windows: tuple[tuple[pd.Timestamp, pd.Timestamp], ...],
+    decision_time: pd.Timestamp,
+) -> tuple[tuple[pd.Timestamp, pd.Timestamp], ...]:
+    return tuple(
+        (start, end) for start, end in excluded_windows if end <= decision_time
+    )
+
+
 # ausgeschlossene Tage werden zu Lücken wie ein unvollständiger Tag, ab keep_from bleibt alles drin (der analysierte Tag selbst)
 def mask_excluded_windows(
     history: pd.Series,

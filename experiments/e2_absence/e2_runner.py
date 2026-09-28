@@ -4,7 +4,7 @@
 # vorher einmal in nilmtk-env: python -m experiments.e2_absence.e2_select_channels
 # danach: python -m experiments.e2_absence.e2_report [full|precheck]
 
-# Systeme je Kontextvariante aus E2Config.ctx_systems: ohne (CTX0) und mit (CTX1) Kalenderkontext
+# Systeme je Kontextvariante aus E2Config.ctx_systems: ohne (CTX0) und mit (CTX1) und per Tool (CTX2) Kalenderkontext
 # precheck: nur SYS1/SYS2 ohne LLM, zeigt ob und wann der Urlaub das Gate öffnet
 
 import logging

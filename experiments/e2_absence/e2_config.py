@@ -12,6 +12,14 @@ REDUCTION_FILE = "e2_reduction_by_day"
 CHANNEL_RANKING_FILE = "absence_channel_ranking"
 CHANNEL_DATA_FILE = "absence_channel_data_hourly"
 
+CONFIG_LABELS = {
+    "SYS1": "SYS1 ohne Adaption",
+    "SYS2": "SYS2 Regel",
+    "SYS3_CTX0": "SYS3 ohne Kalender",
+    "SYS3_CTX1": "SYS3 mit Kalender",
+    "SYS3_CTX2": "SYS3 Kalender per Tool",
+}
+
 PHASE_LABELS = {
     "before": "vor dem Urlaub",
     "absence": "Urlaub",
@@ -37,12 +45,16 @@ class E2Config:
     min_coverage_share_for_subtraction: float = 0.9
 
     target_classification: str = "absence"
+    # Prognose je Phase gepaart gegen das System ohne Adaption
+    reference_config: str = "SYS1"
+    plot_configs: tuple[str, ...] = ("SYS1", "SYS3_CTX0", "SYS3_CTX1")
 
-    # je Kontextvariante: Name im Ergebnis -> Systemvariante, SYS1 als adaptionsfreie Referenz nur einmal
+    # je Kontextvariante: Name im Ergebnis -> Systemvariante
     ctx_systems: dict[str, dict[str, str]] = field(
         default_factory=lambda: {
-            "ctx0": {"SYS1": "SYS1", "SYS2_CTX0": "SYS2", "SYS3_CTX0": "SYS3"},
-            "ctx1": {"SYS2_CTX1": "SYS2", "SYS3_CTX1": "SYS3"},
+            "ctx0": {"SYS1": "SYS1", "SYS2": "SYS2", "SYS3_CTX0": "SYS3"},
+            "ctx1": {"SYS3_CTX1": "SYS3"},
+            "ctx2": {"SYS3_CTX2": "SYS3_TOOL"},
         }
     )
 

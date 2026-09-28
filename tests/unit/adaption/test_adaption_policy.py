@@ -6,7 +6,11 @@ from typing import cast
 import pandas as pd
 import pytest
 
-from src.adaption.adaption_policy import adaption_policy, mask_excluded_windows
+from src.adaption.adaption_policy import (
+    adaption_policy,
+    ended_windows,
+    mask_excluded_windows,
+)
 from src.llm.llm_schema import Classification
 from src.structured_state.structured_state_schema import StructuredState
 
@@ -164,3 +168,22 @@ def test_mask_excluded_windows_keeps_the_analyzed_day_and_everything_outside() -
 
     daily_valid = masked.notna().groupby(pd.DatetimeIndex(masked.index).date).sum()
     assert daily_valid.tolist() == [24, 0, 0, 24]
+
+
+def test_a_running_absence_stays_in_training_until_its_end() -> None:
+    vacation = (
+        pd.Timestamp("2013-09-14", tz="UTC"),
+        pd.Timestamp("2013-09-28", tz="UTC"),
+    )
+    stuck_day = (
+        pd.Timestamp("2013-09-15", tz="UTC"),
+        pd.Timestamp("2013-09-16", tz="UTC"),
+    )
+
+    assert ended_windows(
+        (vacation, stuck_day), pd.Timestamp("2013-09-16", tz="UTC")
+    ) == (stuck_day,)
+    # erster Tag nach der Rückkehr
+    assert ended_windows((vacation,), pd.Timestamp("2013-09-28", tz="UTC")) == (
+        vacation,
+    )

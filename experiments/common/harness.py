@@ -16,6 +16,7 @@ from src.config.config_forecasting import (
 from src.forecasting.forecasting import run_forecast_comparison
 from src.llm.llm_run_artifacts import load_prompt
 from src.llm.llm_runner import PROMPT_DIRECTORY
+from src.common.timestamps import analyzed_day
 from src.pipeline.comparison_harness import ScenarioData, run_comparison
 
 COMPARISON_CONFIG = ComparisonConfig()
@@ -23,6 +24,8 @@ COMPARISON_CONFIG = ComparisonConfig()
 COMPARISON_SUMMARY_FILE = "comparison_summary.csv"
 ANOMALY_FILE = "anomaly.csv"
 LLM_OUTPUTS_FILE = "llm_outputs.jsonl"
+STRUCTURED_STATES_FILE = "structured_states.jsonl"
+FORECASTS_FILE = "forecasts.csv"
 
 
 def read_llm_prompt(prompt_version: str) -> str:
@@ -80,6 +83,28 @@ def read_anomaly_rows(output_directory: Path) -> pd.DataFrame:
         ],
         ignore_index=True,
     )
+
+
+def read_calendar_availability(output_directory: Path) -> pd.DataFrame:
+    # je eingeordnetem Tag, ob ein Kalender im State stand
+    # -> mit Kalender-Tool steht er dort nur, wenn das LLM ihn abgerufen hat
+    rows = [
+        {
+            "config": record["config"],
+            "analyzed_day": analyzed_day(
+                pd.Timestamp(record["decision_time"]), LOCAL_TIMEZONE
+            )
+            .date()
+            .isoformat(),
+            "calendar_available": record["context"]["source_available"],
+        }
+        for state_file in sorted(output_directory.glob(f"*/{STRUCTURED_STATES_FILE}"))
+        for record in map(
+            json.loads, state_file.read_text(encoding="utf-8").splitlines()
+        )
+    ]
+
+    return pd.DataFrame(rows, columns=["config", "analyzed_day", "calendar_available"])
 
 
 def read_llm_outputs(raw_directory: Path) -> pd.DataFrame:
