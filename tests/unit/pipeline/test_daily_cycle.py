@@ -208,7 +208,7 @@ def test_fully_missing_target_day_is_classified_as_measurement_error() -> None:
 
     assert result.analysis_row["value_implausible"]
     assert result.classification == "measurement_error"
-    assert result.rule_output is None
+    assert result.rule_output is not None
 
 
 def test_sustained_level_shift_triggers_new_pattern_with_baseline_reset() -> None:

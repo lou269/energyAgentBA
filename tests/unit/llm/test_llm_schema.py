@@ -63,9 +63,7 @@ def test_evidence_references_must_not_be_empty() -> None:
 
 def test_evidence_reference_with_value_is_rejected() -> None:
     output = valid_llm_output()
-    output["evidence_references"] = [
-        {"path": "anomaly.level", "value": "strong_anomaly"}
-    ]
+    output["evidence_references"] = [{"path": "anomaly.level", "value": "unusual"}]
 
     with pytest.raises(ValueError, match="unexpected fields"):
         validate_llm_output(output)

@@ -7,8 +7,8 @@ def gate_classification(state: StructuredState) -> Classification | None:
     anomaly = state["anomaly"]
 
     if state["observation"]["value_implausible"]:
-        # today_mean fehlt komplett -> anomaly_score ist dadurch selbst auch NaN
-        return "measurement_error"
+        # level ist an so einem Tag leer ->vor der unknown-Prüfung offen lassen
+        return None
 
     if anomaly["sustained_drift"]:
         return None

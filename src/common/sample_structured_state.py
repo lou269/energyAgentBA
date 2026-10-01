@@ -21,7 +21,7 @@ _BASE_STATE_JSON = """
       "weekly": null
     },
     "scale_anomaly_streak_days": {
-      "daily": 1.0,
+      "daily": null,
       "weekday": 1.0,
       "weekly": null,
       "long_term": 1.0

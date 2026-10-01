@@ -201,7 +201,7 @@ class ForecastingConfig:
 @dataclass(frozen=True)
 class LLMConfig:
     model: str = "ministral-3:8b"  # in K3 gewählt
-    prompt_version: str = "v16"
+    prompt_version: str = "v17"
     temperature: float = 0.0
     # qwen3.5:9b liefert das selbst als Modelfile-Default, gegen Wiederholungsschleifen bei greedy decoding
     presence_penalty: float = 1.5
@@ -214,6 +214,43 @@ class LLMConfig:
     keep_alive: int | str = "5m"
     # CTX2: das LLM holt den Kalender per Function Calling selbst, im selben Fenster wie CTX1
     calendar_tool: bool = False
+
+
+@dataclass(frozen=True)
+class TextCheckConfig:
+    # Wortstämme in Kleinbuchstaben, die in Erklärung und Empfehlung nicht vorkommen sollen
+    device_words: tuple[str, ...] = (
+        "waschmaschine",
+        "trockner",
+        "spülmaschine",
+        "geschirrspüler",
+        "herd",
+        "backofen",
+        "kühlschrank",
+        "gefrierschrank",
+        "heizlüfter",
+        "heizung",
+        "wärmepumpe",
+        "boiler",
+        "durchlauferhitzer",
+        "klimaanlage",
+        "fernseher",
+        "wallbox",
+        "e-auto",
+    )
+    control_words: tuple[str, ...] = (
+        "schalte",
+        "ausschalt",
+        "abschalt",
+        "einschalt",
+        "ausstecken",
+        "abstecken",
+        "verschieb",
+        "sparen",
+        "einspar",
+    )
+    # erlaubte Abweichung einer genannten Zahl von den Zahlen im State (Rundung im Text)
+    number_tolerance: float = 0.5
 
 
 @dataclass(frozen=True)

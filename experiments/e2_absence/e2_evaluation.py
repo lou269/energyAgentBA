@@ -56,6 +56,7 @@ PRECHECK_ANOMALY_COLUMNS = [
     "long_term_anomaly_streak_days",
     "anomaly_level",
     "sustained_drift",
+    "value_implausible",
 ]
 
 PHASES = ("before", "absence", "after_return")

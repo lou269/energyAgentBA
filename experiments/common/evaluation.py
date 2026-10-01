@@ -50,10 +50,13 @@ def days_since_event(comparison: pd.DataFrame, event_time: pd.Timestamp) -> pd.I
 
 
 def add_gate_flags(days: pd.DataFrame) -> pd.DataFrame:
-    """Einzeltag-Alarm (Level über normal) und Gate offen (Alarm oder Drift) wie in gate_classification, aus den Spalten von anomaly.csv"""
+    """Einzeltag-Alarm (Level über normal) und Gate offen (Alarm, Drift oder unplausibler Tag) wie in gate_classification, aus den Spalten von anomaly.csv"""
     alarm = days["anomaly_level"].notna() & days["anomaly_level"].ne("normal")
+    gate_open = (
+        alarm | days["sustained_drift"].eq(True) | days["value_implausible"].eq(True)
+    )
 
-    return days.assign(alarm=alarm, gate_open=alarm | days["sustained_drift"].eq(True))
+    return days.assign(alarm=alarm, gate_open=gate_open)
 
 
 def merge_cycle_days(summary: pd.DataFrame, anomaly: pd.DataFrame) -> pd.DataFrame:
