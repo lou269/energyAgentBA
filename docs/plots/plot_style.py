@@ -1,10 +1,7 @@
 from pathlib import Path
 
-from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
 
 SYSTEM_COLORS = {
     "SYS1": "#4C78A8",
@@ -51,10 +48,6 @@ REFERENCE_WINDOW_COLORS = {
     "REF_ROLL60": "#54A24B",
     "REF_ROLL35": "#B279A2",
 }
-RESET_MODE_COLORS = {
-    "isolated": "#B0B0B0",
-    "adaption": "#54A24B",
-}
 STRATEGY_COLORS = {
     "cut": "#E45756",
     "step_regressor": "#4C78A8",
@@ -66,23 +59,3 @@ def save_figure(figure: Figure, output_directory: Path, name: str) -> None:
     figure.savefig(str(output_directory / f"{name}.png"), dpi=300, bbox_inches="tight")
     figure.savefig(str(output_directory / f"{name}.svg"), bbox_inches="tight")
     plt.close(figure)
-
-
-def grouped_bars(
-    axis: Axes, values: pd.DataFrame, colors: dict[str, str], labels: dict[str, str]
-) -> None:
-    # values: Zeilen = Gruppen auf der x-Achse, Spalten = Balken je Gruppe
-    positions = np.arange(len(values.index))
-    bar_width = 0.8 / len(values.columns)
-
-    for offset, column in enumerate(values.columns):
-        axis.bar(
-            positions + (offset - (len(values.columns) - 1) / 2) * bar_width,
-            values[column],
-            width=bar_width - 0.02,
-            color=colors[column],
-            label=labels[column],
-        )
-
-    axis.set_xticks(positions, values.index)
-    axis.grid(axis="y", alpha=0.25)

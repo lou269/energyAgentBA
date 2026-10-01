@@ -19,6 +19,7 @@ from src.structured_state.structured_state_schema import (
     ScaleName,
     ScaleScores,
     StructuredState,
+    available_scale_names,
 )
 
 
@@ -31,7 +32,6 @@ ANALYSIS_FIELDS = frozenset(
         "daily_score",
         "weekday_score",
         "weekly_score",
-        "long_term_score",
         "daily_anomaly_streak_days",
         "weekday_anomaly_streak_days",
         "weekly_anomaly_streak_days",
@@ -99,9 +99,6 @@ def build_structured_state(
         "weekly": _nullable_float(
             analysis_row["weekly_score"], "analysis.weekly_score"
         ),
-        "long_term": _nullable_float(
-            analysis_row["long_term_score"], "analysis.long_term_score"
-        ),
     }
 
     scale_streak_days: ScaleAnomalyStreakDays = {
@@ -135,9 +132,7 @@ def build_structured_state(
         ),
     }
 
-    available_scales: list[ScaleName] = [
-        scale for scale in SCALE_NAMES if scale_scores[scale] is not None
-    ]
+    available_scales = available_scale_names(scale_scores, scale_deviation_pct)
 
     sustained_scales: list[ScaleName] = [
         scale

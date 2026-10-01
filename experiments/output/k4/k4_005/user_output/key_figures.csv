@@ -1,0 +1,5 @@
+Kennzahl,Wert,Bezug
+"cut, Historie ab t_c, Trigger Tag 6: Netto-Effekt bei Dauerlast +100 W [W]",-2.4,"-1,7 % MAE, gleiche Richtung 4/5 Cutover"
+"Stufen-Regressor, Trigger Tag 6: Netto-Effekt bei Dauerlast +100 W [W]",-0.8,"-0,5 % MAE, gleiche Richtung 4/5 Cutover"
+Trigger Tag 19: bester Netto-Effekt bei Dauerlast +100 W [W],-0.1,späte Erkennung
+ohne Aktion: Mehrfehler bei Dauerlast +100 W in Woche 0 [W],0.1,"Woche 2: 3,1 W"

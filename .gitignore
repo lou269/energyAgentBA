@@ -27,6 +27,10 @@ data_2017/
 
 old/
 tests/integration/
+experiments/e5_system_compare/
+tests/unit/experiments/e5_system_compare/
+plot_e5_system_compare.py
+
 
 .history/ 
 

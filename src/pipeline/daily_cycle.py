@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import pandas as pd
 from prophet import Prophet
@@ -6,6 +6,8 @@ from prophet import Prophet
 from src.adaption.adaption_policy import (
     AdaptionAction,
     adaption_policy,
+    add_excluded_window,
+    apply_adaption,
     ended_windows,
     mask_excluded_windows,
 )
@@ -24,7 +26,10 @@ from src.llm.gate import gate_classification
 from src.llm.inference import LLMInferenceError, infer_llm_output
 from src.llm.llm_schema import Classification, LLMOutput
 from src.llm.rule_based_classifier import RuleClassificationResult, rule_based_classify
-from src.numerical_analysis.daily_analysis import compute_analysis_row
+from src.numerical_analysis.daily_analysis import (
+    add_level_shift_streaks,
+    compute_analysis_row,
+)
 from src.structured_state.builder import build_structured_state
 from src.structured_state.structured_state_schema import StructuredState
 
@@ -39,6 +44,7 @@ class CycleState:
     level_shift_start: pd.Timestamp | None = None
     # nach absence ausgeschlossene Kalenderfenster, fehlen bei Fit und Referenz, bleiben aber in history
     excluded_windows: tuple[tuple[pd.Timestamp, pd.Timestamp], ...] = ()
+    score_history: pd.DataFrame = field(default_factory=pd.DataFrame)
 
 
 @dataclass(frozen=True)
@@ -103,20 +109,24 @@ def run_cycle(
     )
 
     excluded_windows = state.excluded_windows
+    score_history = state.score_history
+    analysis_config = config.numerical_analysis_config
 
-    # None, solange die History (z.B. direkt nach einem Reset) kürzer als reference_window_days ist.
     # Der analysierte Tag bleibt auch im ausgeschlossenen Fenster drin, sonst wäre er ein measurement_error
+    analyzed_day_start = shift_local_days(decision_time, -1, local_timezone)
+
     analysis_row = compute_analysis_row(
-        mask_excluded_windows(
-            history,
-            excluded_windows,
-            keep_from=shift_local_days(decision_time, -1, local_timezone),
-        ),
+        mask_excluded_windows(history, excluded_windows, keep_from=analyzed_day_start),
         target_timestamp=decision_time - pd.Timedelta(hours=1),
-        config=config.numerical_analysis_config,
+        config=analysis_config,
         local_timezone=local_timezone,
         raw_value_implausible=new_value_implausible,
     )
+
+    if analysis_row is not None:
+        analysis_row, score_history = add_level_shift_streaks(
+            analysis_row, score_history, config=analysis_config
+        )
 
     structured_state: StructuredState | None = None
     classification: Classification | None = None
@@ -162,7 +172,7 @@ def run_cycle(
             adaption_action = adaption_policy(
                 classification,
                 structured_state,
-                streak_tolerance_window_days=config.numerical_analysis_config.streak_tolerance_window_days,
+                streak_tolerance_window_days=analysis_config.streak_tolerance_window_days,
                 window_exclusion=config.window_exclusion,
                 local_timezone=local_timezone,
             )
@@ -172,17 +182,13 @@ def run_cycle(
     if adaption_action is not None and adaption_action.kind == "advance_history_start":
         history = apply_adaption(history, adaption_action)
         reference_reset = True
+        # die gespeicherten Werte hängen an der alten Referenz, nach Reset beginnt die Streak neu
+        score_history = pd.DataFrame()
 
     if adaption_action is not None and adaption_action.kind == "exclude_window":
-        assert adaption_action.excluded_window is not None
-        # ein laufender Urlaub wird jeden Tag wieder als absence eingeordnet, das Fenster ist dann schon draußen
-        if adaption_action.excluded_window in excluded_windows:
-            adaption_action = AdaptionAction(
-                kind="none",
-                reason=f"{adaption_action.reason}, already excluded: no action",
-            )
-        else:
-            excluded_windows = excluded_windows + (adaption_action.excluded_window,)
+        excluded_windows, adaption_action = add_excluded_window(
+            excluded_windows, adaption_action
+        )
 
     # erst nach der Einordnung prognostizieren, damit eine Adaption schon in die Prognose für heute eingeht
     if adaption_action is not None and adaption_action.kind != "none":
@@ -219,6 +225,7 @@ def run_cycle(
         fixed_history=fixed_history,
         level_shift_start=state.level_shift_start,
         excluded_windows=excluded_windows,
+        score_history=score_history,
     )
 
     result = CycleResult(
@@ -366,8 +373,3 @@ def _fit_variant(
     )
 
     return model, model_history
-
-
-def apply_adaption(history: pd.Series, action: AdaptionAction) -> pd.Series:
-    assert action.new_history_start is not None
-    return history.loc[history.index >= action.new_history_start]

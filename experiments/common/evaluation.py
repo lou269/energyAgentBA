@@ -5,9 +5,17 @@ import pandas as pd
 
 from experiments.common.standard_config import LOCAL_TIMEZONE
 from src.common.timestamps import local_day_index
+from src.structured_state.structured_state_schema import SCALE_NAMES
 
 # Phase über das ganze Fenster, zusätzlich zu vor/ab Cutover
 ALL_DAYS = "all_days"
+
+# Wert je Skala in der Reihenfolge von SCALE_NAMES, long_term kein Z-Score, nur Prozentabweichung
+SCALE_VALUE_COLUMNS = [
+    "long_term_deviation_pct" if scale == "long_term" else f"{scale}_score"
+    for scale in SCALE_NAMES
+]
+SCALE_SUSTAINED_COLUMNS = [f"{scale}_sustained" for scale in SCALE_NAMES]
 
 
 # Tag seit Ereignis = Tag der Entscheidung, decision_time ist dessen Mitternacht. An diesem Tag meldet das System
@@ -68,6 +76,16 @@ def merge_cycle_days(summary: pd.DataFrame, anomaly: pd.DataFrame) -> pd.DataFra
     return add_gate_flags(days).assign(
         new_pattern=days["classification"].eq("new_pattern")
     )
+
+
+def detection_scales(hits: pd.DataFrame, single_day: pd.Series) -> pd.Series:
+    sustained = hits[SCALE_SUSTAINED_COLUMNS].eq(True)
+    streak_scales = sustained.apply(
+        lambda row: "+".join(scale for scale, on in zip(SCALE_NAMES, row) if on),
+        axis=1,
+    )
+
+    return hits["dominant_scale"].where(single_day, streak_scales)
 
 
 def add_days_since_cutover(results: pd.DataFrame) -> pd.DataFrame:

@@ -4,16 +4,15 @@ import pandas as pd
 
 from experiments.common.evaluation import (
     FIRST_ANALYZED_DAY,
+    SCALE_VALUE_COLUMNS,
+    SCALE_SUSTAINED_COLUMNS,
+    detection_scales,
     merge_cycle_days,
     spread_over_repeats,
 )
-from src.config.config_forecasting import NumericalAnalysisConfig
-from src.numerical_analysis.daily_analysis import DAILY_ANOMALY_SCALES
+from experiments.k2_detection.k2_config import STREAK_THRESHOLD_COLUMNS
 
-SCALE_SCORE_COLUMNS = [f"{scale}_score" for scale in DAILY_ANOMALY_SCALES]
-SCALE_SUSTAINED_COLUMNS = [f"{scale}_sustained" for scale in DAILY_ANOMALY_SCALES]
-
-# gepaart wird je Modus, Referenzfenster und Cutover Tag für Tag
+# gepaart wird je Modus, Variante und Cutover Tag für Tag
 PAIR_KEYS = ["mode", "variant", "cutover_date", "days_since_cutover"]
 
 RESULT_COLUMNS = (
@@ -28,7 +27,7 @@ RESULT_COLUMNS = (
         "anomaly_score",
         "dominant_scale",
     ]
-    + SCALE_SCORE_COLUMNS
+    + SCALE_VALUE_COLUMNS
     + SCALE_SUSTAINED_COLUMNS
     + [
         "sustained_drift",
@@ -74,15 +73,11 @@ def summarize_gate_open(results: pd.DataFrame) -> pd.DataFrame:
 
 
 def summarize_quiet_days(gate_open: pd.DataFrame) -> pd.DataFrame:
-    rates = gate_open.set_index(["variant", "mode"])
-    adaption = rates.xs("adaption", level="mode")
+    adaption = gate_open.set_index(["variant", "mode"]).xs("adaption", level="mode")
 
     return (
         pd.DataFrame(
             {
-                "gate_open_isolated_pct": rates.xs("isolated", level="mode")[
-                    "gate_open_pct"
-                ],
                 "gate_open_adaption_pct": adaption["gate_open_pct"],
                 "alarm_adaption_pct": adaption["alarm_pct"],
                 "control_resets": adaption["resets"],
@@ -93,21 +88,23 @@ def summarize_quiet_days(gate_open: pd.DataFrame) -> pd.DataFrame:
     )
 
 
+@dataclass(frozen=True)
+class DetectionSummary:
+    table: pd.DataFrame
+    # falsche Resets je Fenster über alle Ereignisse und Cutover, eine Zeile je Variante
+    false_resets: pd.DataFrame
+
+
 def summarize_detection(
     paired: pd.DataFrame,
     single_day_kinds: tuple[str, ...],
     *,
     control_reset_tolerance_days: int,
     uncounted_cutovers: tuple[str, ...],
-) -> pd.DataFrame:
-    """Erkennung je Art im Betrieb mit Reset: dauerhafte Änderungen am ersten eigenen Reset (der Kontrolllauf hat
-    control_reset_tolerance_days davor und danach keinen), Einzeltag-Ereignisse am Alarm des Ereignistags.
-    Dazu die Skalen, die dabei angeschlagen haben, und bei Einzeltag-Ereignissen die Cutover mit eigenem Reset danach.
-    uncounted_cutovers stehen mit in der Tabelle, zählen aber nicht in Mittel, erkannt und Skala
-    """
+) -> DetectionSummary:
     keys = ["variant", "kind"]
     adaption = paired.loc[paired["mode"].eq("adaption")]
-    own_reset = adaption["event_new_pattern"] & ~_near_control_reset(
+    own_reset = adaption["event_new_pattern"] & ~near_control_new_pattern(
         adaption, control_reset_tolerance_days
     )
     after_cutover = adaption.assign(own_reset=own_reset).loc[
@@ -128,7 +125,7 @@ def summarize_detection(
     )
     first_hits = first_hits.assign(
         day=first_hits["days_since_cutover"],
-        scales=_detection_scales(first_hits, single_day_kinds),
+        scales=detection_scales(first_hits, first_hits["kind"].isin(single_day_kinds)),
     )
 
     days = (
@@ -140,12 +137,22 @@ def summarize_detection(
             how="left",
         )
     )
-    uncounted = days["cutover_date"].isin(uncounted_cutovers)
+    # die Begründung betrifft nur die Streak-Bedingung, Einzeltag-Spitzen zählen dort mit
+    uncounted = days["cutover_date"].isin(uncounted_cutovers) & ~days["kind"].isin(
+        single_day_kinds
+    )
     counted_days = days.loc[~uncounted]
-    table = spread_over_repeats(counted_days, keys, "day", count_detected=True)
-    uncounted_days = (
-        days.loc[uncounted]
-        .pivot(index=keys, columns="cutover_date", values="day")
+    # getrennt, sonst stünden die nicht gezählten Cutover bei den Dauerlasten im Nenner von erkannt
+    spread = pd.concat(
+        [
+            spread_over_repeats(group, keys, "day", count_detected=True)
+            for _, group in counted_days.groupby(
+                counted_days["kind"].isin(single_day_kinds)
+            )
+        ]
+    )
+    wide = (
+        days.pivot(index=keys, columns="cutover_date", values="day")
         .rename_axis(columns=None)
         .reset_index()
     )
@@ -154,31 +161,37 @@ def summarize_detection(
         scales=("scales", lambda scales: ", ".join(sorted(scales.dropna().unique())))
     )
     # über alle Cutover, auch die nicht gezählten, gerade dort tritt es auf
-    reset_by_cutover = (
-        after_cutover.loc[single_day]
-        .groupby(keys + ["cutover_date"])["own_reset"]
-        .any()
+    resets = after_cutover.groupby(keys + ["cutover_date"], as_index=False).agg(
+        own=("own_reset", "sum")
     )
-    single_day_resets = (
-        reset_by_cutover.groupby(keys)
-        .agg(lambda resets: f"{resets.sum()}/{len(resets)}")
-        .rename("single_day_resets")
-        .reset_index()
+    is_detection = resets["own"].gt(0) & resets["kind"].isin(single_day_kinds).eq(False)
+    resets["false_resets"] = resets["own"] - is_detection.astype(int)
+    false_resets = resets.groupby(keys, as_index=False).agg(
+        false_resets=("false_resets", "mean")
+    )
+    false_resets_overall = resets.groupby("variant", as_index=False).agg(
+        false_resets=("false_resets", "mean")
     )
 
     cutovers = sorted(days["cutover_date"].unique())
     table = (
-        table.merge(uncounted_days, on=keys, how="left")
+        wide.merge(spread[keys + ["mean", "detected"]], on=keys)
         .merge(scales, on=keys)
-        .merge(single_day_resets, on=keys, how="left")
+        .merge(false_resets, on=keys, how="left")
     )
     table[cutovers] = table[cutovers].astype("Int64")
 
-    return table[keys + cutovers + ["mean", "detected", "single_day_resets", "scales"]]
+    return DetectionSummary(
+        table[keys + cutovers + ["mean", "detected", "false_resets", "scales"]],
+        false_resets_overall,
+    )
 
 
-def _near_control_reset(paired: pd.DataFrame, tolerance_days: int) -> pd.Series:
-    # ein Reset kurz vor oder nach dem der Kontrolle ist derselbe natürliche Niveauwechsel, nur verschoben
+def near_control_new_pattern(paired: pd.DataFrame, tolerance_days: int) -> pd.Series:
+    """Tage, an denen die Kontrolle in ±tolerance_days ein new_pattern hat. Im Kreislauf ist das ihr Reset, ohne Reset
+    muss new_pattern schon auf den ersten Tag der Drift reduziert sein. Ein eigenes new_pattern dort ist derselbe natürliche
+    Niveauwechsel, nur verschoben
+    """
     window = ["mode", "variant", "kind", "cutover_date"]
     control_resets = paired.loc[
         paired["new_pattern_control"], window + ["days_since_cutover"]
@@ -199,81 +212,57 @@ def _near_control_reset(paired: pd.DataFrame, tolerance_days: int) -> pd.Series:
     )
 
 
-def _detection_scales(
-    hits: pd.DataFrame, single_day_kinds: tuple[str, ...]
-) -> pd.Series:
-    # Einzeltag: die Skala mit dem höchsten Score, new_pattern: alle Skalen mit Streak
-    sustained = hits[SCALE_SUSTAINED_COLUMNS].eq(True)
-    streak_scales = sustained.apply(
-        lambda row: "+".join(
-            scale for scale, on in zip(DAILY_ANOMALY_SCALES, row) if on
-        ),
-        axis=1,
-    )
-
-    return hits["dominant_scale"].where(
-        hits["kind"].isin(single_day_kinds), streak_scales
-    )
-
-
-def production_variant(
-    numerical_analysis_config: NumericalAnalysisConfig,
-    reference_windows: dict[str, tuple[int | None, int | None]],
-) -> str:
-    # das Referenzfenster, mit dem die Pipeline gerade läuft
-    window = (
-        numerical_analysis_config.max_reference_window_growth_days,
-        numerical_analysis_config.reference_window_rolling_days,
-    )
-    for variant, reference_window in reference_windows.items():
-        if reference_window == window:
-            return variant
-
-    raise ValueError(
-        "NumericalAnalysisConfig matches none of the K2 reference windows."
-    )
-
-
 @dataclass(frozen=True)
 class CalibrationSummary:
-    operating_points: pd.DataFrame
-    by_cutover: pd.DataFrame
-    loco: pd.DataFrame
-    best_variant: str
-    best_gate_threshold: float
-    loco_wins: int
-    loco_folds: int
+    gate_threshold: float
+    alarm_by_window: pd.DataFrame
+    streak_sensitivity: pd.DataFrame
+    streak_selected: dict[str, float]
 
 
 def summarize_calibration(
-    calibration: dict[str, pd.DataFrame], cutover_count: int
+    calibration: dict[str, pd.DataFrame],
+    uncounted_cutovers: tuple[str, ...],
+    max_false_new_pattern: float,
 ) -> CalibrationSummary:
-    """Arbeitspunkte, je Cutover und Leave-one-out für den Report, dazu das beste Referenzfenster"""
-    operating_points = calibration["operating_points"].sort_values("rank")
-    by_cutover = calibration["by_cutover"]
-    # je zurückgehaltenem Cutover das Referenzfenster, das auf den anderen drei gewonnen hat, und wie es sich auf dem vierten schlägt
-    loco_winners = calibration["loco"].loc[calibration["loco"]["rank"].eq(1)]
-    best = operating_points.iloc[0]
+    gate = calibration["gate_threshold"]
+    grid = calibration["streak_sensitivity"]
+    threshold_columns = list(STREAK_THRESHOLD_COLUMNS.values())
+
+    false_alarms = grid.groupby(threshold_columns, as_index=False).agg(
+        false_new_pattern=("false_new_pattern", "mean")
+    )
+    counted = grid.loc[grid["cutover_date"].isin(uncounted_cutovers).eq(False)]
+    detection = counted.groupby(threshold_columns, as_index=False).agg(
+        detected=("first_event_new_pattern_day", "count"),
+        detection_day=("first_event_new_pattern_day", "mean"),
+        windows=("first_event_new_pattern_day", "size"),
+    )
+    sensitivity = false_alarms.merge(detection, on=threshold_columns)
+    sensitivity["budget_excess"] = (
+        sensitivity["false_new_pattern"] - max_false_new_pattern
+    ).clip(lower=0)
+    ranked = sensitivity.sort_values(
+        ["budget_excess", "detected", "detection_day", "false_new_pattern"]
+        + threshold_columns,
+        ascending=[True, False, True, True] + [True] * len(threshold_columns),
+    )
+    selected_row = ranked.index[0]
+    selected = ranked.loc[selected_row]
 
     return CalibrationSummary(
-        operating_points=operating_points.assign(
-            alarm_pct=operating_points["alarm_rate"] * 100,
-            detected=operating_points["detected"].astype(str) + f"/{cutover_count}",
+        gate_threshold=float(gate["gate_threshold"].iloc[0]),
+        alarm_by_window=gate.assign(alarm_pct=gate["alarm_rate"] * 100),
+        streak_selected={
+            scale: float(selected[column])
+            for scale, column in STREAK_THRESHOLD_COLUMNS.items()
+        },
+        streak_sensitivity=sensitivity.assign(
+            selected=sensitivity.index.to_series()
+            .eq(selected_row)
+            .map({True: "ja", False: ""}),
+            detected=sensitivity["detected"].astype(str)
+            + "/"
+            + sensitivity["windows"].astype(str),
         ),
-        by_cutover=by_cutover.assign(
-            alarm_pct=by_cutover["alarm_rate"] * 100,
-            first_event_new_pattern_day=by_cutover[
-                "first_event_new_pattern_day"
-            ].astype("Int64"),
-        ),
-        loco=loco_winners.assign(
-            alarm_held_out_pct=loco_winners["alarm_rate_held_out"] * 100,
-            first_event_new_pattern_day=loco_winners[
-                "first_event_new_pattern_day"
-            ].astype("Int64"),
-        ),
-        best_variant=best["variant"],
-        best_gate_threshold=best["gate_threshold"],
-        loco_wins=int(loco_winners["variant"].eq(best["variant"]).sum()),
-        loco_folds=len(loco_winners),
     )

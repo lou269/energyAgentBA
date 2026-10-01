@@ -33,7 +33,7 @@ def _results(
     return frame
 
 
-def test_detection_counts_a_peak_only_on_its_own_day_and_a_step_at_its_reset() -> None:
+def test_detection_peak_day_and_step_reset() -> None:
     normal = ["normal"] * 5
     runs = [
         _results("control", [False] * 5, normal, mode="adaption"),
@@ -65,7 +65,7 @@ def test_detection_counts_a_peak_only_on_its_own_day_and_a_step_at_its_reset() -
         ("peak",),
         control_reset_tolerance_days=7,
         uncounted_cutovers=(),
-    ).set_index("kind")
+    ).table.set_index("kind")
 
     assert detection.loc["step_30", "detected"] == "1/2"
     assert detection.loc["step_30", "2014-04-15"] == 2
@@ -83,7 +83,7 @@ def _reset_on(day: int, days: int = 12) -> list[str]:
     ]
 
 
-def test_detection_skips_shifted_control_resets_and_uncounted_cutovers() -> None:
+def test_detection_skips_shifted_and_uncounted() -> None:
     quiet = [False] * 12
     peak_alarm = [False, False, True] + [False] * 9
     runs = [
@@ -110,16 +110,19 @@ def test_detection_skips_shifted_control_resets_and_uncounted_cutovers() -> None
         ),
     ]
 
-    detection = summarize_detection(
+    summary = summarize_detection(
         pair_with_control(pd.concat(runs, ignore_index=True), PAIR_KEYS),
         ("peak",),
         control_reset_tolerance_days=7,
         uncounted_cutovers=("2013-10-15",),
-    ).set_index("kind")
+    )
+    detection = summary.table.set_index("kind")
 
     assert pd.isna(detection.loc["step_30", "2014-04-15"])
     assert detection.loc["step_30", "2013-10-15"] == 5
     assert detection.loc["step_30", "detected"] == "0/1"
-    assert pd.isna(detection.loc["step_30", "single_day_resets"])
-    assert detection.loc["peak", "detected"] == "1/1"
-    assert detection.loc["peak", "single_day_resets"] == "1/2"
+    assert detection.loc["step_30", "false_resets"] == 0
+    # die Spitze zählt auch im nicht gezählten Cutover
+    assert detection.loc["peak", "detected"] == "2/2"
+    assert detection.loc["peak", "false_resets"] == 0.5
+    assert summary.false_resets["false_resets"].iloc[0] == 0.25

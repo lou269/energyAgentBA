@@ -20,8 +20,8 @@ class K4Config:
     # Zyklus wie dieses System, die Adaptionen gibt das Orakel vor
     cycle_system: str = "SYS1"
 
-    # 6 = frühestmögliches new_pattern (6 von 7 Tagen auffällig, ausgewertet um Mitternacht danach), 12 = späte Erkennung wie live im April in K2
-    trigger_days: tuple[int, ...] = (6, 12)
+    # 6 = frühestmögliches new_pattern (6 von 7 Tagen auffällig, ausgewertet um Mitternacht danach), 19 = späte Erkennung, so spät erkennt der Detektor +100 W im Mittel in K2
+    trigger_days: tuple[int, ...] = (6, 19)
     evaluation_days: int = 30
 
     # scaled ist das zweite Ereignis neben der Dauerlast: additiv gegen multiplikativ

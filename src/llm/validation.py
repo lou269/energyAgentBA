@@ -22,7 +22,6 @@ ALLOWED_EVIDENCE_PATHS = frozenset(
         "anomaly.scale_scores.daily",
         "anomaly.scale_scores.weekday",
         "anomaly.scale_scores.weekly",
-        "anomaly.scale_scores.long_term",
         "anomaly.scale_anomaly_streak_days.daily",
         "anomaly.scale_anomaly_streak_days.weekday",
         "anomaly.scale_anomaly_streak_days.weekly",

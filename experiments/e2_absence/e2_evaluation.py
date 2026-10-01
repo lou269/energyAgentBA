@@ -51,7 +51,7 @@ PRECHECK_ANOMALY_COLUMNS = [
     "daily_score",
     "weekday_score",
     "weekly_score",
-    "long_term_score",
+    "long_term_deviation_pct",
     "weekly_anomaly_streak_days",
     "long_term_anomaly_streak_days",
     "anomaly_level",

@@ -1,0 +1,4 @@
+Rang,Variante,Schwelle daily,Schwelle weekday,Streak weekday,Streak weekly,Streak long_term [%],Einzeltag-Alarme Kontrolle [%],falsche new_pattern je Fenster,Stufe erkannt,Erkennungstag im Mittel
+3,Median/MAD,"3,2",3,"2,5",1,15,4.7,1.0,2/3,23.5
+2,Mittelwert/σ,"2,2","3,4","2,5",1,15,5.0,1.0,2/3,23.5
+1,"Median/MAD, long_term 60 Tage","3,2",3,"2,5",1,5,4.7,1.0,2/3,22.5

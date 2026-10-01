@@ -12,86 +12,117 @@ def anomaly_streak_days(
     streak_tolerance_window_days: int,
     rolling_window_min_coverage: float,
 ) -> pd.Series:
-    elevated = (score.abs() >= threshold).where(score.notna())
+    # 1/-1 an auffälligen Tagen, 0 an unauffälligen, NaN ohne Wert
+    direction = pd.Series(np.sign(score), index=score.index).where(
+        score.abs() >= threshold, 0.0
+    )
+    direction = direction.where(score.notna())
+
+    # ein auffälliger Tag in Gegenrichtung beginnt die Streak neu, ein unauffälliger nicht
+    last_direction = direction.replace(0.0, np.nan).ffill()
+    run_id = last_direction.ne(last_direction.shift()).cumsum()
+    streak_raw = (
+        direction.abs()
+        .groupby(run_id)
+        .rolling(window=streak_tolerance_window_days, min_periods=1)
+        .sum()
+        .reset_index(level=0, drop=True)
+    )
 
     streak_min_periods = math.ceil(
         streak_tolerance_window_days * rolling_window_min_coverage
     )
-    streak_raw = elevated.rolling(
-        window=streak_tolerance_window_days, min_periods=streak_min_periods
-    ).sum()
+    enough_days = (
+        score.notna().rolling(window=streak_tolerance_window_days, min_periods=1).sum()
+        >= streak_min_periods
+    )
 
     # zu wenige gültige Tage im Fenster bleiben NaN (unbekannt), nicht 0 auffällige Tage
-    return streak_raw.where(elevated.notna(), np.nan)
+    return streak_raw.where(enough_days & score.notna(), np.nan)
 
 
-def build_anomaly_detection(
-    analysis_results: pd.DataFrame,
+def build_level_shift_streaks(
+    streak_values: pd.DataFrame,
     *,
-    reference_columns: Mapping[str, tuple[str, str]],
-    direction_override_columns: Mapping[str, tuple[str, str]],
-    min_reference_samples: Mapping[str, int],
-    min_residual_std_w: float,
-    unusual_threshold: float,
-    strong_anomaly_threshold: float,
-    gate_scales: Sequence[str],
     streak_thresholds: Mapping[str, float],
     sustained_anomaly_streak_days: int,
     min_sustained_scales: int,
     streak_tolerance_window_days: int,
     rolling_window_min_coverage: float,
 ) -> pd.DataFrame:
-    result = analysis_results.copy()
+    result = pd.DataFrame(index=streak_values.index)
 
-    train_mask = result["split"] == "train"
-
-    for scale, (observed_column, expected_column) in reference_columns.items():
-        residual_column = f"{scale}_residual"
-        score_column = f"{scale}_score"
-        streak_days_column = f"{scale}_anomaly_streak_days"
-        sustained_column = f"{scale}_sustained"
-
-        result[residual_column] = result[observed_column] - result[expected_column]
-
-        train_residuals = result.loc[
-            train_mask,
-            residual_column,
-        ].dropna()
-
-        residual_mean = train_residuals.mean()
-        residual_std = train_residuals.std()
-
-        # zu wenig Referenz oder fast keine Streuung -> lieber kein Score als ein riesiger, unzuverlässiger
-        if (
-            len(train_residuals) < min_reference_samples[scale]
-            or pd.isna(residual_std)
-            or residual_std < min_residual_std_w
-        ):
-            result[score_column] = np.nan
-            result[streak_days_column] = np.nan
-            result[sustained_column] = False
-            continue
-
-        result[score_column] = (result[residual_column] - residual_mean) / residual_std
-
-        result[streak_days_column] = anomaly_streak_days(
-            result[score_column],
-            threshold=streak_thresholds.get(scale, unusual_threshold),
+    for scale in streak_values.columns:
+        streak_days = anomaly_streak_days(
+            streak_values[scale],
+            threshold=streak_thresholds[scale],
             streak_tolerance_window_days=streak_tolerance_window_days,
             rolling_window_min_coverage=rolling_window_min_coverage,
         )
+        result[f"{scale}_anomaly_streak_days"] = streak_days
+        result[f"{scale}_sustained"] = streak_days >= sustained_anomaly_streak_days
 
-        result[sustained_column] = (
-            result[streak_days_column] >= sustained_anomaly_streak_days
-        )
-
-    # öffnet das Gate auch an einem sonst unauffälligen Tag und ist zugleich die new_pattern-Bedingung der Regel
-    sustained_columns = [f"{scale}_sustained" for scale in reference_columns]
+    # öffnet das Gate auch an einem sonst unauffälligen Tag und ist die new_pattern-Bedingung der Regel
+    sustained_columns = [f"{scale}_sustained" for scale in streak_values.columns]
     result["sustained_drift"] = (
         result[sustained_columns].sum(axis=1) >= min_sustained_scales
     )
 
-    score_columns = [f"{scale}_score" for scale in gate_scales]
+    return result
+
+
+def build_anomaly_detection(
+    analysis_results: pd.DataFrame,
+    *,
+    reference_columns: Mapping[str, tuple[str, str, str]],
+    direction_override_columns: Mapping[str, tuple[str, str]],
+    min_reference_samples: Mapping[str, int],
+    min_residual_std_w: float,
+    unusual_thresholds: Mapping[str, float],
+    single_day_scales: Sequence[str],
+    robust_scales: Sequence[str],
+) -> pd.DataFrame:
+    result = analysis_results.copy()
+
+    for scale, (
+        observed_column,
+        expected_column,
+        reference_column,
+    ) in reference_columns.items():
+        residual_column = f"{scale}_residual"
+        score_column = f"{scale}_score"
+
+        result[residual_column] = result[observed_column] - result[expected_column]
+
+        # Residuen der Referenztage, der bewertete Tag selbst ist nie dabei
+        reference_residuals = (
+            result[reference_column] - result[expected_column]
+        ).dropna()
+
+        if scale in robust_scales:
+            residual_center = reference_residuals.median()
+            # 1,4826: MAD = Standardabweichung bei normalverteilten Werten
+            residual_spread = (
+                1.4826 * (reference_residuals - residual_center).abs().median()
+            )
+        else:
+            residual_center = reference_residuals.mean()
+            residual_spread = reference_residuals.std()
+
+        # zu wenig Referenz oder fast keine Streuung -> lieber kein Score als ein riesiger, unzuverlässiger
+        if (
+            len(reference_residuals) < min_reference_samples[scale]
+            or pd.isna(residual_spread)
+            or residual_spread < min_residual_std_w
+        ):
+            result[score_column] = np.nan
+            continue
+
+        result[score_column] = (
+            result[residual_column] - residual_center
+        ) / residual_spread
+
+    score_columns = [f"{scale}_score" for scale in single_day_scales]
 
     absolute_scores = result[score_columns].abs()
 
@@ -110,7 +141,7 @@ def build_anomaly_detection(
 
     direction_values = pd.Series(np.nan, index=result.index)
 
-    for scale in gate_scales:
+    for scale in single_day_scales:
         mask = result["dominant_scale"] == scale
 
         if scale in direction_override_columns:
@@ -125,15 +156,17 @@ def build_anomaly_detection(
     result.loc[direction_values > 0, "anomaly_direction"] = "high"
     result.loc[direction_values < 0, "anomaly_direction"] = "low"
 
+    # jede Gate-Skala gegen ihre eigene Schwelle
+    unusual = pd.concat(
+        [
+            result[f"{scale}_score"].abs() >= unusual_thresholds[scale]
+            for scale in single_day_scales
+        ],
+        axis=1,
+    ).any(axis=1)
+
     result["anomaly_level"] = "normal"
-    result.loc[
-        result["anomaly_score"] >= unusual_threshold,
-        "anomaly_level",
-    ] = "unusual"
-    result.loc[
-        result["anomaly_score"] >= strong_anomaly_threshold,
-        "anomaly_level",
-    ] = "strong_anomaly"
+    result.loc[unusual, "anomaly_level"] = "unusual"
     result.loc[result["anomaly_score"].isna(), "anomaly_level"] = pd.NA
 
     result.index.name = "timestamp"

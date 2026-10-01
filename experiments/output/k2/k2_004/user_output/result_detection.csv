@@ -1,0 +1,13 @@
+Variante,Ereignis,2013-10-15 (nicht gezählt),2014-02-12,2014-06-12,2014-10-10 (nicht gezählt),2015-02-07,Mittel erkannter,erkannt,Einzeltag mit eigenem Reset,Skala bei Erkennung
+Median/MAD,Dauerlast +30 W,15,,21.0,,,21.0,1/3,,weekly+long_term
+Median/MAD,Dauerlast +50 W,14,,21.0,,11.0,16.0,2/3,,weekly+long_term
+Median/MAD,Dauerlast +100 W,10,21.0,20.0,,11.0,17.3,3/3,,weekly+long_term
+Median/MAD,Dauerlast +200 W,8,11.0,18.0,,11.0,13.3,3/3,,weekly+long_term
+Median/MAD,Einzeltag-Spitze +1000 W über 3 h,1,1.0,,1.0,,1.0,1/3,0/5,daily
+Median/MAD,Einzeltag-Spitze +1000 W über 6 h,1,1.0,,1.0,1.0,1.0,2/3,2/5,daily
+"Median/MAD, ohne Zurückhalten",Dauerlast +30 W,13,,46.0,,,46.0,1/3,,weekly+long_term
+"Median/MAD, ohne Zurückhalten",Dauerlast +50 W,9,,23.0,,,23.0,1/3,,weekly+long_term
+"Median/MAD, ohne Zurückhalten",Dauerlast +100 W,8,,23.0,,12.0,17.5,2/3,,weekly+long_term
+"Median/MAD, ohne Zurückhalten",Dauerlast +200 W,5,11.0,23.0,,9.0,14.3,3/3,,weekly+long_term
+"Median/MAD, ohne Zurückhalten",Einzeltag-Spitze +1000 W über 3 h,1,,,1.0,,,0/3,0/5,
+"Median/MAD, ohne Zurückhalten",Einzeltag-Spitze +1000 W über 6 h,1,1.0,1.0,1.0,1.0,1.0,3/3,0/5,"daily, weekday"

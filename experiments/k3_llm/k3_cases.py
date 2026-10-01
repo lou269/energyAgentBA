@@ -18,6 +18,7 @@ from src.structured_state.structured_state_schema import (
     DEVIATION_SCALE_NAMES,
     AnomalyLevel,
     SCALE_NAMES,
+    SCORE_SCALE_NAMES,
     StructuredState,
 )
 
@@ -56,7 +57,7 @@ def _anomaly_block(
     gate_scores = {
         scale: value
         for scale, value in scores.items()
-        if scale in ANALYSIS_CONFIG.gate_scales
+        if scale in ANALYSIS_CONFIG.single_day_scales
     }
     dominant_scale = max(gate_scores, key=lambda scale: abs(gate_scores[scale]))
     signed_score = gate_scores[dominant_scale]
@@ -73,7 +74,8 @@ def _anomaly_block(
         "direction": (
             "high" if signed_score > 0 else "low" if signed_score < 0 else None
         ),
-        "scale_scores": {scale: scores.get(scale) for scale in SCALE_NAMES},
+        # long_term hat seit State 1.9 keinen Score mehr, die Fälle geben weiter seinen Streak und seine Prozentabweichung
+        "scale_scores": {scale: scores.get(scale) for scale in SCORE_SCALE_NAMES},
         "scale_anomaly_streak_days": {
             scale: streak_days.get(scale) if scale in scores else None
             for scale in SCALE_NAMES
@@ -149,7 +151,7 @@ def llm_relevant_cases() -> tuple[LLMEvaluationCase, ...]:
             value_implausible=False,
             anomaly=_anomaly_block(
                 scores={"daily": 3.77, "weekly": 3.73, "long_term": 3.26},
-                level="strong_anomaly",
+                level="unusual",
                 streak_days={"daily": 1.0, "weekly": 1.0, "long_term": 1.0},
                 deviation_pct={"weekly": 45.0, "long_term": 28.0},
             ),
@@ -165,7 +167,7 @@ def llm_relevant_cases() -> tuple[LLMEvaluationCase, ...]:
             value_implausible=False,
             anomaly=_anomaly_block(
                 scores={"daily": 3.5, "weekly": 3.1, "long_term": 1.1},
-                level="strong_anomaly",
+                level="unusual",
                 streak_days={"daily": 8.0, "weekly": 7.0, "long_term": 1.0},
                 deviation_pct={"weekly": 38.0, "long_term": 9.0},
             ),
@@ -178,7 +180,7 @@ def llm_relevant_cases() -> tuple[LLMEvaluationCase, ...]:
             value_implausible=True,
             anomaly=_anomaly_block(
                 scores={"daily": 3.77, "weekly": 3.73, "long_term": 3.26},
-                level="strong_anomaly",
+                level="unusual",
                 streak_days={"daily": 1.0, "weekly": 1.0, "long_term": 1.0},
                 deviation_pct={"weekly": 45.0, "long_term": 28.0},
             ),
@@ -209,7 +211,7 @@ def llm_relevant_cases() -> tuple[LLMEvaluationCase, ...]:
             value_implausible=False,
             anomaly=_anomaly_block(
                 scores={"daily": 3.5, "weekly": 1.5, "long_term": 1.0},
-                level="strong_anomaly",
+                level="unusual",
                 streak_days={"daily": 6.0, "weekly": 1.0, "long_term": 1.0},
                 deviation_pct={"weekly": 14.0, "long_term": 8.0},
             ),
@@ -225,7 +227,7 @@ def llm_relevant_cases() -> tuple[LLMEvaluationCase, ...]:
             value_implausible=False,
             anomaly=_anomaly_block(
                 scores={"daily": 3.2, "weekly": 3.0, "long_term": 1.2},
-                level="strong_anomaly",
+                level="unusual",
                 streak_days={"daily": 6.0, "weekly": 6.0, "long_term": 1.0},
                 deviation_pct={"weekly": 35.0, "long_term": 10.0},
             ),
@@ -235,7 +237,7 @@ def llm_relevant_cases() -> tuple[LLMEvaluationCase, ...]:
             case_id="measurement_error_weak_anomaly",
             expected="measurement_error",
             reasoning=(
-                "value_implausible bei nur unusual (nicht strong_anomaly) Signatur, value_implausible muss auch bei schwacher Anomalie Vorrang vor der Anomalie-Stärke haben."
+                "value_implausible muss auch bei schwacher Anomalie Vorrang vor der Anomalie-Stärke haben."
             ),
             value_implausible=True,
             anomaly=_anomaly_block(

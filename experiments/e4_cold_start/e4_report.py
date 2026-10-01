@@ -306,8 +306,10 @@ def main() -> None:
         adaptive_model_id=adaptive_model_id,
         static_model_id=static_model_id,
         reference_model_id=run_config["reference_baseline"],
-        gate_scales=tuple(
-            run_config["system_config"]["numerical_analysis_config"]["gate_scales"]
+        single_day_scales=tuple(
+            run_config["system_config"]["numerical_analysis_config"][
+                "single_day_scales"
+            ]
         ),
         injection_days=tuple(e4_config["injection_days"]),
         window_edges_days=tuple(e4_config["window_edges_days"]),

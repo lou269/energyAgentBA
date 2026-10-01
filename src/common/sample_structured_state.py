@@ -14,12 +14,11 @@ _BASE_STATE_JSON = """
       "long_term"
     ],
     "direction": "high",
-    "level": "strong_anomaly",
+    "level": "unusual",
     "scale_scores": {
       "daily": 3.7674342117758495,
       "weekday": 3.734920041231248,
-      "weekly": null,
-      "long_term": 3.264114829329143
+      "weekly": null
     },
     "scale_anomaly_streak_days": {
       "daily": 1.0,
@@ -57,7 +56,7 @@ _BASE_STATE_JSON = """
     "observation_start": "2015-12-15T10:00:00+00:00",
     "value_implausible": false
   },
-  "schema_version": "1.8"
+  "schema_version": "2.0"
 }
 """
 

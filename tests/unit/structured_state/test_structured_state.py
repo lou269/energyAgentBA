@@ -30,7 +30,6 @@ def _analysis_row() -> pd.Series:
             "daily_score": 2.0,
             "weekday_score": 1.8,
             "weekly_score": None,
-            "long_term_score": 0.5,
             "daily_anomaly_streak_days": 2.0,
             "weekday_anomaly_streak_days": 2.0,
             "weekly_anomaly_streak_days": None,
@@ -67,9 +66,9 @@ def _build_state(
     return build_structured_state(
         decision_time=DECISION_TIME,
         analysis_row=analysis_row if analysis_row is not None else _analysis_row(),
-        calendar_context=calendar_context
-        if calendar_context is not None
-        else _calendar_context(),
+        calendar_context=(
+            calendar_context if calendar_context is not None else _calendar_context()
+        ),
         local_timezone="UTC",
     )
 
@@ -102,7 +101,7 @@ def test_analysis_timestamp_must_precede_decision_time() -> None:
         _build_state(analysis_row=analysis_row)
 
 
-def test_partial_and_missing_scale_scores_are_explicit() -> None:
+def test_missing_scale_scores() -> None:
     partial_state = _build_state()
     validate_structured_state(partial_state)
 
@@ -111,7 +110,7 @@ def test_partial_and_missing_scale_scores_are_explicit() -> None:
         "daily_score",
         "weekday_score",
         "weekly_score",
-        "long_term_score",
+        "long_term_deviation_pct",
         "daily_anomaly_streak_days",
         "weekday_anomaly_streak_days",
         "weekly_anomaly_streak_days",

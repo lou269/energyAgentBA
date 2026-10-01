@@ -1,0 +1,10 @@
+Kennzahl,Wert,Bezug
+Einzeltag-Schwelle für 5 % Alarme in der Kontrolle,"3,2","im Lauf 3,2"
+"Streak-Schwellen (weekday / weekly / long_term %), Fehlalarm-Budget und früheste Erkennung","2,5 / 0,5 / 20","im Lauf 2,5 / 0,5 / 20"
+"mit Zurückhalten: Gate offen ohne Ereignis, mit Reset [%]",9.6,"ohne Reset 6,6 %, Resets je Fenster 0,8"
+"mit Zurückhalten: Einzeltag-Spitze +1000 W über 3 h erkannt, mit Reset",0/3,"Skala -, eigener Reset danach 0/5"
+"mit Zurückhalten: Einzeltag-Spitze +1000 W über 6 h erkannt, mit Reset",0/3,"Skala -, eigener Reset danach 0/5"
+"mit Zurückhalten: Dauerlast +100 W erkannt, mit Reset",3/3,Skala weekly+long_term
+"mit Zurückhalten: Dauerlast +200 W erkannt, mit Reset",3/3,Skala weekly+long_term
+"mit Zurückhalten: Dauerlast +30 W erkannt, mit Reset",2/3,Skala weekly+long_term
+"mit Zurückhalten: Dauerlast +50 W erkannt, mit Reset",3/3,Skala weekly+long_term

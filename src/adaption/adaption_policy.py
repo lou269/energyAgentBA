@@ -117,3 +117,23 @@ def pattern_change_start(
     return shift_local_days(
         decision_time, -streak_tolerance_window_days, local_timezone
     )
+
+
+# ein laufender Urlaub wird jeden Tag wieder als absence eingeordnet, dann ist das Fenster schon draußen
+def add_excluded_window(
+    excluded_windows: tuple[tuple[pd.Timestamp, pd.Timestamp], ...],
+    action: AdaptionAction,
+) -> tuple[tuple[tuple[pd.Timestamp, pd.Timestamp], ...], AdaptionAction]:
+    assert action.excluded_window is not None
+
+    if action.excluded_window in excluded_windows:
+        return excluded_windows, AdaptionAction(
+            kind="none", reason=f"{action.reason}, already excluded: no action"
+        )
+
+    return excluded_windows + (action.excluded_window,), action
+
+
+def apply_adaption(history: pd.Series, action: AdaptionAction) -> pd.Series:
+    assert action.new_history_start is not None
+    return history.loc[history.index >= action.new_history_start]

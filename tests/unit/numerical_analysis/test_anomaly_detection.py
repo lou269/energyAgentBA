@@ -1,245 +1,185 @@
 # python -m pytest tests/unit/numerical_analysis/test_anomaly_detection.py -v
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Sequence
 
+import numpy as np
 import pandas as pd
 import pytest
 
-from src.numerical_analysis.anomaly_detection import build_anomaly_detection
+from src.numerical_analysis.anomaly_detection import (
+    anomaly_streak_days,
+    build_anomaly_detection,
+    build_level_shift_streaks,
+)
 
 
-TRAIN_RESIDUALS = [-2.0, -1.0, 0.0, 1.0, 2.0] * 20
+REFERENCE_RESIDUALS = [-2.0, -1.0, 0.0, 1.0, 2.0] * 10
+EXPECTED = 100.0
 
 REFERENCE_COLUMNS = {
-    "short_term": ("current_power", "trend_reference_mean"),
-    "daily": ("current_power", "daily_expected"),
-    "weekly": ("current_power", "weekly_expected"),
-    "long_term": ("current_power", "long_term_mean"),
+    "daily": ("daily_obs", "daily_exp", "daily_ref"),
+    "weekday": ("weekday_obs", "weekday_exp", "weekday_ref"),
 }
 
-MIN_REFERENCE_SAMPLES = {"short_term": 50, "daily": 50, "weekday": 50, "weekly": 50, "long_term": 50}
 
+def _frame(reference: Sequence[float], analyzed: dict[str, float]) -> pd.DataFrame:
+    # die letzte Zeile ist der eingeordnete Tag, sie steht selbst nicht in der Referenz
+    n = len(reference)
+    index = pd.date_range("2024-01-01", periods=n + 1, freq="D", tz="UTC")
+    columns = {}
+    for scale, residual in analyzed.items():
+        columns[f"{scale}_exp"] = EXPECTED
+        columns[f"{scale}_ref"] = [EXPECTED + r for r in reference] + [np.nan]
+        columns[f"{scale}_obs"] = [EXPECTED + r for r in reference] + [
+            EXPECTED + residual
+        ]
 
-def _analysis_frame(
-    current_power: list[float],
-    reference: float,
-    split: list[str]
-) -> pd.DataFrame:
-    return pd.DataFrame(
-        {
-            "split": split,
-            "current_power": current_power,
-            "trend_reference_mean": reference,
-            "daily_expected": reference,
-            "weekly_expected": reference,
-            "long_term_mean": reference,
-        },
-        index=pd.date_range("2013-01-01", periods=len(split), freq="h", tz="UTC"),
-    )
+    return pd.DataFrame(columns, index=index)
 
 
 def _detect(
     frame: pd.DataFrame,
     *,
-    reference_columns: Mapping[str, tuple[str, str]] = REFERENCE_COLUMNS,
-    gate_scales: Sequence[str] = tuple(REFERENCE_COLUMNS),
-    direction_override_columns: Mapping[str, tuple[str, str]] = {},
-    min_reference_samples: Mapping[str, int] = MIN_REFERENCE_SAMPLES,
+    robust_scales: Sequence[str] = (),
+    min_reference_samples: int = 5,
     min_residual_std_w: float = 0.1,
-    unusual_threshold: float = 2.0,
-    streak_thresholds: Mapping[str, float] = {},
-) -> pd.DataFrame:
+    thresholds: dict[str, float] | None = None,
+    direction_override: dict[str, tuple[str, str]] | None = None,
+) -> pd.Series:
+    scales = [s for s in REFERENCE_COLUMNS if f"{s}_obs" in frame]
+
     return build_anomaly_detection(
         frame,
-        reference_columns=reference_columns,
-        direction_override_columns=direction_override_columns,
-        min_reference_samples=min_reference_samples,
+        reference_columns={s: REFERENCE_COLUMNS[s] for s in scales},
+        direction_override_columns=direction_override or {},
+        min_reference_samples={s: min_reference_samples for s in scales},
         min_residual_std_w=min_residual_std_w,
-        unusual_threshold=unusual_threshold,
-        strong_anomaly_threshold=3.0,
-        gate_scales=gate_scales,
-        streak_thresholds=streak_thresholds,
-        sustained_anomaly_streak_days=6,
-        min_sustained_scales=2,
-        streak_tolerance_window_days=7,
-        rolling_window_min_coverage=1.0,
+        unusual_thresholds=thresholds or {s: 2.0 for s in scales},
+        single_day_scales=scales,
+        robust_scales=robust_scales,
+    ).iloc[-1]
+
+
+def test_robust_score_uses_median_mad() -> None:
+    reference = np.array(REFERENCE_RESIDUALS + [100.0])
+    frame = _frame(reference.tolist(), {"daily": 6.0})
+
+    robust = _detect(frame, robust_scales=("daily",))["daily_score"]
+    classic = _detect(frame)["daily_score"]
+
+    center = np.median(reference)
+    mad = 1.4826 * np.median(np.abs(reference - center))
+    assert robust == pytest.approx((6.0 - center) / mad)
+    assert classic == pytest.approx((6.0 - reference.mean()) / reference.std(ddof=1))
+    assert robust > classic
+
+
+def test_analyzed_day_not_in_own_reference() -> None:
+    small = _detect(_frame(REFERENCE_RESIDUALS, {"daily": 4.0}))["daily_score"]
+    large = _detect(_frame(REFERENCE_RESIDUALS, {"daily": 400.0}))["daily_score"]
+
+    # ein riesiger Ausreißer am eingeordneten Tag verschiebt die Streuung der Referenz nicht
+    assert large == pytest.approx(small * 100)
+
+
+def test_no_score_without_reference() -> None:
+    few = _detect(_frame(REFERENCE_RESIDUALS[:4], {"daily": 5.0}))
+    flat = _detect(_frame([0.001, -0.001] * 20, {"daily": 5.0}), min_residual_std_w=1.0)
+
+    assert np.isnan(few["daily_score"])
+    assert np.isnan(flat["daily_score"])
+    assert pd.isna(few["anomaly_level"])
+
+
+def test_dominant_scale_gives_direction() -> None:
+    spread = pd.Series(REFERENCE_RESIDUALS).std()
+    frame = _frame(
+        REFERENCE_RESIDUALS, {"daily": 1.0 * spread, "weekday": -3.0 * spread}
     )
 
+    row = _detect(frame, thresholds={"daily": 2.0, "weekday": 2.5})
 
-def test_z_score_uses_only_train_residuals_for_calibration() -> None:
-    reference = 100.0
-    split = ["train"] * len(TRAIN_RESIDUALS) + ["test"]
-    current_power = [reference + r for r in TRAIN_RESIDUALS] + [reference + 500.0]
-
-    result = _detect(_analysis_frame(current_power, reference, split))
-
-    expected_std = pd.Series(TRAIN_RESIDUALS).std()
-    assert result["short_term_score"].iloc[-2] == pytest.approx(2.0 / expected_std)
-    # der Test-Ausreisser darf Mittelwert/Std nicht verschoben haben, sonst wäre es keine echte Kalibrierung nur auf Trainingsdaten
-    assert result["short_term_score"].iloc[-1] == pytest.approx(500.0 / expected_std)
+    assert row["dominant_scale"] == "weekday"
+    assert row["anomaly_score"] == pytest.approx(3.0)
+    assert row["anomaly_direction"] == "low"
+    assert row["anomaly_level"] == "unusual"
 
 
-def test_insufficient_reference_samples_yields_no_score() -> None:
-    train_residuals = [-2.0, -1.0, 0.0, 1.0, 2.0] * 2
-    reference = 100.0
-    current_power = [reference + r for r in train_residuals]
+def test_own_threshold_per_scale() -> None:
+    spread = pd.Series(REFERENCE_RESIDUALS).std()
+    frame = _frame(
+        REFERENCE_RESIDUALS, {"daily": 2.5 * spread, "weekday": 2.5 * spread}
+    )
 
-    result = _detect(_analysis_frame(current_power, reference, ["train"] * len(train_residuals)))
+    quiet = _detect(frame, thresholds={"daily": 3.0, "weekday": 3.0})
+    alarm = _detect(frame, thresholds={"daily": 3.0, "weekday": 2.0})
 
-    assert result["short_term_score"].isna().all()
-    assert not result["short_term_sustained"].any()
-
-
-def test_residual_std_below_floor_yields_no_score() -> None:
-    noise = [0.001, -0.001] * 50
-    reference = 100.0
-    current_power = [reference + n for n in noise]
-
-    result = _detect(_analysis_frame(current_power, reference, ["train"] * len(noise)), min_residual_std_w=1.0)
-
-    # winzige, aber von Null verschiedene Streuung - darf keinen (potenziell riesigen) Z-Score liefern
-    assert result["short_term_score"].isna().all()
+    assert quiet["anomaly_level"] == "normal"
+    assert alarm["anomaly_level"] == "unusual"
 
 
-def _frame_with_largest_weekly_deviation() -> pd.DataFrame:
-    n = len(TRAIN_RESIDUALS)
+def test_direction_override() -> None:
+    spread = pd.Series(REFERENCE_RESIDUALS).std()
+    frame = _frame(REFERENCE_RESIDUALS, {"daily": 3.0 * spread})
+    # daily misst die Streuung im Tag, die Richtung kommt vom Tagesmittel
+    frame["mean_obs"] = 90.0
+    frame["mean_exp"] = 100.0
 
+    row = _detect(frame, direction_override={"daily": ("mean_obs", "mean_exp")})
+
+    assert row["daily_score"] > 0
+    assert row["anomaly_direction"] == "low"
+
+
+def test_streak_counts_elevated_days() -> None:
+    score = pd.Series([3.0, 3.0, np.nan, 3.0, -0.5, 3.0, -3.0])
+
+    streak = anomaly_streak_days(
+        score,
+        threshold=2.0,
+        streak_tolerance_window_days=4,
+        rolling_window_min_coverage=0.5,
+    )
+
+    assert np.isnan(streak.iloc[2])
+    # Fenster von 4 Tagen ab Position 2: NaN / 3,0 / -0,5 / 3,0, der leicht negative Tag bricht nicht ab
+    assert streak.iloc[5] == 2.0
+    # -3,0 ist auffällig in Gegenrichtung, die Streak beginnt neu
+    assert streak.iloc[6] == 1.0
+
+
+def _level_shift_values(
+    weekday: float, weekly: float, long_term: float
+) -> pd.DataFrame:
+    index = pd.date_range("2024-01-01", periods=8, freq="D", tz="UTC")
     return pd.DataFrame(
-        {
-            "split": ["train"] * n + ["test"],
-            "current_power": [100.0 + r for r in TRAIN_RESIDUALS] + [106.0],
-            "trend_reference_mean": [100.0] * n + [104.0],
-            "daily_expected": [100.0] * n + [106.0],
-            "weekly_expected": [100.0] * n + [100.0],
-            "long_term_mean": [100.0] * n + [106.0],
-        },
-        index=pd.date_range("2013-01-01", periods=n + 1, freq="h", tz="UTC"),
+        {"weekday": weekday, "weekly": weekly, "long_term": long_term}, index=index
     )
 
 
-def test_dominant_scale_picks_largest_absolute_score() -> None:
-    row = _detect(_frame_with_largest_weekly_deviation()).iloc[-1]
-
-    # weekly hat den größten Ausschlag (+6 W bei identischer Trainingsstreuung wie die anderen drei Skalen) und muss deshalb den Gesamt-Score und die Einstufung bestimmen
-    assert row["dominant_scale"] == "weekly"
-    assert row["anomaly_direction"] == "high"
-    assert row["anomaly_level"] == "strong_anomaly"
-    assert row["anomaly_score"] == pytest.approx(row["weekly_score"])
-
-
-def test_scales_outside_the_gate_do_not_set_score_or_level() -> None:
-    row = _detect(_frame_with_largest_weekly_deviation(), gate_scales=("short_term", "daily")).iloc[-1]
-
-    # weekly bleibt der größte Ausschlag, zählt fürs Gate aber nicht mehr mit
-    assert abs(row["weekly_score"]) > abs(row["short_term_score"])
-    assert row["dominant_scale"] == "short_term"
-    assert row["anomaly_score"] == pytest.approx(row["short_term_score"])
-    assert row["anomaly_level"] == "normal"
-
-
-def test_slow_scales_open_the_gate_through_their_own_streak_threshold() -> None:
-    n = len(TRAIN_RESIDUALS)
-    drift_days = 7
-
-    frame = pd.DataFrame(
-        {
-            "split": ["train"] * n + ["test"] * drift_days,
-            "current_power": [100.0 + r for r in TRAIN_RESIDUALS] + [100.0] * drift_days,
-            "daily_expected": 100.0,
-            "weekday_expected": 100.0,
-            # z ca. 2,1 bzw. 1,4, beides unter unusual_threshold
-            "weekly_expected": [100.0] * n + [97.0] * drift_days,
-            "long_term_mean": [100.0] * n + [98.0] * drift_days,
-        },
-        index=pd.date_range("2013-01-01", periods=n + drift_days, freq="h", tz="UTC"),
-    )
-    reference_columns = {
-        "daily": ("current_power", "daily_expected"),
-        "weekday": ("current_power", "weekday_expected"),
-        "weekly": ("current_power", "weekly_expected"),
-        "long_term": ("current_power", "long_term_mean"),
-    }
-
-    result = _detect(
-        frame,
-        unusual_threshold=2.6,
-        gate_scales=("daily", "weekday"),
-        streak_thresholds={"weekly": 1.25, "long_term": 1.0},
-        reference_columns=reference_columns,
-    )
-    row = result.iloc[-1]
-
-    assert row["anomaly_level"] == "normal"
-    assert row["weekly_sustained"] and row["long_term_sustained"]
-    assert row["sustained_drift"]
-
-    # mit unusual_threshold als Streak-Schwelle wäre dieselbe Drift unsichtbar
-    without_own_thresholds = _detect(frame, unusual_threshold=2.6, gate_scales=("daily", "weekday"), reference_columns=reference_columns)
-    assert not without_own_thresholds["sustained_drift"].iloc[-1]
-
-
-def test_reference_columns_parameter_restricts_scales() -> None:
-    reference = 100.0
-    split = ["train"] * len(TRAIN_RESIDUALS) + ["test"]
-    current_power = [reference + r for r in TRAIN_RESIDUALS] + [reference + 500.0]
-
-    result = _detect(
-        _analysis_frame(current_power, reference, split),
-        gate_scales=("daily", "weekly", "long_term"),
-        reference_columns={
-            "daily": ("current_power", "daily_expected"),
-            "weekly": ("current_power", "weekly_expected"),
-            "long_term": ("current_power", "long_term_mean"),
-        },
+def _streaks(values: pd.DataFrame, min_sustained_scales: int) -> pd.DataFrame:
+    return build_level_shift_streaks(
+        values,
+        streak_thresholds={"weekday": 2.0, "weekly": 1.0, "long_term": 20.0},
+        sustained_anomaly_streak_days=6,
+        min_sustained_scales=min_sustained_scales,
+        streak_tolerance_window_days=7,
+        rolling_window_min_coverage=0.8,
     )
 
-    assert "short_term_score" not in result.columns
-    assert result["dominant_scale"].iloc[-1] in ("daily", "weekly", "long_term")
+
+def test_scale_sustained_after_streak() -> None:
+    result = _streaks(_level_shift_values(3.0, 3.0, 5.0), min_sustained_scales=2)
+
+    assert not result["weekday_sustained"].iloc[4]
+    assert result["weekday_sustained"].iloc[5]
+    assert not result["long_term_sustained"].any()
 
 
-def test_min_reference_samples_disables_only_the_affected_scale() -> None:
-    reference = 100.0
-    split = ["train"] * len(TRAIN_RESIDUALS) + ["test"]
-    current_power = [reference + r for r in TRAIN_RESIDUALS] + [reference + 500.0]
+def test_drift_needs_enough_scales() -> None:
+    two_scales = _level_shift_values(3.0, 3.0, 5.0)
 
-    # short_term bekommt eine unerreichbar hohe Schwelle, die anderen drei bleiben bei 50 (erreicht)
-    result = _detect(
-        _analysis_frame(current_power, reference, split),
-        min_reference_samples={"short_term": 1000, "daily": 50, "weekly": 50, "long_term": 50},
-    )
-
-    assert result["short_term_score"].isna().all()
-    assert result["daily_score"].notna().any()
-
-
-def test_direction_override_column_replaces_the_scores_own_sign_for_direction() -> None:
-    n = len(TRAIN_RESIDUALS)
-    split = ["train"] * n + ["test"]
-    # der Score-Ausschlag ist negativ (current_power < daily_expected), die Override-Spalten
-    # zeigen aber eine positive Abweichung, direction muss Override-Spalte folgen, nicht dem Score
-    current_power = [100.0 + r for r in TRAIN_RESIDUALS] + [90.0]
-
-    frame = pd.DataFrame(
-        {
-            "split": split,
-            "current_power": current_power,
-            "trend_reference_mean": [100.0] * n + [100.0],
-            "daily_expected": [100.0] * n + [100.0],
-            "today_mean": [100.0] * n + [90.0],
-            "today_mean_expected": [100.0] * n + [80.0],
-        },
-        index=pd.date_range("2013-01-01", periods=n + 1, freq="h", tz="UTC"),
-    )
-
-    result = _detect(
-        frame,
-        gate_scales=("daily",),
-        reference_columns={"daily": ("current_power", "daily_expected")},
-        direction_override_columns={"daily": ("today_mean", "today_mean_expected")},
-    )
-
-    row = result.iloc[-1]
-    assert row["daily_score"] < 0
-    assert row["dominant_scale"] == "daily"
-    # today_mean (90) > today_mean_expected (80) -> "high", trotz negativem daily_score
-    assert row["anomaly_direction"] == "high"
+    assert _streaks(two_scales, min_sustained_scales=2)["sustained_drift"].iloc[-1]
+    assert not _streaks(two_scales, min_sustained_scales=3)["sustained_drift"].iloc[-1]
+    one_scale = _level_shift_values(3.0, 0.2, 5.0)
+    assert not _streaks(one_scale, min_sustained_scales=2)["sustained_drift"].any()

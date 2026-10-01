@@ -1,68 +1,44 @@
 import math
+from collections.abc import Sequence
+from typing import cast
 
 import numpy as np
 import pandas as pd
-
-from src.common.timestamps import local_day
 
 
 def build_multi_scale_analysis(
     history: pd.Series,
     *,
-    reference_window_end: pd.Timestamp,
-    reference_window_rolling_days: int | None,
+    analyzed_day: pd.Timestamp,
+    reference_window_rolling_days: int,
     short_term_window: int,
     sample_period_hours: float,
     long_term_window: int,
+    long_term_reference_days: int,
     weekly_window_days: int,
     min_weekday_reference_samples: int,
+    min_longterm_reference_samples: int,
     trend_threshold: float,
     min_reference_power_w: float,
     rolling_window_min_coverage: float,
+    robust_scales: Sequence[str],
     local_timezone: str,
 ) -> pd.DataFrame:
     local_history = history.tz_convert(local_timezone)
-
     daily_mean = local_history.resample("D").mean()
     daily_std = local_history.resample("D").std(ddof=0)
 
-    # der Tag von reference_window_end ist evtl. nur teilweise beobachtet -> ganz raus aus dem Training, fällt stattdessen unter validation
-    reference_day = local_day(reference_window_end, local_timezone)
-
-    train_index = daily_mean.index[daily_mean.index < reference_day]
-    remaining_index = daily_mean.index[daily_mean.index >= reference_day]
-
-    if reference_window_rolling_days is not None:
-        # n Kalendertage, auch über eine Zeitumstellung, ältere Tage zählen nur noch für weekly_mean/long_term_window_mean
-        train_index = train_index[-reference_window_rolling_days:]
-
-    if len(remaining_index) < 2:
-        raise ValueError(
-            "Not enough observed days after the reference window to score validation and test."
-        )
+    analyzed_position = cast(int, daily_mean.index.get_loc(analyzed_day))
 
     result = pd.DataFrame(index=daily_mean.index)
-
-    result["split"] = pd.NA
-    result.loc[train_index, "split"] = "train"
-    result.loc[remaining_index[:-1], "split"] = "validation"
-    result.loc[remaining_index[-1:], "split"] = "test"
-
     result["today_mean"] = daily_mean
+    result["daily_std"] = daily_std
 
     previous_power = result["today_mean"].shift(1)
 
-    result["trend_reference_mean"] = previous_power.rolling(
+    result["trend_daily_mean"] = previous_power.rolling(
         window=short_term_window, min_periods=short_term_window
     ).mean()
-
-    # min_periods < window, damit ein einzelner NaN-Tag (z.B. measurement_error) im Fenster nicht die komplette Skala für long_term_window Tage lahmlegt
-    long_term_min_periods = math.ceil(long_term_window * rolling_window_min_coverage)
-    result["long_term_window_mean"] = (
-        result["today_mean"]
-        .rolling(window=long_term_window, min_periods=long_term_min_periods)
-        .mean()
-    )
 
     trend_time = np.arange(short_term_window) * sample_period_hours
     centered_trend_time = trend_time - trend_time.mean()
@@ -75,86 +51,83 @@ def build_multi_scale_analysis(
         raw=True,
     )
 
-    train_reference = pd.DataFrame(
-        {
-            "power": daily_mean.loc[train_index],
-            "day_of_week": pd.DatetimeIndex(train_index).dayofweek,
-        },
-        index=train_index,
+    trend_reference = result["trend_daily_mean"].where(
+        result["trend_daily_mean"].abs() >= min_reference_power_w
     )
-
-    weekday_profile = train_reference.groupby("day_of_week")["power"].agg(
-        ["mean", "count"]
-    )
-    weekday_profile.loc[
-        weekday_profile["count"] < min_weekday_reference_samples, "mean"
-    ] = np.nan
-
-    weekday_keys = pd.DatetimeIndex(daily_mean.index).dayofweek
-    result["weekday_expected"] = (
-        weekday_profile["mean"].reindex(weekday_keys).to_numpy()
-    )
-
-    train_weekday_expected = train_reference.groupby("day_of_week")["power"].transform(
-        lambda values: values.shift(1)
-        .expanding(min_periods=min_weekday_reference_samples)
-        .mean()
-    )
-
-    result.loc[train_index, "weekday_expected"] = train_weekday_expected
-
-    trend_reference = result["trend_reference_mean"].where(
-        result["trend_reference_mean"].abs() >= min_reference_power_w
-    )
-
     trend_window_hours = short_term_window * sample_period_hours
-
     result["trend_change"] = (
         result["trend_slope_w_per_hour"] * trend_window_hours
     ) / trend_reference
 
     result["trend"] = "stable"
-
     result.loc[result["trend_change"] > trend_threshold, "trend"] = "increasing"
-
     result.loc[result["trend_change"] < -trend_threshold, "trend"] = "decreasing"
-
     result.loc[result["trend_change"].isna(), "trend"] = pd.NA
 
-    result["daily_std"] = daily_std
-    result["daily_std_expected"] = _walk_forward_expectation(
-        daily_std, train_index, remaining_index
+    # Erwartung und Referenz gelten für analyzed_day, die Spalten tragen sie in jeder Zeile
+    # Tagesskalen: Referenz sind die Tage vor dem eingeordneten Tag
+    day_window = _reference_window(
+        analyzed_position - 1,
+        rolling_days=reference_window_rolling_days,
+    )
+    daily_robust = "daily" in robust_scales
+    day_mean_reference = _only_positions(daily_mean, day_window)
+
+    result["daily_reference_value"] = _only_positions(daily_std, day_window)
+    result["daily_std_expected"] = _center(
+        result["daily_reference_value"], robust=daily_robust
+    )
+    # nur für die Richtung von daily, gleiche Mitte wie die Skala selbst
+    result["today_mean_expected"] = _center(day_mean_reference, robust=daily_robust)
+
+    result["weekday_reference_value"] = day_mean_reference
+    result["weekday_expected"] = _weekday_expected(
+        day_mean_reference,
+        min_samples=min_weekday_reference_samples,
+        robust="weekday" in robust_scales,
     )
 
-    result["today_mean_expected"] = _walk_forward_expectation(
-        daily_mean, train_index, remaining_index
-    )
-
+    # Rollmittel: Beobachtung auf der vollen Reihe
     weekly_min_periods = math.ceil(weekly_window_days * rolling_window_min_coverage)
-    result["weekly_mean"] = (
-        result["today_mean"]
-        .rolling(window=weekly_window_days, min_periods=weekly_min_periods)
+    result["weekly_mean"] = daily_mean.rolling(
+        window=weekly_window_days, min_periods=weekly_min_periods
+    ).mean()
+    result["weekly_reference_value"] = _weekly_reference(
+        result["weekly_mean"],
+        analyzed_position=analyzed_position,
+        weekly_window_days=weekly_window_days,
+        rolling_days=reference_window_rolling_days,
+    )
+    result["weekly_mean_expected"] = _center(
+        result["weekly_reference_value"], robust="weekly" in robust_scales
+    )
+
+    long_term_min_periods = math.ceil(long_term_window * rolling_window_min_coverage)
+    result["long_term_window_mean"] = daily_mean.rolling(
+        window=long_term_window, min_periods=long_term_min_periods
+    ).mean()
+    # je Tag das Mittel der long_term_reference_days direkt vor dessen Beobachtungsfenster
+    result["long_term_expected"] = (
+        daily_mean.rolling(
+            window=long_term_reference_days,
+            min_periods=min_longterm_reference_samples,
+        )
         .mean()
-    )
-    result["weekly_mean_expected"] = _walk_forward_expectation(
-        result["weekly_mean"], train_index, remaining_index
+        .shift(long_term_window)
     )
 
-    result["long_term_expected"] = _walk_forward_expectation(
-        result["long_term_window_mean"], train_index, remaining_index
-    )
-
-    result["weekday_deviation_pct"] = _deviation_pct(
-        result["today_mean"], result["weekday_expected"], min_reference_power_w
-    )
-    result["weekly_deviation_pct"] = _deviation_pct(
-        result["weekly_mean"], result["weekly_mean_expected"], min_reference_power_w
-    )
-    result["long_term_deviation_pct"] = _deviation_pct(
-        result["long_term_window_mean"],
-        result["long_term_expected"],
-        min_reference_power_w,
-    )
+    for scale, observed_column, expected_column in (
+        ("weekday", "today_mean", "weekday_expected"),
+        ("weekly", "weekly_mean", "weekly_mean_expected"),
+        ("long_term", "long_term_window_mean", "long_term_expected"),
+    ):
+        result[f"{scale}_deviation_pct"] = _deviation_pct(
+            result[observed_column], result[expected_column], min_reference_power_w
+        )
+        # Tagesmittel in W -> kWh pro Tag
+        result[f"{scale}_deviation_kwh_per_day"] = (
+            (result[observed_column] - result[expected_column]) * 24 / 1000
+        )
 
     result.index.name = "timestamp"
 
@@ -171,16 +144,53 @@ def _deviation_pct(
     return (measured - reference) / reference * 100.0
 
 
-def _walk_forward_expectation(
-    values: pd.Series,
-    train_index: pd.Index,
-    remaining_index: pd.Index,
-) -> pd.Series:
-    # in train expandierend nur über frühere Tage (kein Blick nach vorn), für validation/test auf den train-Mittelwert eingefroren
-    expected = pd.Series(np.nan, index=values.index)
-    expected.loc[train_index] = (
-        values.loc[train_index].shift(1).expanding(min_periods=1).mean()
-    )
-    expected.loc[remaining_index] = values.loc[train_index].mean()
+def _reference_window(end: int, *, rolling_days: int) -> range:
+    # Positionen im Tagesindex, end ist der letzte Tag vor dem Beobachtungsfenster
+    return range(max(0, end - rolling_days + 1), end + 1)
 
-    return expected
+
+def _weekday_expected(
+    reference: pd.Series, *, min_samples: int, robust: bool
+) -> pd.Series:
+    values = reference.dropna()
+    profile = values.groupby(pd.DatetimeIndex(values.index).dayofweek).agg(
+        ["median" if robust else "mean", "count"]
+    )
+    profile.columns = ["center", "count"]
+    profile.loc[profile["count"] < min_samples, "center"] = np.nan
+
+    return pd.Series(
+        profile["center"]
+        .reindex(pd.DatetimeIndex(reference.index).dayofweek)
+        .to_numpy(),
+        index=reference.index,
+    )
+
+
+def _weekly_reference(
+    weekly_mean: pd.Series,
+    *,
+    analyzed_position: int,
+    weekly_window_days: int,
+    rolling_days: int,
+) -> pd.Series:
+    # nur Wochenmittel, die ganz im Referenzfenster liegen, es endet direkt vor der beobachteten Woche
+    window = _reference_window(
+        analyzed_position - weekly_window_days, rolling_days=rolling_days
+    )
+    return _only_positions(
+        weekly_mean, range(window.start + weekly_window_days - 1, window.stop)
+    )
+
+
+def _only_positions(values: pd.Series, positions: range) -> pd.Series:
+    inside = pd.Series(np.nan, index=values.index)
+    if len(positions) > 0:
+        inside.iloc[positions.start : positions.stop] = values.iloc[
+            positions.start : positions.stop
+        ]
+    return inside
+
+
+def _center(values: pd.Series, *, robust: bool) -> float:
+    return float(values.median() if robust else values.mean())

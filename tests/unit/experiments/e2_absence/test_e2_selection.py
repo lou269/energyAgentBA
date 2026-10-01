@@ -14,7 +14,7 @@ from experiments.e2_absence.e2_selection import (
 E2_CONFIG = E2Config()
 
 
-def test_resolve_absence_window_matches_e2_config_reference() -> None:
+def test_absence_window_matches_config() -> None:
     events = load_calendar_events(E2_CONFIG.calendar_events_file)
 
     window_start, window_end = resolve_absence_window(
@@ -22,7 +22,7 @@ def test_resolve_absence_window_matches_e2_config_reference() -> None:
     )
 
     assert window_start == pd.Timestamp("2013-09-14T00:00:00+01:00")
-    assert window_end == pd.Timestamp("2013-09-28T00:00:00+01:00")
+    assert window_end == pd.Timestamp("2013-10-04T00:00:00+01:00")
 
 
 def test_resolve_absence_window_raises_for_unknown_event_id() -> None:

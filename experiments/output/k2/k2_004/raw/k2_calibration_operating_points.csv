@@ -1,0 +1,4 @@
+variant,daily_unusual_threshold,weekday_unusual_threshold,alarm_rate,weekday_streak_threshold,weekly_streak_threshold,long_term_streak_threshold_pct,false_new_pattern,detected,detection_day,rank
+ROBUST_LT60,3.2,3.0,0.046831955922865015,2.5,1.0,5.0,1.0,2,22.5,1
+CLASSIC,2.2,3.4,0.049586776859504134,2.5,1.0,15.0,1.0,2,23.5,2
+ROBUST,3.2,3.0,0.046831955922865015,2.5,1.0,15.0,1.0,2,23.5,3

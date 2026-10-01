@@ -26,12 +26,13 @@ NOTIFICATION_PERIOD_DAYS = 30
 # Standard-Szenarien der Komponentenstudien K2, K3 (Ebene 2) und K4. Experimente laufen nicht auf diesen Cutovern, weil K2 und K3 darauf eingestellt wurden
 @dataclass(frozen=True)
 class StandardScenarioConfig:
-    # lokale Kalendertage, je eine Jahreszeit, alle im Train-Split und ohne bekannte Kalenderereignisse im Fenster
+    # lokale Kalendertage im Train-Split, 120 Tage auseinander: Überwachung und Zeit danach (je 60 Tage) überlappen sich zwischen den Fenstern nicht
     cutover_dates: tuple[str, ...] = (
         "2013-10-15",
-        "2014-01-15",
-        "2014-04-15",
-        "2014-07-15",
+        "2014-02-12",
+        "2014-06-12",
+        "2014-10-10",
+        "2015-02-07",
     )
 
     # Historie beginnt Kaltstart + diese Tage vor dem Cutover

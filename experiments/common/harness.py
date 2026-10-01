@@ -26,6 +26,7 @@ ANOMALY_FILE = "anomaly.csv"
 LLM_OUTPUTS_FILE = "llm_outputs.jsonl"
 STRUCTURED_STATES_FILE = "structured_states.jsonl"
 FORECASTS_FILE = "forecasts.csv"
+RUN_META_FILE = "run_meta.json"
 
 
 def read_llm_prompt(prompt_version: str) -> str:
@@ -135,6 +136,27 @@ def read_llm_outputs(raw_directory: Path) -> pd.DataFrame:
             "classification",
             "explanation",
         ],
+    )
+
+
+def read_run_meta(raw_directory: Path) -> pd.DataFrame:
+    # je Szenario-Ordner und System die Laufzeit, scenario wie in read_llm_outputs
+    rows = []
+    for meta_file in sorted(raw_directory.rglob(RUN_META_FILE)):
+        meta = json.loads(meta_file.read_text(encoding="utf-8"))
+        rows.append(
+            {
+                "scenario": meta_file.parent.parent.relative_to(
+                    raw_directory
+                ).as_posix(),
+                "config": meta["config"],
+                "runtime_seconds": meta["runtime_seconds"],
+                "interrupted": meta["interrupted"],
+            }
+        )
+
+    return pd.DataFrame(
+        rows, columns=["scenario", "config", "runtime_seconds", "interrupted"]
     )
 
 

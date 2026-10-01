@@ -4,6 +4,8 @@ import pandas as pd
 
 from experiments.common.evaluation import (
     FIRST_ANALYZED_DAY,
+    SCALE_VALUE_COLUMNS,
+    SCALE_SUSTAINED_COLUMNS,
     count_notifications,
     days_since_date,
     merge_cycle_days,
@@ -17,8 +19,6 @@ from experiments.common.standard_config import (
 from experiments.e4_cold_start.e4_config import CLEAN_SCENARIO
 from src.structured_state.structured_state_schema import SCALE_NAMES
 
-SCORE_COLUMNS = [f"{scale}_score" for scale in SCALE_NAMES]
-SUSTAINED_COLUMNS = [f"{scale}_sustained" for scale in SCALE_NAMES]
 # neben den vier Skalen: die erste Gate-Skala und alle vier zusammen (Einschwingzeit)
 GATE_SCALE = "gate"
 ALL_SCALES = "all"
@@ -40,8 +40,8 @@ SYSTEM_COLUMNS = (
         "mae_w",
         "mape_pct",
     ]
-    + SCORE_COLUMNS
-    + SUSTAINED_COLUMNS
+    + SCALE_VALUE_COLUMNS
+    + SCALE_SUSTAINED_COLUMNS
 )
 
 
@@ -261,11 +261,11 @@ def _scale_names(flags: pd.DataFrame) -> list[str]:
 
 
 def summarize_scale_days(
-    clean: pd.DataFrame, *, gate_scales: tuple[str, ...]
+    clean: pd.DataFrame, *, single_day_scales: tuple[str, ...]
 ) -> pd.DataFrame:
-    available = clean[SCORE_COLUMNS].notna()
+    available = clean[SCALE_VALUE_COLUMNS].notna()
     available.columns = list(SCALE_NAMES)
-    available[GATE_SCALE] = available[list(gate_scales)].any(axis=1)
+    available[GATE_SCALE] = available[list(single_day_scales)].any(axis=1)
     available[ALL_SCALES] = available[list(SCALE_NAMES)].all(axis=1)
 
     by_day = pd.concat(
@@ -300,7 +300,7 @@ def summarize_scale_days(
 
 def list_resets_in_settling(days: pd.DataFrame) -> pd.DataFrame:
     resets = days.loc[
-        days["reference_reset"].eq(True) & days[SCORE_COLUMNS].isna().any(axis=1)
+        days["reference_reset"].eq(True) & days[SCALE_VALUE_COLUMNS].isna().any(axis=1)
     ]
 
     return resets[
@@ -314,8 +314,8 @@ def list_resets_in_settling(days: pd.DataFrame) -> pd.DataFrame:
             "classification",
         ]
     ].assign(
-        available_scales=_scale_names(resets[SCORE_COLUMNS].notna()),
-        sustained_scales=_scale_names(resets[SUSTAINED_COLUMNS].eq(True)),
+        available_scales=_scale_names(resets[SCALE_VALUE_COLUMNS].notna()),
+        sustained_scales=_scale_names(resets[SCALE_SUSTAINED_COLUMNS].eq(True)),
     )
 
 
@@ -423,7 +423,7 @@ class SystemSummary:
 def summarize_system(
     system_days: pd.DataFrame,
     *,
-    gate_scales: tuple[str, ...],
+    single_day_scales: tuple[str, ...],
     injection_days: tuple[int, ...],
     window_edges_days: tuple[int, ...],
 ) -> SystemSummary:
@@ -450,7 +450,7 @@ def summarize_system(
     ).reset_index()
 
     return SystemSummary(
-        scale_days=summarize_scale_days(clean, gate_scales=gate_scales),
+        scale_days=summarize_scale_days(clean, single_day_scales=single_day_scales),
         resets=list_resets_in_settling(system_days),
         notifications=count_notifications(
             add_windows(clean, window_edges_days),
@@ -659,7 +659,7 @@ def summarize_e4(
     adaptive_model_id: str,
     static_model_id: str,
     reference_model_id: str,
-    gate_scales: tuple[str, ...],
+    single_day_scales: tuple[str, ...],
     injection_days: tuple[int, ...],
     window_edges_days: tuple[int, ...],
     smoothing_days: int,
@@ -686,7 +686,7 @@ def summarize_e4(
     )
     system = summarize_system(
         system_days,
-        gate_scales=gate_scales,
+        single_day_scales=single_day_scales,
         injection_days=injection_days,
         window_edges_days=window_edges_days,
     )

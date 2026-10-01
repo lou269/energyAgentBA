@@ -198,7 +198,7 @@ def build_precheck_days_table(summary: GatePrecheckSummary) -> pd.DataFrame:
             "z daily": days["daily_score"],
             "z weekday": days["weekday_score"],
             "z weekly": days["weekly_score"],
-            "z long_term": days["long_term_score"],
+            "long_term [%]": days["long_term_deviation_pct"],
             "Streak weekly": days["weekly_anomaly_streak_days"],
             "Streak long_term": days["long_term_anomaly_streak_days"],
             "Level": days["anomaly_level"],
@@ -357,7 +357,7 @@ def write_precheck_report(run_directory: Path) -> None:
         },
         notes=[
             "Urlaubstag = analysierter Tag seit Beginn der Abwesenheit, 0 = erster Urlaubstag",
-            "Gate Einzeltag: daily/weekday über unusual_threshold, Gate Drift: sustained_drift (Streak auf mindestens zwei Skalen)",
+            "Gate Einzeltag: daily/weekday über ihrer Schwelle, Gate Drift: sustained_drift (Streak auf mindestens zwei Niveau-Skalen)",
             "Reset = new_pattern mit advance_history_start, bei SYS1 nie",
         ],
         images=[],

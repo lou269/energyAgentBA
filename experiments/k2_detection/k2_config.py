@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass
 
 from src.config.config_forecasting import (
     CycleConfig,
@@ -11,10 +11,14 @@ RUN_PREFIX = "k2"
 # vom Runner geschrieben, vom Report gelesen
 RESULTS_FILE = "k2_results"
 CALIBRATION_FILES = {
-    "grid": "k2_calibration_grid",
-    "operating_points": "k2_calibration_operating_points",
-    "by_cutover": "k2_calibration_by_cutover",
-    "loco": "k2_calibration_loco",
+    "gate_threshold": "k2_gate_threshold",
+    "streak_sensitivity": "k2_streak_sensitivity",
+}
+# Spalten der Streak-Schwellen in den Kalibrierungstabellen
+STREAK_THRESHOLD_COLUMNS = {
+    "weekday": "weekday_streak_threshold",
+    "weekly": "weekly_streak_threshold",
+    "long_term": "long_term_streak_threshold_pct",
 }
 
 
@@ -34,102 +38,45 @@ class K2Config:
     isolated_kinds: tuple[str, ...] = ("control", "step")
     # erkannt heißt hier Alarm am Ereignistag, nicht new_pattern
     single_day_kinds: tuple[str, ...] = ("peak", "peak_6")
-    # eigener Reset nur, wenn die Kontrolle so viele Tage davor und danach keinen hat
+    # eigener Reset (ohne Reset: Beginn eines new_pattern) nur, wenn die Kontrolle so viele Tage davor und danach keinen hat
     control_reset_tolerance_days: int = 7
     # Beginn der Heizperiode: die Kontrolle liegt knapp unter der Streak-Bedingung, jede Störung löst dort new_pattern aus.
-    # Steht in der Erkennungstabelle, zählt aber nicht
-    uncounted_cutovers: tuple[str, ...] = ("2013-10-15",)
+    # Nur für Dauerlasten, Steht in der Erkennungstabelle, zählt aber nicht
+    uncounted_cutovers: tuple[str, ...] = ("2013-10-15", "2014-10-10")
 
-    # Variante -> (max_reference_window_growth_days, reference_window_rolling_days)
-    reference_windows: dict[str, tuple[int | None, int | None]] = field(
-        default_factory=lambda: {
-            "REF_STATIC": (60, None),
-            "REF_EXPANDING": (None, None),
-            "REF_ROLL60": (None, 60),
-            "REF_ROLL35": (None, 35),
-        }
-    )
-
-    # Stufe 3: Schwellen und Referenzfenster zusammen kalibrieren, rein offline auf den isolated-Läufen
-    slow_scales: tuple[str, ...] = ("weekly", "long_term")
-
-    # bis 4,0, weil Rolling 35 nur 5 Referenztage je Wochentag hat und weekday dort deutlich breiter streut
-    gate_thresholds: tuple[float, ...] = (
-        2.0,
-        2.1,
-        2.2,
-        2.3,
-        2.4,
-        2.5,
-        2.6,
-        2.7,
-        2.8,
-        2.9,
-        3.0,
-        3.2,
-        3.4,
-        3.6,
-        3.8,
-        4.0,
-    )
-    # darf unter 2 liegen, die eigentliche Hürde ist die Streak mit 6 von 7 Tagen
-    slow_scale_thresholds: tuple[float, ...] = (
-        1.0,
-        1.25,
-        1.5,
-        1.75,
-        2.0,
-        2.5,
-        3.0,
-        3.5,
-        4.0,
-        4.5,
-        5.0,
-    )
-
-    target_alarm_rate: float = 0.05
-    max_false_new_pattern: float = 1.0
+    # Anteil der Kontrolltage, an denen ein Einzeltag-Alarm gewollt ist
+    target_alarm_pct: float = 5.0
+    gate_threshold_decimals: int = 1
+    max_false_new_pattern: float = 0.5
+    # Raster der Streak-Schwellen
+    weekday_streak_thresholds: tuple[float, ...] = (1.25, 1.5, 1.75, 2.0, 2.5, 2.75)
+    weekly_streak_thresholds: tuple[float, ...] = (0.75, 1.0, 1.25, 1.5)
+    long_term_streak_thresholds_pct: tuple[float, ...] = (12.5, 15.0, 20.0, 25.0)
 
 
-REFERENCE_WINDOW_LABELS: dict[str, str] = {
-    "REF_STATIC": "Statisch",
-    "REF_EXPANDING": "Expanding",
-    "REF_ROLL60": "Rolling 60",
-    "REF_ROLL35": "Rolling 35",
-}
+DETECTOR_VARIANT = "DETECTOR"
+VARIANT_LABELS: dict[str, str] = {DETECTOR_VARIANT: "Detektor"}
 MODE_LABELS: dict[str, str] = {"isolated": "ohne Reset", "adaption": "mit Reset"}
 
 
 def _variant(
-    event_adaptation: bool, growth_days: int | None, rolling_days: int | None
+    event_adaptation: bool, numerical_analysis_config: NumericalAnalysisConfig
 ) -> CycleConfig:
     return CycleConfig(
         forecasting_config=ForecastingConfig(),
-        numerical_analysis_config=replace(
-            NumericalAnalysisConfig(),
-            max_reference_window_growth_days=growth_days,
-            reference_window_rolling_days=rolling_days,
-        ),
+        numerical_analysis_config=numerical_analysis_config,
         event_adaptation=event_adaptation,
         llm_mode="rule",
     )
 
 
-def build_mode_configs(
-    reference_windows: dict[str, tuple[int | None, int | None]],
-) -> dict[str, dict[str, CycleConfig]]:
-    # isolated: nur der Detektor, darauf wird kalibriert. adaption: Gates wie im echten Betrieb, mit Reset durch die Regel wie SYS2 (ohne LLM)
-    return {
-        "isolated": {
-            label: _variant(False, growth, rolling)
-            for label, (growth, rolling) in reference_windows.items()
-        },
-        "adaption": {
-            label: _variant(True, growth, rolling)
-            for label, (growth, rolling) in reference_windows.items()
-        },
-    }
+# nur der Detektor ohne Reset, darauf wird kalibriert (die Scores hängen nicht von den Schwellen ab)
+def build_isolated_configs() -> dict[str, CycleConfig]:
+    return {DETECTOR_VARIANT: _variant(False, NumericalAnalysisConfig())}
 
 
-def kinds_by_mode(k2_config: K2Config) -> dict[str, tuple[str, ...]]:
-    return {"isolated": k2_config.isolated_kinds, "adaption": k2_config.kinds}
+# wie im echten Betrieb, Reset durch die Regel wie SYS2 (ohne LLM), mit den kalibrierten Schwellen
+def build_adaption_configs(
+    numerical_analysis_config: NumericalAnalysisConfig,
+) -> dict[str, CycleConfig]:
+    return {DETECTOR_VARIANT: _variant(True, numerical_analysis_config)}

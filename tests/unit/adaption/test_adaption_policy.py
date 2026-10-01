@@ -7,7 +7,10 @@ import pandas as pd
 import pytest
 
 from src.adaption.adaption_policy import (
+    AdaptionAction,
     adaption_policy,
+    add_excluded_window,
+    apply_adaption,
     ended_windows,
     mask_excluded_windows,
 )
@@ -187,3 +190,33 @@ def test_a_running_absence_stays_in_training_until_its_end() -> None:
     assert ended_windows((vacation,), pd.Timestamp("2013-09-28", tz="UTC")) == (
         vacation,
     )
+
+
+def test_add_excluded_window_skips_duplicates() -> None:
+    vacation = (
+        pd.Timestamp("2013-09-14", tz="UTC"),
+        pd.Timestamp("2013-09-28", tz="UTC"),
+    )
+    action = AdaptionAction(kind="exclude_window", excluded_window=vacation)
+
+    windows, first = add_excluded_window((), action)
+    assert windows == (vacation,)
+    assert first.kind == "exclude_window"
+
+    windows, second = add_excluded_window(windows, action)
+    assert windows == (vacation,)
+    assert second.kind == "none"
+
+
+def test_apply_adaption_cuts_history() -> None:
+    index = pd.date_range("2013-09-13", periods=3 * 24, freq="1h", tz="UTC")
+    history = pd.Series(100.0, index=index)
+    start = pd.Timestamp("2013-09-14", tz="UTC")
+
+    cut = apply_adaption(
+        history,
+        AdaptionAction(kind="advance_history_start", new_history_start=start),
+    )
+
+    assert cut.index[0] == start
+    assert len(cut) == 2 * 24

@@ -1,0 +1,13 @@
+Variante,Ereignis,2013-10-15 (nicht gezählt),2014-02-12,2014-06-12,2014-10-10 (nicht gezählt),2015-02-07,Mittel erkannter,erkannt,Einzeltag mit eigenem Reset,Skala bei Erkennung
+mit Zurückhalten,Dauerlast +30 W,,22.0,,15.0,20.0,21.0,2/3,,weekly+long_term
+mit Zurückhalten,Dauerlast +50 W,,22.0,23.0,15.0,16.0,20.3,3/3,,weekly+long_term
+mit Zurückhalten,Dauerlast +100 W,5.0,21.0,21.0,15.0,15.0,19.0,3/3,,weekly+long_term
+mit Zurückhalten,Dauerlast +200 W,5.0,17.0,19.0,15.0,12.0,16.0,3/3,,weekly+long_term
+mit Zurückhalten,Einzeltag-Spitze +1000 W über 3 h,1.0,,,,,,0/3,0/5,
+mit Zurückhalten,Einzeltag-Spitze +1000 W über 6 h,1.0,,,1.0,,,0/3,0/5,
+ohne Zurückhalten,Dauerlast +30 W,,22.0,,21.0,22.0,22.0,2/3,,weekly+long_term
+ohne Zurückhalten,Dauerlast +50 W,,22.0,,11.0,16.0,19.0,2/3,,weekly+long_term
+ohne Zurückhalten,Dauerlast +100 W,15.0,21.0,24.0,9.0,15.0,20.0,3/3,,weekly+long_term
+ohne Zurückhalten,Dauerlast +200 W,5.0,17.0,21.0,6.0,11.0,16.3,3/3,,weekly+long_term
+ohne Zurückhalten,Einzeltag-Spitze +1000 W über 3 h,1.0,,,1.0,,,0/3,0/5,
+ohne Zurückhalten,Einzeltag-Spitze +1000 W über 6 h,1.0,1.0,,1.0,,1.0,1/3,0/5,daily

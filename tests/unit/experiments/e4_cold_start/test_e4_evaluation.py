@@ -4,12 +4,11 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from experiments.e4_cold_start.e4_evaluation import (
-    SCORE_COLUMNS,
-    SUSTAINED_COLUMNS,
-    find_settling_day,
-    summarize_e4,
+from experiments.common.evaluation import (
+    SCALE_VALUE_COLUMNS,
+    SCALE_SUSTAINED_COLUMNS,
 )
+from experiments.e4_cold_start.e4_evaluation import find_settling_day, summarize_e4
 from src.common.timestamps import local_calendar_range, local_midnight_utc
 
 TIMEZONE = "Europe/London"
@@ -68,10 +67,10 @@ def _system(
             "mape_pct": [12.0] * days,
         }
     )
-    for column in SCORE_COLUMNS:
+    for column in SCALE_VALUE_COLUMNS:
         frame[column] = 0.5
     frame["weekday_score"] = weekday_scores or [0.5] * days
-    for column in SUSTAINED_COLUMNS:
+    for column in SCALE_SUSTAINED_COLUMNS:
         frame[column] = False
 
     return frame
@@ -101,7 +100,7 @@ def test_settling_needs_agreement_on_every_later_point() -> None:
     assert settling[("b", "peak_6")] == 3
 
 
-def test_summary_counts_resets_missed_injections_and_skill() -> None:
+def test_summary_counts_resets_and_skill() -> None:
     forecast_metrics = pd.concat(
         [
             _forecast(7, "B2", [200.0, 200.0, 200.0, 200.0]),
@@ -140,7 +139,7 @@ def test_summary_counts_resets_missed_injections_and_skill() -> None:
         adaptive_model_id="C3_30",
         static_model_id="C1",
         reference_model_id="B2",
-        gate_scales=("daily", "weekday"),
+        single_day_scales=("daily", "weekday"),
         injection_days=(1,),
         window_edges_days=(2, 4),
         smoothing_days=2,
