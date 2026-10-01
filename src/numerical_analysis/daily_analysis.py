@@ -8,6 +8,7 @@ from src.config.config_forecasting import NumericalAnalysisConfig
 from src.numerical_analysis.anomaly_detection import (
     build_anomaly_detection,
     build_level_shift_streaks,
+    exceeding_since,
 )
 from src.numerical_analysis.multi_scale_analysis import build_multi_scale_analysis
 
@@ -110,6 +111,7 @@ def add_level_shift_streaks(
     score_history: pd.DataFrame,
     *,
     config: NumericalAnalysisConfig,
+    local_timezone: str,
 ) -> tuple[pd.Series, pd.DataFrame]:
     # die Streak zählt die Werte, die jede Skala an ihrem eigenen Entscheidungstag hatte, nicht neu gerechnete
     today = pd.DataFrame(
@@ -130,11 +132,30 @@ def add_level_shift_streaks(
         rolling_window_min_coverage=config.rolling_window_min_coverage,
     ).iloc[-1]
 
-    row = pd.concat([analysis_row, streaks])
-    # daily zählt nicht für new_pattern, der State-Builder erwartet die Felder aber, sie bleiben leer
+    # ein fehlender Tag zwischen zwei Treffern bleibt im Verlauf, wie bei sustained (6 von 7 Tagen)
+    max_gap_days = (
+        config.streak_tolerance_window_days - config.sustained_anomaly_streak_days
+    )
+    thresholds = level_shift_thresholds(config)
+    since = pd.Series(
+        {
+            f"{scale}_exceeding_since": exceeding_since(
+                score_history[scale],
+                threshold=thresholds[scale],
+                max_gap_days=max_gap_days,
+                local_timezone=local_timezone,
+            )
+            for scale in config.level_shift_scales
+        },
+        dtype=object,
+    )
+
+    row = pd.concat([analysis_row, streaks, since])
+    # daily zählt nicht für new_pattern und hat keinen Beginn, die Spalten bleiben leer
     for scale in DAILY_ANOMALY_SCALES:
         if scale not in config.level_shift_scales:
             row[f"{scale}_anomaly_streak_days"] = np.nan
             row[f"{scale}_sustained"] = False
+            row[f"{scale}_exceeding_since"] = None
 
     return row, score_history

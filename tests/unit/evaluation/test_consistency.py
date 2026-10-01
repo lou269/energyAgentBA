@@ -3,17 +3,18 @@
 from src.evaluation.consistency import missing_evidence_paths
 from tests.unit.llm._state_fixture import valid_structured_state
 
-BASE_PATHS = ["anomaly.sustained_drift", "anomaly.level"]
+BASE_PATHS = ["anomaly.level"]
 
 
-def test_evidence_must_match_the_classification() -> None:
+def test_evidence_per_class() -> None:
     state = valid_structured_state()
     state["anomaly"]["sustained_scales"] = ["weekday", "long_term"]
 
     assert missing_evidence_paths("peak", BASE_PATHS, state) == ("anomaly.direction",)
     assert missing_evidence_paths(
         "new_pattern",
-        BASE_PATHS + ["anomaly.scale_anomaly_streak_days.weekday"],
+        BASE_PATHS
+        + ["anomaly.sustained_drift", "anomaly.scale_anomaly_streak_days.weekday"],
         state,
     ) == ("anomaly.scale_anomaly_streak_days.long_term",)
     assert (
@@ -24,7 +25,7 @@ def test_evidence_must_match_the_classification() -> None:
     )
 
 
-def test_absence_must_cite_an_absence_event() -> None:
+def test_absence_needs_event() -> None:
     state = valid_structured_state()
 
     assert missing_evidence_paths("absence", BASE_PATHS, state) == (

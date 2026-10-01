@@ -201,7 +201,7 @@ class ForecastingConfig:
 @dataclass(frozen=True)
 class LLMConfig:
     model: str = "ministral-3:8b"  # in K3 gewählt
-    prompt_version: str = "v17"
+    prompt_version: str = "v19"
     temperature: float = 0.0
     # qwen3.5:9b liefert das selbst als Modelfile-Default, gegen Wiederholungsschleifen bei greedy decoding
     presence_penalty: float = 1.5
@@ -218,7 +218,7 @@ class LLMConfig:
 
 @dataclass(frozen=True)
 class TextCheckConfig:
-    # Wortstämme in Kleinbuchstaben, die in Erklärung und Empfehlung nicht vorkommen sollen
+    # Wortstämme in Kleinbuchstaben, die als Hinweis auf eine Gerätenennung zählen (erlaubt als Möglichkeit, nie als Ursache)
     device_words: tuple[str, ...] = (
         "waschmaschine",
         "trockner",

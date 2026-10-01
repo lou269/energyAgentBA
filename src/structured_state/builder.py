@@ -5,21 +5,27 @@ from typing import TypeVar, cast
 import numpy as np
 import pandas as pd
 
-from src.common.timestamps import local_isoformat, parse_utc_timestamp
+from src.common.timestamps import (
+    local_date_text,
+    local_isoformat,
+    parse_utc_timestamp,
+)
 from src.context.calendar_schema import CalendarContext
 from src.pipeline.schema_validation import is_real_number
 from src.structured_state.structured_state_schema import (
     ANOMALY_DIRECTIONS,
     ANOMALY_LEVELS,
+    DEVIATION_SCALE_NAMES,
     SCALE_NAMES,
+    SCORE_SCALE_NAMES,
     SCHEMA_VERSION,
     ContextState,
     ScaleAnomalyStreakDays,
     ScaleDeviationPct,
+    ScaleExceedingSince,
     ScaleName,
-    ScaleScores,
+    ScoreScaleName,
     StructuredState,
-    available_scale_names,
 )
 
 
@@ -32,11 +38,14 @@ ANALYSIS_FIELDS = frozenset(
         "daily_score",
         "weekday_score",
         "weekly_score",
-        "daily_anomaly_streak_days",
+        "daily_alarm",
+        "weekday_alarm",
         "weekday_anomaly_streak_days",
         "weekly_anomaly_streak_days",
         "long_term_anomaly_streak_days",
-        "daily_sustained",
+        "weekday_exceeding_since",
+        "weekly_exceeding_since",
+        "long_term_exceeding_since",
         "weekday_sustained",
         "weekly_sustained",
         "long_term_sustained",
@@ -91,21 +100,7 @@ def build_structured_state(
     if context_decision_time != decision_time:
         raise ValueError("Calendar context decision_time must match decision_time.")
 
-    scale_scores: ScaleScores = {
-        "daily": _nullable_float(analysis_row["daily_score"], "analysis.daily_score"),
-        "weekday": _nullable_float(
-            analysis_row["weekday_score"], "analysis.weekday_score"
-        ),
-        "weekly": _nullable_float(
-            analysis_row["weekly_score"], "analysis.weekly_score"
-        ),
-    }
-
     scale_streak_days: ScaleAnomalyStreakDays = {
-        "daily": _nullable_float(
-            analysis_row["daily_anomaly_streak_days"],
-            "analysis.daily_anomaly_streak_days",
-        ),
         "weekday": _nullable_float(
             analysis_row["weekday_anomaly_streak_days"],
             "analysis.weekday_anomaly_streak_days",
@@ -132,13 +127,38 @@ def build_structured_state(
         ),
     }
 
-    available_scales = available_scale_names(scale_scores, scale_deviation_pct)
+    # eine Skala hat einen Wert, wenn ihr Score da ist, bei long_term die Prozentabweichung
+    available_scales: list[ScaleName] = [
+        scale
+        for scale in SCALE_NAMES
+        if not _is_missing(
+            analysis_row[
+                "long_term_deviation_pct" if scale == "long_term" else f"{scale}_score"
+            ]
+        )
+    ]
 
     sustained_scales: list[ScaleName] = [
         scale
-        for scale in SCALE_NAMES
+        for scale in DEVIATION_SCALE_NAMES
         if _bool(analysis_row[f"{scale}_sustained"], f"analysis.{scale}_sustained")
     ]
+
+    # weekly ist keine Gate-Skala und hat keine Spalte
+    alarm_scales: list[ScoreScaleName] = [
+        scale
+        for scale in SCORE_SCALE_NAMES
+        if _bool(analysis_row.get(f"{scale}_alarm", False), f"analysis.{scale}_alarm")
+    ]
+
+    scale_exceeding_since: ScaleExceedingSince = {
+        scale: _local_date(
+            analysis_row[f"{scale}_exceeding_since"],
+            f"analysis.{scale}_exceeding_since",
+            local_timezone,
+        )
+        for scale in DEVIATION_SCALE_NAMES
+    }  # type: ignore[typeddict-item]
 
     state: StructuredState = {
         "schema_version": SCHEMA_VERSION,
@@ -159,8 +179,9 @@ def build_structured_state(
                 "anomaly.direction",
                 ANOMALY_DIRECTIONS,
             ),
-            "scale_scores": scale_scores,
+            "alarm_scales": alarm_scales,
             "scale_anomaly_streak_days": scale_streak_days,
+            "scale_exceeding_since": scale_exceeding_since,
             "scale_deviation_pct": scale_deviation_pct,
             "sustained_scales": sustained_scales,
             "sustained_drift": _bool(
@@ -187,6 +208,13 @@ def _nullable_float(value: object, field_name: str) -> float | None:
         raise ValueError(f"{field_name} must be finite.")
 
     return number
+
+
+def _local_date(value: object, field_name: str, local_timezone: str) -> str | None:
+    if _is_missing(value):
+        return None
+
+    return local_date_text(parse_utc_timestamp(value, field_name), local_timezone)
 
 
 def _nullable_text(

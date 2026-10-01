@@ -1,8 +1,10 @@
 import numpy as np
 import pandas as pd
 
-from experiments.k3_llm.k3_evaluation import summarize_sequence
+from experiments.k3_llm.k3_evaluation import check_answer_texts, summarize_sequence
 from src.common.timestamps import local_calendar_range, local_midnight_utc
+from src.config.config_forecasting import TextCheckConfig
+from tests.unit.llm._state_fixture import valid_structured_state
 
 TIMEZONE = "Europe/London"
 
@@ -79,3 +81,71 @@ def test_sequence_counts_the_expected_class_only_on_days_the_event_opened_the_ga
     assert models.loc["MDL0", "event_kinds"] == 3
     assert models.loc["MDL0", "control_notification_days"] == 1
     assert models.loc["MDL0", "failed_days"] == 1
+
+
+def test_text_check_counts() -> None:
+    state = valid_structured_state()
+    config = TextCheckConfig()
+    text = {"explanation": "Etwa 311 % mehr.", "uncertainty": "Ursache offen."}
+    answers = pd.DataFrame(
+        [
+            {
+                "model_id": "MDL0",
+                "case_id": "peak",
+                "classification": "peak",
+                "user_recommendation": "Prüfe, ob etwas lief.",
+                "state": state,
+            },
+            {
+                "model_id": "MDL1",
+                "case_id": "peak",
+                "classification": "peak",
+                "user_recommendation": "Schalte die Waschmaschine aus.",
+                "state": state,
+            },
+        ]
+    ).assign(**text)
+    results = pd.DataFrame(
+        {
+            "model_id": ["MDL0", "MDL1"],
+            "case_id": ["peak", "peak"],
+            "evidence_paths": [
+                "anomaly.level;anomaly.direction",
+                "anomaly.level",
+            ],
+        }
+    )
+    no_outputs = pd.DataFrame(
+        columns=[
+            "scenario",
+            "config",
+            "decision_time",
+            "analyzed_day",
+            "classification",
+            "explanation",
+            "user_recommendation",
+            "uncertainty",
+            "evidence_paths",
+        ]
+    )
+    no_states = pd.DataFrame(columns=["scenario", "config", "decision_time", "state"])
+
+    checks = check_answer_texts(
+        answers,
+        results,
+        no_outputs,
+        no_states,
+        model_order=["MDL0", "MDL1"],
+        device_words=config.device_words,
+        control_words=config.control_words,
+        number_tolerance=config.number_tolerance,
+        prompt_numbers=(7.0, 30.0),
+    ).models.set_index("model_id")
+
+    assert checks.loc["MDL0", "single_violations"] == 0
+    assert checks.loc["MDL0", "single_missing_evidence"] == 0
+    assert checks.loc["MDL1", "single_violations"] == 1
+    assert checks.loc["MDL1", "single_missing_evidence"] == 1
+    assert checks.loc["MDL1", "single_device_mentions"] == 1
+    assert checks.loc["MDL0", "single_device_mentions"] == 0
+    assert checks["sequence_answers"].sum() == 0

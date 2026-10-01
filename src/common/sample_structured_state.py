@@ -13,18 +13,21 @@ _BASE_STATE_JSON = """
       "weekday",
       "long_term"
     ],
+    "alarm_scales": [
+      "daily",
+      "weekday"
+    ],
     "direction": "high",
     "level": "unusual",
-    "scale_scores": {
-      "daily": 3.7674342117758495,
-      "weekday": 3.734920041231248,
-      "weekly": null
-    },
     "scale_anomaly_streak_days": {
-      "daily": null,
       "weekday": 1.0,
       "weekly": null,
       "long_term": 1.0
+    },
+    "scale_exceeding_since": {
+      "weekday": "2015-12-15",
+      "weekly": null,
+      "long_term": "2015-12-15"
     },
     "scale_deviation_pct": {
       "weekday": 311.41426541878765,
@@ -44,19 +47,19 @@ _BASE_STATE_JSON = """
         "start": "2015-12-15T00:00:00+00:00"
       }
     ],
-    "retrieved_at": "2015-12-15T11:00:00+00:00",
+    "retrieved_at": "2015-12-16T00:00:00+00:00",
     "source": "simulated_calendar",
     "source_available": true,
-    "window_end": "2015-12-16T11:00:00+00:00",
-    "window_start": "2015-12-14T11:00:00+00:00"
+    "window_end": "2015-12-17T00:00:00+00:00",
+    "window_start": "2015-12-15T00:00:00+00:00"
   },
-  "decision_time": "2015-12-15T11:00:00+00:00",
+  "decision_time": "2015-12-16T00:00:00+00:00",
   "observation": {
-    "observation_end": "2015-12-15T11:00:00+00:00",
-    "observation_start": "2015-12-15T10:00:00+00:00",
+    "observation_end": "2015-12-16T00:00:00+00:00",
+    "observation_start": "2015-12-15T00:00:00+00:00",
     "value_implausible": false
   },
-  "schema_version": "2.0"
+  "schema_version": "2.1"
 }
 """
 

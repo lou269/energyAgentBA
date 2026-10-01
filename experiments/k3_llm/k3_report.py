@@ -1,6 +1,8 @@
 # conda activate forecasting-env
 # python -m experiments.k3_llm.k3_report [run_directory] [sequence_run_directory]
 
+from pathlib import Path
+
 import pandas as pd
 
 from docs.plots.plot_k3_llm_model import build_k3_plot
@@ -20,11 +22,18 @@ from experiments.k3_llm.k3_config import (
     SEQUENCE_RESULTS_FILE,
     SEQUENCE_RUN_PREFIX,
 )
-from experiments.k3_llm.k3_evaluation import summarize_k3
-from src.config.config_forecasting import SYS_VARIANTS
+from experiments.common.harness import read_llm_outputs, read_structured_states
+from experiments.k3_llm.k3_evaluation import (
+    TEXT_COLUMNS,
+    check_answer_texts,
+    collect_answer_texts,
+    summarize_k3,
+)
+from src.config.config_forecasting import SYS_VARIANTS, TextCheckConfig
 from src.pipeline.io import (
     RAW_SUBDIR,
     df_to_csv,
+    read_jsonl,
     read_raw_json,
     run_directory_from_argv,
     user_output_directory,
@@ -69,6 +78,26 @@ DEVIATION_HEADERS = {
     "classification": "Modell sagt",
     "kinds": "in Arten",
 }
+TEXT_CHECK_HEADERS = {
+    "model_id": "Modell",
+    "single_answers": "E1 Antworten",
+    "single_violations": "E1 mit Verstoß",
+    "single_missing_evidence": "E1 Belege fehlen",
+    "single_device_mentions": "E1 Gerät genannt",
+    "sequence_answers": "E2 Antworten",
+    "sequence_violations": "E2 mit Verstoß",
+    "sequence_missing_evidence": "E2 Belege fehlen",
+    "sequence_device_mentions": "E2 Gerät genannt",
+}
+FINDING_HEADERS = {
+    "level": "Ebene",
+    "model_id": "Modell",
+    "item": "Fall oder Tag",
+    "violations": "Verstoß",
+    "missing_evidence": "fehlende Belege",
+    "device_mentions": "Gerät genannt (Hinweis)",
+}
+LEVEL_LABELS = {"single": "Ebene 1", "sequence": "Ebene 2"}
 CASE_HEADERS = {"case_id": "Fall", "expected_classification": "erwartet"}
 CLASS_HEADERS = {
     "model_id": "Modell",
@@ -114,12 +143,74 @@ def build_setup(
     }
 
 
+def read_single_answers(run_directory: Path) -> pd.DataFrame:
+    # je Modell eine jsonl mit einer Zeile je Fall, ungültige Antworten haben keinen output
+    rows = []
+    for answer_file in sorted((run_directory / RAW_SUBDIR).glob("*.jsonl")):
+        for record in read_jsonl(answer_file):
+            output = record["output"] or {}
+            rows.append(
+                {"model_id": answer_file.stem, "case_id": record["case_id"]}
+                | {column: output.get(column) for column in TEXT_COLUMNS}
+                | {"error": record["error"], "state": record.get("state")}
+            )
+
+    return pd.DataFrame(rows)
+
+
+def _text_lines(row: pd.Series) -> list[str]:
+    return [
+        f"  - Erklärung: {row['explanation']}",
+        f"  - Empfehlung: {row['user_recommendation']}",
+        f"  - Unsicherheit: {row['uncertainty']}",
+    ]
+
+
+def single_answer_lines(
+    single: pd.DataFrame, model_labels: dict[str, str]
+) -> list[str]:
+    lines: list[str] = []
+    for case_id, answers in single.groupby("case_id", observed=True):
+        lines += [
+            f"**{case_id}** (erwartet: {answers['expected_classification'].iloc[0]})",
+            "",
+        ]
+        for _, row in answers.iterrows():
+            if pd.isna(row["classification"]):
+                lines.append(
+                    f"- {model_labels[row['model_id']]}: ungültig ({row['error']})"
+                )
+                continue
+            mark = f" {CORRECT_ANSWER_LABEL}" if row["correct"] else ""
+            lines.append(
+                f"- {model_labels[row['model_id']]}: {row['classification']}{mark}"
+            )
+            lines += _text_lines(row)
+        lines.append("")
+
+    return lines
+
+
+def sequence_answer_lines(sequence: pd.DataFrame) -> list[str]:
+    lines: list[str] = []
+    for _, row in sequence.iterrows():
+        lines += [
+            f"- {row['analyzed_day']}: {row['classification']} (Arten: {row['kinds']})"
+        ]
+        lines += _text_lines(row)
+
+    return lines
+
+
 def _count_of(counts: pd.Series, totals: pd.Series) -> pd.Series:
     return counts.astype(str) + "/" + totals.astype(str)
 
 
 def build_key_figures(
-    models: pd.DataFrame, rule_deviations: pd.DataFrame, production_model: str
+    models: pd.DataFrame,
+    rule_deviations: pd.DataFrame,
+    production_model: str,
+    checks: pd.DataFrame,
 ) -> pd.DataFrame:
     production = models.loc[models["model"].eq(production_model)].iloc[0]
     rule = models.loc[models["model_id"].eq(BASELINE_ID)].iloc[0]
@@ -128,6 +219,7 @@ def build_key_figures(
         rule_deviations["model_id"].eq(production["model_id"])
     ]
     name = production["model"]
+    checked = checks.loc[checks["model_id"].eq(production["model_id"])].iloc[0]
 
     return key_figures_table(
         [
@@ -170,6 +262,18 @@ def build_key_figures(
                 production["invalid"],
                 f"Ausfalltage Ebene 2: {production['failed_days']}",
             ),
+            (
+                f"{name}: Antworten mit Textverstoß (Ebene 1 / Ebene 2)",
+                f"{checked['single_violations']}/{checked['single_answers']} / "
+                f"{checked['sequence_violations']}/{checked['sequence_answers']}",
+                "Gerät, Steuerung oder Zahl, Datum, Uhrzeit nicht im State",
+            ),
+            (
+                f"{name}: Antworten mit fehlenden Belegen (Ebene 1 / Ebene 2)",
+                f"{checked['single_missing_evidence']}/{checked['single_answers']} / "
+                f"{checked['sequence_missing_evidence']}/{checked['sequence_answers']}",
+                "zitierte Belege passen nicht zur eigenen Klasse",
+            ),
         ]
     )
 
@@ -185,8 +289,9 @@ def main() -> None:
         k3_output_dir, SEQUENCE_RUN_PREFIX, 2
     )
 
+    results = pd.read_csv(run_directory / RAW_SUBDIR / f"{RESULTS_FILE}.csv")
     summary = summarize_k3(
-        pd.read_csv(run_directory / RAW_SUBDIR / f"{RESULTS_FILE}.csv"),
+        results,
         pd.read_csv(
             sequence_run_directory / RAW_SUBDIR / f"{SEQUENCE_RESULTS_FILE}.csv",
             dtype={"cutover_date": str},
@@ -203,11 +308,44 @@ def main() -> None:
         model=models["model_id"].map(model_labels),
     )
     run_names = f"{run_directory.name} / {sequence_run_directory.name}"
+    production_id = models.loc[models["model"].eq(production_model), "model_id"].iloc[0]
+    single_answers = read_single_answers(run_directory)
+    sequence_raw_directory = sequence_run_directory / RAW_SUBDIR
+    sequence_outputs = read_llm_outputs(sequence_raw_directory)
+    answers = collect_answer_texts(
+        single_answers,
+        results,
+        sequence_outputs,
+        model_order=models["model_id"].tolist(),
+        sequence_model_id=production_id,
+    )
+    text_check_config = TextCheckConfig()
+    # die Fensterlängen aus der Skalenbeschreibung im Prompt stehen nicht im State, kommen aber im Text vor
+    analysis_config = SYS_VARIANTS["SYS3"].numerical_analysis_config
+    window_numbers = (
+        float(analysis_config.weekly_window_days),
+        float(analysis_config.long_term_window_days),
+    )
+    checks = check_answer_texts(
+        single_answers,
+        results,
+        sequence_outputs,
+        read_structured_states(sequence_raw_directory),
+        model_order=[
+            model_id for model_id in models["model_id"] if model_id != BASELINE_ID
+        ],
+        device_words=text_check_config.device_words,
+        control_words=text_check_config.control_words,
+        number_tolerance=text_check_config.number_tolerance,
+        prompt_numbers=window_numbers,
+    )
 
     tables = {
         "key_figures": (
             "Kennzahlen",
-            build_key_figures(counted, summary.rule_deviations, production_model),
+            build_key_figures(
+                counted, summary.rule_deviations, production_model, checks.models
+            ),
         ),
         "result_single_case": (
             "Ebene 1: Modellvergleich auf den Einzelfällen",
@@ -216,6 +354,22 @@ def main() -> None:
         "result_cases": (
             f"Ebene 1: Antwort je Fall ({CORRECT_ANSWER_LABEL} = richtig, sonst die Antwort, - = ungültig)",
             summary.case_answers.rename(columns=CASE_HEADERS | model_labels),
+        ),
+        "result_text_checks": (
+            "Automatische Textprüfung je Modell (Antworten mit Verstoß oder fehlenden Belegen)",
+            relabel(
+                checks.models[list(TEXT_CHECK_HEADERS)],
+                TEXT_CHECK_HEADERS,
+                {"model_id": model_labels},
+            ),
+        ),
+        "result_text_findings": (
+            "Auffälligkeiten der Textprüfung",
+            relabel(
+                checks.findings,
+                FINDING_HEADERS,
+                {"level": LEVEL_LABELS, "model_id": model_labels},
+            ),
         ),
         "result_sequence": (
             "Ebene 2: je Modell über alle Ereignis-Arten",
@@ -257,6 +411,10 @@ def main() -> None:
         "Ebene 2, anders als die Regel: gleiche Art und gleicher analysierter Tag, Regel gegen Modell. Nach einem Reset an verschiedenen Tagen "
         "laufen die Reihen auseinander, spätere Abweichungen können daraus folgen",
         "Antwortzeit: gemessen auf dem Rechner des Laufs, nur zum Vergleich der Modelle untereinander",
+        "Textprüfung: Verstoß heißt, ein Steuerungswort oder eine Zahl, ein Datum oder eine Uhrzeit steht im Text, aber nicht im State des Falls. Ein genanntes Gerät ist nur ein Hinweis, als Möglichkeit ist es erlaubt, ob es als Ursache behauptet wird, beurteilen die Bewertenden. "
+        "Zahlwörter („sechs Wochen“) und nicht gelistete Geräte findet sie nicht. Die Fensterlängen 7 und 30 aus der Skalenbeschreibung im Prompt gelten als erlaubt",
+        "Fehlende Belege: der Prompt verlangt je Klasse bestimmte Pfade (new_pattern: sustained_drift, level, Streaks, peak/low: level, direction, absence: level, Kalendereintrag, measurement_error: Flag). Geprüft wird gegen die eigene Klasse des Modells, nicht gegen die erwartete. Ebene 1 wird nur für Läufe geprüft, die den State der Fälle in der Antwortdatei speichern, ältere Läufe haben in der Tabelle 0 Antworten",
+        "Antworttexte im Anhang: Ebene 1 für alle Modelle, Ebene 2 nur für das Produktivmodell. Alle Texte auch als answers_single.csv und answers_sequence.csv",
     ]
 
     output_directory = user_output_directory(run_directory)
@@ -264,6 +422,8 @@ def main() -> None:
     df_to_csv(models, output_directory, "model_comparison")
     df_to_csv(summary.cases, output_directory, "case_breakdown")
     df_to_csv(summary.classes, output_directory, "class_breakdown")
+    df_to_csv(answers.single, output_directory, "answers_single")
+    df_to_csv(answers.sequence, output_directory, "answers_sequence")
     sequence_output_directory = user_output_directory(sequence_run_directory)
     df_to_csv(summary.events, sequence_output_directory, "sequence_events")
     df_to_csv(summary.sequence_models, sequence_output_directory, "sequence_models")
@@ -279,12 +439,28 @@ def main() -> None:
             len(summary.case_answers),
             production_model,
             run_names,
-        ),
+        )
+        | {
+            "Textprüfung": f"{len(text_check_config.device_words)} Gerätewörter, "
+            f"{len(text_check_config.control_words)} Steuerungswörter, "
+            f"Zahlentoleranz {format_number(text_check_config.number_tolerance, 1)}, "
+            f"Fensterzahlen aus dem Prompt {', '.join(format_number(n, 0) for n in window_numbers)}"
+        },
         tables=tables,
         notes=notes,
         images=["k3_quality_vs_time.png"],
         decimals=DECIMALS,
         appendix=appendix,
+        appendix_text=[
+            (
+                "Ebene 1: Antworten der Modelle je Fall",
+                single_answer_lines(answers.single, model_labels),
+            ),
+            (
+                f"Ebene 2: Antworten von {production_model}, ein Tag mit allen Arten, in denen derselbe Text kam",
+                sequence_answer_lines(answers.sequence),
+            ),
+        ],
     )
 
     print(f"Result written to {output_directory / 'ergebnis.md'}")

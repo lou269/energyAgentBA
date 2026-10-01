@@ -7,25 +7,28 @@ import pandas as pd
 from experiments.common.standard_config import LOCAL_TIMEZONE
 from experiments.k3_llm.k3_config import BASELINE_ID, LLMModelVariant
 from src.common.sample_structured_state import valid_structured_state
+from src.common.timestamps import local_date_text, local_midnight_utc
 from src.config.config_forecasting import LLMConfig, NumericalAnalysisConfig
 from src.llm.client import LLMClient, OllamaClient
 from src.llm.gate import gate_classification
 from src.llm.inference import LLMAttemptRecord, LLMInferenceError, infer_llm_output
 from src.llm.llm_schema import Classification
 from src.llm.rule_based_classifier import rule_based_classify
+from src.numerical_analysis.daily_analysis import level_shift_thresholds
 from src.pipeline.io import append_csv, append_jsonl
 from src.structured_state.structured_state_schema import (
     DEVIATION_SCALE_NAMES,
     SCALE_NAMES,
-    SCORE_SCALE_NAMES,
     StructuredState,
-    available_scale_names,
 )
 
 logger = logging.getLogger(__name__)
 
 # die Fälle sollen so aussehen, wie build_anomaly_detection sie mit der Pipeline-Konfiguration baut
 ANALYSIS_CONFIG = NumericalAnalysisConfig()
+
+# der analysierte Tag aller Fälle, wie in valid_structured_state
+ANALYZED_DAY = "2015-12-15"
 
 # Urlaub seit einer Woche, deckt den eingeordneten Tag (15.12.) aus valid_structured_state ab
 _ABSENCE_EVENT = {
@@ -46,6 +49,20 @@ class LLMEvaluationCase:
     reaches_llm: bool
 
 
+def _exceeding_since(
+    streak: float | None, value: float | None, threshold: float
+) -> str | None:
+    # Beginn des Verlaufs: nur wenn die Skala heute über ihrer Streak-Schwelle liegt, sonst leer
+    if streak is None or streak < 1 or value is None or abs(value) < threshold:
+        return None
+
+    start = local_midnight_utc(
+        ANALYZED_DAY, LOCAL_TIMEZONE, days_offset=1 - int(streak)
+    )
+
+    return local_date_text(start, LOCAL_TIMEZONE)
+
+
 def _anomaly_block(
     *,
     scores: dict[str, float],
@@ -53,36 +70,59 @@ def _anomaly_block(
     streak_days: dict[str, float],
     deviation_pct: dict[str, float],
 ) -> dict[str, object]:
-    # level wie in build_anomaly_detection: eine Gate-Skala über der Schwelle genügt
-    unusual = any(
-        abs(scores[scale]) >= ANALYSIS_CONFIG.unusual_threshold
+    # alarm_scales wie in build_anomaly_detection: jede Gate-Skala gegen ihre Schwelle, eine genügt für level
+    alarm_scales = [
+        scale
         for scale in ANALYSIS_CONFIG.single_day_scales
-        if scale in scores
-    )
-    score_block = {scale: scores.get(scale) for scale in SCORE_SCALE_NAMES}
+        if scale in scores and abs(scores[scale]) >= ANALYSIS_CONFIG.unusual_threshold
+    ]
     deviation_block = {
         scale: deviation_pct.get(scale) for scale in DEVIATION_SCALE_NAMES
     }
-    available = available_scale_names(score_block, deviation_block)
-
-    # Streaks gibt es nur für die Niveau-Skalen, daily bleibt leer
-    streak_block = {
-        scale: streak_days.get(scale)
-        if scale in ANALYSIS_CONFIG.level_shift_scales and scale in available
-        else None
+    # verfügbar heißt: Score da, bei long_term die Prozentabweichung
+    available = [
+        scale
         for scale in SCALE_NAMES
+        if (
+            deviation_pct.get("long_term") is not None
+            if scale == "long_term"
+            else scale in scores
+        )
+    ]
+    level_values = {
+        "weekday": scores.get("weekday"),
+        "weekly": scores.get("weekly"),
+        "long_term": deviation_pct.get("long_term"),
+    }
+    thresholds = level_shift_thresholds(ANALYSIS_CONFIG)
+
+    # Streak und Beginn gibt es nur für die Niveau-Skalen
+    streak_block = {
+        scale: (
+            streak_days.get(scale)
+            if scale in ANALYSIS_CONFIG.level_shift_scales and scale in available
+            else None
+        )
+        for scale in DEVIATION_SCALE_NAMES
+    }
+    since_block = {
+        scale: _exceeding_since(
+            streak_block[scale], level_values[scale], thresholds[scale]
+        )
+        for scale in DEVIATION_SCALE_NAMES
     }
     sustained_scales = [
         scale
-        for scale in SCALE_NAMES
+        for scale in DEVIATION_SCALE_NAMES
         if (streak_block[scale] or 0.0) >= ANALYSIS_CONFIG.sustained_anomaly_streak_days
     ]
 
     return {
-        "level": "unusual" if unusual else "normal",
+        "level": "unusual" if alarm_scales else "normal",
         "direction": direction,
-        "scale_scores": score_block,
+        "alarm_scales": alarm_scales,
         "scale_anomaly_streak_days": streak_block,
+        "scale_exceeding_since": since_block,
         "scale_deviation_pct": deviation_block,
         "sustained_scales": sustained_scales,
         "sustained_drift": len(sustained_scales)
@@ -95,8 +135,9 @@ def _empty_anomaly_block() -> dict[str, object]:
     return {
         "level": None,
         "direction": None,
-        "scale_scores": {scale: None for scale in SCORE_SCALE_NAMES},
-        "scale_anomaly_streak_days": {scale: None for scale in SCALE_NAMES},
+        "alarm_scales": [],
+        "scale_anomaly_streak_days": {scale: None for scale in DEVIATION_SCALE_NAMES},
+        "scale_exceeding_since": {scale: None for scale in DEVIATION_SCALE_NAMES},
         "scale_deviation_pct": {scale: None for scale in DEVIATION_SCALE_NAMES},
         "sustained_scales": [],
         "sustained_drift": False,
@@ -109,11 +150,11 @@ def _context_block(
 ) -> dict[str, object]:
     return {
         "events": [_ABSENCE_EVENT] if with_event else [],
-        "retrieved_at": "2015-12-15T11:00:00+00:00",
+        "retrieved_at": "2015-12-16T00:00:00+00:00",
         "source": "simulated_calendar",
         "source_available": source_available,
-        "window_end": "2015-12-16T11:00:00+00:00",
-        "window_start": "2015-12-14T11:00:00+00:00",
+        "window_end": "2015-12-17T00:00:00+00:00",
+        "window_start": "2015-12-15T00:00:00+00:00",
     }
 
 
@@ -281,10 +322,8 @@ def llm_relevant_cases() -> tuple[LLMEvaluationCase, ...]:
     return tuple(case for case in cases if case.reaches_llm)
 
 
-# was der Prompt (seit v14) je Klasse zu zitieren verlangt
-_SINGLE_DAY_PATHS = frozenset(
-    {"anomaly.sustained_drift", "anomaly.level", "anomaly.direction"}
-)
+# was der Prompt je Klasse zu zitieren verlangt
+_SINGLE_DAY_PATHS = frozenset({"anomaly.level", "anomaly.direction"})
 _DRIFT_PATHS = frozenset(
     {
         "anomaly.sustained_drift",
@@ -295,7 +334,7 @@ _DRIFT_PATHS = frozenset(
 )
 
 EXPECTED_EVIDENCE_PATHS: dict[str, frozenset[str]] = {
-    "normal": frozenset({"anomaly.sustained_drift", "anomaly.level"}),
+    "normal": frozenset({"anomaly.level"}),
     "peak": _SINGLE_DAY_PATHS,
     "new_pattern": _DRIFT_PATHS,
     "low_single_scale": _SINGLE_DAY_PATHS,
@@ -312,7 +351,6 @@ EXPECTED_EVIDENCE_PATHS: dict[str, frozenset[str]] = {
     ),
     "absence_drift_down": frozenset(
         {
-            "anomaly.sustained_drift",
             "anomaly.level",
             "context.events.0.event_type",
         }
@@ -535,6 +573,7 @@ def _save_raw_attempt(
             "attempts": [asdict(attempt) for attempt in attempts],
             "output": output,
             "error": error,
+            "state": case.state,
         },
         raw_dir / f"{variant.model_id}.jsonl",
     )

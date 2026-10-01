@@ -4,6 +4,8 @@ from collections.abc import Mapping, Sequence
 import numpy as np
 import pandas as pd
 
+from src.common.timestamps import local_days_between
+
 
 def anomaly_streak_days(
     score: pd.Series,
@@ -39,6 +41,31 @@ def anomaly_streak_days(
 
     # zu wenige gültige Tage im Fenster bleiben NaN (unbekannt), nicht 0 auffällige Tage
     return streak_raw.where(enough_days & score.notna(), np.nan)
+
+
+def exceeding_since(
+    score: pd.Series, *, threshold: float, max_gap_days: int, local_timezone: str
+) -> pd.Timestamp | None:
+    # Beginn des laufenden Verlaufs: Treffer in dieselbe Richtung, zwischen zwei Treffern fehlen höchstens max_gap_days Tage
+    # Der Verlauf läuft bis zum letzten Eintrag (analysierter Tag), liegt der letzte Treffer weiter zurück, gibt es keinen
+    hits = score.index[score.abs() >= threshold]
+    if len(hits) == 0:
+        return None
+
+    newest = hits[-1]
+    if local_days_between(score.index[-1], newest, local_timezone) > max_gap_days:
+        return None
+
+    direction = np.sign(score.loc[newest])
+    start = newest
+    for hit in reversed(hits[:-1]):
+        if np.sign(score.loc[hit]) != direction:
+            break
+        if local_days_between(start, hit, local_timezone) - 1 > max_gap_days:
+            break
+        start = hit
+
+    return start
 
 
 def build_level_shift_streaks(
@@ -156,14 +183,13 @@ def build_anomaly_detection(
     result.loc[direction_values > 0, "anomaly_direction"] = "high"
     result.loc[direction_values < 0, "anomaly_direction"] = "low"
 
-    # jede Gate-Skala gegen ihre eigene Schwelle
-    unusual = pd.concat(
-        [
+    # jede Gate-Skala gegen ihre eigene Schwelle, die einzelnen Treffer bleiben für den State erhalten
+    for scale in single_day_scales:
+        result[f"{scale}_alarm"] = (
             result[f"{scale}_score"].abs() >= unusual_thresholds[scale]
-            for scale in single_day_scales
-        ],
-        axis=1,
-    ).any(axis=1)
+        )
+
+    unusual = result[[f"{scale}_alarm" for scale in single_day_scales]].any(axis=1)
 
     result["anomaly_level"] = "normal"
     result.loc[unusual, "anomaly_level"] = "unusual"

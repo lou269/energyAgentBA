@@ -79,6 +79,7 @@ def write_result_report(
     images: list[str],
     decimals: int,
     appendix: dict[str, tuple[str, pd.DataFrame]] | None = None,
+    appendix_text: list[tuple[str, list[str]]] | None = None,
 ) -> None:
     # ergebnis.md plus je Tabelle eine gerundete CSV, tables/appendix bilden Dateiname auf (Überschrift, Tabelle) ab
     lines = [f"# {title}", "", "## Setup", ""]
@@ -95,11 +96,13 @@ def write_result_report(
     for image in images:
         lines += ["", f"![{image}]({image})"]
 
-    if appendix:
+    if appendix or appendix_text:
         lines += ["", "## Anhang"]
-        for filename, (heading, table) in appendix.items():
+        for filename, (heading, table) in (appendix or {}).items():
             df_to_csv(_rounded(table, decimals), output_directory, filename)
             lines += ["", f"### {heading}", "", markdown_table(table, decimals)]
+        for heading, text_lines in appendix_text or []:
+            lines += ["", f"### {heading}", ""] + text_lines
 
     write_text_atomic("\n".join(lines) + "\n", output_directory / "ergebnis.md")
 

@@ -30,11 +30,14 @@ def _analysis_row() -> pd.Series:
             "daily_score": 2.0,
             "weekday_score": 1.8,
             "weekly_score": None,
-            "daily_anomaly_streak_days": 2.0,
+            "daily_alarm": True,
+            "weekday_alarm": False,
             "weekday_anomaly_streak_days": 2.0,
             "weekly_anomaly_streak_days": None,
             "long_term_anomaly_streak_days": 0.0,
-            "daily_sustained": False,
+            "weekday_exceeding_since": pd.Timestamp("2013-08-30T00:00:00+00:00"),
+            "weekly_exceeding_since": None,
+            "long_term_exceeding_since": None,
             "weekday_sustained": False,
             "weekly_sustained": False,
             "long_term_sustained": False,
@@ -111,7 +114,7 @@ def test_missing_scale_scores() -> None:
         "weekday_score",
         "weekly_score",
         "long_term_deviation_pct",
-        "daily_anomaly_streak_days",
+        "weekday_exceeding_since",
         "weekday_anomaly_streak_days",
         "weekly_anomaly_streak_days",
         "long_term_anomaly_streak_days",
@@ -214,3 +217,14 @@ def test_identical_inputs_produce_identical_states() -> None:
     second_state = _build_state()
 
     assert first_state == second_state
+
+
+def test_alarm_and_since_in_state() -> None:
+    anomaly = _build_state()["anomaly"]
+
+    assert anomaly["alarm_scales"] == ["daily"]
+    assert anomaly["scale_exceeding_since"] == {
+        "weekday": "2013-08-30",
+        "weekly": None,
+        "long_term": None,
+    }

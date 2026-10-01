@@ -70,6 +70,12 @@ def df_to_csv(df: pd.DataFrame, output_path: Path, filename: str) -> None:
     df.to_csv(output_file, index=False)
 
 
+def read_jsonl(input_file: Path) -> list[dict[str, Any]]:
+    return [
+        json.loads(line) for line in input_file.read_text(encoding="utf-8").splitlines()
+    ]
+
+
 def append_csv(df: pd.DataFrame, output_file: Path) -> None:
     output_file.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(output_file, mode="a", header=not output_file.exists(), index=False)

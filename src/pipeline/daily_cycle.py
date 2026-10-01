@@ -125,7 +125,10 @@ def run_cycle(
 
     if analysis_row is not None:
         analysis_row, score_history = add_level_shift_streaks(
-            analysis_row, score_history, config=analysis_config
+            analysis_row,
+            score_history,
+            config=analysis_config,
+            local_timezone=local_timezone,
         )
 
     structured_state: StructuredState | None = None

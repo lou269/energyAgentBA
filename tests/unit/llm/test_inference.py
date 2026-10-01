@@ -263,10 +263,10 @@ def _calendar():
         [VACATION],
         source_available=True,
         source="calendar_tool",
-        retrieved_at="2015-12-15T11:00:00+00:00",
-        decision_time="2015-12-15T11:00:00+00:00",
-        window_start="2015-12-14T11:00:00+00:00",
-        window_end="2015-12-16T11:00:00+00:00",
+        retrieved_at="2015-12-16T00:00:00+00:00",
+        decision_time="2015-12-16T00:00:00+00:00",
+        window_start="2015-12-15T00:00:00+00:00",
+        window_end="2015-12-17T00:00:00+00:00",
         local_timezone="UTC",
     )
 

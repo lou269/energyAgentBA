@@ -64,13 +64,21 @@ def snap_to_local_midnight_range(
     return snapped_start.tz_convert("UTC"), snapped_end.tz_convert("UTC")
 
 
-def shift_local_days(timestamp: pd.Timestamp, days: int, local_timezone: str) -> pd.Timestamp:
+def shift_local_days(
+    timestamp: pd.Timestamp, days: int, local_timezone: str
+) -> pd.Timestamp:
     # Versatz in Kalendertagen, über eine Zeitumstellung hat ein Tag also 23 oder 25 Stunden
-    return (timestamp.tz_convert(local_timezone) + pd.DateOffset(days=days)).tz_convert("UTC")
+    return (timestamp.tz_convert(local_timezone) + pd.DateOffset(days=days)).tz_convert(
+        "UTC"
+    )
 
 
-def local_midnight_utc(date: str, local_timezone: str, days_offset: int = 0) -> pd.Timestamp:
-    return shift_local_days(pd.Timestamp(date, tz=local_timezone), days_offset, local_timezone)
+def local_midnight_utc(
+    date: str, local_timezone: str, days_offset: int = 0
+) -> pd.Timestamp:
+    return shift_local_days(
+        pd.Timestamp(date, tz=local_timezone), days_offset, local_timezone
+    )
 
 
 def local_day_index(index: pd.Index, local_timezone: str) -> pd.DatetimeIndex:
@@ -88,27 +96,59 @@ def reindex_at_local_lag(
     local_timezone: str,
 ) -> pd.Series:
     # Vergleich über die Wanduhrzeit, damit 08:00 auch nach der Zeitumstellung auf 08:00 vom Vortag zeigt
-    wall_clock = pd.Series(series.to_numpy(), index=pd.DatetimeIndex(series.index).tz_convert(local_timezone).tz_localize(None))
+    wall_clock = pd.Series(
+        series.to_numpy(),
+        index=pd.DatetimeIndex(series.index)
+        .tz_convert(local_timezone)
+        .tz_localize(None),
+    )
     # im Oktober gibt es 01:00 zweimal, der erste Wert zählt
     wall_clock = wall_clock[~wall_clock.index.duplicated()]
 
-    reference = target_index.tz_convert(local_timezone).tz_localize(None) - pd.Timedelta(days=lag_days)
+    reference = target_index.tz_convert(local_timezone).tz_localize(
+        None
+    ) - pd.Timedelta(days=lag_days)
     # die im März übersprungene Stunde nimmt den Wert davor, die Uhr springt genau eine Stunde
-    values = wall_clock.reindex(reference, method="ffill", tolerance=pd.Timedelta(hours=1))
+    values = wall_clock.reindex(
+        reference, method="ffill", tolerance=pd.Timedelta(hours=1)
+    )
 
     return pd.Series(values.to_numpy(), index=target_index)
 
 
-def analyzed_day_index(decision_times: pd.Index, local_timezone: str) -> pd.DatetimeIndex:
+def analyzed_day_index(
+    decision_times: pd.Index, local_timezone: str
+) -> pd.DatetimeIndex:
     # decision_time ist die Mitternacht nach dem analysierten Tag, die Prognose startet dagegen genau dort
-    return local_day_index(pd.DatetimeIndex(decision_times) - pd.Timedelta(hours=1), local_timezone)
+    return local_day_index(
+        pd.DatetimeIndex(decision_times) - pd.Timedelta(hours=1), local_timezone
+    )
 
 
 def analyzed_day(decision_time: pd.Timestamp, local_timezone: str) -> pd.Timestamp:
     return analyzed_day_index(pd.DatetimeIndex([decision_time]), local_timezone)[0]
 
 
-def local_day_hours(day_start: pd.Timestamp, days: int, frequency: str, local_timezone: str) -> pd.DatetimeIndex:
+def analyzed_day_text(decision_time: pd.Timestamp, local_timezone: str) -> str:
+    return analyzed_day(decision_time, local_timezone).date().isoformat()
+
+
+def local_date_text(timestamp: pd.Timestamp, local_timezone: str) -> str:
+    return local_day(timestamp, local_timezone).date().isoformat()
+
+
+def local_days_between(
+    later: pd.Timestamp, earlier: pd.Timestamp, local_timezone: str
+) -> int:
+    return (
+        local_day(later, local_timezone).tz_localize(None)
+        - local_day(earlier, local_timezone).tz_localize(None)
+    ).days
+
+
+def local_day_hours(
+    day_start: pd.Timestamp, days: int, frequency: str, local_timezone: str
+) -> pd.DatetimeIndex:
     day_end = shift_local_days(day_start, days, local_timezone)
     return pd.date_range(start=day_start, end=day_end, freq=frequency, inclusive="left")
 
@@ -125,5 +165,7 @@ def local_calendar_range(
     if local_start != local_start.normalize():
         raise ValueError(f"start must lie on local midnight, got {local_start}.")
 
-    local_index = pd.date_range(start=local_start, end=end.tz_convert(local_timezone), freq=f"{step_days}D")
+    local_index = pd.date_range(
+        start=local_start, end=end.tz_convert(local_timezone), freq=f"{step_days}D"
+    )
     return local_index.tz_convert("UTC")

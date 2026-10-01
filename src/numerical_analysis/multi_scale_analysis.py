@@ -124,10 +124,6 @@ def build_multi_scale_analysis(
         result[f"{scale}_deviation_pct"] = _deviation_pct(
             result[observed_column], result[expected_column], min_reference_power_w
         )
-        # Tagesmittel in W -> kWh pro Tag
-        result[f"{scale}_deviation_kwh_per_day"] = (
-            (result[observed_column] - result[expected_column]) * 24 / 1000
-        )
 
     result.index.name = "timestamp"
 

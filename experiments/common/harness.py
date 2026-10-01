@@ -16,8 +16,9 @@ from src.config.config_forecasting import (
 from src.forecasting.forecasting import run_forecast_comparison
 from src.llm.llm_run_artifacts import load_prompt
 from src.llm.llm_runner import PROMPT_DIRECTORY
-from src.common.timestamps import analyzed_day
+from src.common.timestamps import analyzed_day_text
 from src.pipeline.comparison_harness import ScenarioData, run_comparison
+from src.pipeline.io import read_jsonl
 
 COMPARISON_CONFIG = ComparisonConfig()
 # so benennt run_comparison seine Ausgaben
@@ -94,36 +95,44 @@ def read_calendar_availability(output_directory: Path) -> pd.DataFrame:
     rows = [
         {
             "config": record["config"],
-            "analyzed_day": analyzed_day(
+            "analyzed_day": analyzed_day_text(
                 pd.Timestamp(record["decision_time"]), LOCAL_TIMEZONE
-            )
-            .date()
-            .isoformat(),
+            ),
             "calendar_available": record["context"]["source_available"],
         }
         for state_file in sorted(output_directory.glob(f"*/{STRUCTURED_STATES_FILE}"))
-        for record in map(
-            json.loads, state_file.read_text(encoding="utf-8").splitlines()
-        )
+        for record in read_jsonl(state_file)
     ]
 
     return pd.DataFrame(rows, columns=["config", "analyzed_day", "calendar_available"])
 
 
+def _scenario_of(file: Path, raw_directory: Path) -> str:
+    # Ordner über dem System (ctx0 in E2, Szenario in E5)
+    return file.parent.parent.relative_to(raw_directory).as_posix()
+
+
 def read_llm_outputs(raw_directory: Path) -> pd.DataFrame:
-    # alle LLM-Antworten eines Laufs, scenario ist der Ordner über dem System (ctx0 in E2, Szenario in E5)
+    # alle LLM-Antworten eines Laufs, analyzed_day lokal wie in der Auswertung
     rows = []
     for output_file in sorted(raw_directory.rglob(LLM_OUTPUTS_FILE)):
-        scenario = output_file.parent.parent.relative_to(raw_directory).as_posix()
-        for line in output_file.read_text(encoding="utf-8").splitlines():
-            record = json.loads(line)
+        scenario = _scenario_of(output_file, raw_directory)
+        for record in read_jsonl(output_file):
             rows.append(
                 {
                     "scenario": scenario,
                     "config": record["config"],
                     "decision_time": record["decision_time"],
+                    "analyzed_day": analyzed_day_text(
+                        pd.Timestamp(record["decision_time"]), LOCAL_TIMEZONE
+                    ),
                     "classification": record["classification"],
                     "explanation": record["explanation"],
+                    "user_recommendation": record["user_recommendation"],
+                    "uncertainty": record["uncertainty"],
+                    "evidence_paths": ";".join(
+                        reference["path"] for reference in record["evidence_references"]
+                    ),
                 }
             )
 
@@ -133,10 +142,32 @@ def read_llm_outputs(raw_directory: Path) -> pd.DataFrame:
             "scenario",
             "config",
             "decision_time",
+            "analyzed_day",
             "classification",
             "explanation",
+            "user_recommendation",
+            "uncertainty",
+            "evidence_paths",
         ],
     )
+
+
+def read_structured_states(raw_directory: Path) -> pd.DataFrame:
+    # alle States eines Laufs, scenario und config wie in read_llm_outputs
+    rows = []
+    for state_file in sorted(raw_directory.rglob(STRUCTURED_STATES_FILE)):
+        scenario = _scenario_of(state_file, raw_directory)
+        for record in read_jsonl(state_file):
+            rows.append(
+                {
+                    "scenario": scenario,
+                    "config": record.pop("config"),
+                    "decision_time": record["decision_time"],
+                    "state": record,
+                }
+            )
+
+    return pd.DataFrame(rows, columns=["scenario", "config", "decision_time", "state"])
 
 
 def read_run_meta(raw_directory: Path) -> pd.DataFrame:
@@ -146,9 +177,7 @@ def read_run_meta(raw_directory: Path) -> pd.DataFrame:
         meta = json.loads(meta_file.read_text(encoding="utf-8"))
         rows.append(
             {
-                "scenario": meta_file.parent.parent.relative_to(
-                    raw_directory
-                ).as_posix(),
+                "scenario": _scenario_of(meta_file, raw_directory),
                 "config": meta["config"],
                 "runtime_seconds": meta["runtime_seconds"],
                 "interrupted": meta["interrupted"],

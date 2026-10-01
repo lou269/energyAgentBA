@@ -1,4 +1,6 @@
 import math
+import re
+from datetime import date, datetime
 from collections.abc import Mapping
 from typing import Literal, TypedDict
 
@@ -11,7 +13,9 @@ from src.context.calendar_schema import (
 from src.pipeline.schema_validation import is_real_number, validate_fields
 
 
-SCHEMA_VERSION = "2.0"
+SCHEMA_VERSION = "2.1"
+
+DATE_PATTERN = re.compile(r"\d{4}-\d{2}-\d{2}")
 
 ScaleName = Literal["daily", "weekday", "weekly", "long_term"]
 # long_term kein Z-Score, nur Prozentabweichung gegenüber Vormonat
@@ -42,9 +46,10 @@ ANOMALY_FIELDS = frozenset(
     {
         "level",
         "direction",
-        "scale_scores",
         "scale_anomaly_streak_days",
         "scale_deviation_pct",
+        "alarm_scales",
+        "scale_exceeding_since",
         "sustained_scales",
         "sustained_drift",
         "available_scales",
@@ -70,17 +75,17 @@ class ObservationState(TypedDict):
     value_implausible: bool
 
 
-class ScaleScores(TypedDict):
-    daily: float | None
-    weekday: float | None
-    weekly: float | None
-
-
+# Streak und Beginn gibt es nur für die Niveau-Skalen, daily misst die Form des Tages
 class ScaleAnomalyStreakDays(TypedDict):
-    daily: float | None
     weekday: float | None
     weekly: float | None
     long_term: float | None
+
+
+class ScaleExceedingSince(TypedDict):
+    weekday: str | None
+    weekly: str | None
+    long_term: str | None
 
 
 class ScaleDeviationPct(TypedDict):
@@ -92,8 +97,9 @@ class ScaleDeviationPct(TypedDict):
 class AnomalyState(TypedDict):
     level: AnomalyLevel | None
     direction: AnomalyDirection | None
-    scale_scores: ScaleScores
+    alarm_scales: list[ScoreScaleName]
     scale_anomaly_streak_days: ScaleAnomalyStreakDays
+    scale_exceeding_since: ScaleExceedingSince
     scale_deviation_pct: ScaleDeviationPct
     sustained_scales: list[ScaleName]
     sustained_drift: bool
@@ -115,18 +121,6 @@ class StructuredState(TypedDict):
     observation: ObservationState
     anomaly: AnomalyState
     context: ContextState
-
-
-def available_scale_names(
-    scale_scores: Mapping[str, object], scale_deviation_pct: Mapping[str, object]
-) -> list[ScaleName]:
-    # verfügbar = Skala hat einen Wert, bei long_term ist das die Prozentabweichung
-    return [
-        scale
-        for scale in SCALE_NAMES
-        if (scale_deviation_pct[scale] if scale == "long_term" else scale_scores[scale])
-        is not None
-    ]
 
 
 def validate_structured_state(state: Mapping[str, object]) -> None:
@@ -168,9 +162,6 @@ def validate_structured_state(state: Mapping[str, object]) -> None:
     ):
         raise ValueError("anomaly.direction contains an unsupported value.")
 
-    scale_scores = _mapping(anomaly["scale_scores"], "anomaly.scale_scores")
-    validate_fields(scale_scores, frozenset(SCORE_SCALE_NAMES), "anomaly.scale_scores")
-
     scale_deviation_pct = _mapping(
         anomaly["scale_deviation_pct"], "anomaly.scale_deviation_pct"
     )
@@ -187,26 +178,30 @@ def validate_structured_state(state: Mapping[str, object]) -> None:
             nullable=True,
         )
 
-    for scale in SCORE_SCALE_NAMES:
-        _number(scale_scores[scale], f"anomaly.scale_scores.{scale}", nullable=True)
+    available_scales = anomaly["available_scales"]
 
-    available_names = available_scale_names(scale_scores, scale_deviation_pct)
+    if not isinstance(available_scales, list) or any(
+        scale not in SCALE_NAMES for scale in available_scales
+    ):
+        raise ValueError("anomaly.available_scales must be a list of scale names.")
 
     scale_streak_days = _mapping(
         anomaly["scale_anomaly_streak_days"], "anomaly.scale_anomaly_streak_days"
     )
     validate_fields(
-        scale_streak_days, frozenset(SCALE_NAMES), "anomaly.scale_anomaly_streak_days"
+        scale_streak_days,
+        frozenset(DEVIATION_SCALE_NAMES),
+        "anomaly.scale_anomaly_streak_days",
     )
 
-    for scale in SCALE_NAMES:
+    for scale in DEVIATION_SCALE_NAMES:
         streak_days = _number(
             scale_streak_days[scale],
             f"anomaly.scale_anomaly_streak_days.{scale}",
             nullable=True,
         )
         # umgekehrt erlaubt: Score da, aber zu wenige gültige Tage im Streak-Fenster
-        if streak_days is not None and scale not in available_names:
+        if streak_days is not None and scale not in available_scales:
             raise ValueError(
                 f"anomaly.scale_anomaly_streak_days.{scale} must be null when the scale has no value."
             )
@@ -216,13 +211,33 @@ def validate_structured_state(state: Mapping[str, object]) -> None:
                 f"anomaly.scale_anomaly_streak_days.{scale} must not be negative."
             )
 
-    available_scales = anomaly["available_scales"]
+    alarm_scales = anomaly["alarm_scales"]
+    if not isinstance(alarm_scales, list) or any(
+        scale not in SCORE_SCALE_NAMES for scale in alarm_scales
+    ):
+        raise ValueError("anomaly.alarm_scales must be a list of score scale names.")
 
-    if not isinstance(available_scales, list):
-        raise TypeError("anomaly.available_scales must be a list.")
+    scale_exceeding_since = _mapping(
+        anomaly["scale_exceeding_since"], "anomaly.scale_exceeding_since"
+    )
+    validate_fields(
+        scale_exceeding_since,
+        frozenset(DEVIATION_SCALE_NAMES),
+        "anomaly.scale_exceeding_since",
+    )
+    analyzed_date = datetime.fromisoformat(str(observation["observation_start"])).date()
 
-    if available_scales != available_names:
-        raise ValueError("anomaly.available_scales must match the scales with a value.")
+    for scale in DEVIATION_SCALE_NAMES:
+        since = scale_exceeding_since[scale]
+        # Beginn des Verlaufs als lokales Datum, nie nach dem analysierten Tag
+        if since is not None and (
+            not isinstance(since, str)
+            or not DATE_PATTERN.fullmatch(since)
+            or date.fromisoformat(since) > analyzed_date
+        ):
+            raise ValueError(
+                f"anomaly.scale_exceeding_since.{scale} must be a date up to the analyzed day or null."
+            )
 
     context = _mapping(state["context"], "context")
     validate_fields(context, CONTEXT_FIELDS, "context")

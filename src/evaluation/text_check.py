@@ -4,8 +4,14 @@ from dataclasses import dataclass
 
 import pandas as pd
 
-ISO_TIMESTAMP = re.compile(r"\d{4}-\d{2}-\d{2}T[\d:.+\-Z]+")
+ISO_TIMESTAMP = re.compile(r"\d{4}-\d{2}-\d{2}(?:T[\d:.+\-Z]+)?")
+MONTHS = (
+    "Januar|Februar|März|April|Mai|Juni|Juli|August|September|Oktober|November|Dezember"
+)
 DATE_IN_TEXT = re.compile(r"\b(\d{1,2})\.(\d{1,2})\.(\d{4})?")
+DAY_AND_MONTH_IN_TEXT = re.compile(
+    rf"\b(\d{{1,2}})\.(?:\s+bis\s+(\d{{1,2}})\.)?\s+(?:{MONTHS})"
+)
 TIME_IN_TEXT = re.compile(r"\b(\d{1,2}):(\d{2})\b")
 NUMBER_IN_TEXT = re.compile(r"\d+(?:[.,]\d+)?")
 
@@ -29,19 +35,18 @@ def find_violations(
     *,
     quantities: Collection[float],
     date_parts: Collection[int],
-    device_words: Collection[str],
     control_words: Collection[str],
     number_tolerance: float,
+    prompt_numbers: Collection[float] = (),
 ) -> tuple[TextViolation, ...]:
     lowered = text.lower()
     violations = [
-        TextViolation("device", word) for word in device_words if word in lowered
-    ]
-    violations += [
-        TextViolation("control", word) for word in control_words if word in lowered
+        TextViolation("control", word)
+        for word in control_words
+        if re.search(rf"\b{re.escape(word)}", lowered)
     ]
 
-    for pattern in (DATE_IN_TEXT, TIME_IN_TEXT):
+    for pattern in (DATE_IN_TEXT, DAY_AND_MONTH_IN_TEXT, TIME_IN_TEXT):
         for match in pattern.finditer(text):
             for part in match.groups():
                 if part is not None and int(part) not in date_parts:
@@ -51,10 +56,21 @@ def find_violations(
 
     for match in NUMBER_IN_TEXT.findall(text):
         value = float(match.replace(",", "."))
-        if not any(abs(value - known) <= number_tolerance for known in quantities):
+        known_values = [*quantities, *prompt_numbers]
+        if not any(abs(value - known) <= number_tolerance for known in known_values):
             violations.append(TextViolation("number", match))
 
     return tuple(violations)
+
+
+def find_device_mentions(
+    text: str, *, device_words: Collection[str]
+) -> tuple[str, ...]:
+    lowered = text.lower()
+
+    return tuple(
+        word for word in device_words if re.search(rf"\b{re.escape(word)}", lowered)
+    )
 
 
 def _collect(value: object, quantities: set[float], date_parts: set[int]) -> None:

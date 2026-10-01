@@ -121,8 +121,6 @@ def test_long_term_reference_block() -> None:
     assert last["long_term_deviation_pct"] == pytest.approx(
         (200.0 - 165.0) / 165.0 * 100.0
     )
-    # Tagesmittel in W -> kWh pro Tag
-    assert last["long_term_deviation_kwh_per_day"] == pytest.approx(35.0 * 24 / 1000)
 
 
 def test_deviation_pct_small_reference() -> None:
