@@ -1,0 +1,7 @@
+Modell,E1 Antworten,E1 mit Verstoß,E1 Belege fehlen,E1 Gerät genannt,E2 Antworten,E2 mit Verstoß,E2 Belege fehlen,E2 Gerät genannt
+qwen3:4b,8,0,7,2,14,0,5,3
+qwen3:8b,8,0,1,4,14,0,0,2
+qwen3.5:9b,8,0,2,2,14,0,0,0
+ministral-3:8b,8,0,1,5,14,0,0,4
+gemma4:e4b,8,0,0,2,14,0,0,8
+gemma4:e4b-mlx,8,0,0,2,14,0,0,2

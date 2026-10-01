@@ -1,0 +1,5 @@
+{"classification": "peak", "config": "BASELINE", "decision_time": "2014-03-02T00:00:00+00:00", "reasoning": "unusual (unusual), but no sustained multi-scale signature (weekend)."}
+{"classification": "measurement_error", "config": "BASELINE", "decision_time": "2014-03-04T00:00:00+00:00", "reasoning": "observation.value_implausible is set (weekday)."}
+{"classification": "peak", "config": "BASELINE", "decision_time": "2014-03-16T00:00:00+00:00", "reasoning": "unusual (unusual), but no sustained multi-scale signature (weekend)."}
+{"classification": "low", "config": "BASELINE", "decision_time": "2014-04-12T23:00:00+00:00", "reasoning": "unusual (unusual) low reading, but no sustained multi-scale signature (weekend)."}
+{"classification": "peak", "config": "BASELINE", "decision_time": "2014-04-15T23:00:00+00:00", "reasoning": "unusual (unusual), but no sustained multi-scale signature (weekday)."}

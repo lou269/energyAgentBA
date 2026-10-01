@@ -1,0 +1,9 @@
+Kennzahl,Wert,Bezug
+Ebene 1: bestes Modell nach Macro-F1,qwen3:4b,"Macro-F1 0,77, Regel 0,77"
+ministral-3:8b: Ebene 1 richtig,7/8,Regel 7/8
+ministral-3:8b: Antwortzeit je Aufruf im Mittel [s],23.0,"p95 38,9 s, Regel 0,0 s"
+ministral-3:8b: Ebene 2 Ereignis-Arten erkannt,1/2,Regel 1/2
+ministral-3:8b: Ebene 2 Tage mit anderer Klasse als die Regel,0,-
+ministral-3:8b: ungültige Antworten Ebene 1,0,Ausfalltage Ebene 2: 0
+ministral-3:8b: Antworten mit Textverstoß (Ebene 1 / Ebene 2),0/8 / 0/14,"Gerät, Steuerung oder Zahl, Datum, Uhrzeit nicht im State"
+ministral-3:8b: Antworten mit fehlenden Belegen (Ebene 1 / Ebene 2),1/8 / 0/14,zitierte Belege passen nicht zur eigenen Klasse
