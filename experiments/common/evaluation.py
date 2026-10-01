@@ -1,10 +1,17 @@
 from __future__ import annotations
 
+from collections.abc import Collection, Mapping
+
 import numpy as np
 import pandas as pd
 
 from experiments.common.standard_config import LOCAL_TIMEZONE
 from src.common.timestamps import local_day_index
+from src.evaluation.text_check import (
+    collect_state_values,
+    find_device_mentions,
+    find_violations,
+)
 from src.structured_state.structured_state_schema import SCALE_NAMES
 
 # Phase über das ganze Fenster, zusätzlich zu vor/ab Cutover
@@ -352,3 +359,29 @@ def spread_over_repeats(
         )
 
     return wide.reset_index()
+
+
+def check_answer_text(
+    text: str,
+    state: Mapping[str, object],
+    *,
+    device_words: Collection[str],
+    control_words: Collection[str],
+    number_tolerance: float,
+    prompt_numbers: Collection[float] = (),
+) -> tuple[str, str]:
+    quantities, date_parts = collect_state_values(state)
+    violations = find_violations(
+        text,
+        quantities=quantities,
+        date_parts=date_parts,
+        control_words=control_words,
+        number_tolerance=number_tolerance,
+        prompt_numbers=prompt_numbers,
+    )
+    devices = find_device_mentions(text, device_words=device_words)
+
+    return (
+        "; ".join(f"{item.kind}: {item.found}" for item in violations),
+        "; ".join(devices),
+    )

@@ -41,6 +41,7 @@ class ProjectConfig:
     k2_output_dir: Path = experiment_output_dir / "k2"
     k3_output_dir: Path = experiment_output_dir / "k3"
     k4_output_dir: Path = experiment_output_dir / "k4"
+    proactive_cycle_output_dir: Path = experiment_output_dir / "proactive_cycle"
     result_decimals: int = 1
 
     timezone: str = "Europe/London"

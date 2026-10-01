@@ -6,6 +6,7 @@ import pandas as pd
 from experiments.common.evaluation import (
     FIRST_ANALYZED_DAY,
     add_days_since_cutover,
+    check_answer_text,
     count_notifications,
     merge_cycle_days,
     pair_with_control,
@@ -18,11 +19,6 @@ from experiments.common.standard_config import (
 from experiments.k3_llm.k3_cases import EXPECTED_EVIDENCE_PATHS
 from experiments.k3_llm.k3_config import BASELINE_ID, CORRECT_ANSWER_LABEL
 from src.evaluation.consistency import missing_evidence_paths
-from src.evaluation.text_check import (
-    collect_state_values,
-    find_device_mentions,
-    find_violations,
-)
 from src.llm.llm_schema import CLASSIFICATIONS
 from src.structured_state.structured_state_schema import StructuredState
 
@@ -378,29 +374,23 @@ def _check_answer(
     number_tolerance: float,
     prompt_numbers: tuple[float, ...],
 ) -> tuple[str, str, str]:
-    quantities, date_parts = collect_state_values(state)
     text = " ".join(
         answer[column]
         for column in ["explanation", "user_recommendation", "uncertainty"]
     )
-    violations = find_violations(
+    violations, devices = check_answer_text(
         text,
-        quantities=quantities,
-        date_parts=date_parts,
+        state,
+        device_words=device_words,
         control_words=control_words,
         number_tolerance=number_tolerance,
         prompt_numbers=prompt_numbers,
     )
-    devices = find_device_mentions(text, device_words=device_words)
     missing = missing_evidence_paths(
         answer["classification"], answer["evidence_paths"].split(";"), state
     )
 
-    return (
-        "; ".join(f"{v.kind}: {v.found}" for v in violations),
-        "; ".join(missing),
-        "; ".join(devices),
-    )
+    return violations, "; ".join(missing), devices
 
 
 def check_answer_texts(

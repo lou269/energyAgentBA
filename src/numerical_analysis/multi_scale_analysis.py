@@ -130,6 +130,26 @@ def build_multi_scale_analysis(
     return result
 
 
+def expected_weekday_mean(
+    history: pd.Series,
+    forecast_day: pd.Timestamp,
+    *,
+    reference_window_rolling_days: int,
+    min_weekday_reference_samples: int,
+    robust: bool,
+    local_timezone: str,
+) -> float | None:
+    # wie weekday_expected oben, nur für einen Tag, der noch nicht in history liegt
+    daily_mean = history.tz_convert(local_timezone).resample("D").mean()
+    reference = daily_mean.iloc[-reference_window_rolling_days:]
+    with_day = pd.concat([reference, pd.Series([np.nan], index=[forecast_day])])
+    expected = _weekday_expected(
+        with_day, min_samples=min_weekday_reference_samples, robust=robust
+    ).iloc[-1]
+
+    return None if pd.isna(expected) else float(expected)
+
+
 def _deviation_pct(
     measured: pd.Series,
     expected: pd.Series,

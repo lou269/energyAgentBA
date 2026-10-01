@@ -10,6 +10,7 @@ from experiments.common.report import (
     format_commit,
     format_number,
     key_figures_table,
+    markdown_table,
     relabel,
     write_result_report,
 )
@@ -202,6 +203,36 @@ def sequence_answer_lines(sequence: pd.DataFrame) -> list[str]:
     return lines
 
 
+def sequence_answer_sections(
+    single_answers: pd.DataFrame,
+    results: pd.DataFrame,
+    sequence_outputs: pd.DataFrame,
+    model_labels: dict[str, str],
+    *,
+    model_order: list[str],
+) -> list[tuple[str, list[str]]]:
+    sections = []
+    for model_id in model_order:
+        if model_id == BASELINE_ID:
+            continue
+        sequence = collect_answer_texts(
+            single_answers,
+            results,
+            sequence_outputs,
+            model_order=model_order,
+            sequence_model_id=model_id,
+        ).sequence
+        if not sequence.empty:
+            sections.append(
+                (
+                    f"Ebene 2: Antworten von {model_labels[model_id]}, ein Tag mit allen Arten, in denen derselbe Text kam",
+                    sequence_answer_lines(sequence),
+                )
+            )
+
+    return sections
+
+
 def _count_of(counts: pd.Series, totals: pd.Series) -> pd.Series:
     return counts.astype(str) + "/" + totals.astype(str)
 
@@ -363,14 +394,6 @@ def main() -> None:
                 {"model_id": model_labels},
             ),
         ),
-        "result_text_findings": (
-            "Auffälligkeiten der Textprüfung",
-            relabel(
-                checks.findings,
-                FINDING_HEADERS,
-                {"level": LEVEL_LABELS, "model_id": model_labels},
-            ),
-        ),
         "result_sequence": (
             "Ebene 2: je Modell über alle Ereignis-Arten",
             relabel(
@@ -400,6 +423,11 @@ def main() -> None:
             relabel(summary.classes, CLASS_HEADERS, {"model_id": model_labels}),
         )
     }
+    findings = relabel(
+        checks.findings,
+        FINDING_HEADERS,
+        {"level": LEVEL_LABELS, "model_id": model_labels},
+    )
     notes = [
         "Ebene 1 prüft, ob ein Modell die Regeln aus dem Prompt nachvollzieht. Der Prompt wurde auf denselben Fällen verbessert, "
         "die Quoten begründen deshalb nur die Modellwahl und belegen nicht das Ziel von 80 % richtiger Klassen (dafür E5)",
@@ -414,8 +442,32 @@ def main() -> None:
         "Textprüfung: Verstoß heißt, ein Steuerungswort oder eine Zahl, ein Datum oder eine Uhrzeit steht im Text, aber nicht im State des Falls. Ein genanntes Gerät ist nur ein Hinweis, als Möglichkeit ist es erlaubt, ob es als Ursache behauptet wird, beurteilen die Bewertenden. "
         "Zahlwörter („sechs Wochen“) und nicht gelistete Geräte findet sie nicht. Die Fensterlängen 7 und 30 aus der Skalenbeschreibung im Prompt gelten als erlaubt",
         "Fehlende Belege: der Prompt verlangt je Klasse bestimmte Pfade (new_pattern: sustained_drift, level, Streaks, peak/low: level, direction, absence: level, Kalendereintrag, measurement_error: Flag). Geprüft wird gegen die eigene Klasse des Modells, nicht gegen die erwartete. Ebene 1 wird nur für Läufe geprüft, die den State der Fälle in der Antwortdatei speichern, ältere Läufe haben in der Tabelle 0 Antworten",
-        "Antworttexte im Anhang: Ebene 1 für alle Modelle, Ebene 2 nur für das Produktivmodell. Alle Texte auch als answers_single.csv und answers_sequence.csv",
+        "Antworttexte und Auffälligkeiten der Textprüfung im Anhang, Antworten für alle Modelle in Ebene 1 und Ebene 2. "
+        "Als CSV: answers_single.csv für Ebene 1, answers_sequence.csv für Ebene 2 nur vom Produktivmodell, result_text_findings.csv für die Auffälligkeiten",
     ]
+
+    # die Auffälligkeiten stehen ganz unten im Anhang
+    appendix_text = (
+        [
+            (
+                "Ebene 1: Antworten der Modelle je Fall",
+                single_answer_lines(answers.single, model_labels),
+            )
+        ]
+        + sequence_answer_sections(
+            single_answers,
+            results,
+            sequence_outputs,
+            model_labels,
+            model_order=models["model_id"].tolist(),
+        )
+        + [
+            (
+                "Auffälligkeiten der Textprüfung",
+                markdown_table(findings, DECIMALS).splitlines(),
+            )
+        ]
+    )
 
     output_directory = user_output_directory(run_directory)
     # die bisherigen CSVs mit Rohspalten, model_comparison enthält jetzt beide Ebenen
@@ -424,6 +476,7 @@ def main() -> None:
     df_to_csv(summary.classes, output_directory, "class_breakdown")
     df_to_csv(answers.single, output_directory, "answers_single")
     df_to_csv(answers.sequence, output_directory, "answers_sequence")
+    df_to_csv(findings, output_directory, "result_text_findings")
     sequence_output_directory = user_output_directory(sequence_run_directory)
     df_to_csv(summary.events, sequence_output_directory, "sequence_events")
     df_to_csv(summary.sequence_models, sequence_output_directory, "sequence_models")
@@ -451,16 +504,7 @@ def main() -> None:
         images=["k3_quality_vs_time.png"],
         decimals=DECIMALS,
         appendix=appendix,
-        appendix_text=[
-            (
-                "Ebene 1: Antworten der Modelle je Fall",
-                single_answer_lines(answers.single, model_labels),
-            ),
-            (
-                f"Ebene 2: Antworten von {production_model}, ein Tag mit allen Arten, in denen derselbe Text kam",
-                sequence_answer_lines(answers.sequence),
-            ),
-        ],
+        appendix_text=appendix_text,
     )
 
     print(f"Result written to {output_directory / 'ergebnis.md'}")

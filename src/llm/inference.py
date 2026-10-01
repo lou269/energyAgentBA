@@ -1,8 +1,9 @@
 import json
 import math
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from time import perf_counter
-from typing import cast
+from typing import Any, cast
 
 from src.llm.calendar_tool import (
     CALENDAR_TOOL,
@@ -87,10 +88,48 @@ def infer_llm_output(
         )
 
     allowed_evidence_paths = collect_scalar_evidence_paths(state)
-    output_schema = build_llm_output_json_schema(allowed_evidence_paths)
+    output, attempts = request_validated_json(
+        client,
+        state_messages(prompt, state),
+        build_llm_output_json_schema(allowed_evidence_paths),
+        lambda parsed: validate_llm_output_against_state(
+            cast(RawLLMOutput, parsed), state, allowed_paths=allowed_evidence_paths
+        ),
+        model=model.strip(),
+        temperature=float(temperature),
+        presence_penalty=float(presence_penalty),
+        seed=seed,
+        max_attempts=max_attempts,
+        num_predict=num_predict,
+        num_ctx=num_ctx,
+        think=think,
+        keep_alive=keep_alive,
+    )
 
-    messages = _state_messages(prompt, state)
+    return LLMInferenceResult(
+        output=output,
+        attempts=attempts,
+        state=state,
+        calendar_tool_response=calendar_tool_response,
+    )
 
+
+def request_validated_json(
+    client: LLMClient,
+    messages: list[dict[str, str]],
+    output_schema: dict[str, object],
+    validate: Callable[[object], Any],
+    *,
+    model: str,
+    temperature: float,
+    presence_penalty: float,
+    seed: int | None,
+    max_attempts: int,
+    num_predict: int,
+    num_ctx: int,
+    think: bool,
+    keep_alive: int | str,
+) -> tuple[Any, tuple[LLMAttemptRecord, ...]]:
     attempts: list[LLMAttemptRecord] = []
     last_error: Exception | None = None
 
@@ -99,11 +138,11 @@ def infer_llm_output(
 
         try:
             content = client.generate_json(
-                model=model.strip(),
+                model=model,
                 messages=messages,
                 output_schema=output_schema,
-                temperature=float(temperature),
-                presence_penalty=float(presence_penalty),
+                temperature=temperature,
+                presence_penalty=presence_penalty,
                 seed=seed,
                 num_predict=num_predict,
                 num_ctx=num_ctx,
@@ -133,12 +172,7 @@ def infer_llm_output(
             if not content.strip():
                 raise ValueError("LLM returned an empty response.")
 
-            parsed_output = json.loads(content)
-            raw_output = cast(RawLLMOutput, parsed_output)
-
-            output = validate_llm_output_against_state(
-                raw_output, state, allowed_paths=allowed_evidence_paths
-            )
+            output = validate(json.loads(content))
 
         except (TypeError, ValueError) as error:
             last_error = error
@@ -172,12 +206,7 @@ def infer_llm_output(
             )
         )
 
-        return LLMInferenceResult(
-            output=output,
-            attempts=tuple(attempts),
-            state=state,
-            calendar_tool_response=calendar_tool_response,
-        )
+        return output, tuple(attempts)
 
     raise LLMInferenceError(
         f"LLM returned no valid output after {max_attempts} attempt(s).",
@@ -185,7 +214,7 @@ def infer_llm_output(
     ) from last_error
 
 
-def _state_messages(prompt: str, state: StructuredState) -> list[dict[str, str]]:
+def state_messages(prompt: str, state: Mapping[str, object]) -> list[dict[str, str]]:
     state_json = json.dumps(
         state, ensure_ascii=False, allow_nan=False, separators=(",", ":")
     )
@@ -217,7 +246,7 @@ def _fetch_calendar(
     try:
         response = client.request_tool_calls(
             model=model,
-            messages=_state_messages(CALENDAR_TOOL_PROMPT, state),
+            messages=state_messages(CALENDAR_TOOL_PROMPT, state),
             tools=[CALENDAR_TOOL],
             temperature=temperature,
             presence_penalty=presence_penalty,
@@ -263,12 +292,7 @@ def _append_correction_messages(
             "content": (
                 "The previous response was invalid: "
                 f"{type(error).__name__}: {error} "
-                "Return one corrected JSON object only. "
-                "Use only evidence paths allowed by the provided "
-                "JSON schema. The user JSON is the root object. "
-                "Do not add `data`, `state`, `json`, `input`, or a "
-                "filename before an evidence path. Each evidence "
-                "reference contains only a `path`, never a `value`."
+                "Return one corrected JSON object only."
             ),
         }
     )
