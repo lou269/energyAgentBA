@@ -1,0 +1,500 @@
+{
+  "llm_outputs": [
+    {
+      "classification": "normal",
+      "config": "MDL0",
+      "decision_time": "2014-03-02T00:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "unusual"
+        },
+        {
+          "path": "anomaly.sustained_drift",
+          "value": false
+        }
+      ],
+      "explanation": "Die Verbrauchsdaten zeigen keine ungewöhnliche Situation für den analysierten Tag.",
+      "schema_version": "1.3",
+      "uncertainty": "Keine",
+      "user_recommendation": "Keine spezifischen Maßnahmen empfohlen"
+    },
+    {
+      "classification": "measurement_error",
+      "config": "MDL0",
+      "decision_time": "2014-03-04T00:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.value_implausible",
+          "value": true
+        }
+      ],
+      "explanation": "Die Messung ist ungültig, da der Wert implausible ist.",
+      "schema_version": "1.3",
+      "uncertainty": "Keine Unsicherheit, da die Messung ungültig ist.",
+      "user_recommendation": "Keine spezifischen Handlungsanweisungen für diese Situation."
+    },
+    {
+      "classification": "normal",
+      "config": "MDL0",
+      "decision_time": "2014-03-16T00:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "unusual"
+        },
+        {
+          "path": "anomaly.sustained_drift",
+          "value": false
+        }
+      ],
+      "explanation": "Die Verbrauchsdaten zeigen keine ungewöhnliche Situation für den analysierten Tag.",
+      "schema_version": "1.3",
+      "uncertainty": "Keine",
+      "user_recommendation": "Keine spezifischen Maßnahmen empfohlen"
+    },
+    {
+      "classification": "normal",
+      "config": "MDL0",
+      "decision_time": "2014-04-12T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "unusual"
+        },
+        {
+          "path": "anomaly.sustained_drift",
+          "value": false
+        }
+      ],
+      "explanation": "Die Verbrauchsdaten zeigen keine ungewöhnliche Situation für den analysierten Tag.",
+      "schema_version": "1.3",
+      "uncertainty": "Keine",
+      "user_recommendation": "Keine spezifischen Maßnahmen empfohlen"
+    },
+    {
+      "classification": "peak",
+      "config": "MDL1",
+      "decision_time": "2014-03-02T00:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "unusual"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        },
+        {
+          "path": "anomaly.scale_deviation_pct.weekday",
+          "value": 19.876077520424555
+        },
+        {
+          "path": "anomaly.scale_deviation_pct.weekly",
+          "value": 10.24330459397259
+        }
+      ],
+      "explanation": "Der Verbrauch war höher als üblich, was auf einen Spitzenverbrauch hindeutet. Die Abweichung beträgt etwa 19,9 % im Vergleich zur Wochenzeit und 10,2 % im Vergleich zur langfristigen Durchschnittszeit.",
+      "schema_version": "1.3",
+      "uncertainty": "Keine",
+      "user_recommendation": "Überprüfe, ob es Geräte gab, die besonders viel Strom verbraucht haben, oder ob eine ungewöhnliche Nutzung stattfand."
+    },
+    {
+      "classification": "measurement_error",
+      "config": "MDL1",
+      "decision_time": "2014-03-04T00:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.value_implausible",
+          "value": true
+        }
+      ],
+      "explanation": "Der Messwert wird als unplausibel eingestuft, was darauf hinweist, dass der Verbrauch für den analysierten Tag nicht zuverlässig ist.",
+      "schema_version": "1.3",
+      "uncertainty": "Keine",
+      "user_recommendation": "Überprüfe die Messung oder kontaktiere den Anbieter, um sicherzustellen, dass keine technischen Probleme vorliegen."
+    },
+    {
+      "classification": "peak",
+      "config": "MDL1",
+      "decision_time": "2014-03-16T00:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "unusual"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        },
+        {
+          "path": "anomaly.scale_scores.daily",
+          "value": 3.8201321128028387
+        },
+        {
+          "path": "anomaly.scale_scores.weekday",
+          "value": 1.6452377652982593
+        },
+        {
+          "path": "anomaly.scale_scores.weekly",
+          "value": 0.20938872693622174
+        },
+        {
+          "path": "anomaly.scale_deviation_pct.weekday",
+          "value": 25.925615700698224
+        },
+        {
+          "path": "anomaly.scale_deviation_pct.weekly",
+          "value": 4.203570883546663
+        },
+        {
+          "path": "anomaly.scale_deviation_pct.long_term",
+          "value": 4.9982830237978
+        }
+      ],
+      "explanation": "Der Verbrauch war höher als üblich, insbesondere an diesem Tag und im Vergleich zu den üblichen Werten für einen Werktag. Der Anstieg beträgt etwa 25,9 % im Vergleich zum Durchschnitt der letzten Woche und 4,2 % im Vergleich zur langfristigen Durchschnittsperiode.",
+      "schema_version": "1.3",
+      "uncertainty": "Keine",
+      "user_recommendation": "Überprüfe, ob es einen spezifischen Grund für den erhöhten Verbrauch an diesem Tag gab, wie z. B. eine Nutzung von elektrischen Geräten oder eine ungewöhnliche Aktivität im Haushalt."
+    },
+    {
+      "classification": "low",
+      "config": "MDL1",
+      "decision_time": "2014-04-12T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "unusual"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "low"
+        },
+        {
+          "path": "anomaly.scale_scores.weekday",
+          "value": -4.932370272625256
+        },
+        {
+          "path": "anomaly.scale_scores.weekly",
+          "value": -1.4476975365323768
+        },
+        {
+          "path": "anomaly.scale_deviation_pct.weekday",
+          "value": -66.39503204297252
+        },
+        {
+          "path": "anomaly.scale_deviation_pct.weekly",
+          "value": -11.972145963594075
+        }
+      ],
+      "explanation": "Der Verbrauch war deutlich unter dem üblichen Niveau, insbesondere im Vergleich zum Wochenende und der letzten Woche. Es gab keine Hinweise auf eine geplante Abwesenheit.",
+      "schema_version": "1.3",
+      "uncertainty": "Keine",
+      "user_recommendation": "Prüfe, ob es in deinem Haushalt eine Veränderung gab, die den Verbrauch beeinflusst hat. Zum Beispiel könnte ein Gerät nicht mehr funktioniert haben oder sich das Verhalten der Bewohner verändert haben."
+    },
+    {
+      "classification": "peak",
+      "config": "MDL2",
+      "decision_time": "2014-03-02T00:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "unusual"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        }
+      ],
+      "explanation": "Der Verbrauch am analysierten Tag war ungewöhnlich hoch.",
+      "schema_version": "1.3",
+      "uncertainty": "Keine.",
+      "user_recommendation": "Keine spezifische Handlung wird empfohlen."
+    },
+    {
+      "classification": "measurement_error",
+      "config": "MDL2",
+      "decision_time": "2014-03-04T00:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.value_implausible",
+          "value": true
+        }
+      ],
+      "explanation": "Die aktuelle Messung ist nicht vertrauenswürdig, da der Wert als unplausibel eingestuft wurde.",
+      "schema_version": "1.3",
+      "uncertainty": "Die Klassifizierung basiert auf der aktuellen Beobachtung, die als unplausibel markiert ist.",
+      "user_recommendation": "Keine spezifische Handlung wird empfohlen, da die Messung nicht verlässlich ist."
+    },
+    {
+      "classification": "peak",
+      "config": "MDL2",
+      "decision_time": "2014-03-16T00:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "unusual"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        }
+      ],
+      "explanation": "Der Verbrauch war an diesem Tag ungewöhnlich hoch.",
+      "schema_version": "1.3",
+      "uncertainty": "Keine.",
+      "user_recommendation": "Keine spezifische Handlung wird empfohlen."
+    },
+    {
+      "classification": "low",
+      "config": "MDL2",
+      "decision_time": "2014-04-12T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "unusual"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "low"
+        },
+        {
+          "path": "anomaly.scale_deviation_pct.weekday",
+          "value": -66.39503204297252
+        }
+      ],
+      "explanation": "Der Stromverbrauch war ungewöhnlich niedrig. Der Verbrauch lag am analysierten Tag etwa 66 % unter dem für diesen Wochentag üblichen Niveau.",
+      "schema_version": "1.3",
+      "uncertainty": "Keine Kalenderdaten verfügbar.",
+      "user_recommendation": "Es wird keine spezifische Aktion empfohlen."
+    },
+    {
+      "classification": "peak",
+      "config": "MDL3",
+      "decision_time": "2014-03-02T00:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        }
+      ],
+      "explanation": "Die Verbrauchsdaten zeigen einen ungewöhnlich hohen Verbrauch an diesem Tag. Dies ist besonders im Vergleich zum normalen Wochentagsmuster und den letzten sieben Tagen der Fall.",
+      "schema_version": "1.3",
+      "uncertainty": "Keine",
+      "user_recommendation": "Es könnte sinnvoll sein, zu prüfen, ob an diesem Tag besondere Ereignisse stattfanden, die einen höheren Verbrauch erklären könnten."
+    },
+    {
+      "classification": "measurement_error",
+      "config": "MDL3",
+      "decision_time": "2014-03-04T00:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.value_implausible",
+          "value": true
+        }
+      ],
+      "explanation": "Die Messung für den analysierten Tag ist als ungültig markiert.",
+      "schema_version": "1.3",
+      "uncertainty": "Keine",
+      "user_recommendation": "Aufgrund der Ungültigkeit der Messdaten kann keine spezifische Empfehlung gegeben werden."
+    },
+    {
+      "classification": "peak",
+      "config": "MDL3",
+      "decision_time": "2014-03-16T00:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        },
+        {
+          "path": "anomaly.level",
+          "value": "unusual"
+        }
+      ],
+      "explanation": "Die Verbrauchsdaten deuten auf einen ungewöhnlich hohen Verbrauch an diesem Tag hin. Dies ist besonders im Vergleich zum üblichen Verbrauch an einem Wochentag um etwa 26 % erhöht.",
+      "schema_version": "1.3",
+      "uncertainty": "Keine Unsicherheit vorhanden.",
+      "user_recommendation": "Es könnte sinnvoll sein, zu prüfen, ob an diesem Tag ungewöhnlich viel Energie verbraucht wurde, beispielsweise durch besondere Aktivitäten oder Geräte."
+    },
+    {
+      "classification": "low",
+      "config": "MDL3",
+      "decision_time": "2014-04-12T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "unusual"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "low"
+        }
+      ],
+      "explanation": "Die Verbrauchsdaten zeigen eine ungewöhnlich niedrige Nutzung im Vergleich zum üblichen Niveau für einen Wochentag, was auf einen Rückgang von über 66 % hindeutet. Auch im Vergleich der letzten Woche war ein deutlicher Rückgang festzustellen.",
+      "schema_version": "1.3",
+      "uncertainty": "Keine Kalenderinformationen waren verfügbar, um eine Abwesenheit auszuschließen.",
+      "user_recommendation": "Es könnte sinnvoll sein zu prüfen, ob sich die Nutzungsgewohnheiten im Vergleich zu normalen Wochentagen geändert haben."
+    },
+    {
+      "classification": "peak",
+      "config": "MDL4",
+      "decision_time": "2014-03-02T00:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "unusual"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        }
+      ],
+      "explanation": "Der Verbrauch ist ungewöhnlich hoch, was sich auch im Vergleich zur Woche und zum letzten Monat zeigt.",
+      "schema_version": "1.3",
+      "uncertainty": "Keine Unsicherheiten vorhanden.",
+      "user_recommendation": "Es könnte hilfreich sein zu prüfen, ob sich in der Haushaltsausstattung etwas geändert hat, da der erhöhte Verbrauch nicht durch einen bekannten Kalenderereignis erklärt werden kann."
+    },
+    {
+      "classification": "measurement_error",
+      "config": "MDL4",
+      "decision_time": "2014-03-04T00:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.value_implausible",
+          "value": true
+        }
+      ],
+      "explanation": "Die Messung ist als unglaubwürdig eingestuft worden.",
+      "schema_version": "1.3",
+      "uncertainty": "N/A",
+      "user_recommendation": "Es ist ratsam, die Datenquelle und die Messgeräte zu überprüfen, um sicherzustellen, dass die Messungen korrekt sind."
+    },
+    {
+      "classification": "peak",
+      "config": "MDL4",
+      "decision_time": "2014-03-16T00:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "unusual"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        }
+      ],
+      "explanation": "Der Verbrauch ist ungewöhnlich hoch, was sich insbesondere im Vergleich zum Wochentrend um etwa 26% zeigt.",
+      "schema_version": "1.3",
+      "uncertainty": "Es konnten keine Kalenderereignisse zur Überprüfung herangezogen werden.",
+      "user_recommendation": "Prüfen Sie, ob an diesem Tag außergewöhnliche Ereignisse stattgefunden haben, die den erhöhten Verbrauch erklären könnten."
+    },
+    {
+      "classification": "low",
+      "config": "MDL4",
+      "decision_time": "2014-04-12T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "unusual"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "low"
+        },
+        {
+          "path": "anomaly.scale_scores.weekday",
+          "value": -4.932370272625256
+        }
+      ],
+      "explanation": "Der Verbrauch ist im Vergleich zum üblichen Niveau für einen Wochentag um etwa 66 Prozent niedriger, und auch der wöchentliche Trend zeigt eine Abweichung von fast 12 Prozent nach unten.",
+      "schema_version": "1.3",
+      "uncertainty": "Es konnten keine Kalenderereignisse zur Abklärung herangezogen werden.",
+      "user_recommendation": "Prüfen Sie, ob sich in Ihrem Haushalt etwas geändert hat, da der niedrige Verbrauch ungewöhnlich ist."
+    },
+    {
+      "classification": "peak",
+      "config": "MDL5",
+      "decision_time": "2014-03-02T00:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "unusual"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        },
+        {
+          "path": "anomaly.scale_deviation_pct.weekday",
+          "value": 19.876077520424555
+        }
+      ],
+      "explanation": "Der Stromverbrauch war gestern deutlich höher als üblich, mit einem Anstieg von etwa 20 % gegenüber dem üblichen Verbrauch an Wochentagen.",
+      "schema_version": "1.3",
+      "uncertainty": "Kein Kalender war verfügbar, um geplante Abwesenheiten zu prüfen.",
+      "user_recommendation": "Überprüfen Sie, ob ungewöhnlich viele Geräte gleichzeitig genutzt wurden oder ob ein neues Gerät in Betrieb genommen wurde."
+    },
+    {
+      "classification": "measurement_error",
+      "config": "MDL5",
+      "decision_time": "2014-03-04T00:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.value_implausible",
+          "value": true
+        }
+      ],
+      "explanation": "Der gemessene Stromverbrauch für den Tag ist nicht vertrauenswürdig.",
+      "schema_version": "1.3",
+      "uncertainty": "Die Daten für diesen Tag sind fehlerhaft und können keine Rückschlüsse auf den Verbrauch zulassen.",
+      "user_recommendation": "Keine spezifische Handlung empfohlen, da die Messung nicht auswertbar ist."
+    },
+    {
+      "classification": "peak",
+      "config": "MDL5",
+      "decision_time": "2014-03-16T00:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "unusual"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        },
+        {
+          "path": "anomaly.scale_deviation_pct.weekday",
+          "value": 25.925615700698224
+        }
+      ],
+      "explanation": "Der Stromverbrauch am gestrigen Tag war ungewöhnlich hoch und lag etwa 26 % über dem üblichen Wert für diesen Wochentag.",
+      "schema_version": "1.3",
+      "uncertainty": "Keine Kalenderdaten verfügbar.",
+      "user_recommendation": "Überprüfen Sie, ob ungewöhnlich viele Geräte gleichzeitig genutzt wurden oder ob ein neues Gerät hinzugekommen ist."
+    },
+    {
+      "classification": "low",
+      "config": "MDL5",
+      "decision_time": "2014-04-12T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "unusual"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "low"
+        },
+        {
+          "path": "anomaly.scale_deviation_pct.weekday",
+          "value": -66.39503204297252
+        }
+      ],
+      "explanation": "Der Stromverbrauch war am gestrigen Tag deutlich niedriger als üblich. Der Verbrauch lag etwa 66 % unter dem für diesen Wochentag typischen Wert.",
+      "schema_version": "1.3",
+      "uncertainty": "Kein Kalender war verfügbar, um geplante Abwesenheiten zu überprüfen.",
+      "user_recommendation": "Da kein Kalender zur Verfügung steht, prüfen Sie bitte, ob der ungewöhnlich niedrige Verbrauch auf einen geplanten Ausfall oder eine vorübergehende Abwesenheit zurückzuführen ist."
+    }
+  ]
+}

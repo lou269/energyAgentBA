@@ -1,0 +1,15 @@
+config,kind,expected_classification,event_gate_open_days,correct_days,first_correct_day,resets
+BASELINE,peak_6,peak,1,1,1,0
+BASELINE,step,new_pattern,1,0,,0
+MDL0,peak_6,peak,1,0,,0
+MDL0,step,new_pattern,1,0,,0
+MDL1,peak_6,peak,1,1,1,0
+MDL1,step,new_pattern,1,0,,0
+MDL2,peak_6,peak,1,1,1,0
+MDL2,step,new_pattern,1,0,,0
+MDL3,peak_6,peak,1,1,1,0
+MDL3,step,new_pattern,1,0,,0
+MDL4,peak_6,peak,1,1,1,0
+MDL4,step,new_pattern,1,0,,0
+MDL5,peak_6,peak,1,1,1,0
+MDL5,step,new_pattern,1,0,,0
