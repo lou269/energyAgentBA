@@ -1,0 +1,4 @@
+ID,Modell,richtig,Macro-F1,ungültig,Ø Versuche,Grounding,Ø s je Aufruf,p95 s
+BASELINE,Regel,7/8,0.8,0,1.0,,0.0,0.0
+MDL1,qwen3:8b,7/8,0.8,0,1.0,0.8,20.2,34.3
+MDL5,ministral-3:8b,7/8,0.8,0,1.0,0.9,22.4,39.5

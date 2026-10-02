@@ -1,0 +1,4 @@
+model_id,model,n_attempts,correct,invalid,mean_attempt_count,mean_generation_seconds,p95_generation_seconds,mean_grounding_coverage,macro_f1,gate_open_days,failed_days,detected_kinds,event_kinds,control_notification_days,control_unknown_days,control_resets,rule_deviation_days
+BASELINE,rule_based,8,7,0,1.0,0.0,0.0,,0.7714285714285715,14,0,1,2,3,0,0,0
+MDL1,qwen3:8b,8,7,0,1.0,20.240452479125224,34.32005625459996,0.8125,0.7714285714285715,14,0,1,2,3,0,0,0
+MDL5,ministral-3:8b,8,7,0,1.0,22.442863666625044,39.45729974815102,0.90625,0.7714285714285715,14,0,1,2,3,0,0,0

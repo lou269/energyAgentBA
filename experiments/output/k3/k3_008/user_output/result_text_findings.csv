@@ -1,0 +1,13 @@
+Ebene,Modell,Fall oder Tag,Verstoß,fehlende Belege,Gerät genannt (Hinweis)
+Ebene 2,qwen3:8b,2014-04-15 peak_6,,,heizung
+Ebene 2,ministral-3:8b,2014-03-15 control,,,heizung
+Ebene 2,ministral-3:8b,2014-03-15 peak_6,,,heizung
+Ebene 2,ministral-3:8b,2014-03-15 step,,,heizung
+Ebene 1,qwen3:8b,absence_drift_down,,anomaly.level,
+Ebene 1,qwen3:8b,new_pattern,,anomaly.scale_anomaly_streak_days.weekly,
+Ebene 1,qwen3:8b,new_pattern_at_min_scales_boundary,,anomaly.scale_anomaly_streak_days.weekly,heizung
+Ebene 1,qwen3:8b,peak,,,heizung
+Ebene 1,qwen3:8b,peak_single_sustained_scale,,,heizung
+Ebene 1,ministral-3:8b,new_pattern_at_min_scales_boundary,,anomaly.scale_anomaly_streak_days.weekly,heizung
+Ebene 1,ministral-3:8b,new_pattern_drift_down,,,heizung
+Ebene 1,ministral-3:8b,peak_single_sustained_scale,,,heizung
