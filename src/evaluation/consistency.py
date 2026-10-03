@@ -19,14 +19,13 @@ def missing_evidence_paths(
 
     if classification == "measurement_error":
         required = {"observation.value_implausible"}
-    else:
-        required = {"anomaly.level"}
-
-    if classification == "new_pattern":
-        required |= {"anomaly.sustained_drift"} | {
+    elif classification == "new_pattern":
+        required = {
             f"anomaly.scale_anomaly_streak_days.{scale}"
             for scale in anomaly["sustained_scales"]
         }
+    else:
+        required = {"anomaly.level"}
 
     if classification in ("peak", "low"):
         required.add("anomaly.direction")

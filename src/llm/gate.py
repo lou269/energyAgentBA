@@ -10,7 +10,7 @@ def gate_classification(state: StructuredState) -> Classification | None:
         # level ist an so einem Tag leer ->vor der unknown-Prüfung offen lassen
         return None
 
-    if anomaly["sustained_drift"]:
+    if anomaly["sustained_scales"]:
         return None
 
     if anomaly["level"] is None:

@@ -269,7 +269,9 @@ def _classify(
 
     if config.llm_mode == "rule":
         rule_output = rule_based_classify(
-            structured_state, local_timezone=local_timezone
+            structured_state,
+            local_timezone=local_timezone,
+            min_sustained_scales=config.numerical_analysis_config.min_sustained_scales,
         )
         return rule_output.classification, None, rule_output, structured_state, None
 

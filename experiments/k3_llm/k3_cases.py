@@ -125,8 +125,6 @@ def _anomaly_block(
         "scale_exceeding_since": since_block,
         "scale_deviation_pct": deviation_block,
         "sustained_scales": sustained_scales,
-        "sustained_drift": len(sustained_scales)
-        >= ANALYSIS_CONFIG.min_sustained_scales,
         "available_scales": available,
     }
 
@@ -140,7 +138,6 @@ def _empty_anomaly_block() -> dict[str, object]:
         "scale_exceeding_since": {scale: None for scale in DEVIATION_SCALE_NAMES},
         "scale_deviation_pct": {scale: None for scale in DEVIATION_SCALE_NAMES},
         "sustained_scales": [],
-        "sustained_drift": False,
         "available_scales": [],
     }
 
@@ -260,6 +257,22 @@ def llm_relevant_cases() -> tuple[LLMEvaluationCase, ...]:
             context=_context_block(source_available=True),
         ),
         _case(
+            case_id="normal_single_sustained_scale",
+            expected="normal",
+            reasoning=(
+                "Nur weekly ist seit 6 Tagen leicht erhöht, kein Einzeltag-Alarm (level normal), eine Skala genügt nicht für new_pattern "
+                "(min_sustained_scales=2). Seit dem Gate mit einer Skala erreicht der Tag das LLM."
+            ),
+            value_implausible=False,
+            anomaly=_anomaly_block(
+                scores={"daily": 0.5, "weekday": 0.9, "weekly": 1.4},
+                direction="high",
+                streak_days={"weekday": 2.0, "weekly": 6.0, "long_term": 1.0},
+                deviation_pct={"weekday": 7.0, "weekly": 9.0, "long_term": 3.0},
+            ),
+            context=_context_block(source_available=True),
+        ),
+        _case(
             case_id="new_pattern_at_min_scales_boundary",
             expected="new_pattern",
             reasoning=(
@@ -326,8 +339,6 @@ def llm_relevant_cases() -> tuple[LLMEvaluationCase, ...]:
 _SINGLE_DAY_PATHS = frozenset({"anomaly.level", "anomaly.direction"})
 _DRIFT_PATHS = frozenset(
     {
-        "anomaly.sustained_drift",
-        "anomaly.level",
         "anomaly.scale_anomaly_streak_days.weekday",
         "anomaly.scale_anomaly_streak_days.weekly",
     }
@@ -337,14 +348,15 @@ EXPECTED_EVIDENCE_PATHS: dict[str, frozenset[str]] = {
     "normal": frozenset({"anomaly.level"}),
     "peak": _SINGLE_DAY_PATHS,
     "new_pattern": _DRIFT_PATHS,
+    "normal_single_sustained_scale": frozenset(
+        {"anomaly.level", "anomaly.scale_anomaly_streak_days.weekly"}
+    ),
     "low_single_scale": _SINGLE_DAY_PATHS,
     "peak_single_sustained_scale": _SINGLE_DAY_PATHS,
     "new_pattern_at_min_scales_boundary": _DRIFT_PATHS,
     "measurement_error_missing_day": frozenset({"observation.value_implausible"}),
     "new_pattern_drift_down": frozenset(
         {
-            "anomaly.sustained_drift",
-            "anomaly.level",
             "anomaly.scale_anomaly_streak_days.weekly",
             "anomaly.scale_anomaly_streak_days.long_term",
         }
@@ -427,7 +439,9 @@ def classify_cases_with_baseline(
         classification = gate_classification(case.state)
         if classification is None:
             classification = rule_based_classify(
-                case.state, local_timezone=LOCAL_TIMEZONE
+                case.state,
+                local_timezone=LOCAL_TIMEZONE,
+                min_sustained_scales=ANALYSIS_CONFIG.min_sustained_scales,
             ).classification
 
         row = {

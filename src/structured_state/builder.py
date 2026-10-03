@@ -49,7 +49,6 @@ ANALYSIS_FIELDS = frozenset(
         "weekday_sustained",
         "weekly_sustained",
         "long_term_sustained",
-        "sustained_drift",
         "anomaly_direction",
         "anomaly_level",
         "value_implausible",
@@ -184,9 +183,6 @@ def build_structured_state(
             "scale_exceeding_since": scale_exceeding_since,
             "scale_deviation_pct": scale_deviation_pct,
             "sustained_scales": sustained_scales,
-            "sustained_drift": _bool(
-                analysis_row["sustained_drift"], "analysis.sustained_drift"
-            ),
             "available_scales": available_scales,
         },
         "context": context_state(calendar_context),

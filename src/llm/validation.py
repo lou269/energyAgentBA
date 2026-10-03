@@ -28,7 +28,6 @@ ALLOWED_EVIDENCE_PATHS = frozenset(
         "anomaly.scale_deviation_pct.weekday",
         "anomaly.scale_deviation_pct.weekly",
         "anomaly.scale_deviation_pct.long_term",
-        "anomaly.sustained_drift",
         "context.source_available",
     }
 )

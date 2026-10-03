@@ -15,13 +15,18 @@ def rule_based_classify(
     state: StructuredState,
     *,
     local_timezone: str,
-)-> RuleClassificationResult:
+    min_sustained_scales: int,
+) -> RuleClassificationResult:
     observation = state["observation"]
     anomaly = state["anomaly"]
 
     decision_time = parse_utc_timestamp(state["decision_time"], "decision_time")
     # nur für die reasoning-Texte gedacht (Nachvollziehbarkeit), fließt in keine Entscheidung ein
-    day_label = "weekend" if analyzed_day(decision_time, local_timezone).dayofweek >= 5 else "weekday"
+    day_label = (
+        "weekend"
+        if analyzed_day(decision_time, local_timezone).dayofweek >= 5
+        else "weekday"
+    )
 
     if observation["value_implausible"]:
         return RuleClassificationResult(
@@ -29,7 +34,7 @@ def rule_based_classify(
             reasoning=f"observation.value_implausible is set ({day_label}).",
         )
 
-    if anomaly["sustained_drift"]:
+    if len(anomaly["sustained_scales"]) >= min_sustained_scales:
         return RuleClassificationResult(
             classification="new_pattern",
             reasoning=f"sustained deviation across multiple scales at once ({', '.join(anomaly['sustained_scales'])}), on a {day_label}.",
@@ -46,4 +51,3 @@ def rule_based_classify(
         classification="low",
         reasoning=f"unusual ({anomaly['level']}) low reading, but no sustained multi-scale signature ({day_label}).",
     )
-
