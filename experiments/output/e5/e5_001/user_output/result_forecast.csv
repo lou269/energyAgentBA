@@ -1,0 +1,13 @@
+Cutover,Zeitraum,System,MAE [W],MAPE [%],Differenz [W],2 Standardfehler [W],Tage,Tage besser [%],belastbar,MAPE-Differenz zu SYS1 [%-Punkte]
+2013-10-15,Kontrolllauf ab Tag 0,SYS1 ohne Adaption,135.6,40.3,,,,,,
+2013-10-15,Kontrolllauf ab Tag 0,SYS2 Regel,135.6,40.3,0.0,0.0,52.0,0.0,nein,0.0
+2013-10-15,Kontrolllauf ab Tag 0,SYS3 LLM,135.6,40.3,0.0,0.0,52.0,0.0,nein,0.0
+2013-10-15,Ereignislauf ab Tag 21,SYS1 ohne Adaption,174.3,30.1,,,,,,
+2013-10-15,Ereignislauf ab Tag 21,SYS2 Regel,162.0,26.8,-12.2,10.1,31.0,51.6,ja,-3.3
+2013-10-15,Ereignislauf ab Tag 21,SYS3 LLM,162.0,26.8,-12.2,10.1,31.0,51.6,ja,-3.3
+2014-01-15,Kontrolllauf ab Tag 0,SYS1 ohne Adaption,153.2,47.3,,,,,,
+2014-01-15,Kontrolllauf ab Tag 0,SYS2 Regel,153.2,47.3,0.0,0.0,51.0,0.0,nein,0.0
+2014-01-15,Kontrolllauf ab Tag 0,SYS3 LLM,153.2,47.3,0.0,0.0,51.0,0.0,nein,0.0
+2014-01-15,Ereignislauf ab Tag 21,SYS1 ohne Adaption,159.3,26.7,,,,,,
+2014-01-15,Ereignislauf ab Tag 21,SYS2 Regel,161.6,27.4,2.4,5.6,30.0,56.7,nein,0.7
+2014-01-15,Ereignislauf ab Tag 21,SYS3 LLM,161.6,27.4,2.4,5.6,30.0,56.7,nein,0.7

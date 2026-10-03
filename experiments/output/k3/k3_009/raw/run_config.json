@@ -1,0 +1,46 @@
+{
+  "code_version": {
+    "git_commit": "df21bc9ec168f51e49f422cdbe0a40c2bb9c4db1",
+    "git_dirty": true
+  },
+  "k3_config": {
+    "base_llm_config": {
+      "calendar_tool": false,
+      "keep_alive": -1,
+      "max_attempts": 2,
+      "model": "",
+      "num_ctx": 8192,
+      "num_predict": 1024,
+      "presence_penalty": 1.5,
+      "prompt_version": "v21",
+      "request_timeout_seconds": 120.0,
+      "seed": 42,
+      "temperature": 0.0,
+      "think": false
+    },
+    "config_version": "llm-model-0.6",
+    "experiment_id": "K3_1_llm_model",
+    "include_rule_based_baseline": true,
+    "model_variants": [
+      {
+        "model": "qwen3:8b",
+        "model_id": "MDL1"
+      },
+      {
+        "model": "qwen3.5:9b",
+        "model_id": "MDL2"
+      },
+      {
+        "model": "ministral-3:8b",
+        "model_id": "MDL5"
+      }
+    ],
+    "repetitions": 1,
+    "sequence_cutover_date": "2014-04-15",
+    "sequence_kinds": [
+      "control",
+      "step",
+      "peak_6"
+    ]
+  }
+}

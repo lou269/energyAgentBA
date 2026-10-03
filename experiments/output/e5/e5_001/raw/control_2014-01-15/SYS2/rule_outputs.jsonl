@@ -1,0 +1,2 @@
+{"classification": "peak", "config": "SYS2", "decision_time": "2014-03-02T00:00:00+00:00", "reasoning": "unusual (unusual), but no sustained multi-scale signature (weekend)."}
+{"classification": "measurement_error", "config": "SYS2", "decision_time": "2014-03-04T00:00:00+00:00", "reasoning": "observation.value_implausible is set (weekday)."}

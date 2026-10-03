@@ -1,0 +1,25 @@
+Cutover,Ereignis,System,erwartet,bewertet an Tag,Klasse,richtig,Skala,Meldungen davor,Reset an Tag,Aktion passend,nach Trennung
+2013-10-15,"1: Einzeltag-Spitze +1000 W über 6 h, Tag 0",SYS1 ohne Adaption,peak,1.0,peak,ja,weekday,,,ja,nein
+2013-10-15,"1: Einzeltag-Spitze +1000 W über 6 h, Tag 0",SYS2 Regel,peak,1.0,peak,ja,weekday,,,ja,nein
+2013-10-15,"1: Einzeltag-Spitze +1000 W über 6 h, Tag 0",SYS3 LLM,peak,1.0,peak,ja,weekday,,,ja,nein
+2013-10-15,"2: Einzeltag-Spitze +1000 W über 6 h, Tag 10",SYS1 ohne Adaption,peak,11.0,peak,ja,daily,,,ja,nein
+2013-10-15,"2: Einzeltag-Spitze +1000 W über 6 h, Tag 10",SYS2 Regel,peak,11.0,peak,ja,daily,,16.0,nein,nein
+2013-10-15,"2: Einzeltag-Spitze +1000 W über 6 h, Tag 10",SYS3 LLM,peak,11.0,peak,ja,daily,,16.0,nein,nein
+2013-10-15,"3: Festhänger über 12 h, Tag 17",SYS1 ohne Adaption,measurement_error,18.0,measurement_error,ja,weekday,,,ja,ja
+2013-10-15,"3: Festhänger über 12 h, Tag 17",SYS2 Regel,measurement_error,18.0,measurement_error,ja,daily,,,ja,ja
+2013-10-15,"3: Festhänger über 12 h, Tag 17",SYS3 LLM,measurement_error,18.0,measurement_error,ja,daily,,,ja,ja
+2013-10-15,"4: Dauerlast +200 W, Tag 21",SYS1 ohne Adaption,new_pattern,28.0,new_pattern,ja,weekday+long_term,5.0,,nein,ja
+2013-10-15,"4: Dauerlast +200 W, Tag 21",SYS2 Regel,new_pattern,48.0,new_pattern,ja,weekly+long_term,0.0,48.0,ja,ja
+2013-10-15,"4: Dauerlast +200 W, Tag 21",SYS3 LLM,new_pattern,48.0,new_pattern,ja,weekly+long_term,0.0,48.0,ja,ja
+2014-01-15,"1: Einzeltag-Spitze +1000 W über 6 h, Tag 0",SYS1 ohne Adaption,peak,1.0,peak,ja,daily,,,ja,nein
+2014-01-15,"1: Einzeltag-Spitze +1000 W über 6 h, Tag 0",SYS2 Regel,peak,1.0,peak,ja,daily,,,ja,nein
+2014-01-15,"1: Einzeltag-Spitze +1000 W über 6 h, Tag 0",SYS3 LLM,peak,1.0,peak,ja,daily,,,ja,nein
+2014-01-15,"2: Einzeltag-Spitze +1000 W über 6 h, Tag 10",SYS1 ohne Adaption,peak,,,,,,,ja,nein
+2014-01-15,"2: Einzeltag-Spitze +1000 W über 6 h, Tag 10",SYS2 Regel,peak,,,,,,,ja,nein
+2014-01-15,"2: Einzeltag-Spitze +1000 W über 6 h, Tag 10",SYS3 LLM,peak,,,,,,,ja,nein
+2014-01-15,"3: Festhänger über 12 h, Tag 17",SYS1 ohne Adaption,measurement_error,18.0,measurement_error,ja,weekday,,,ja,nein
+2014-01-15,"3: Festhänger über 12 h, Tag 17",SYS2 Regel,measurement_error,18.0,measurement_error,ja,weekday,,,ja,nein
+2014-01-15,"3: Festhänger über 12 h, Tag 17",SYS3 LLM,measurement_error,18.0,measurement_error,ja,weekday,,,ja,nein
+2014-01-15,"4: Dauerlast +200 W, Tag 21",SYS1 ohne Adaption,new_pattern,33.0,new_pattern,ja,weekly+long_term,0.0,,nein,ja
+2014-01-15,"4: Dauerlast +200 W, Tag 21",SYS2 Regel,new_pattern,33.0,new_pattern,ja,weekly+long_term,0.0,33.0,ja,ja
+2014-01-15,"4: Dauerlast +200 W, Tag 21",SYS3 LLM,new_pattern,33.0,new_pattern,ja,weekly+long_term,0.0,33.0,ja,ja

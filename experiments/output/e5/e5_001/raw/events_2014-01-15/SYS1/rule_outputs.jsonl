@@ -1,0 +1,21 @@
+{"classification": "peak", "config": "SYS1", "decision_time": "2014-01-16T00:00:00+00:00", "reasoning": "unusual (unusual), but no sustained multi-scale signature (weekday)."}
+{"classification": "measurement_error", "config": "SYS1", "decision_time": "2014-02-02T00:00:00+00:00", "reasoning": "observation.value_implausible is set (weekend)."}
+{"classification": "new_pattern", "config": "SYS1", "decision_time": "2014-02-17T00:00:00+00:00", "reasoning": "sustained deviation across multiple scales at once (weekly, long_term), on a weekend."}
+{"classification": "new_pattern", "config": "SYS1", "decision_time": "2014-02-18T00:00:00+00:00", "reasoning": "sustained deviation across multiple scales at once (weekly, long_term), on a weekday."}
+{"classification": "new_pattern", "config": "SYS1", "decision_time": "2014-02-19T00:00:00+00:00", "reasoning": "sustained deviation across multiple scales at once (weekly, long_term), on a weekday."}
+{"classification": "new_pattern", "config": "SYS1", "decision_time": "2014-02-20T00:00:00+00:00", "reasoning": "sustained deviation across multiple scales at once (weekly, long_term), on a weekday."}
+{"classification": "new_pattern", "config": "SYS1", "decision_time": "2014-02-21T00:00:00+00:00", "reasoning": "sustained deviation across multiple scales at once (weekly, long_term), on a weekday."}
+{"classification": "new_pattern", "config": "SYS1", "decision_time": "2014-02-22T00:00:00+00:00", "reasoning": "sustained deviation across multiple scales at once (weekly, long_term), on a weekday."}
+{"classification": "new_pattern", "config": "SYS1", "decision_time": "2014-02-23T00:00:00+00:00", "reasoning": "sustained deviation across multiple scales at once (weekly, long_term), on a weekend."}
+{"classification": "new_pattern", "config": "SYS1", "decision_time": "2014-02-24T00:00:00+00:00", "reasoning": "sustained deviation across multiple scales at once (weekly, long_term), on a weekend."}
+{"classification": "new_pattern", "config": "SYS1", "decision_time": "2014-02-25T00:00:00+00:00", "reasoning": "sustained deviation across multiple scales at once (weekly, long_term), on a weekday."}
+{"classification": "new_pattern", "config": "SYS1", "decision_time": "2014-02-26T00:00:00+00:00", "reasoning": "sustained deviation across multiple scales at once (weekly, long_term), on a weekday."}
+{"classification": "new_pattern", "config": "SYS1", "decision_time": "2014-02-27T00:00:00+00:00", "reasoning": "sustained deviation across multiple scales at once (weekly, long_term), on a weekday."}
+{"classification": "new_pattern", "config": "SYS1", "decision_time": "2014-02-28T00:00:00+00:00", "reasoning": "sustained deviation across multiple scales at once (weekly, long_term), on a weekday."}
+{"classification": "new_pattern", "config": "SYS1", "decision_time": "2014-03-01T00:00:00+00:00", "reasoning": "sustained deviation across multiple scales at once (weekly, long_term), on a weekday."}
+{"classification": "new_pattern", "config": "SYS1", "decision_time": "2014-03-02T00:00:00+00:00", "reasoning": "sustained deviation across multiple scales at once (weekly, long_term), on a weekend."}
+{"classification": "new_pattern", "config": "SYS1", "decision_time": "2014-03-03T00:00:00+00:00", "reasoning": "sustained deviation across multiple scales at once (weekly, long_term), on a weekend."}
+{"classification": "measurement_error", "config": "SYS1", "decision_time": "2014-03-04T00:00:00+00:00", "reasoning": "observation.value_implausible is set (weekday)."}
+{"classification": "new_pattern", "config": "SYS1", "decision_time": "2014-03-05T00:00:00+00:00", "reasoning": "sustained deviation across multiple scales at once (weekly, long_term), on a weekday."}
+{"classification": "new_pattern", "config": "SYS1", "decision_time": "2014-03-06T00:00:00+00:00", "reasoning": "sustained deviation across multiple scales at once (weekly, long_term), on a weekday."}
+{"classification": "new_pattern", "config": "SYS1", "decision_time": "2014-03-07T00:00:00+00:00", "reasoning": "sustained deviation across multiple scales at once (weekly, long_term), on a weekday."}

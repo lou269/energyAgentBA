@@ -1,0 +1,8 @@
+{"classification": "peak", "config": "SYS2", "decision_time": "2014-01-16T00:00:00+00:00", "reasoning": "unusual (unusual), but no sustained multi-scale signature (weekday)."}
+{"classification": "measurement_error", "config": "SYS2", "decision_time": "2014-02-02T00:00:00+00:00", "reasoning": "observation.value_implausible is set (weekend)."}
+{"classification": "new_pattern", "config": "SYS2", "decision_time": "2014-02-17T00:00:00+00:00", "reasoning": "sustained deviation across multiple scales at once (weekly, long_term), on a weekend."}
+{"classification": "low", "config": "SYS2", "decision_time": "2014-02-21T00:00:00+00:00", "reasoning": "unusual (unusual) low reading, but no sustained multi-scale signature (weekday)."}
+{"classification": "low", "config": "SYS2", "decision_time": "2014-02-22T00:00:00+00:00", "reasoning": "unusual (unusual) low reading, but no sustained multi-scale signature (weekday)."}
+{"classification": "peak", "config": "SYS2", "decision_time": "2014-03-02T00:00:00+00:00", "reasoning": "unusual (unusual), but no sustained multi-scale signature (weekend)."}
+{"classification": "measurement_error", "config": "SYS2", "decision_time": "2014-03-04T00:00:00+00:00", "reasoning": "observation.value_implausible is set (weekday)."}
+{"classification": "low", "config": "SYS2", "decision_time": "2014-03-05T00:00:00+00:00", "reasoning": "unusual (unusual) low reading, but no sustained multi-scale signature (weekday)."}

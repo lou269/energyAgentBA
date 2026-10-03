@@ -1,0 +1,199 @@
+Modell,analysierter Tag,Regel,Modell sagt,in Arten
+qwen3:8b,2014-03-05,low,new_pattern,"control, step, peak_6"
+qwen3:8b,2014-03-06,low,unknown,"control, step, peak_6"
+qwen3:8b,2014-03-07,low,normal,"control, step, peak_6"
+qwen3:8b,2014-03-08,peak,normal,"control, step, peak_6"
+qwen3:8b,2014-03-09,peak,normal,"control, step, peak_6"
+qwen3:8b,2014-03-10,low,normal,"control, step, peak_6"
+qwen3:8b,2014-03-15,peak,normal,"control, step, peak_6"
+qwen3:8b,2014-03-27,normal,peak,"control, step, peak_6"
+qwen3:8b,2014-04-01,normal,peak,"control, step, peak_6"
+qwen3:8b,2014-04-04,low,new_pattern,"control, step, peak_6"
+qwen3:8b,2014-04-05,low,normal,"control, step, peak_6"
+qwen3:8b,2014-04-06,low,normal,"control, step, peak_6"
+qwen3:8b,2014-04-12,low,normal,"control, step, peak_6"
+qwen3:8b,2014-04-15,peak,normal,peak_6
+qwen3:8b,2014-04-17,peak,new_pattern,"control, step"
+qwen3:8b,2014-04-17,peak,normal,peak_6
+qwen3:8b,2014-04-18,low,normal,control
+qwen3:8b,2014-04-18,peak,normal,step
+qwen3:8b,2014-04-18,low,new_pattern,peak_6
+qwen3:8b,2014-04-19,peak,normal,"control, peak_6"
+qwen3:8b,2014-04-20,low,normal,control
+qwen3:8b,2014-04-21,low,normal,control
+qwen3:8b,2014-04-24,peak,normal,step
+qwen3:8b,2014-04-25,peak,normal,step
+qwen3:8b,2014-04-26,peak,normal,step
+qwen3:8b,2014-04-27,peak,normal,step
+qwen3:8b,2014-04-28,low,normal,step
+qwen3:8b,2014-04-29,peak,normal,step
+qwen3:8b,2014-04-30,peak,normal,step
+qwen3:8b,2014-05-01,peak,normal,step
+qwen3:8b,2014-05-02,peak,normal,step
+qwen3:8b,2014-05-03,peak,normal,step
+qwen3:8b,2014-05-04,peak,normal,step
+qwen3:8b,2014-05-05,peak,normal,step
+qwen3:8b,2014-05-06,low,normal,step
+qwen3:8b,2014-05-07,peak,normal,step
+qwen3:8b,2014-05-08,peak,normal,step
+qwen3:8b,2014-05-09,peak,normal,step
+qwen3:8b,2014-05-10,peak,normal,step
+qwen3:8b,2014-05-11,peak,normal,step
+qwen3:8b,2014-05-12,peak,normal,step
+qwen3:8b,2014-05-13,peak,normal,step
+qwen3:8b,2014-05-14,peak,normal,step
+qwen3:8b,2014-05-15,low,normal,step
+qwen3:8b,2014-05-17,normal,new_pattern,control
+qwen3:8b,2014-05-22,normal,low,peak_6
+qwen3:8b,2014-05-23,peak,normal,peak_6
+qwen3:8b,2014-05-24,normal,low,peak_6
+qwen3:8b,2014-05-25,normal,low,peak_6
+qwen3:8b,2014-05-30,low,new_pattern,"control, step, peak_6"
+qwen3:8b,2014-05-31,low,peak,"control, step, peak_6"
+qwen3:8b,2014-06-03,low,normal,"control, step, peak_6"
+qwen3:8b,2014-06-04,low,normal,"control, step, peak_6"
+qwen3:8b,2014-06-05,low,normal,control
+qwen3:8b,2014-06-05,peak,normal,step
+qwen3:8b,2014-06-05,new_pattern,normal,peak_6
+qwen3:8b,2014-06-06,peak,normal,"control, step"
+qwen3:8b,2014-06-12,normal,new_pattern,"control, step, peak_6"
+qwen3:8b,2014-06-13,normal,low,"control, step, peak_6"
+qwen3.5:9b,2014-03-05,low,new_pattern,"control, step, peak_6"
+qwen3.5:9b,2014-03-06,low,unknown,"control, step, peak_6"
+qwen3.5:9b,2014-03-07,low,normal,"control, step, peak_6"
+qwen3.5:9b,2014-03-08,peak,normal,"control, step, peak_6"
+qwen3.5:9b,2014-03-09,peak,normal,"control, step, peak_6"
+qwen3.5:9b,2014-03-10,low,normal,"control, step, peak_6"
+qwen3.5:9b,2014-03-15,peak,normal,"control, step, peak_6"
+qwen3.5:9b,2014-03-27,normal,peak,"control, step, peak_6"
+qwen3.5:9b,2014-03-31,normal,new_pattern,"control, step, peak_6"
+qwen3.5:9b,2014-04-04,low,normal,"control, step, peak_6"
+qwen3.5:9b,2014-04-05,low,normal,"control, step, peak_6"
+qwen3.5:9b,2014-04-06,low,normal,"control, step, peak_6"
+qwen3.5:9b,2014-04-12,low,normal,"control, step, peak_6"
+qwen3.5:9b,2014-04-13,normal,new_pattern,"control, step, peak_6"
+qwen3.5:9b,2014-04-15,peak,normal,peak_6
+qwen3.5:9b,2014-04-17,peak,normal,"control, step, peak_6"
+qwen3.5:9b,2014-04-18,low,normal,"control, peak_6"
+qwen3.5:9b,2014-04-18,peak,normal,step
+qwen3.5:9b,2014-04-19,peak,normal,"control, peak_6"
+qwen3.5:9b,2014-04-20,low,normal,control
+qwen3.5:9b,2014-04-21,low,normal,control
+qwen3.5:9b,2014-04-24,peak,normal,step
+qwen3.5:9b,2014-04-25,peak,normal,step
+qwen3.5:9b,2014-04-26,normal,new_pattern,"control, peak_6"
+qwen3.5:9b,2014-04-26,peak,new_pattern,step
+qwen3.5:9b,2014-04-27,peak,normal,step
+qwen3.5:9b,2014-04-28,low,normal,step
+qwen3.5:9b,2014-04-29,peak,normal,step
+qwen3.5:9b,2014-04-30,peak,normal,step
+qwen3.5:9b,2014-05-01,peak,normal,step
+qwen3.5:9b,2014-05-02,peak,normal,step
+qwen3.5:9b,2014-05-03,peak,normal,step
+qwen3.5:9b,2014-05-04,peak,normal,step
+qwen3.5:9b,2014-05-05,peak,normal,step
+qwen3.5:9b,2014-05-06,low,normal,step
+qwen3.5:9b,2014-05-07,peak,normal,step
+qwen3.5:9b,2014-05-08,peak,normal,step
+qwen3.5:9b,2014-05-09,peak,normal,step
+qwen3.5:9b,2014-05-10,normal,new_pattern,"control, peak_6"
+qwen3.5:9b,2014-05-10,peak,new_pattern,step
+qwen3.5:9b,2014-05-11,peak,normal,step
+qwen3.5:9b,2014-05-12,peak,normal,step
+qwen3.5:9b,2014-05-13,normal,low,"control, peak_6"
+qwen3.5:9b,2014-05-13,peak,low,step
+qwen3.5:9b,2014-05-14,normal,peak,"control, peak_6"
+qwen3.5:9b,2014-05-15,low,normal,step
+qwen3.5:9b,2014-05-16,new_pattern,normal,step
+qwen3.5:9b,2014-05-20,normal,low,"control, step, peak_6"
+qwen3.5:9b,2014-05-23,peak,normal,peak_6
+qwen3.5:9b,2014-05-24,normal,new_pattern,"control, step, peak_6"
+qwen3.5:9b,2014-05-26,low,normal,peak_6
+qwen3.5:9b,2014-05-27,low,normal,peak_6
+qwen3.5:9b,2014-05-28,low,normal,peak_6
+qwen3.5:9b,2014-05-29,low,normal,peak_6
+qwen3.5:9b,2014-05-30,low,normal,"control, step, peak_6"
+qwen3.5:9b,2014-05-31,low,normal,"control, step, peak_6"
+qwen3.5:9b,2014-06-01,peak,normal,"control, step, peak_6"
+qwen3.5:9b,2014-06-02,peak,normal,"control, step, peak_6"
+qwen3.5:9b,2014-06-03,low,normal,"control, step, peak_6"
+qwen3.5:9b,2014-06-04,low,normal,"control, step, peak_6"
+qwen3.5:9b,2014-06-05,low,normal,control
+qwen3.5:9b,2014-06-05,peak,normal,step
+qwen3.5:9b,2014-06-05,new_pattern,normal,peak_6
+qwen3.5:9b,2014-06-06,peak,normal,"control, step"
+qwen3.5:9b,2014-06-12,normal,new_pattern,"control, step, peak_6"
+qwen3.5:9b,2014-06-13,normal,low,"control, step, peak_6"
+ministral-3:8b,2014-03-05,low,new_pattern,"control, step, peak_6"
+ministral-3:8b,2014-03-06,low,unknown,"control, step, peak_6"
+ministral-3:8b,2014-03-07,low,normal,"control, step, peak_6"
+ministral-3:8b,2014-03-08,peak,normal,"control, step, peak_6"
+ministral-3:8b,2014-03-09,peak,normal,"control, step, peak_6"
+ministral-3:8b,2014-03-10,low,normal,"control, step, peak_6"
+ministral-3:8b,2014-03-15,peak,normal,"control, step, peak_6"
+ministral-3:8b,2014-03-19,normal,new_pattern,"control, step, peak_6"
+ministral-3:8b,2014-04-01,normal,new_pattern,"control, step, peak_6"
+ministral-3:8b,2014-04-04,low,normal,"control, step, peak_6"
+ministral-3:8b,2014-04-05,low,normal,"control, step, peak_6"
+ministral-3:8b,2014-04-06,low,normal,"control, step, peak_6"
+ministral-3:8b,2014-04-12,low,normal,"control, step, peak_6"
+ministral-3:8b,2014-04-14,normal,new_pattern,"control, step, peak_6"
+ministral-3:8b,2014-04-15,peak,normal,peak_6
+ministral-3:8b,2014-04-17,peak,normal,"control, step, peak_6"
+ministral-3:8b,2014-04-18,low,normal,"control, peak_6"
+ministral-3:8b,2014-04-18,peak,normal,step
+ministral-3:8b,2014-04-19,peak,normal,"control, peak_6"
+ministral-3:8b,2014-04-20,low,normal,control
+ministral-3:8b,2014-04-21,low,normal,control
+ministral-3:8b,2014-04-24,peak,normal,step
+ministral-3:8b,2014-04-25,peak,normal,step
+ministral-3:8b,2014-04-26,peak,normal,step
+ministral-3:8b,2014-04-27,peak,new_pattern,step
+ministral-3:8b,2014-04-28,normal,new_pattern,control
+ministral-3:8b,2014-04-28,low,normal,step
+ministral-3:8b,2014-04-29,peak,normal,step
+ministral-3:8b,2014-04-30,normal,peak,control
+ministral-3:8b,2014-04-30,peak,normal,step
+ministral-3:8b,2014-05-01,peak,normal,step
+ministral-3:8b,2014-05-02,peak,normal,step
+ministral-3:8b,2014-05-03,peak,normal,step
+ministral-3:8b,2014-05-04,peak,normal,step
+ministral-3:8b,2014-05-05,peak,normal,step
+ministral-3:8b,2014-05-06,low,normal,step
+ministral-3:8b,2014-05-07,peak,normal,step
+ministral-3:8b,2014-05-08,peak,normal,step
+ministral-3:8b,2014-05-09,peak,normal,step
+ministral-3:8b,2014-05-10,peak,normal,step
+ministral-3:8b,2014-05-11,normal,new_pattern,control
+ministral-3:8b,2014-05-11,peak,normal,step
+ministral-3:8b,2014-05-12,peak,normal,step
+ministral-3:8b,2014-05-13,normal,low,control
+ministral-3:8b,2014-05-13,peak,normal,step
+ministral-3:8b,2014-05-14,normal,peak,control
+ministral-3:8b,2014-05-14,peak,normal,step
+ministral-3:8b,2014-05-15,low,normal,step
+ministral-3:8b,2014-05-16,new_pattern,normal,step
+ministral-3:8b,2014-05-17,normal,low,control
+ministral-3:8b,2014-05-20,normal,low,control
+ministral-3:8b,2014-05-22,normal,new_pattern,step
+ministral-3:8b,2014-05-23,peak,normal,peak_6
+ministral-3:8b,2014-05-24,normal,new_pattern,control
+ministral-3:8b,2014-05-26,low,normal,peak_6
+ministral-3:8b,2014-05-27,low,normal,peak_6
+ministral-3:8b,2014-05-28,low,normal,peak_6
+ministral-3:8b,2014-05-29,low,normal,peak_6
+ministral-3:8b,2014-05-30,low,normal,"control, step"
+ministral-3:8b,2014-05-30,low,new_pattern,peak_6
+ministral-3:8b,2014-05-31,low,normal,"control, step"
+ministral-3:8b,2014-05-31,low,peak,peak_6
+ministral-3:8b,2014-06-01,peak,normal,"control, step"
+ministral-3:8b,2014-06-02,peak,normal,"control, step"
+ministral-3:8b,2014-06-03,low,normal,"control, step, peak_6"
+ministral-3:8b,2014-06-04,low,normal,"control, peak_6"
+ministral-3:8b,2014-06-04,low,new_pattern,step
+ministral-3:8b,2014-06-05,low,normal,control
+ministral-3:8b,2014-06-05,peak,normal,step
+ministral-3:8b,2014-06-05,new_pattern,normal,peak_6
+ministral-3:8b,2014-06-06,peak,normal,"control, step"
+ministral-3:8b,2014-06-12,normal,new_pattern,"control, peak_6"
+ministral-3:8b,2014-06-13,normal,low,"control, peak_6"

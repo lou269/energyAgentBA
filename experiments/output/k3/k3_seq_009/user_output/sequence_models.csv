@@ -1,0 +1,5 @@
+model_id,gate_open_days,failed_days,detected_kinds,event_kinds,control_notification_days,control_unknown_days,control_resets,rule_deviation_days
+BASELINE,101,0,2,2,25,0,0,0
+MDL1,65,0,1,2,13,1,6,54
+MDL2,51,0,0,2,13,1,7,60
+MDL5,37,0,2,2,15,1,8,62
