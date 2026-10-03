@@ -47,7 +47,9 @@ def fit_prophet_model(
 
         # liegt der Start vor dem Fenster, ist die Spalte überall 1 und nicht mehr vom Niveau zu unterscheiden
         if prophet_data["ds"].iloc[0] < shift_start:
-            prophet_data[LEVEL_SHIFT_COLUMN] = (prophet_data["ds"] >= shift_start).astype(float)
+            prophet_data[LEVEL_SHIFT_COLUMN] = (
+                prophet_data["ds"] >= shift_start
+            ).astype(float)
             model.add_regressor(LEVEL_SHIFT_COLUMN)
 
     model.fit(prophet_data)
@@ -68,11 +70,15 @@ def build_prophet_forecast(
     # (UTC, stündlich, gefittetes model) - die einzige real mögliche Verletzung
     # ist ein Blick in die Zukunft.
     if history_end >= target_index[0]:
-        raise ValueError("The fitted model contains history at or after the forecast origin.")
+        raise ValueError(
+            "The fitted model contains history at or after the forecast origin."
+        )
 
     # Lokale statt UTC-Zeit, sonst verschmiert eine Zeitumstellung im Trainingsfenster
     # die gelernte Tageskurve künstlich um eine Stunde (siehe Kap. 06/08 im Handbuch).
-    future = pd.DataFrame({"ds": target_index.tz_convert(local_timezone).tz_localize(None)})
+    future = pd.DataFrame(
+        {"ds": target_index.tz_convert(local_timezone).tz_localize(None)}
+    )
 
     if LEVEL_SHIFT_COLUMN in model.extra_regressors:
         future[LEVEL_SHIFT_COLUMN] = 1.0
@@ -110,8 +116,9 @@ def build_prophet_forecast(
     return result[["y_pred", "y_pred_raw", "y_lower", "y_upper"]]
 
 
-def _prepare_prophet_data(history: pd.Series, local_timezone: str, log_transform: bool) -> pd.DataFrame:
-
+def _prepare_prophet_data(
+    history: pd.Series, local_timezone: str, log_transform: bool
+) -> pd.DataFrame:
     valid_history = history.dropna()
 
     if len(valid_history) < 2:
@@ -152,7 +159,9 @@ def select_prophet_history(
     if rolling_window_days is None:
         raise ValueError("rolling_window_days is required for rolling history.")
 
-    history_start = shift_local_days(forecast_origin, -rolling_window_days, local_timezone)
+    history_start = shift_local_days(
+        forecast_origin, -rolling_window_days, local_timezone
+    )
     return available_history.loc[available_history.index >= history_start]
 
 
@@ -172,11 +181,13 @@ def is_refit_required(
         return False
 
     if retraining_interval_days is None:
-        raise RuntimeError("retraining_interval_days is required outside of fixed_train.")
+        raise RuntimeError(
+            "retraining_interval_days is required outside of fixed_train."
+        )
 
     assert fitted_at is not None
 
     # in Kalendertagen, sonst fällt am 23-h-Tag im März das tägliche Retraining aus
-    return current_time >= shift_local_days(fitted_at, retraining_interval_days, local_timezone)
-
-
+    return current_time >= shift_local_days(
+        fitted_at, retraining_interval_days, local_timezone
+    )

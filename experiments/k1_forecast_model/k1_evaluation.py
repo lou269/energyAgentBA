@@ -32,7 +32,37 @@ def _best_variant(
     return str(overall.loc[list(variant_ids), "mae_w"].idxmin())
 
 
-def summarize_overall(results: dict[str, pd.DataFrame]) -> pd.DataFrame:
+def summarize_daily_error(
+    forecasts: pd.DataFrame, actual_daily_mean_w: pd.Series
+) -> pd.DataFrame:
+    """Fehler des Tagesmittels je Modell (Mittel der 24 Prognosewerte gegen das Ist-Tagesmittel), nur Tage mit lauter bewerteten Stunden"""
+    forecasts = forecasts.assign(
+        forecast_origin=pd.to_datetime(forecasts["forecast_origin"], utc=True)
+    )
+    days = forecasts.groupby(["model_id", "forecast_origin"]).agg(
+        predicted_w=("y_pred", "mean"),
+        complete=("target_eligible", "all"),
+    )
+    days = days.loc[days["complete"]]
+
+    # treated_daily liegt auf der lokalen Mitternacht, also genau auf dem forecast_origin
+    actual_w = actual_daily_mean_w.reindex(
+        days.index.get_level_values("forecast_origin")
+    ).to_numpy()
+    error_w = (days["predicted_w"] - actual_w).abs()
+
+    return pd.DataFrame(
+        {
+            "daily_mae_w": error_w.groupby("model_id").mean(),
+            "daily_mape_pct": (error_w / actual_w).groupby("model_id").mean() * 100,
+            "daily_count": error_w.groupby("model_id").size(),
+        }
+    )
+
+
+def summarize_overall(
+    results: dict[str, pd.DataFrame], actual_daily_mean_w: pd.Series
+) -> pd.DataFrame:
     """Gesamtfehler je Modell, Skill gegen die naive Referenz des Modus und Abdeckung des Prognoseintervalls"""
     reference = str(results["primary_naive_reference"]["model_id"].iloc[0])
     overall = results["overall_metrics"].set_index("model_id")
@@ -47,11 +77,16 @@ def summarize_overall(results: dict[str, pd.DataFrame]) -> pd.DataFrame:
         "empirical_coverage"
     ]
 
+    daily = summarize_daily_error(results["forecasts"], actual_daily_mean_w)
+
     return pd.DataFrame(
         {
             "mae_w": overall["mae_w"],
             "rmse_w": overall["rmse_w"],
             "mape_pct": overall["mape_pct"],
+            "daily_mae_w": daily["daily_mae_w"],
+            "daily_mape_pct": daily["daily_mape_pct"],
+            "daily_count": daily["daily_count"],
             "skill_pct": skill * 100,
             "coverage_pct": coverage * 100,
             "refit_seconds": overall["total_refit_runtime_seconds"],
@@ -88,6 +123,7 @@ class ModeSummary:
     skill_max_pct: float
     worse_than_best: int
     compared_variants: int
+    daily_count: int
     excluded_target_count: int
     possible_target_count: int
     # (Grund, Anzahl) der nicht bewerteten Zielstunden des besten Modells
@@ -101,6 +137,7 @@ def summarize_modes(
     results_by_mode: dict[str, dict[str, pd.DataFrame]],
     paired: pd.DataFrame,
     variant_ids: tuple[str, ...],
+    actual_daily_mean_w: pd.Series,
 ) -> list[ModeSummary]:
     """Je Modus alles, was Setup, Kennzahlen und Hinweise brauchen"""
     summaries = []
@@ -108,7 +145,7 @@ def summarize_modes(
     for mode, results in results_by_mode.items():
         best = _best_variant(results, variant_ids)
         reference = str(results["primary_naive_reference"]["model_id"].iloc[0])
-        overall = summarize_overall(results)
+        overall = summarize_overall(results, actual_daily_mean_w)
         metrics = results["overall_metrics"].set_index("model_id")
 
         skill = overall.loc[list(variant_ids), "skill_pct"]
@@ -128,6 +165,7 @@ def summarize_modes(
                 skill_max_pct=skill.max(),
                 worse_than_best=int(mode_paired["exceeds_noise"].sum()),
                 compared_variants=len(mode_paired),
+                daily_count=int(overall["daily_count"][best]),
                 excluded_target_count=metrics["excluded_target_count"][best],
                 possible_target_count=metrics["possible_target_count"][best],
                 exclusion_reasons=list(

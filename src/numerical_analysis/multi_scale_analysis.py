@@ -5,6 +5,8 @@ from typing import cast
 import numpy as np
 import pandas as pd
 
+from src.common.timestamps import local_daily_mean
+
 
 def build_multi_scale_analysis(
     history: pd.Series,
@@ -25,7 +27,7 @@ def build_multi_scale_analysis(
     local_timezone: str,
 ) -> pd.DataFrame:
     local_history = history.tz_convert(local_timezone)
-    daily_mean = local_history.resample("D").mean()
+    daily_mean = local_daily_mean(history, local_timezone)
     daily_std = local_history.resample("D").std(ddof=0)
 
     analyzed_position = cast(int, daily_mean.index.get_loc(analyzed_day))
@@ -140,7 +142,7 @@ def expected_weekday_mean(
     local_timezone: str,
 ) -> float | None:
     # wie weekday_expected oben, nur für einen Tag, der noch nicht in history liegt
-    daily_mean = history.tz_convert(local_timezone).resample("D").mean()
+    daily_mean = local_daily_mean(history, local_timezone)
     reference = daily_mean.iloc[-reference_window_rolling_days:]
     with_day = pd.concat([reference, pd.Series([np.nan], index=[forecast_day])])
     expected = _weekday_expected(

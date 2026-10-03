@@ -5,6 +5,7 @@ import logging
 
 import pandas as pd
 
+from src.common.timestamps import local_daily_mean
 from src.pipeline.io import df_to_csv
 from src.config.config_forecasting import NumericalAnalysisConfig, PreprocessingConfig
 from src.config.project_config import ProjectConfig, ensure_project_directories
@@ -23,6 +24,7 @@ class PreprocessingResult:
     treated_15min: pd.DataFrame
     imputation_mask_15min: pd.DataFrame
     treated_hourly: pd.DataFrame
+    treated_daily: pd.DataFrame
     imputation_mask_hourly: pd.DataFrame
     plausibility_15min: pd.DataFrame
     plausibility_hourly: pd.DataFrame
@@ -203,11 +205,16 @@ def run_preprocessing(
         max_daily_missing_share=config.max_daily_missing_share,
     )
 
+    treated_daily = local_daily_mean(treated_hourly, local_timezone)
+    daily_index = pd.DatetimeIndex(treated_daily.index)
+    treated_daily.index = daily_index.tz_convert("UTC").rename("timestamp")
+
     return PreprocessingResult(
         split_manifest=split_manifest,
         treated_15min=treated_15min,
         imputation_mask_15min=imputation_mask_15min,
         treated_hourly=treated_hourly,
+        treated_daily=treated_daily,
         imputation_mask_hourly=imputation_mask_hourly,
         plausibility_15min=plausibility_15min,
         plausibility_hourly=plausibility_hourly,
@@ -223,7 +230,9 @@ class PreprocessingRunner:
     ) -> None:
         self.project_config = project_config or ProjectConfig()
         self.preprocessing_config = preprocessing_config or PreprocessingConfig()
-        self.numerical_analysis_config = numerical_analysis_config or NumericalAnalysisConfig()
+        self.numerical_analysis_config = (
+            numerical_analysis_config or NumericalAnalysisConfig()
+        )
 
     def _read_canonical(self, name: str) -> pd.DataFrame:
         return pd.read_csv(
@@ -269,6 +278,7 @@ class PreprocessingRunner:
             "treated_15min": result.treated_15min,
             "imputation_mask_15min": result.imputation_mask_15min,
             "treated_hourly": result.treated_hourly,
+            "treated_daily": result.treated_daily,
             "imputation_mask_hourly": result.imputation_mask_hourly,
             "plausibility_15min": result.plausibility_15min,
             "plausibility_hourly": result.plausibility_hourly,
@@ -281,7 +291,10 @@ class PreprocessingRunner:
                 name,
             )
 
-        logger.info("Preprocessing completed successfully: %d output artifacts.", len(preprocessing_outputs) + 1)
+        logger.info(
+            "Preprocessing completed successfully: %d output artifacts.",
+            len(preprocessing_outputs) + 1,
+        )
 
 
 def main() -> None:

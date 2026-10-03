@@ -1,0 +1,9 @@
+Modell,MAE [W],RMSE [W],MAPE [%],Tagesfehler MAE [W],Tagesfehler MAPE [%],Skill ggü. B2 [%],"Intervall-Abdeckung [%], Soll 80",Refit-Zeit gesamt [s]
+C2 expanding,146.8,234.1,51.7,66.2,23.2,15.4,92.5,25.6
+C3_60 rolling 60 Tage,147.4,233.8,52.2,65.4,22.5,15.1,90.7,12.4
+C3_30 rolling 30 Tage,148.9,234.6,52.9,66.8,22.8,14.2,89.4,7.4
+C3_7 rolling 7 Tage,156.6,241.5,56.1,72.7,23.7,9.7,84.8,4.1
+C1 statisch,157.8,239.2,59.2,70.5,28.8,9.1,91.2,0.2
+"B2 naiv, Vortag",173.5,314.3,54.8,70.6,22.1,,,0.0
+"B3 naiv, Vorwoche",185.7,321.4,61.2,95.7,33.6,,,0.0
+"B1 naiv, letzter Wert",326.0,500.4,127.9,294.8,90.6,,,0.0

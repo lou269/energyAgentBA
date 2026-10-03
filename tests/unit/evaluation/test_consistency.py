@@ -13,8 +13,7 @@ def test_evidence_per_class() -> None:
     assert missing_evidence_paths("peak", BASE_PATHS, state) == ("anomaly.direction",)
     assert missing_evidence_paths(
         "new_pattern",
-        BASE_PATHS
-        + ["anomaly.sustained_drift", "anomaly.scale_anomaly_streak_days.weekday"],
+        ["anomaly.scale_anomaly_streak_days.weekday"],
         state,
     ) == ("anomaly.scale_anomaly_streak_days.long_term",)
     assert (

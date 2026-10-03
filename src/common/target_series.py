@@ -24,3 +24,11 @@ def read_preprocessed_target(
     )[plausibility_column(meter_key)]
 
     return target_series, target_imputed, target_value_implausible
+
+
+def read_preprocessed_daily_target(project_config: ProjectConfig) -> pd.Series:
+    meter_key = read_target_meter_key(project_config)
+
+    return read_preprocessing_frame(project_config, "treated_daily")[
+        treated_column(meter_key)
+    ]

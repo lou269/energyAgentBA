@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+from typing import TypeVar, cast
+
 import pandas as pd
+
+SeriesOrFrame = TypeVar("SeriesOrFrame", pd.Series, pd.DataFrame)
 
 
 def parse_utc_timestamp(value: object, field_name: str) -> pd.Timestamp:
@@ -83,6 +87,10 @@ def local_midnight_utc(
 
 def local_day_index(index: pd.Index, local_timezone: str) -> pd.DatetimeIndex:
     return pd.DatetimeIndex(index).tz_convert(local_timezone).normalize()
+
+
+def local_daily_mean(values: SeriesOrFrame, local_timezone: str) -> SeriesOrFrame:
+    return cast(SeriesOrFrame, values.tz_convert(local_timezone).resample("D").mean())
 
 
 def local_day(timestamp: pd.Timestamp, local_timezone: str) -> pd.Timestamp:

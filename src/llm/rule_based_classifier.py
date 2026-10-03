@@ -40,6 +40,13 @@ def rule_based_classify(
             reasoning=f"sustained deviation across multiple scales at once ({', '.join(anomaly['sustained_scales'])}), on a {day_label}.",
         )
 
+    # das Gate öffnet auch bei einer einzelnen anhaltenden Skala, der Tag selbst kann dabei normal sein
+    if anomaly["level"] != "unusual":
+        return RuleClassificationResult(
+            classification="normal",
+            reasoning=f"the day itself is not unusual and fewer than {min_sustained_scales} scales are sustained ({day_label}).",
+        )
+
     # peak/low sind per Definition richtungsgebunden ("unusually high"/"unusually low" consumption), ohne sustained Mehrskalen-Signatur bleibt nur die Richtung, um zwischen beiden zu unterscheiden
     if anomaly["direction"] == "high":
         return RuleClassificationResult(

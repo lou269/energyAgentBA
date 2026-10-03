@@ -182,7 +182,7 @@ class ForecastingConfig:
     daily_seasonality: bool = True
     country_holidays: str | None = "UK"
     # Prophet fitted auf log(y) statt y, Rücktransformation via exp() nach dem Predict
-    log_transform: bool = True
+    log_transform: bool = False
     interval_width: float = 0.80
     uncertainty_samples: int = 1000
     seed: int = 42

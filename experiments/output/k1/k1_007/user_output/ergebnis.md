@@ -1,0 +1,74 @@
+# K1 Retraining-Vergleich, Lauf k1_007
+
+## Setup
+
+- Split: validation, 2015-04-30 bis 2015-10-08, 162 Prognosetage (Ortszeit)
+- Modus rolling: 60 Tage Historie vor Split-Start, wie der Online-Zyklus
+- Modus macro: gesamte Historie vor Split-Start
+- Naive Referenz: rolling B2, macro B2
+- Prognose: 1 Tag ab lokaler Mitternacht, Intervall 80 %
+- Konfiguration: forecast-model-0.1, Seed 42
+- Commit: d22f039 (mit lokalen Änderungen)
+
+## Kennzahlen
+
+| Kennzahl | Wert | Bezug |
+|---|---|---|
+| rolling: MAE bestes Modell C2 expanding [W] | 146,8 | B2 173,5 W |
+| rolling: Skill der Prophet-Varianten ggü. B2 [%] | 15,4 | Spanne 9,1 bis 15,4 % |
+| rolling: Varianten belastbar schlechter als das beste Modell | 2 | von 4 |
+| macro: MAE bestes Modell C2 expanding [W] | 140,8 | B2 173,5 W |
+| macro: Skill der Prophet-Varianten ggü. B2 [%] | 18,9 | Spanne 9,7 bis 18,9 % |
+| macro: Varianten belastbar schlechter als das beste Modell | 4 | von 4 |
+
+## Gesamtfehler rolling
+
+| Modell | MAE [W] | RMSE [W] | MAPE [%] | Tagesfehler MAE [W] | Tagesfehler MAPE [%] | Skill ggü. B2 [%] | Intervall-Abdeckung [%], Soll 80 | Refit-Zeit gesamt [s] |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| C2 expanding | 146,8 | 234,1 | 51,7 | 66,2 | 23,2 | 15,4 | 92,5 | 25,6 |
+| C3_60 rolling 60 Tage | 147,4 | 233,8 | 52,2 | 65,4 | 22,5 | 15,1 | 90,7 | 12,4 |
+| C3_30 rolling 30 Tage | 148,9 | 234,6 | 52,9 | 66,8 | 22,8 | 14,2 | 89,4 | 7,4 |
+| C3_7 rolling 7 Tage | 156,6 | 241,5 | 56,1 | 72,7 | 23,7 | 9,7 | 84,8 | 4,1 |
+| C1 statisch | 157,8 | 239,2 | 59,2 | 70,5 | 28,8 | 9,1 | 91,2 | 0,2 |
+| B2 naiv, Vortag | 173,5 | 314,3 | 54,8 | 70,6 | 22,1 | - | - | 0,0 |
+| B3 naiv, Vorwoche | 185,7 | 321,4 | 61,2 | 95,7 | 33,6 | - | - | 0,0 |
+| B1 naiv, letzter Wert | 326,0 | 500,4 | 127,9 | 294,8 | 90,6 | - | - | 0,0 |
+
+## Gesamtfehler macro
+
+| Modell | MAE [W] | RMSE [W] | MAPE [%] | Tagesfehler MAE [W] | Tagesfehler MAPE [%] | Skill ggü. B2 [%] | Intervall-Abdeckung [%], Soll 80 | Refit-Zeit gesamt [s] |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| C2 expanding | 140,8 | 236,4 | 46,9 | 67,3 | 23,6 | 18,9 | 90,7 | 269,4 |
+| C3_60 rolling 60 Tage | 147,4 | 233,8 | 52,2 | 65,4 | 22,5 | 15,1 | 90,8 | 12,5 |
+| C1 statisch | 148,0 | 237,1 | 53,1 | 67,5 | 26,2 | 14,7 | 89,9 | 1,3 |
+| C3_30 rolling 30 Tage | 148,9 | 234,6 | 52,9 | 66,8 | 22,8 | 14,2 | 89,6 | 7,5 |
+| C3_7 rolling 7 Tage | 156,6 | 241,5 | 56,1 | 72,7 | 23,7 | 9,7 | 84,5 | 4,4 |
+| B2 naiv, Vortag | 173,5 | 314,3 | 54,8 | 70,6 | 22,1 | - | - | 0,0 |
+| B3 naiv, Vorwoche | 185,7 | 321,4 | 61,2 | 95,7 | 33,6 | - | - | 0,0 |
+| B1 naiv, letzter Wert | 326,0 | 500,4 | 127,9 | 294,8 | 90,6 | - | - | 0,0 |
+
+## Abstand zum besten Prophet-Modell, gepaart je Origin
+
+| Modus | Modell | Referenz | Differenz [W] | 2 Standardfehler [W] | Origins | Origins besser [%] | belastbar |
+|---|---|---|---:|---:|---:|---:|---|
+| rolling | C3_60 rolling 60 Tage | C2 expanding | 0,6 | 2,8 | 161 | 55,3 | nein |
+| rolling | C3_30 rolling 30 Tage | C2 expanding | 2,2 | 4,3 | 161 | 52,2 | nein |
+| rolling | C3_7 rolling 7 Tage | C2 expanding | 9,9 | 6,8 | 161 | 37,9 | ja |
+| rolling | C1 statisch | C2 expanding | 11,0 | 4,3 | 161 | 32,9 | ja |
+| macro | C3_60 rolling 60 Tage | C2 expanding | 6,6 | 4,0 | 161 | 33,5 | ja |
+| macro | C1 statisch | C2 expanding | 7,2 | 2,1 | 161 | 23,6 | ja |
+| macro | C3_30 rolling 30 Tage | C2 expanding | 8,2 | 5,1 | 161 | 31,7 | ja |
+| macro | C3_7 rolling 7 Tage | C2 expanding | 15,9 | 7,5 | 161 | 29,8 | ja |
+
+## Hinweise
+
+- belastbar: Betrag der Differenz größer als 2 Standardfehler der gepaarten Differenzen, grobe Faustregel
+- Tagesfehler: Fehler des Tagesmittels (Mittel der 24 Prognosewerte gegen das Ist-Tagesmittel), nicht der Mittelwert der Stundenfehler
+- rolling: Tagesfehler aus 160 von 162 Tagen (nur Tage mit lauter bewerteten Stunden)
+- rolling: 25 von 3888 Zielstunden nicht bewertet (Messwert fehlt 24, imputiert 1)
+- macro: Tagesfehler aus 160 von 162 Tagen (nur Tage mit lauter bewerteten Stunden)
+- macro: 25 von 3888 Zielstunden nicht bewertet (Messwert fehlt 24, imputiert 1)
+
+![rolling/forecast_model_comparison.png](rolling/forecast_model_comparison.png)
+
+![macro/forecast_model_comparison.png](macro/forecast_model_comparison.png)

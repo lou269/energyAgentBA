@@ -110,7 +110,11 @@ def run_chain(
         )
         classification = (
             gate_classification(state)
-            or rule_based_classify(state, local_timezone=local_timezone).classification
+            or rule_based_classify(
+                state,
+                local_timezone=local_timezone,
+                min_sustained_scales=config.min_sustained_scales,
+            ).classification
         )
         action = adaption_policy(
             classification,

@@ -2,11 +2,27 @@ import numpy as np
 import pandas as pd
 from prophet import Prophet
 
-from src.common.timestamps import local_calendar_range, local_day_hours, shift_local_days
+from src.common.timestamps import (
+    local_calendar_range,
+    local_day_hours,
+    shift_local_days,
+)
 from src.config.config_forecasting import ProphetVariantConfig
-from src.forecasting.baselines import build_daily_naive_forecast, build_last_value_forecast, build_weekly_naive_forecast
-from src.forecasting.prophet_model import build_prophet_forecast, fit_prophet_model, is_refit_required, select_prophet_history
-from src.forecasting.forecast_schema import FORECAST_OUTPUT_COLUMNS, validate_forecast_output
+from src.forecasting.baselines import (
+    build_daily_naive_forecast,
+    build_last_value_forecast,
+    build_weekly_naive_forecast,
+)
+from src.forecasting.prophet_model import (
+    build_prophet_forecast,
+    fit_prophet_model,
+    is_refit_required,
+    select_prophet_history,
+)
+from src.forecasting.forecast_schema import (
+    FORECAST_OUTPUT_COLUMNS,
+    validate_forecast_output,
+)
 
 
 _SEASONAL_NAIVE_BUILDERS = {
@@ -40,14 +56,22 @@ def build_walk_forward_forecasts(
     scenario_id: str | None = None,
 ) -> pd.DataFrame:
     if (baseline_model_id is None) == (prophet_variant is None):
-        raise ValueError("Exactly one of baseline_model_id or prophet_variant must be given.")
+        raise ValueError(
+            "Exactly one of baseline_model_id or prophet_variant must be given."
+        )
 
     if baseline_model_id not in (None, "B1", "B2", "B3"):
         raise ValueError(f"Unsupported baseline model ID: {baseline_model_id}")
 
-    _validate_walk_forward_data(fixed_history, evaluation_targets, evaluation_imputation_mask, frequency)
+    _validate_walk_forward_data(
+        fixed_history, evaluation_targets, evaluation_imputation_mask, frequency
+    )
 
-    for name, value in {"run_id": run_id, "experiment_id": experiment_id, "split": split}.items():
+    for name, value in {
+        "run_id": run_id,
+        "experiment_id": experiment_id,
+        "split": split,
+    }.items():
         if not value:
             raise ValueError(f"{name} must not be empty.")
 
@@ -55,15 +79,19 @@ def build_walk_forward_forecasts(
     if horizon_days < 1:
         raise ValueError("horizon_days must be at least 1.")
     if forecast_origin_step_days < horizon_days:
-        raise ValueError("forecast_origin_step_days must be at least horizon_days to prevent overlapping horizons.")
+        raise ValueError(
+            "forecast_origin_step_days must be at least horizon_days to prevent overlapping horizons."
+        )
 
     # Prophet-weite Annahmen dieser Implementierung.
-    if growth != "linear":
-        raise ValueError("The current Prophet implementation only supports linear growth.")
+    if growth not in ("linear", "flat"):
+        raise ValueError("growth must be 'linear' or 'flat'.")
     if not 0.0 < interval_width < 1.0:
         raise ValueError("interval_width must be between 0 and 1.")
 
-    model_id = baseline_model_id if baseline_model_id is not None else prophet_variant.model_id  # type: ignore[union-attr]
+    model_id = (
+        baseline_model_id if baseline_model_id is not None else prophet_variant.model_id  # type: ignore[union-attr]
+    )
 
     first_origin = evaluation_targets.index[0]
     evaluation_end = evaluation_targets.index[-1] + pd.Timedelta(frequency)
@@ -72,15 +100,21 @@ def build_walk_forward_forecasts(
     if last_origin < first_origin:
         raise ValueError("Evaluation split contains no complete forecast horizon.")
 
-    forecast_origins = local_calendar_range(first_origin, forecast_origin_step_days, last_origin, local_timezone)
+    forecast_origins = local_calendar_range(
+        first_origin, forecast_origin_step_days, last_origin, local_timezone
+    )
 
     complete_history = pd.concat([fixed_history, evaluation_targets])
     prophet_state: tuple[Prophet, pd.Timestamp, pd.Series] | None = None
     forecast_outputs: list[pd.DataFrame] = []
 
     for forecast_origin in forecast_origins:
-        target_index = local_day_hours(forecast_origin, horizon_days, frequency, local_timezone)
-        available_history = complete_history.loc[complete_history.index < forecast_origin]
+        target_index = local_day_hours(
+            forecast_origin, horizon_days, frequency, local_timezone
+        )
+        available_history = complete_history.loc[
+            complete_history.index < forecast_origin
+        ]
 
         target_values = evaluation_targets.loc[target_index]
         target_imputed = evaluation_imputation_mask.loc[target_index]
@@ -92,9 +126,13 @@ def build_walk_forward_forecasts(
 
         if baseline_model_id is not None:
             if baseline_model_id == "B1":
-                raw_predictions = build_last_value_forecast(available_history, target_index)
+                raw_predictions = build_last_value_forecast(
+                    available_history, target_index
+                )
             else:
-                raw_predictions = _SEASONAL_NAIVE_BUILDERS[baseline_model_id](available_history, target_index, local_timezone)
+                raw_predictions = _SEASONAL_NAIVE_BUILDERS[baseline_model_id](
+                    available_history, target_index, local_timezone
+                )
 
             predictions = (
                 raw_predictions.clip(lower=0.0)
@@ -308,10 +346,14 @@ def _validate_hourly_series(series: pd.Series, name: str, frequency: str) -> Non
     if str(series.index.tz) != "UTC":
         raise ValueError(f"{name} must use UTC.")
 
-    expected_index = pd.date_range(start=series.index[0], periods=len(series), freq=frequency)
+    expected_index = pd.date_range(
+        start=series.index[0], periods=len(series), freq=frequency
+    )
 
     if not series.index.equals(expected_index):
-        raise ValueError(f"{name} must contain a continuous index at the configured frequency.")
+        raise ValueError(
+            f"{name} must contain a continuous index at the configured frequency."
+        )
 
     try:
         values = pd.to_numeric(series, errors="raise").to_numpy(dtype="float64")
@@ -337,13 +379,17 @@ def _validate_walk_forward_data(
     expected_evaluation_start = fixed_history.index[-1] + pd.Timedelta(hours=1)
 
     if evaluation_targets.index[0] != expected_evaluation_start:
-        raise ValueError("evaluation_targets must start exactly one hour after fixed_history ends.")
+        raise ValueError(
+            "evaluation_targets must start exactly one hour after fixed_history ends."
+        )
 
     if not isinstance(evaluation_imputation_mask, pd.Series):
         raise TypeError("evaluation_imputation_mask must be a pandas Series.")
 
     if not evaluation_imputation_mask.index.equals(evaluation_targets.index):
-        raise ValueError("evaluation_imputation_mask must use exactly the evaluation target index.")
+        raise ValueError(
+            "evaluation_imputation_mask must use exactly the evaluation target index."
+        )
 
     if evaluation_imputation_mask.isna().any():
         raise ValueError("evaluation_imputation_mask contains missing values.")

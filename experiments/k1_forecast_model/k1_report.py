@@ -8,6 +8,7 @@ import pandas as pd
 
 from docs.plots.plot_k1_forecast_model import build_forecast_model_plot
 from docs.plots.plot_k1_seasonality import build_seasonality_plot
+from src.common.target_series import read_preprocessed_daily_target
 from src.config.config_forecasting import MODEL_LABELS as FORECAST_MODEL_LABELS
 from experiments.common.report import (
     NOISE_RULE_NOTE,
@@ -54,6 +55,7 @@ MODEL_LABELS: dict[str, str] = FORECAST_MODEL_LABELS | {
 }
 
 RESULT_FILES = (
+    "forecasts",
     "overall_metrics",
     "origin_metrics",
     "mae_skill",
@@ -71,6 +73,8 @@ def build_overall_table(
             "MAE [W]": overall["mae_w"],
             "RMSE [W]": overall["rmse_w"],
             "MAPE [%]": overall["mape_pct"],
+            "Tagesfehler MAE [W]": overall["daily_mae_w"],
+            "Tagesfehler MAPE [%]": overall["daily_mape_pct"],
             f"Skill ggü. {reference_model} [%]": overall["skill_pct"],
             f"Intervall-Abdeckung [%], Soll {nominal_interval_level * 100:.0f}": overall[
                 "coverage_pct"
@@ -122,12 +126,18 @@ def build_setup(
 
 
 def build_notes(modes: list[ModeSummary]) -> list[str]:
-    notes = [NOISE_RULE_NOTE]
+    notes = [
+        NOISE_RULE_NOTE,
+        "Tagesfehler: Fehler des Tagesmittels (Mittel der 24 Prognosewerte gegen das Ist-Tagesmittel), nicht der Mittelwert der Stundenfehler",
+    ]
 
     for mode in modes:
         reasons = ", ".join(
             f"{EXCLUSION_LABELS.get(reason, reason)} {count}"
             for reason, count in mode.exclusion_reasons
+        )
+        notes.append(
+            f"{mode.mode}: Tagesfehler aus {mode.daily_count} von {mode.forecast_day_count} Tagen (nur Tage mit lauter bewerteten Stunden)"
         )
         notes.append(
             f"{mode.mode}: {mode.excluded_target_count} von {mode.possible_target_count} Zielstunden nicht bewertet ({reasons})"
@@ -178,14 +188,15 @@ def report_retraining(run_directory: Path) -> Path:
     }
 
     paired = compare_to_best_variant(results_by_mode, variant_ids)
-    modes = summarize_modes(results_by_mode, paired, variant_ids)
+    actual_daily = read_preprocessed_daily_target(PROJECT_CONFIG)
+    modes = summarize_modes(results_by_mode, paired, variant_ids, actual_daily)
 
     output_directory = user_output_directory(run_directory)
     tables = {"key_figures": ("Kennzahlen", build_key_figures(modes))}
 
     for mode in modes:
         results = results_by_mode[mode.mode]
-        overall = summarize_overall(results)
+        overall = summarize_overall(results, actual_daily)
 
         tables[f"result_overall_{mode.mode}"] = (
             f"Gesamtfehler {mode.mode}",

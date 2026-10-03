@@ -41,7 +41,6 @@ def _analysis_row() -> pd.Series:
             "weekday_sustained": False,
             "weekly_sustained": False,
             "long_term_sustained": False,
-            "sustained_drift": False,
             "anomaly_direction": "high",
             "anomaly_level": "unusual",
         }

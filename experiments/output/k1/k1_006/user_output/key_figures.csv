@@ -1,0 +1,7 @@
+Kennzahl,Wert,Bezug
+rolling: MAE bestes Modell C3_60 rolling 60 Tage [W],145.2,"B2 173,5 W"
+rolling: Skill der Prophet-Varianten ggü. B2 [%],16.3,"Spanne 6,1 bis 16,3 %"
+rolling: Varianten belastbar schlechter als das beste Modell,2.0,von 4
+macro: MAE bestes Modell C2 expanding [W],144.5,"B2 173,5 W"
+macro: Skill der Prophet-Varianten ggü. B2 [%],16.7,"Spanne 14,7 bis 16,7 %"
+macro: Varianten belastbar schlechter als das beste Modell,1.0,von 4
