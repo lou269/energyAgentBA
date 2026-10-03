@@ -1,0 +1,65 @@
+Ebene,Modell,Fall oder Tag,Verstoß,fehlende Belege,Gerät genannt (Hinweis)
+Ebene 2,qwen3.5:9b,2014-03-01 control,,,heizung
+Ebene 2,qwen3.5:9b,2014-03-01 peak_6,,,heizung
+Ebene 2,qwen3.5:9b,2014-03-01 step,,,heizung
+Ebene 2,qwen3.5:9b,2014-03-05 control,,,heizung
+Ebene 2,qwen3.5:9b,2014-03-05 peak_6,,,heizung
+Ebene 2,qwen3.5:9b,2014-03-05 step,,,heizung
+Ebene 2,qwen3.5:9b,2014-04-01 control,,,heizung
+Ebene 2,qwen3.5:9b,2014-04-01 peak_6,,,heizung
+Ebene 2,qwen3.5:9b,2014-04-01 step,,,heizung
+Ebene 2,qwen3.5:9b,2014-06-01 peak_6,,,wärmepumpe; boiler
+Ebene 2,qwen3.5:9b,2014-06-02 peak_6,,,wärmepumpe; boiler
+Ebene 2,qwen3.5:9b,2014-06-12 control,,,heizung
+Ebene 2,ministral-3:8b,2014-03-05 control,,,heizung
+Ebene 2,ministral-3:8b,2014-03-05 peak_6,,,heizung
+Ebene 2,ministral-3:8b,2014-03-05 step,,,heizung
+Ebene 2,ministral-3:8b,2014-03-19 control,,,heizung
+Ebene 2,ministral-3:8b,2014-03-19 peak_6,,,heizung
+Ebene 2,ministral-3:8b,2014-03-19 step,,,heizung
+Ebene 2,ministral-3:8b,2014-04-01 control,,,heizung
+Ebene 2,ministral-3:8b,2014-04-01 peak_6,,,heizung
+Ebene 2,ministral-3:8b,2014-04-01 step,,,heizung
+Ebene 2,ministral-3:8b,2014-04-14 control,,,heizung
+Ebene 2,ministral-3:8b,2014-04-14 peak_6,,,heizung
+Ebene 2,ministral-3:8b,2014-04-14 step,,,heizung
+Ebene 2,ministral-3:8b,2014-04-30 control,,anomaly.direction,heizlüfter
+Ebene 2,ministral-3:8b,2014-05-11 control,,,heizung
+Ebene 2,ministral-3:8b,2014-05-13 control,,anomaly.direction,
+Ebene 2,ministral-3:8b,2014-05-14 control,,anomaly.direction,
+Ebene 2,ministral-3:8b,2014-05-17 control,,anomaly.direction,
+Ebene 2,ministral-3:8b,2014-05-22 step,,,heizung
+Ebene 2,ministral-3:8b,2014-06-01 peak_6,,anomaly.direction,waschmaschine; trockner
+Ebene 2,ministral-3:8b,2014-06-02 peak_6,,anomaly.direction,heizlüfter
+Ebene 2,ministral-3:8b,2014-06-12 peak_6,,,heizung
+Ebene 2,ministral-3:8b,2014-06-13 control,,anomaly.direction,
+Ebene 2,ministral-3:8b,2014-06-13 peak_6,,anomaly.direction,
+Ebene 2,qwen3:8b,2014-03-05 control,,,heizung
+Ebene 2,qwen3:8b,2014-03-05 peak_6,,,heizung
+Ebene 2,qwen3:8b,2014-03-05 step,,,heizung
+Ebene 2,qwen3:8b,2014-04-03 control,number: 18,,
+Ebene 2,qwen3:8b,2014-04-03 peak_6,number: 18,,
+Ebene 2,qwen3:8b,2014-04-03 step,number: 18,,
+Ebene 2,qwen3:8b,2014-04-04 control,,,heizung
+Ebene 2,qwen3:8b,2014-04-04 peak_6,,,heizung
+Ebene 2,qwen3:8b,2014-04-04 step,,,heizung
+Ebene 2,qwen3:8b,2014-04-17 control,,,heizung
+Ebene 2,qwen3:8b,2014-04-30 step,number: 20,,
+Ebene 2,qwen3:8b,2014-05-13 step,number: 15,,
+Ebene 2,qwen3:8b,2014-06-04 peak_6,number: 15,,
+Ebene 2,qwen3:8b,2014-06-12 control,,,heizung
+Ebene 2,qwen3:8b,2014-06-13 control,number: 15,,
+Ebene 2,qwen3:8b,2014-06-13 step,number: 15,,
+Ebene 1,qwen3.5:9b,absence_drift_down,number: 8. bis 21. Dezember,,
+Ebene 1,qwen3.5:9b,low_single_scale,,,heizung
+Ebene 1,qwen3.5:9b,new_pattern,,,heizung
+Ebene 1,qwen3.5:9b,new_pattern_drift_down,,,heizung
+Ebene 1,ministral-3:8b,absence_drift_down,number: 21. Dezember,,
+Ebene 1,ministral-3:8b,new_pattern,,,heizung
+Ebene 1,ministral-3:8b,new_pattern_at_min_scales_boundary,,,heizung
+Ebene 1,ministral-3:8b,peak,,,heizung
+Ebene 1,ministral-3:8b,peak_single_sustained_scale,,,heizung
+Ebene 1,qwen3:8b,new_pattern,,,heizung
+Ebene 1,qwen3:8b,new_pattern_drift_down,,,heizung
+Ebene 1,qwen3:8b,normal_single_sustained_scale,,,heizung
+Ebene 1,qwen3:8b,peak,,,heizung

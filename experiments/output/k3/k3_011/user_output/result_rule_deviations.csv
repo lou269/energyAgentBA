@@ -1,0 +1,84 @@
+Modell,analysierter Tag,Regel,Modell sagt,in Arten
+qwen3:8b,2014-03-05,normal,new_pattern,"control, step, peak_6"
+qwen3:8b,2014-03-06,normal,unknown,"control, step, peak_6"
+qwen3:8b,2014-03-15,peak,normal,"control, step, peak_6"
+qwen3:8b,2014-03-19,normal,new_pattern,"control, step, peak_6"
+qwen3:8b,2014-04-04,normal,new_pattern,"control, step, peak_6"
+qwen3:8b,2014-04-12,low,normal,"control, step, peak_6"
+qwen3:8b,2014-04-15,peak,normal,peak_6
+qwen3:8b,2014-04-17,normal,new_pattern,control
+qwen3:8b,2014-04-17,peak,normal,step
+qwen3:8b,2014-04-18,normal,new_pattern,peak_6
+qwen3:8b,2014-04-28,normal,new_pattern,step
+qwen3:8b,2014-04-30,normal,peak,step
+qwen3:8b,2014-05-11,normal,new_pattern,step
+qwen3:8b,2014-05-13,normal,low,step
+qwen3:8b,2014-05-14,normal,peak,step
+qwen3:8b,2014-05-16,new_pattern,normal,step
+qwen3:8b,2014-05-17,normal,new_pattern,control
+qwen3:8b,2014-05-20,normal,low,step
+qwen3:8b,2014-05-22,normal,new_pattern,peak_6
+qwen3:8b,2014-05-24,normal,new_pattern,step
+qwen3:8b,2014-05-30,normal,new_pattern,control
+qwen3:8b,2014-05-31,normal,peak,control
+qwen3:8b,2014-06-01,normal,peak,control
+qwen3:8b,2014-06-02,normal,peak,control
+qwen3:8b,2014-06-04,normal,new_pattern,peak_6
+qwen3:8b,2014-06-05,new_pattern,normal,peak_6
+qwen3:8b,2014-06-12,normal,new_pattern,"control, step"
+qwen3:8b,2014-06-13,normal,low,"control, step"
+qwen3.5:9b,2014-03-05,normal,new_pattern,"control, step, peak_6"
+qwen3.5:9b,2014-03-06,normal,unknown,"control, step, peak_6"
+qwen3.5:9b,2014-03-15,peak,normal,"control, step, peak_6"
+qwen3.5:9b,2014-03-19,normal,new_pattern,"control, step, peak_6"
+qwen3.5:9b,2014-04-01,normal,new_pattern,"control, step, peak_6"
+qwen3.5:9b,2014-04-12,low,normal,"control, step, peak_6"
+qwen3.5:9b,2014-04-14,normal,new_pattern,"control, step, peak_6"
+qwen3.5:9b,2014-04-15,peak,normal,peak_6
+qwen3.5:9b,2014-04-17,peak,normal,step
+qwen3.5:9b,2014-04-27,normal,new_pattern,step
+qwen3.5:9b,2014-04-28,normal,new_pattern,control
+qwen3.5:9b,2014-04-30,normal,peak,control
+qwen3.5:9b,2014-05-11,normal,new_pattern,control
+qwen3.5:9b,2014-05-13,normal,low,control
+qwen3.5:9b,2014-05-14,normal,peak,control
+qwen3.5:9b,2014-05-16,new_pattern,normal,step
+qwen3.5:9b,2014-05-17,normal,low,control
+qwen3.5:9b,2014-05-20,normal,low,control
+qwen3.5:9b,2014-05-22,normal,new_pattern,step
+qwen3.5:9b,2014-05-24,normal,new_pattern,control
+qwen3.5:9b,2014-05-30,normal,new_pattern,peak_6
+qwen3.5:9b,2014-05-31,normal,peak,peak_6
+qwen3.5:9b,2014-06-01,normal,peak,peak_6
+qwen3.5:9b,2014-06-02,normal,peak,peak_6
+qwen3.5:9b,2014-06-04,normal,new_pattern,step
+qwen3.5:9b,2014-06-05,new_pattern,normal,peak_6
+qwen3.5:9b,2014-06-12,normal,new_pattern,"control, peak_6"
+qwen3.5:9b,2014-06-13,normal,low,"control, peak_6"
+ministral-3:8b,2014-03-05,normal,new_pattern,"control, step, peak_6"
+ministral-3:8b,2014-03-06,normal,unknown,"control, step, peak_6"
+ministral-3:8b,2014-03-15,peak,normal,"control, step, peak_6"
+ministral-3:8b,2014-03-19,normal,new_pattern,"control, step, peak_6"
+ministral-3:8b,2014-04-01,normal,new_pattern,"control, step, peak_6"
+ministral-3:8b,2014-04-12,low,normal,"control, step, peak_6"
+ministral-3:8b,2014-04-14,normal,new_pattern,"control, step, peak_6"
+ministral-3:8b,2014-04-15,peak,normal,peak_6
+ministral-3:8b,2014-04-17,peak,normal,step
+ministral-3:8b,2014-04-27,normal,new_pattern,step
+ministral-3:8b,2014-04-28,normal,new_pattern,control
+ministral-3:8b,2014-04-30,normal,peak,control
+ministral-3:8b,2014-05-11,normal,new_pattern,control
+ministral-3:8b,2014-05-13,normal,low,control
+ministral-3:8b,2014-05-14,normal,peak,control
+ministral-3:8b,2014-05-16,new_pattern,normal,step
+ministral-3:8b,2014-05-17,normal,low,control
+ministral-3:8b,2014-05-22,normal,new_pattern,step
+ministral-3:8b,2014-05-24,normal,new_pattern,control
+ministral-3:8b,2014-05-30,normal,new_pattern,peak_6
+ministral-3:8b,2014-05-31,normal,peak,peak_6
+ministral-3:8b,2014-06-01,normal,peak,peak_6
+ministral-3:8b,2014-06-02,normal,peak,peak_6
+ministral-3:8b,2014-06-04,normal,new_pattern,step
+ministral-3:8b,2014-06-05,new_pattern,normal,peak_6
+ministral-3:8b,2014-06-12,normal,new_pattern,"control, peak_6"
+ministral-3:8b,2014-06-13,normal,low,"control, peak_6"

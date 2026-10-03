@@ -1,0 +1,9 @@
+Kennzahl,Wert,Bezug
+Ebene 1: bestes Modell nach Macro-F1,qwen3.5:9b,"Macro-F1 0,86, Regel 0,81"
+ministral-3:8b: Ebene 1 richtig,8/9,Regel 8/9
+ministral-3:8b: Antwortzeit je Aufruf im Mittel [s],21.4,"p95 38,6 s, Regel 0,0 s"
+ministral-3:8b: Ebene 2 Ereignis-Arten erkannt,2/2,Regel 2/2
+ministral-3:8b: Ebene 2 Tage mit anderer Klasse als die Regel,27,2014-03-05 new_pattern statt normal; 2014-03-06 unknown statt normal; 2014-03-15 normal statt peak; 2014-03-19 new_pattern statt normal; 2014-04-01 new_pattern statt normal; 2014-04-12 normal statt low; 2014-04-14 new_pattern statt normal; 2014-04-15 normal statt peak; 2014-04-17 normal statt peak; 2014-04-27 new_pattern statt normal; 2014-04-28 new_pattern statt normal; 2014-04-30 peak statt normal; 2014-05-11 new_pattern statt normal; 2014-05-13 low statt normal; 2014-05-14 peak statt normal; 2014-05-16 normal statt new_pattern; 2014-05-17 low statt normal; 2014-05-22 new_pattern statt normal; 2014-05-24 new_pattern statt normal; 2014-05-30 new_pattern statt normal; 2014-05-31 peak statt normal; 2014-06-01 peak statt normal; 2014-06-02 peak statt normal; 2014-06-04 new_pattern statt normal; 2014-06-05 normal statt new_pattern; 2014-06-12 new_pattern statt normal; 2014-06-13 low statt normal
+ministral-3:8b: ungültige Antworten Ebene 1,0,Ausfalltage Ebene 2: 0
+ministral-3:8b: Antworten mit Textverstoß (Ebene 1 / Ebene 2),1/9 / 0/37,"Gerät, Steuerung oder Zahl, Datum, Uhrzeit nicht im State"
+ministral-3:8b: Antworten mit fehlenden Belegen (Ebene 1 / Ebene 2),0/9 / 8/37,zitierte Belege passen nicht zur eigenen Klasse

@@ -1,0 +1,4 @@
+Modell,E1 Antworten,E1 mit Verstoß,E1 Belege fehlen,E1 Gerät genannt,E2 Antworten,E2 mit Verstoß,E2 Belege fehlen,E2 Gerät genannt
+qwen3.5:9b,9,1,0,3,37,0,0,12
+ministral-3:8b,9,1,0,4,37,0,8,18
+qwen3:8b,9,0,0,4,52,8,0,8
