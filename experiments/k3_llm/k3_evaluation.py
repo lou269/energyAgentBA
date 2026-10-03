@@ -17,13 +17,14 @@ from experiments.common.standard_config import (
     NOTIFICATION_PERIOD_DAYS,
 )
 from experiments.k3_llm.k3_cases import EXPECTED_EVIDENCE_PATHS
-from experiments.k3_llm.k3_config import BASELINE_ID, CORRECT_ANSWER_LABEL
+from experiments.k3_llm.k3_config import BASELINE_ID
 from src.evaluation.consistency import missing_evidence_paths
 from src.llm.llm_schema import CLASSIFICATIONS
 from src.structured_state.structured_state_schema import StructuredState
 
 # Ebene 2: jedes Modell läuft als eigene Config, gepaart wird mit seinem eigenen Kontrolllauf
 SEQUENCE_PAIR_KEYS = ["config", "days_since_cutover"]
+CORRECT_ANSWER = "correct"
 
 SEQUENCE_RESULT_COLUMNS = [
     "kind",
@@ -228,7 +229,7 @@ def _case_answers(cases: pd.DataFrame, model_order: list[str]) -> pd.DataFrame:
     # Fall x Modell, nur falsche Antworten stehen als Klasse drin, ungültige bleiben leer
     answers = (
         cases["classifications"]
-        .where(cases["accuracy"].lt(1), CORRECT_ANSWER_LABEL)
+        .where(cases["accuracy"].lt(1), CORRECT_ANSWER)
         .replace("", pd.NA)
     )
 

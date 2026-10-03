@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 
-from experiments.common.standard_config import KIND_LABELS
 from src.config.config_forecasting import C1_STATIC, ProphetVariantConfig
 
 RUN_PREFIX = "e4"
@@ -9,46 +8,6 @@ FORECAST_METRICS_FILE = "e4_forecast_metrics"
 SYSTEM_RESULTS_FILE = "e4_system_results"
 # Szenario ohne Injektion im Kreislauf
 CLEAN_SCENARIO = "clean"
-
-SCENARIO_LABELS = {CLEAN_SCENARIO: "ohne Injektion"} | KIND_LABELS
-CRITERION_LABELS = {
-    "no_malfunction": "keine Fehlfunktion",
-    "usable_from_start": "von Anfang an nutzbar",
-    "adapts": "passt sich an",
-    "adaptive_vs_static": "adaptiv gegen statisch",
-}
-CHECK_LABELS = {
-    "resets_in_settling": "Resets, solange nicht alle Skalen einen Score haben",
-    "forecast_skill_first_window_pct": "Skill der Prognose gegenüber der Baseline in Woche 1 [%]",
-    "first_gate_scale_day": "erster Tag mit Gate-Skala, spätester Termin",
-    "forecast_settling_day": "Einschwingtag Prognose",
-    "notification_settling_day": "Einschwingtag Meldungen, spätester Termin",
-    "detection_settling_day": "Einschwingtag Erkennung, spätester Termin und Art",
-    "classification_settling_day": "Einschwingtag Einordnung, spätester Termin und Art",
-    "static_worse_share": "Anteil der Fenster ab Woche 2, in denen statisch an jedem Termin schlechter ist",
-}
-# Kennzahl und Bezug, {total} ist die Bezugsgröße aus summarize_price
-PRICE_LABELS = {
-    "mae_gap_w": ("Zusatz-MAE der Prognose [W]", "bei {total} W mit langem Kaltstart"),
-    "only_shortest": (
-        "Meldetage nur mit kurzem Kaltstart",
-        "von {total} sauberen Tagen",
-    ),
-    "only_longest": (
-        "Meldetage nur mit langem Kaltstart",
-        "von {total} sauberen Tagen",
-    ),
-    "unknown": ("unknown-Tage", "von {total} sauberen Tagen"),
-    "missed": ("verpasste Injektionen", "von {total}, die der lange Kaltstart meldet"),
-    "class_other": (
-        "Injektionen mit anderer Klasse",
-        "von {total}, die der lange Kaltstart meldet",
-    ),
-    "class_unknown": (
-        "Injektionen mit unknown statt Klasse",
-        "von {total}, die der lange Kaltstart meldet",
-    ),
-}
 
 
 @dataclass(frozen=True)

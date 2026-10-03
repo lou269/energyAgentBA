@@ -22,7 +22,6 @@ from experiments.common.report import (
 from experiments.common.standard_config import DECIMALS, LOCAL_TIMEZONE, PROJECT_CONFIG
 from experiments.e2_absence.e2_config import (
     COMPARISON_FILE,
-    PHASE_LABELS,
     PRECHECK_RUN_PREFIX,
     REDUCTION_FILE,
     RUN_PREFIX,
@@ -43,6 +42,20 @@ from src.pipeline.io import (
     run_directory_from_argv,
     user_output_directory,
 )
+
+CONFIG_LABELS = {
+    "SYS1": "SYS1 ohne Adaption",
+    "SYS2": "SYS2 Regel",
+    "SYS3_CTX0": "SYS3 ohne Kalender",
+    "SYS3_CTX1": "SYS3 mit Kalender",
+    "SYS3_CTX2": "SYS3 Kalender per Tool",
+}
+
+PHASE_LABELS = {
+    "before": "vor dem Urlaub",
+    "absence": "Urlaub",
+    "after_return": "nach der Rückkehr",
+}
 
 
 def read_ctx_anomaly(raw_directory: Path, ctx_systems: dict) -> pd.DataFrame:
@@ -255,6 +268,7 @@ def write_full_report(run_directory: Path) -> None:
         summary.timeline,
         output_directory,
         configs=tuple(e2_config["plot_configs"]),
+        config_labels=CONFIG_LABELS,
     )
     write_result_report(
         output_directory,

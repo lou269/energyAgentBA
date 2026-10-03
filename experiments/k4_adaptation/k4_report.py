@@ -8,21 +8,21 @@ import pandas as pd
 
 from docs.plots.plot_k4_adaptation_strategies import build_k4_plot
 from experiments.common.report import (
+    KIND_LABELS,
     format_commit,
     format_number,
     key_figures_table,
     relabel,
     write_result_report,
 )
-from experiments.common.standard_config import DECIMALS, KIND_LABELS, PROJECT_CONFIG
+from experiments.common.evaluation import ALL_DAYS
+from experiments.common.standard_config import DECIMALS, PROJECT_CONFIG
 from experiments.k4_adaptation.k4_config import (
     MASKING_DECISIONS_FILE,
-    MASKING_PHASE_LABELS,
     MASKING_RESULTS_FILE,
     MASKING_RUN_PREFIX,
     RESULTS_FILE,
     RUN_PREFIX,
-    STRATEGY_LABELS,
     K4Config,
 )
 from experiments.k4_adaptation.k4_evaluation import (
@@ -46,6 +46,19 @@ from src.pipeline.io import (
     run_directory_from_argv,
     user_output_directory,
 )
+
+STRATEGY_LABELS: dict[str, str] = {
+    "none": "keine Aktion",
+    "cut": "cut, Historie ab t_c",
+    "step_regressor": "Stufen-Regressor",
+}
+
+MASKING_PHASE_LABELS: dict[str, str] = {
+    "before_cutover": "vor Cutover",
+    "early": f"Tag 0-{K4Config.masking_early_days - 1}",
+    "late": f"ab Tag {K4Config.masking_early_days}",
+    ALL_DAYS: "alle Tage",
+}
 
 HEADERS = {
     "kind": "Ereignis",

@@ -1,0 +1,7 @@
+Szenario,2013-10-15,2014-02-12,2014-06-12,2014-10-10,2015-02-07,Tage bis Erkennung (Mittel),erkannt (n von N Fenstern),Skala bei Erkennung
+Sprung +30 %,5.0,,18.0,5.0,14.0,10.5,4/5,"weekday+weekly, weekly+long_term"
+Sprung −30 %,19.0,16.0,,24.0,,19.7,3/5,"weekday+weekly, weekly+long_term"
+Rampe über 28 Tage +30 %,,23.0,18.0,,22.0,21.0,3/5,weekly+long_term
+Rampe über 28 Tage −30 %,22.0,,,24.0,,23.0,2/5,weekday+weekly
+Einzeltag-Spitze +1000 W über 3 h,1.0,,,1.0,,1.0,2/5,daily
+Einzeltag-Spitze +1000 W über 6 h,1.0,1.0,,1.0,,1.0,3/5,"daily, weekday"

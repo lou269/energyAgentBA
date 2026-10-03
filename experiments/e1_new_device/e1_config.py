@@ -30,10 +30,3 @@ class E1Config:
     # Cutover-Kandidaten alle 4 Wochen, damit jeder auf denselben Wochentag fällt
     cutover_step_days: int = 28
     min_device_coverage: float = 0.9
-
-
-PERIOD_LABELS: dict[str, str] = {
-    "before_event": "vor Cutover",
-    "after_event": "ab Cutover",
-    "after_event_control": "ab Cutover, Kontrolle",
-}

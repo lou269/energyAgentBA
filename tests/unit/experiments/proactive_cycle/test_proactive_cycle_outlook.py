@@ -35,16 +35,10 @@ def test_state_sums_only_the_day_and_follows_its_length() -> None:
     assert short["forecast_kwh"] == pytest.approx(6.9)
     assert short["usual_kwh"] == pytest.approx(6.21)
 
-
-def test_state_without_usual_value() -> None:
-    state = _state_for("2014-03-29", None)
-
-    assert state["usual_kwh"] is None
-    assert state["deviation_pct"] is None
-
-
-def test_factor_scales_the_forecast_only() -> None:
-    state = _state_for("2014-03-29", 270.0, factor=1.1)
-
-    assert state["forecast_kwh"] == pytest.approx(7.92)
-    assert state["usual_kwh"] == pytest.approx(6.48)
+    # Faktor wirkt nur auf die Prognose, ohne üblichen Wert bleibt der Vergleich leer
+    scaled = _state_for("2014-03-29", 270.0, factor=1.1)
+    without_usual = _state_for("2014-03-29", None)
+    assert scaled["forecast_kwh"] == pytest.approx(7.92)
+    assert scaled["usual_kwh"] == pytest.approx(6.48)
+    assert without_usual["usual_kwh"] is None
+    assert without_usual["deviation_pct"] is None

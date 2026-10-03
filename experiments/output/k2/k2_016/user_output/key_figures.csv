@@ -1,0 +1,13 @@
+Kennzahl,Wert,Bezug
+Einzeltag-Schwelle für 5 % Alarme in der Kontrolle,"3,2",gilt im Lauf mit Reset
+"Streak-Schwellen (weekday / weekly / long_term %), Fehlalarm-Budget und früheste Erkennung","2,5 / 0,75 / 20",gilt im Lauf mit Reset
+"Detektor: Gate offen ohne Ereignis, mit Reset [%]",6.3,Einzeltag-Alarme und Drift zusammen
+"Detektor: falsche Resets im Betrieb je Fenster, alle Ereignisse",0.0,"nur Resets, die der Kontrolllauf in ±Toleranz nicht hat, bei einer Dauerlast ohne die Erkennung"
+"Detektor: Resets im Kontrolllauf ohne Ereignis, je Fenster",0.6,"Grundrate, zählt nicht als falsch. Ohne Reset (gewählter Punkt) 0,4, Budget 0,8"
+Detektor: Einzeltag-Spitze +1000 W über 3 h erkannt (Alarm am Ereignistag),2/5,"Skala daily, falsche Resets 0,0 je Fenster"
+Detektor: Einzeltag-Spitze +1000 W über 6 h erkannt (Alarm am Ereignistag),3/5,"Skala daily, weekday, falsche Resets 0,0 je Fenster"
+Detektor: Dauerlast +100 W erkannt (new_pattern),3/3,"im Mittel nach 20,0 Tagen, Skala weekly+long_term, falsche Resets 0,0 je Fenster"
+Detektor: Dauerlast −100 W erkannt (new_pattern),2/3,"im Mittel nach 34,0 Tagen, Skala weekly+long_term, falsche Resets 0,0 je Fenster"
+Detektor: Dauerlast +200 W erkannt (new_pattern),3/3,"im Mittel nach 16,3 Tagen, Skala weekly+long_term, falsche Resets 0,0 je Fenster"
+Detektor: Dauerlast +30 W erkannt (new_pattern),0/3,"Skala -, falsche Resets 0,2 je Fenster"
+Detektor: Dauerlast +50 W erkannt (new_pattern),2/3,"im Mittel nach 22,0 Tagen, Skala weekly+long_term, falsche Resets 0,0 je Fenster"

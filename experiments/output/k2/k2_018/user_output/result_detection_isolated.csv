@@ -1,0 +1,7 @@
+Szenario,Sollverhalten,erkannt bzw. feuert (n von N Fenstern),Tage bis Erkennung (Mittel)
+Sprung +30 %,erkennen,4/5,11.8
+Sprung −30 %,erkennen,3/5,17.3
+Rampe über 28 Tage +30 %,erkennen,2/5,22.5
+Rampe über 28 Tage −30 %,erkennen,2/5,23.0
+Rampe über 56 Tage +30 %,nicht feuern,2/5,
+Rampe über 56 Tage −30 %,nicht feuern,1/5,

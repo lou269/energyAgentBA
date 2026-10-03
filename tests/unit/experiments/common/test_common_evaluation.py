@@ -4,7 +4,6 @@ import pandas as pd
 import pytest
 
 from experiments.common.evaluation import (
-    add_days_since_cutover,
     compare_mae_to_reference,
     compare_mae_to_reference_after_reset,
     count_days_by_period,
@@ -13,6 +12,7 @@ from experiments.common.evaluation import (
     pair_with_control,
     spread_over_repeats,
     summarize_event_response,
+    summarize_latency,
 )
 from src.common.timestamps import local_calendar_range, local_midnight_utc
 
@@ -212,13 +212,30 @@ def test_event_response_only_counts_new_pattern_the_control_run_did_not_see() ->
     assert response["first_event_new_pattern_day"] == 2
 
 
-def test_days_since_cutover_count_the_decision_day() -> None:
+def test_latency_per_call() -> None:
     results = pd.DataFrame(
         {
-            # Mitternacht Ortszeit, der 15.04. ist schon Sommerzeit
-            "decision_time": ["2014-04-14T23:00:00+00:00", "2014-04-15T23:00:00+00:00"],
-            "cutover_date": "2014-04-15",
+            "scenario": ["events_a"] * 8,
+            "config": ["SYS2"] * 4 + ["SYS3"] * 4,
+            "classifier_called": [False, True, False, False, False, True, True, False],
+            "error": [None, None, None, None, None, None, "invalid", None],
+        }
+    )
+    runtimes = pd.DataFrame(
+        {
+            "scenario": ["events_a"] * 2,
+            "config": ["SYS2", "SYS3"],
+            "runtime_seconds": [40.0, 100.0],
         }
     )
 
-    assert list(add_days_since_cutover(results)["days_since_cutover"]) == [0, 1]
+    latency = summarize_latency(
+        results, runtimes, rule_system="SYS2", llm_system="SYS3"
+    ).iloc[0]
+
+    assert latency["days"] == 4
+    assert latency["llm_calls"] == 2
+    assert latency["failed_days"] == 1
+    assert latency["rule_seconds_per_day"] == pytest.approx(10.0)
+    assert latency["extra_seconds"] == pytest.approx(60.0)
+    assert latency["extra_seconds_per_call"] == pytest.approx(30.0)

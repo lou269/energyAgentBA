@@ -17,7 +17,7 @@ class ProactiveCycleConfig:
     # Prognose ohne Adaption und ohne Aufruf 1, der Ausblick hängt nur an der Prognose
     cycle_system: str = "SYS1"
 
-    llm_config: LLMConfig = LLMConfig(prompt_version="outlook_v1", keep_alive=-1)
+    llm_config: LLMConfig = LLMConfig(prompt_version="outlook_v3", keep_alive=-1)
 
     # Train-Cutover aus den Standard-Szenarien, vom Cutover an so viele Tage mit Ausblick, ohne Kalender
     cutover_date: str = "2014-02-12"

@@ -1,268 +1,343 @@
 from dataclasses import dataclass
 
+import numpy as np
 import pandas as pd
 
-from experiments.common.evaluation import (
-    FIRST_ANALYZED_DAY,
-    SCALE_VALUE_COLUMNS,
-    SCALE_SUSTAINED_COLUMNS,
-    detection_scales,
-    merge_cycle_days,
-    spread_over_repeats,
-)
+from experiments.common.evaluation import streak_scale_names
 from experiments.k2_detection.k2_config import STREAK_THRESHOLD_COLUMNS
-
-# gepaart wird je Modus, Variante und Cutover Tag für Tag
-PAIR_KEYS = ["mode", "variant", "cutover_date", "days_since_cutover"]
-
-RESULT_COLUMNS = (
-    [
-        "mode",
-        "kind",
-        "cutover_date",
-        "variant",
-        "decision_time",
-        "analyzed_day",
-        "anomaly_level",
-        "anomaly_score",
-        "dominant_scale",
-    ]
-    + SCALE_VALUE_COLUMNS
-    + SCALE_SUSTAINED_COLUMNS
-    + [
-        "sustained_drift",
-        "classification",
-        "alarm",
-        "gate_open",
-        "new_pattern",
-        "reference_reset",
-    ]
-)
+from src.common.timestamps import analyzed_day_index
 
 
-def read_scenario_results(
-    summary: pd.DataFrame,
-    anomaly: pd.DataFrame,
+def _daily_means(series: pd.Series, local_timezone: str) -> pd.Series:
+    return series.tz_convert(local_timezone).resample("D").mean().tz_localize(None)
+
+
+def find_real_events(
+    series: pd.Series,
     *,
-    mode: str,
-    kind: str,
-    cutover_date: str,
+    local_timezone: str,
+    reference_days: int,
+    transition_days: int,
+    min_change_pct: float,
+    min_duration_days: int,
+    smoothing_days: int,
+    share: float,
+    merge_days: int,
 ) -> pd.DataFrame:
-    results = (
-        merge_cycle_days(summary, anomaly)
-        .rename(columns={"config": "variant"})
-        .assign(mode=mode, kind=kind, cutover_date=cutover_date)
-    )
-
-    return results[RESULT_COLUMNS]
-
-
-def summarize_gate_open(results: pd.DataFrame) -> pd.DataFrame:
-    """Fehlalarme und Resets ohne Ereignis über das ganze Fenster, erst je Cutover, dann gemittelt"""
-    control = results.loc[results["kind"].eq("control")]
-    by_cutover = control.groupby(["mode", "variant", "cutover_date"]).agg(
-        alarm_rate=("alarm", "mean"),
-        gate_open_rate=("gate_open", "mean"),
-        resets=("reference_reset", "sum"),
-    )
-    rates = by_cutover.groupby(["variant", "mode"]).mean().reset_index()
-
-    return rates.assign(
-        gate_open_pct=rates["gate_open_rate"] * 100, alarm_pct=rates["alarm_rate"] * 100
-    )
-
-
-def summarize_quiet_days(gate_open: pd.DataFrame) -> pd.DataFrame:
-    adaption = gate_open.set_index(["variant", "mode"]).xs("adaption", level="mode")
-
-    return (
-        pd.DataFrame(
-            {
-                "gate_open_adaption_pct": adaption["gate_open_pct"],
-                "alarm_adaption_pct": adaption["alarm_pct"],
-                "control_resets": adaption["resets"],
-            }
-        )
-        .rename_axis("variant")
-        .reset_index()
-    )
-
-
-@dataclass(frozen=True)
-class DetectionSummary:
-    table: pd.DataFrame
-    # falsche Resets je Fenster über alle Ereignisse und Cutover, eine Zeile je Variante
-    false_resets: pd.DataFrame
-
-
-def summarize_detection(
-    paired: pd.DataFrame,
-    single_day_kinds: tuple[str, ...],
-    *,
-    control_reset_tolerance_days: int,
-    uncounted_cutovers: tuple[str, ...],
-) -> DetectionSummary:
-    keys = ["variant", "kind"]
-    adaption = paired.loc[paired["mode"].eq("adaption")]
-    own_reset = adaption["event_new_pattern"] & ~near_control_new_pattern(
-        adaption, control_reset_tolerance_days
-    )
-    after_cutover = adaption.assign(own_reset=own_reset).loc[
-        adaption["days_since_cutover"].ge(FIRST_ANALYZED_DAY)
-    ]
-    single_day = after_cutover["kind"].isin(single_day_kinds)
-
-    hit = after_cutover["own_reset"].where(
-        ~single_day,
-        after_cutover["event_alarm"]
-        & after_cutover["days_since_cutover"].eq(FIRST_ANALYZED_DAY),
-    )
-    first_hits = (
-        after_cutover.loc[hit]
-        .sort_values("days_since_cutover")
-        .groupby(keys + ["cutover_date"])
-        .head(1)
-    )
-    first_hits = first_hits.assign(
-        day=first_hits["days_since_cutover"],
-        scales=detection_scales(first_hits, first_hits["kind"].isin(single_day_kinds)),
-    )
-
-    days = (
-        after_cutover[keys + ["cutover_date"]]
-        .drop_duplicates()
-        .merge(
-            first_hits[keys + ["cutover_date", "day", "scales"]],
-            on=keys + ["cutover_date"],
-            how="left",
-        )
-    )
-    # die Begründung betrifft nur die Streak-Bedingung, Einzeltag-Spitzen zählen dort mit
-    uncounted = days["cutover_date"].isin(uncounted_cutovers) & ~days["kind"].isin(
-        single_day_kinds
-    )
-    counted_days = days.loc[~uncounted]
-    # getrennt, sonst stünden die nicht gezählten Cutover bei den Dauerlasten im Nenner von erkannt
-    spread = pd.concat(
-        [
-            spread_over_repeats(group, keys, "day", count_detected=True)
-            for _, group in counted_days.groupby(
-                counted_days["kind"].isin(single_day_kinds)
-            )
-        ]
-    )
-    wide = (
-        days.pivot(index=keys, columns="cutover_date", values="day")
-        .rename_axis(columns=None)
-        .reset_index()
-    )
-
-    scales = counted_days.groupby(keys, as_index=False).agg(
-        scales=("scales", lambda scales: ", ".join(sorted(scales.dropna().unique())))
-    )
-    # über alle Cutover, auch die nicht gezählten, gerade dort tritt es auf
-    resets = after_cutover.groupby(keys + ["cutover_date"], as_index=False).agg(
-        own=("own_reset", "sum")
-    )
-    is_detection = resets["own"].gt(0) & resets["kind"].isin(single_day_kinds).eq(False)
-    resets["false_resets"] = resets["own"] - is_detection.astype(int)
-    false_resets = resets.groupby(keys, as_index=False).agg(
-        false_resets=("false_resets", "mean")
-    )
-    false_resets_overall = resets.groupby("variant", as_index=False).agg(
-        false_resets=("false_resets", "mean")
-    )
-
-    cutovers = sorted(days["cutover_date"].unique())
-    table = (
-        wide.merge(spread[keys + ["mean", "detected"]], on=keys)
-        .merge(scales, on=keys)
-        .merge(false_resets, on=keys, how="left")
-    )
-    table[cutovers] = table[cutovers].astype("Int64")
-
-    return DetectionSummary(
-        table[keys + cutovers + ["mean", "detected", "false_resets", "scales"]],
-        false_resets_overall,
-    )
-
-
-def near_control_new_pattern(paired: pd.DataFrame, tolerance_days: int) -> pd.Series:
-    """Tage, an denen die Kontrolle in ±tolerance_days ein new_pattern hat. Im Kreislauf ist das ihr Reset, ohne Reset
-    muss new_pattern schon auf den ersten Tag der Drift reduziert sein. Ein eigenes new_pattern dort ist derselbe natürliche
-    Niveauwechsel, nur verschoben
+    """Echte Trends aus den Tagesmitteln, ohne Detektor: das Niveau ändert sich gegen den Median der reference_days davor
+    um mindestens min_change_pct, der Übergang ist nach transition_days abgeschlossen und das neue Niveau hält
+    min_duration_days. Beginn ist der erste Tag, an dem die Abweichung die halbe Mindeständerung erreicht
     """
-    window = ["mode", "variant", "kind", "cutover_date"]
-    control_resets = paired.loc[
-        paired["new_pattern_control"], window + ["days_since_cutover"]
-    ].rename(columns={"days_since_cutover": "control_reset_day"})
-    candidates = (
-        paired[window + ["days_since_cutover"]]
-        .reset_index()
-        .merge(control_resets, on=window)
-    )
-    near = (
-        (candidates["days_since_cutover"] - candidates["control_reset_day"])
-        .abs()
-        .le(tolerance_days)
+    daily = _daily_means(series, local_timezone)
+    values = daily.to_numpy()
+    level = daily.rolling(smoothing_days, center=True, min_periods=1).mean().to_numpy()
+    min_change = min_change_pct / 100
+
+    candidates: list[tuple[int, float, float]] = []
+    for day in range(reference_days, len(values) - transition_days - min_duration_days):
+        before = np.nanmedian(values[day - reference_days : day])
+        hold = values[day + transition_days : day + transition_days + min_duration_days]
+        change = np.nanmedian(hold) / before - 1
+        if abs(change) < min_change:
+            continue
+        # beide Hälften der Haltephase zeigen die Änderung in dieselbe Richtung
+        half = len(hold) // 2
+        halves = [
+            np.nanmedian(part) / before - 1 for part in (hold[:half], hold[half:])
+        ]
+        if any(
+            np.sign(value) != np.sign(change) or abs(value) < share * min_change
+            for value in halves
+        ):
+            continue
+        # Übergang: am Tag noch das alte Niveau, nach transition_days das neue
+        new_level = before * (1 + change)
+        progress_start = (level[day] - before) / (new_level - before)
+        progress_end = (level[day + transition_days] - before) / (new_level - before)
+        if progress_start > 1 - share or progress_end < share:
+            continue
+        candidates.append((day, before, change))
+
+    # Kandidaten innerhalb von merge_days sind ein Ereignis, der Beginn kommt vom ersten
+    firsts = []
+    previous = None
+    for candidate in candidates:
+        if previous is None or candidate[0] - previous > merge_days:
+            firsts.append(candidate)
+        previous = candidate[0]
+
+    starts, directions, changes = [], [], []
+    for day, before, change in firsts:
+        for offset in range(transition_days + min_duration_days):
+            if abs(level[day + offset] / before - 1) >= min_change / 2:
+                starts.append(daily.index[day + offset])
+                directions.append(int(np.sign(change)))
+                changes.append(change * 100)
+                break
+
+    return pd.DataFrame(
+        {"start": starts, "direction": directions, "change_pct": changes}
     )
 
-    return pd.Series(
-        paired.index.isin(candidates.loc[near, "index"]), index=paired.index
+
+def analysis_days(
+    series: pd.Series, *, local_timezone: str, coldstart_days: int, last_day: str
+) -> pd.DatetimeIndex:
+    days = _daily_means(series, local_timezone).index[coldstart_days:]
+
+    return pd.DatetimeIndex(days[days <= pd.Timestamp(last_day)])
+
+
+def scenario_days(
+    decision_times: tuple[pd.Timestamp, ...], local_timezone: str
+) -> pd.DatetimeIndex:
+    return analyzed_day_index(
+        pd.DatetimeIndex(decision_times), local_timezone
+    ).tz_localize(None)
+
+
+def _hit_windows(
+    starts: pd.Series, *, hit_days_before: int, hit_days_after: int
+) -> zip:
+    return zip(
+        starts - pd.Timedelta(days=hit_days_before),
+        starts + pd.Timedelta(days=hit_days_after),
     )
+
+
+def events_in_range(
+    events: pd.DataFrame,
+    first_day: pd.Timestamp,
+    last_day: pd.Timestamp,
+    *,
+    hit_days_before: int,
+    hit_days_after: int,
+) -> pd.DataFrame:
+    inside = [
+        window_start >= first_day and window_end <= last_day
+        for window_start, window_end in _hit_windows(
+            events["start"],
+            hit_days_before=hit_days_before,
+            hit_days_after=hit_days_after,
+        )
+    ]
+
+    return events.loc[inside].reset_index(drop=True)
+
+
+def _in_event_window(
+    days: pd.Series,
+    events: pd.DataFrame,
+    *,
+    hit_days_before: int,
+    hit_days_after: int,
+) -> pd.Series:
+    inside = pd.Series(False, index=days.index)
+    for window_start, window_end in _hit_windows(
+        events["start"],
+        hit_days_before=hit_days_before,
+        hit_days_after=hit_days_after,
+    ):
+        inside |= days.ge(window_start) & days.le(window_end)
+
+    return inside
+
+
+def event_hits(
+    chain: pd.DataFrame,
+    events: pd.DataFrame,
+    *,
+    hit_days_before: int,
+    hit_days_after: int,
+) -> pd.DataFrame:
+    """Je Ereignis der erste Reset im Trefferfenster, Tage seit dem Beginn (negativ = davor)"""
+    resets = chain.loc[chain["reset"], "analyzed_day"]
+    first_reset = []
+    for window_start, window_end in _hit_windows(
+        events["start"],
+        hit_days_before=hit_days_before,
+        hit_days_after=hit_days_after,
+    ):
+        window = resets[resets.ge(window_start) & resets.le(window_end)]
+        first_reset.append(window.min() if len(window) else pd.NaT)
+
+    table = pd.DataFrame({"start": events["start"], "reset_day": first_reset})
+    table["delay"] = (table["reset_day"] - table["start"]).dt.days
+
+    return table
+
+
+def summarize_point(
+    chain: pd.DataFrame,
+    events: pd.DataFrame,
+    *,
+    hit_days_before: int,
+    hit_days_after: int,
+) -> dict[str, float]:
+    hits = event_hits(
+        chain, events, hit_days_before=hit_days_before, hit_days_after=hit_days_after
+    )
+    resets = chain.loc[chain["reset"], "analyzed_day"]
+    outside = resets.loc[
+        _in_event_window(
+            resets,
+            events,
+            hit_days_before=hit_days_before,
+            hit_days_after=hit_days_after,
+        ).eq(False)
+    ]
+
+    return {
+        "hits": int(hits["reset_day"].notna().sum()),
+        "events": len(events),
+        "mean_delay": float(hits["delay"].mean()),
+        "resets": len(resets),
+        "false_resets": len(outside),
+        "false_per_year": len(outside) * 365.25 / len(chain),
+    }
 
 
 @dataclass(frozen=True)
-class CalibrationSummary:
-    gate_threshold: float
-    alarm_by_window: pd.DataFrame
-    streak_sensitivity: pd.DataFrame
-    streak_selected: dict[str, float]
+class GridSummary:
+    selected: dict[str, float]
+    ranked: pd.DataFrame
 
 
-def summarize_calibration(
-    calibration: dict[str, pd.DataFrame],
-    uncounted_cutovers: tuple[str, ...],
-    max_false_new_pattern: float,
-) -> CalibrationSummary:
-    gate = calibration["gate_threshold"]
-    grid = calibration["streak_sensitivity"]
+def summarize_grid(
+    points: pd.DataFrame,
+    max_false_per_year: float,
+    current_thresholds: dict[str, float],
+) -> GridSummary:
     threshold_columns = list(STREAK_THRESHOLD_COLUMNS.values())
+    excess = (points["false_per_year"] - max_false_per_year).clip(lower=0)
+    ranked = (
+        points.assign(budget_excess=excess)
+        .sort_values(
+            ["budget_excess", "hits", "mean_delay", "false_per_year"]
+            + threshold_columns,
+            ascending=[True, False, True, True] + [True] * len(threshold_columns),
+            na_position="last",
+        )
+        .reset_index(drop=True)
+    )
 
-    false_alarms = grid.groupby(threshold_columns, as_index=False).agg(
-        false_new_pattern=("false_new_pattern", "mean")
-    )
-    counted = grid.loc[grid["cutover_date"].isin(uncounted_cutovers).eq(False)]
-    detection = counted.groupby(threshold_columns, as_index=False).agg(
-        detected=("first_event_new_pattern_day", "count"),
-        detection_day=("first_event_new_pattern_day", "mean"),
-        windows=("first_event_new_pattern_day", "size"),
-    )
-    sensitivity = false_alarms.merge(detection, on=threshold_columns)
-    sensitivity["budget_excess"] = (
-        sensitivity["false_new_pattern"] - max_false_new_pattern
-    ).clip(lower=0)
-    ranked = sensitivity.sort_values(
-        ["budget_excess", "detected", "detection_day", "false_new_pattern"]
-        + threshold_columns,
-        ascending=[True, False, True, True] + [True] * len(threshold_columns),
-    )
-    selected_row = ranked.index[0]
-    selected = ranked.loc[selected_row]
+    is_current = pd.Series(True, index=ranked.index)
+    for scale, column in STREAK_THRESHOLD_COLUMNS.items():
+        is_current &= ranked[column].eq(current_thresholds[scale])
 
-    return CalibrationSummary(
-        gate_threshold=float(gate["gate_threshold"].iloc[0]),
-        alarm_by_window=gate.assign(alarm_pct=gate["alarm_rate"] * 100),
-        streak_selected={
+    selected = ranked.iloc[0]
+
+    return GridSummary(
+        selected={
             scale: float(selected[column])
             for scale, column in STREAK_THRESHOLD_COLUMNS.items()
         },
-        streak_sensitivity=sensitivity.assign(
-            selected=sensitivity.index.to_series()
-            .eq(selected_row)
-            .map({True: "ja", False: ""}),
-            detected=sensitivity["detected"].astype(str)
-            + "/"
-            + sensitivity["windows"].astype(str),
+        ranked=ranked.assign(
+            selected=ranked.index == 0,
+            current=is_current,
         ),
+    )
+
+
+def summarize_events(
+    events: pd.DataFrame, chosen: pd.DataFrame, current: pd.DataFrame
+) -> pd.DataFrame:
+    return pd.DataFrame(
+        {
+            "start": events["start"],
+            "change_pct": events["change_pct"],
+            "chosen_reset": chosen["reset_day"],
+            "chosen_delay": chosen["delay"],
+            "current_reset": current["reset_day"],
+            "current_delay": current["delay"],
+        }
+    )
+
+
+def diagnosis_case(
+    chain: pd.DataFrame,
+    cutover_date: str,
+    kind: str,
+    *,
+    events: pd.DataFrame,
+    positive_kinds: tuple[str, ...],
+    negative_kinds: tuple[str, ...],
+    hit_days_before: int,
+    hit_days_after: int,
+) -> dict[str, object]:
+    day = (
+        chain["analyzed_day"] + pd.Timedelta(days=1) - pd.Timestamp(cutover_date)
+    ).dt.days
+    if kind in positive_kinds:
+        reacted = chain["reset"] & day.between(1, hit_days_after)
+    elif kind in negative_kinds:
+        outside = _in_event_window(
+            chain["analyzed_day"],
+            events,
+            hit_days_before=hit_days_before,
+            hit_days_after=hit_days_after,
+        ).eq(False)
+        reacted = chain["reset"] & day.ge(1) & outside
+    else:
+        reacted = chain["alarm"] & day.eq(1)
+
+    first = chain.loc[reacted].head(1)
+    scales = ""
+    if len(first) and kind not in negative_kinds:
+        scales = streak_scale_names(first).iloc[0]
+
+    return {
+        "kind": kind,
+        "cutover_date": cutover_date,
+        "hit_day": float(day[first.index[0]]) if len(first) else np.nan,
+        "scales": scales,
+    }
+
+
+def summarize_diagnosis(cases: pd.DataFrame) -> pd.DataFrame:
+    """Je Einstellung und Eingriff: erkannt bzw. gefeuert in hits von windows Fenstern, mittlerer Tag"""
+    return cases.groupby(["config", "kind"], as_index=False, sort=False).agg(
+        hits=("hit_day", "count"),
+        windows=("hit_day", "size"),
+        mean_day=("hit_day", "mean"),
+    )
+
+
+@dataclass(frozen=True)
+class Headline:
+    detection_met: bool
+    false_met: bool
+    slow_met: bool
+    diagnosis_hits: int
+    diagnosis_windows: int
+    slow_fired: int
+    slow_windows: int
+
+
+def summarize_headline(
+    selected: pd.Series,
+    diagnosis: pd.DataFrame,
+    *,
+    positive_kinds: tuple[str, ...],
+    negative_kinds: tuple[str, ...],
+    target_detected_share: float,
+    max_false_per_year: float,
+    max_slow_fired_share: float,
+) -> Headline:
+    chosen = diagnosis.loc[diagnosis["config"].eq("chosen")]
+    positive = chosen.loc[chosen["kind"].isin(positive_kinds)]
+    negative = chosen.loc[chosen["kind"].isin(negative_kinds)]
+    slow_fired = int(negative["hits"].sum())
+    slow_windows = int(negative["windows"].sum())
+
+    return Headline(
+        detection_met=bool(
+            selected["hits"] / selected["events"] >= target_detected_share
+        ),
+        false_met=bool(selected["false_per_year"] <= max_false_per_year),
+        slow_met=slow_fired / slow_windows <= max_slow_fired_share,
+        diagnosis_hits=int(positive["hits"].sum()),
+        diagnosis_windows=int(positive["windows"].sum()),
+        slow_fired=slow_fired,
+        slow_windows=slow_windows,
     )

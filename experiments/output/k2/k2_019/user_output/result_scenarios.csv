@@ -1,0 +1,9 @@
+Szenario,Sollverhalten
+Sprung +30 %,erkennen
+Sprung −30 %,erkennen
+Rampe über 28 Tage +30 %,erkennen
+Rampe über 28 Tage −30 %,erkennen
+Rampe über 56 Tage +30 %,nicht feuern
+Rampe über 56 Tage −30 %,nicht feuern
+Einzeltag-Spitze +1000 W über 3 h,Alarm am Ereignistag
+Einzeltag-Spitze +1000 W über 6 h,Alarm am Ereignistag

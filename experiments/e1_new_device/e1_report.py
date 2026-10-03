@@ -18,7 +18,6 @@ from experiments.common.report import (
 from experiments.common.standard_config import DECIMALS, LOCAL_TIMEZONE, PROJECT_CONFIG
 from experiments.e1_new_device.e1_config import (
     CONTROL_RUN_PREFIX,
-    PERIOD_LABELS,
     RUN_PREFIX,
 )
 from experiments.e1_new_device.e1_evaluation import E1Summary, summarize_e1
@@ -31,6 +30,12 @@ from src.pipeline.io import (
     run_directory_from_argv,
     user_output_directory,
 )
+
+PERIOD_LABELS: dict[str, str] = {
+    "before_event": "vor Cutover",
+    "after_event": "ab Cutover",
+    "after_event_control": "ab Cutover, Kontrolle",
+}
 
 
 def _read_comparison(run_directory: Path) -> pd.DataFrame:

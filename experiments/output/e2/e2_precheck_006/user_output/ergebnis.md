@@ -1,0 +1,139 @@
+# E2 Vorprüfung Gate, Lauf e2_precheck_006
+
+## Setup
+
+- Abwesenheit: vacation-2013-09, 2013-09-14 bis vor 2013-10-04
+- Systeme: SYS1, SYS2
+- Tage nach der Rückkehr: 30
+- Commit: 67b1e7c
+
+## Erste Tage ab Urlaubsbeginn
+
+| System | Gate offen [Urlaubstag] | Drift [Urlaubstag] | Reset [Urlaubstag] |
+|---|---:|---:|---:|
+| SYS1 | 21 | 21 | - |
+| SYS2 | 21 | 21 | 21 |
+
+## Gate und Einordnung je Phase
+
+| System | Phase | Tage | Gate offen | davon Einzeltag | davon Drift | new_pattern | low | peak | absence | Resets | Meldungen | Ausfalltage | MAE [W] |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| SYS1 | vor dem Urlaub | 31 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 110,1 |
+| SYS1 | Urlaub | 20 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 50,8 |
+| SYS1 | nach der Rückkehr | 30 | 3 | 1 | 2 | 2 | 0 | 1 | 0 | 0 | 3 | 0 | 121,0 |
+| SYS2 | vor dem Urlaub | 31 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 110,1 |
+| SYS2 | Urlaub | 20 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 50,8 |
+| SYS2 | nach der Rückkehr | 30 | 7 | 6 | 1 | 1 | 5 | 1 | 0 | 1 | 7 | 0 | 123,4 |
+
+## Hinweise
+
+- Urlaubstag = analysierter Tag seit Beginn der Abwesenheit, 0 = erster Urlaubstag
+- Gate Einzeltag: daily/weekday über ihrer Schwelle, Gate Drift: sustained_drift (Streak auf mindestens zwei Niveau-Skalen)
+- Reset = new_pattern mit advance_history_start, bei SYS1 nie
+
+## Anhang
+
+### Je Tag ab Urlaubsbeginn
+
+| System | Urlaubstag | Datum | Phase | Tagesmittel [W] | erwartet Wochentag [W] | z daily | z weekday | z weekly | long_term [%] | Streak weekly | Streak long_term | Level | Drift | Einordnung | Adaption | MAE [W] |
+|---|---:|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---|---:|---|---|---:|
+| SYS1 | 0 | 2013-09-14 | Urlaub | 162,5 | 283,9 | -1,3 | -2,4 | -0,1 | 15,6 | 4,0 | 0,0 | normal | False | normal | none | 55,1 |
+| SYS1 | 1 | 2013-09-15 | Urlaub | 145,8 | 257,8 | -1,5 | -2,2 | -0,4 | 14,6 | 3,0 | 0,0 | normal | False | normal | none | 41,1 |
+| SYS1 | 2 | 2013-09-16 | Urlaub | 177,4 | 312,3 | -1,0 | -2,2 | -0,9 | 15,6 | 1,0 | 0,0 | normal | False | normal | none | 52,7 |
+| SYS1 | 3 | 2013-09-17 | Urlaub | 191,8 | 246,6 | -1,0 | -0,9 | -1,5 | 12,2 | 2,0 | 0,0 | normal | False | normal | none | 29,7 |
+| SYS1 | 4 | 2013-09-18 | Urlaub | 152,4 | 300,6 | -1,4 | -2,4 | -1,8 | 9,6 | 3,0 | 0,0 | normal | False | normal | none | 40,3 |
+| SYS1 | 5 | 2013-09-19 | Urlaub | 168,9 | 280,3 | -0,9 | -1,6 | -1,9 | 7,0 | 4,0 | 0,0 | normal | False | normal | none | 106,8 |
+| SYS1 | 6 | 2013-09-20 | Urlaub | 239,3 | 277,1 | 0,5 | -0,5 | -2,0 | 3,1 | 5,0 | 0,0 | normal | False | normal | none | 45,0 |
+| SYS1 | 7 | 2013-09-21 | Urlaub | 181,8 | 283,9 | -0,8 | -1,5 | -2,0 | 0,0 | 6,0 | 0,0 | normal | False | normal | none | 32,5 |
+| SYS1 | 8 | 2013-09-22 | Urlaub | 144,9 | 257,8 | -1,3 | -1,7 | -2,1 | -2,6 | 7,0 | 0,0 | normal | False | normal | none | 24,8 |
+| SYS1 | 9 | 2013-09-23 | Urlaub | 166,2 | 312,3 | -1,3 | -2,6 | -2,2 | -5,7 | 7,0 | 0,0 | normal | False | normal | none | 19,0 |
+| SYS1 | 10 | 2013-09-24 | Urlaub | 160,9 | 246,6 | -1,3 | -1,5 | -2,5 | -8,0 | 7,0 | 0,0 | normal | False | normal | none | 28,6 |
+| SYS1 | 11 | 2013-09-25 | Urlaub | 166,4 | 300,6 | -1,2 | -2,4 | -2,5 | -11,9 | 7,0 | 0,0 | normal | False | normal | none | 37,0 |
+| SYS1 | 12 | 2013-09-26 | Urlaub | 165,6 | 280,3 | -1,2 | -1,8 | -2,6 | -14,3 | 7,0 | 0,0 | normal | False | normal | none | 50,4 |
+| SYS1 | 13 | 2013-09-27 | Urlaub | 181,7 | 277,1 | -0,9 | -1,3 | -2,8 | -14,7 | 7,0 | 0,0 | normal | False | normal | none | 37,1 |
+| SYS1 | 14 | 2013-09-28 | Urlaub | 155,5 | 283,9 | -1,1 | -1,7 | -2,8 | -19,0 | 7,0 | 0,0 | normal | False | normal | none | 74,0 |
+| SYS1 | 15 | 2013-09-29 | Urlaub | 203,5 | 253,7 | 0,3 | -0,6 | -2,5 | -19,6 | 7,0 | 0,0 | normal | False | normal | none | 37,3 |
+| SYS1 | 16 | 2013-09-30 | Urlaub | 156,2 | 276,2 | -1,0 | -1,5 | -2,3 | -20,8 | 7,0 | 1,0 | normal | False | normal | none | 61,4 |
+| SYS1 | 17 | 2013-10-01 | Urlaub | 211,4 | 246,6 | -0,7 | -0,4 | -2,0 | -21,1 | 7,0 | 2,0 | normal | False | normal | none | 25,5 |
+| SYS1 | 18 | 2013-10-02 | Urlaub | 160,7 | 272,0 | -1,0 | -1,3 | -1,9 | -22,6 | 7,0 | 3,0 | normal | False | normal | none | 36,8 |
+| SYS1 | 19 | 2013-10-03 | Urlaub | 146,3 | 266,8 | -1,1 | -1,3 | -1,9 | -23,8 | 7,0 | 4,0 | normal | False | normal | none | 181,5 |
+| SYS1 | 20 | 2013-10-04 | nach der Rückkehr | 331,2 | 269,3 | 1,4 | 0,6 | -1,4 | -24,1 | 7,0 | 5,0 | normal | False | normal | none | 164,1 |
+| SYS1 | 21 | 2013-10-05 | nach der Rückkehr | 343,7 | 232,7 | 0,9 | 1,4 | -0,7 | -23,3 | 6,0 | 6,0 | normal | True | new_pattern | none | 119,4 |
+| SYS1 | 22 | 2013-10-06 | nach der Rückkehr | 349,8 | 246,6 | 0,8 | 1,3 | -0,3 | -23,6 | 5,0 | 7,0 | normal | False | normal | none | 136,4 |
+| SYS1 | 23 | 2013-10-07 | nach der Rückkehr | 307,0 | 210,2 | 0,9 | 1,3 | 0,2 | -24,0 | 4,0 | 7,0 | normal | False | normal | none | 104,5 |
+| SYS1 | 24 | 2013-10-08 | nach der Rückkehr | 253,1 | 230,6 | -0,3 | 0,2 | 0,4 | -23,1 | 3,0 | 7,0 | normal | False | normal | none | 109,1 |
+| SYS1 | 25 | 2013-10-09 | nach der Rückkehr | 326,8 | 230,4 | 0,7 | 1,0 | 0,8 | -23,6 | 1,0 | 7,0 | normal | False | normal | none | 119,2 |
+| SYS1 | 26 | 2013-10-10 | nach der Rückkehr | 363,7 | 230,1 | 0,6 | 1,4 | 1,4 | -24,9 | 2,0 | 7,0 | normal | False | normal | none | 113,4 |
+| SYS1 | 27 | 2013-10-11 | nach der Rückkehr | 333,6 | 269,3 | 0,5 | 0,6 | 1,5 | -24,8 | 3,0 | 7,0 | normal | False | normal | none | 128,9 |
+| SYS1 | 28 | 2013-10-12 | nach der Rückkehr | 325,2 | 233,0 | 0,5 | 0,9 | 1,4 | -23,6 | 4,0 | 7,0 | normal | False | normal | none | 95,3 |
+| SYS1 | 29 | 2013-10-13 | nach der Rückkehr | 392,1 | 246,6 | 0,3 | 1,6 | 1,6 | -22,5 | 5,0 | 7,0 | normal | False | normal | none | 113,0 |
+| SYS1 | 30 | 2013-10-14 | nach der Rückkehr | 348,1 | 274,9 | 0,2 | 0,8 | 1,7 | -18,9 | 6,0 | 6,0 | normal | True | new_pattern | none | 146,5 |
+| SYS1 | 31 | 2013-10-15 | nach der Rückkehr | 273,4 | 251,5 | -0,0 | 0,3 | 1,7 | -16,0 | 7,0 | 5,0 | normal | False | normal | none | 131,7 |
+| SYS1 | 32 | 2013-10-16 | nach der Rückkehr | 368,0 | 272,0 | 0,5 | 1,1 | 1,8 | -13,9 | 7,0 | 4,0 | normal | False | normal | none | 100,9 |
+| SYS1 | 33 | 2013-10-17 | nach der Rückkehr | 314,0 | 230,1 | 0,4 | 1,0 | 1,6 | -11,4 | 7,0 | 3,0 | normal | False | normal | none | 97,5 |
+| SYS1 | 34 | 2013-10-18 | nach der Rückkehr | 320,5 | 276,9 | 0,1 | 0,5 | 1,5 | -8,3 | 7,0 | 2,0 | normal | False | normal | none | 120,7 |
+| SYS1 | 35 | 2013-10-19 | nach der Rückkehr | 320,3 | 295,9 | 0,9 | 0,3 | 1,4 | -5,6 | 7,0 | 1,0 | normal | False | normal | none | 114,3 |
+| SYS1 | 36 | 2013-10-20 | nach der Rückkehr | 321,4 | 246,6 | 0,7 | 0,9 | 1,2 | -3,3 | 7,0 | 0,0 | normal | False | normal | none | 96,2 |
+| SYS1 | 37 | 2013-10-21 | nach der Rückkehr | 314,3 | 308,3 | 0,1 | 0,1 | 1,1 | -0,4 | 7,0 | 0,0 | normal | False | normal | none | 87,4 |
+| SYS1 | 38 | 2013-10-22 | nach der Rückkehr | 278,5 | 258,4 | -0,6 | 0,2 | 1,1 | 2,7 | 7,0 | 0,0 | normal | False | normal | none | 176,8 |
+| SYS1 | 39 | 2013-10-23 | nach der Rückkehr | 423,4 | 272,0 | 1,3 | 1,9 | 1,1 | 7,6 | 7,0 | 0,0 | normal | False | normal | none | 125,0 |
+| SYS1 | 40 | 2013-10-24 | nach der Rückkehr | 290,7 | 230,1 | 0,4 | 0,7 | 1,1 | 10,7 | 7,0 | 0,0 | normal | False | normal | none | 91,1 |
+| SYS1 | 41 | 2013-10-25 | nach der Rückkehr | 320,7 | 308,6 | 0,1 | 0,1 | 1,0 | 15,8 | 7,0 | 0,0 | normal | False | normal | none | 222,4 |
+| SYS1 | 42 | 2013-10-26 | nach der Rückkehr | 475,8 | 309,6 | 3,5 | 2,0 | 1,4 | 22,8 | 7,0 | 1,0 | unusual | False | peak | none | 116,2 |
+| SYS1 | 43 | 2013-10-27 | nach der Rückkehr | 263,3 | 246,6 | 0,4 | 0,2 | 1,2 | 25,6 | 7,0 | 2,0 | normal | False | normal | none | 104,9 |
+| SYS1 | 44 | 2013-10-28 | nach der Rückkehr | 236,0 | 308,3 | -0,4 | -1,0 | 1,0 | 31,1 | 7,0 | 3,0 | normal | False | normal | none | 149,4 |
+| SYS1 | 45 | 2013-10-29 | nach der Rückkehr | 316,1 | 258,4 | 1,3 | 0,7 | 1,1 | 34,5 | 7,0 | 4,0 | normal | False | normal | none | 80,8 |
+| SYS1 | 46 | 2013-10-30 | nach der Rückkehr | 233,7 | 295,7 | -0,9 | -0,7 | 0,7 | 38,7 | 6,0 | 5,0 | normal | False | normal | none | 100,3 |
+| SYS1 | 47 | 2013-10-31 | nach der Rückkehr | 180,6 | 230,1 | -0,6 | -0,5 | 0,4 | 39,1 | 5,0 | 6,0 | normal | False | normal | none | 72,7 |
+| SYS1 | 48 | 2013-11-01 | nach der Rückkehr | 158,0 | 320,6 | -0,9 | -1,9 | 0,1 | 42,2 | 4,0 | 7,0 | normal | False | normal | none | 162,1 |
+| SYS1 | 49 | 2013-11-02 | nach der Rückkehr | 309,7 | 315,9 | 0,8 | -0,1 | -0,3 | 47,4 | 3,0 | 7,0 | normal | False | normal | none | 131,1 |
+| SYS2 | 0 | 2013-09-14 | Urlaub | 162,5 | 283,9 | -1,3 | -2,4 | -0,1 | 15,6 | 4,0 | 0,0 | normal | False | normal | none | 55,1 |
+| SYS2 | 1 | 2013-09-15 | Urlaub | 145,8 | 257,8 | -1,5 | -2,2 | -0,4 | 14,6 | 3,0 | 0,0 | normal | False | normal | none | 41,1 |
+| SYS2 | 2 | 2013-09-16 | Urlaub | 177,4 | 312,3 | -1,0 | -2,2 | -0,9 | 15,6 | 1,0 | 0,0 | normal | False | normal | none | 52,7 |
+| SYS2 | 3 | 2013-09-17 | Urlaub | 191,8 | 246,6 | -1,0 | -0,9 | -1,5 | 12,2 | 2,0 | 0,0 | normal | False | normal | none | 29,7 |
+| SYS2 | 4 | 2013-09-18 | Urlaub | 152,4 | 300,6 | -1,4 | -2,4 | -1,8 | 9,6 | 3,0 | 0,0 | normal | False | normal | none | 40,3 |
+| SYS2 | 5 | 2013-09-19 | Urlaub | 168,9 | 280,3 | -0,9 | -1,6 | -1,9 | 7,0 | 4,0 | 0,0 | normal | False | normal | none | 106,8 |
+| SYS2 | 6 | 2013-09-20 | Urlaub | 239,3 | 277,1 | 0,5 | -0,5 | -2,0 | 3,1 | 5,0 | 0,0 | normal | False | normal | none | 45,0 |
+| SYS2 | 7 | 2013-09-21 | Urlaub | 181,8 | 283,9 | -0,8 | -1,5 | -2,0 | 0,0 | 6,0 | 0,0 | normal | False | normal | none | 32,5 |
+| SYS2 | 8 | 2013-09-22 | Urlaub | 144,9 | 257,8 | -1,3 | -1,7 | -2,1 | -2,6 | 7,0 | 0,0 | normal | False | normal | none | 24,8 |
+| SYS2 | 9 | 2013-09-23 | Urlaub | 166,2 | 312,3 | -1,3 | -2,6 | -2,2 | -5,7 | 7,0 | 0,0 | normal | False | normal | none | 19,0 |
+| SYS2 | 10 | 2013-09-24 | Urlaub | 160,9 | 246,6 | -1,3 | -1,5 | -2,5 | -8,0 | 7,0 | 0,0 | normal | False | normal | none | 28,6 |
+| SYS2 | 11 | 2013-09-25 | Urlaub | 166,4 | 300,6 | -1,2 | -2,4 | -2,5 | -11,9 | 7,0 | 0,0 | normal | False | normal | none | 37,0 |
+| SYS2 | 12 | 2013-09-26 | Urlaub | 165,6 | 280,3 | -1,2 | -1,8 | -2,6 | -14,3 | 7,0 | 0,0 | normal | False | normal | none | 50,4 |
+| SYS2 | 13 | 2013-09-27 | Urlaub | 181,7 | 277,1 | -0,9 | -1,3 | -2,8 | -14,7 | 7,0 | 0,0 | normal | False | normal | none | 37,1 |
+| SYS2 | 14 | 2013-09-28 | Urlaub | 155,5 | 283,9 | -1,1 | -1,7 | -2,8 | -19,0 | 7,0 | 0,0 | normal | False | normal | none | 74,0 |
+| SYS2 | 15 | 2013-09-29 | Urlaub | 203,5 | 253,7 | 0,3 | -0,6 | -2,5 | -19,6 | 7,0 | 0,0 | normal | False | normal | none | 37,3 |
+| SYS2 | 16 | 2013-09-30 | Urlaub | 156,2 | 276,2 | -1,0 | -1,5 | -2,3 | -20,8 | 7,0 | 1,0 | normal | False | normal | none | 61,4 |
+| SYS2 | 17 | 2013-10-01 | Urlaub | 211,4 | 246,6 | -0,7 | -0,4 | -2,0 | -21,1 | 7,0 | 2,0 | normal | False | normal | none | 25,5 |
+| SYS2 | 18 | 2013-10-02 | Urlaub | 160,7 | 272,0 | -1,0 | -1,3 | -1,9 | -22,6 | 7,0 | 3,0 | normal | False | normal | none | 36,8 |
+| SYS2 | 19 | 2013-10-03 | Urlaub | 146,3 | 266,8 | -1,1 | -1,3 | -1,9 | -23,8 | 7,0 | 4,0 | normal | False | normal | none | 181,5 |
+| SYS2 | 20 | 2013-10-04 | nach der Rückkehr | 331,2 | 269,3 | 1,4 | 0,6 | -1,4 | -24,1 | 7,0 | 5,0 | normal | False | normal | none | 164,1 |
+| SYS2 | 21 | 2013-10-05 | nach der Rückkehr | 343,7 | 232,7 | 0,9 | 1,4 | -0,7 | -23,3 | 6,0 | 6,0 | normal | True | new_pattern | advance_history_start | 156,1 |
+| SYS2 | 22 | 2013-10-06 | nach der Rückkehr | 349,8 | - | 2,3 | - | - | - | - | - | normal | False | normal | none | 184,9 |
+| SYS2 | 23 | 2013-10-07 | nach der Rückkehr | 307,0 | - | 0,9 | - | - | - | - | - | normal | False | normal | none | 123,0 |
+| SYS2 | 24 | 2013-10-08 | nach der Rückkehr | 253,1 | - | -0,4 | - | - | - | - | - | normal | False | normal | none | 122,7 |
+| SYS2 | 25 | 2013-10-09 | nach der Rückkehr | 326,8 | - | 0,5 | - | - | - | - | - | normal | False | normal | none | 122,9 |
+| SYS2 | 26 | 2013-10-10 | nach der Rückkehr | 363,7 | - | 0,4 | - | - | - | - | - | normal | False | normal | none | 104,8 |
+| SYS2 | 27 | 2013-10-11 | nach der Rückkehr | 333,6 | - | 0,1 | - | - | - | - | - | normal | False | normal | none | 118,1 |
+| SYS2 | 28 | 2013-10-12 | nach der Rückkehr | 325,2 | - | 0,2 | - | - | - | - | - | normal | False | normal | none | 94,9 |
+| SYS2 | 29 | 2013-10-13 | nach der Rückkehr | 392,1 | - | -0,4 | - | 6,5 | - | - | - | normal | False | normal | none | 110,2 |
+| SYS2 | 30 | 2013-10-14 | nach der Rückkehr | 348,1 | - | -0,4 | - | 4,3 | - | - | - | normal | False | normal | none | 144,0 |
+| SYS2 | 31 | 2013-10-15 | nach der Rückkehr | 273,4 | - | -0,6 | - | 4,0 | - | - | - | normal | False | normal | none | 131,4 |
+| SYS2 | 32 | 2013-10-16 | nach der Rückkehr | 368,0 | - | 0,5 | - | 3,1 | - | - | - | normal | False | normal | none | 95,5 |
+| SYS2 | 33 | 2013-10-17 | nach der Rückkehr | 314,0 | - | 0,1 | - | 1,8 | - | - | - | normal | False | normal | none | 92,6 |
+| SYS2 | 34 | 2013-10-18 | nach der Rückkehr | 320,5 | - | -0,8 | - | 1,4 | - | 6,0 | - | normal | False | normal | none | 118,0 |
+| SYS2 | 35 | 2013-10-19 | nach der Rückkehr | 320,3 | - | 1,0 | - | 1,3 | - | 7,0 | - | normal | False | normal | none | 112,4 |
+| SYS2 | 36 | 2013-10-20 | nach der Rückkehr | 321,4 | - | 0,6 | - | 0,9 | - | 7,0 | - | normal | False | normal | none | 91,9 |
+| SYS2 | 37 | 2013-10-21 | nach der Rückkehr | 314,3 | - | -0,5 | - | 0,6 | - | 6,0 | - | normal | False | normal | none | 89,0 |
+| SYS2 | 38 | 2013-10-22 | nach der Rückkehr | 278,5 | - | -1,8 | - | 0,6 | - | 5,0 | - | normal | False | normal | none | 173,6 |
+| SYS2 | 39 | 2013-10-23 | nach der Rückkehr | 423,4 | - | 1,8 | - | 0,6 | - | 4,0 | - | normal | False | normal | none | 126,6 |
+| SYS2 | 40 | 2013-10-24 | nach der Rückkehr | 290,7 | - | 0,2 | - | 0,5 | - | 3,0 | - | normal | False | normal | none | 89,6 |
+| SYS2 | 41 | 2013-10-25 | nach der Rückkehr | 320,7 | - | -0,2 | - | 0,5 | - | 2,0 | - | normal | False | normal | none | 219,1 |
+| SYS2 | 42 | 2013-10-26 | nach der Rückkehr | 475,8 | - | 6,1 | - | 1,0 | - | 2,0 | - | unusual | False | peak | none | 117,0 |
+| SYS2 | 43 | 2013-10-27 | nach der Rückkehr | 263,3 | 335,6 | 0,2 | -3,4 | 0,8 | - | 2,0 | - | unusual | False | low | none | 104,5 |
+| SYS2 | 44 | 2013-10-28 | nach der Rückkehr | 236,0 | 310,7 | -1,3 | -3,3 | 0,5 | - | 2,0 | - | unusual | False | low | none | 149,4 |
+| SYS2 | 45 | 2013-10-29 | nach der Rückkehr | 316,1 | 263,2 | 1,6 | 2,0 | 0,6 | 50,5 | 2,0 | - | normal | False | normal | none | 80,8 |
+| SYS2 | 46 | 2013-10-30 | nach der Rückkehr | 233,7 | 347,4 | -1,8 | -3,7 | -0,2 | 71,7 | 2,0 | - | unusual | False | low | none | 100,3 |
+| SYS2 | 47 | 2013-10-31 | nach der Rückkehr | 180,6 | 302,4 | -1,5 | -3,4 | -0,6 | 61,7 | 2,0 | - | unusual | False | low | none | 72,7 |
+| SYS2 | 48 | 2013-11-01 | nach der Rückkehr | 158,0 | 326,0 | -2,2 | -4,0 | -1,4 | 68,2 | 1,0 | - | unusual | False | low | none | 162,1 |
+| SYS2 | 49 | 2013-11-02 | nach der Rückkehr | 309,7 | 334,4 | 0,8 | -0,5 | -2,1 | 78,3 | 2,0 | - | normal | False | normal | none | 131,1 |

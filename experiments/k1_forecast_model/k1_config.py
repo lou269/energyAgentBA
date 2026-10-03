@@ -6,7 +6,6 @@ from src.config.config_forecasting import (
     C3_ROLLING_30,
     ExperimentSplit,
     FORECAST_MODEL_PROPHET_VARIANTS,
-    MODEL_LABELS as FORECAST_MODEL_LABELS,
     ForecastingConfig,
     ProphetVariantConfig,
 )
@@ -57,16 +56,3 @@ class K1Config(ForecastingConfig):
         ("C2", "C3_30"),
         ("S1", "C3_30"),
     )
-
-
-MODE_DESCRIPTIONS: dict[str, str] = {
-    "rolling": "{coldstart_days} Tage Historie vor Split-Start, wie der Online-Zyklus",
-    "macro": "gesamte Historie vor Split-Start",
-}
-EXCLUSION_LABELS: dict[str, str] = {
-    "missing_target": "Messwert fehlt",
-    "target_imputed": "imputiert",
-}
-MODEL_LABELS: dict[str, str] = FORECAST_MODEL_LABELS | {
-    "S1": "S1 expanding + Jahressaison"
-}

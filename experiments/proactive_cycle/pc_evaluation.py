@@ -42,6 +42,7 @@ def check_day(
         "usual_kwh": state["usual_kwh"],
         "deviation_pct": state["deviation_pct"],
         "valid": output is not None,
+        "error": record["error"],
         "violations": "",
         "device_mentions": "",
     }

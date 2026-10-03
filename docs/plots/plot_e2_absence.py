@@ -5,14 +5,17 @@ import pandas as pd
 from matplotlib.lines import Line2D
 
 from docs.plots.plot_style import CLASSIFICATION_COLORS, CONTEXT_COLORS, save_figure
-from experiments.e2_absence.e2_config import CONFIG_LABELS
 
 ADAPTION_MARKERS = {"advance_history_start": "x", "exclude_window": "s"}
 ADAPTION_LABELS = {"advance_history_start": "Reset", "exclude_window": "Ausschluss"}
 
 
 def build_e2_plot(
-    timeline: pd.DataFrame, output_directory: Path, *, configs: tuple[str, ...]
+    timeline: pd.DataFrame,
+    output_directory: Path,
+    *,
+    configs: tuple[str, ...],
+    config_labels: dict[str, str],
 ) -> None:
     figure, (consumption_axis, decision_axis) = plt.subplots(
         2,
@@ -44,7 +47,7 @@ def build_e2_plot(
             days["forecast_w"],
             color=CONTEXT_COLORS[config],
             linewidth=1.2,
-            label=f"Prognose {CONFIG_LABELS[config]}",
+            label=f"Prognose {config_labels[config]}",
         )
 
         classified = days.loc[days["classification"].isin(CLASSIFICATION_COLORS)]
@@ -77,7 +80,7 @@ def build_e2_plot(
     consumption_axis.legend(fontsize=8, loc="upper left")
 
     decision_axis.set_yticks(
-        range(len(configs)), [CONFIG_LABELS[config] for config in configs]
+        range(len(configs)), [config_labels[config] for config in configs]
     )
     # erstes System oben wie in der Legende
     decision_axis.set_ylim(len(configs) - 0.4, -0.6)

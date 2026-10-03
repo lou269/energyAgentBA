@@ -7,6 +7,7 @@ import pandas as pd
 
 from docs.plots.plot_k3_llm_model import build_k3_plot
 from experiments.common.report import (
+    KIND_LABELS,
     format_commit,
     format_number,
     key_figures_table,
@@ -14,10 +15,9 @@ from experiments.common.report import (
     relabel,
     write_result_report,
 )
-from experiments.common.standard_config import DECIMALS, KIND_LABELS, PROJECT_CONFIG
+from experiments.common.standard_config import DECIMALS, PROJECT_CONFIG
 from experiments.k3_llm.k3_config import (
     BASELINE_ID,
-    CORRECT_ANSWER_LABEL,
     RESULTS_FILE,
     RUN_PREFIX,
     SEQUENCE_RESULTS_FILE,
@@ -25,6 +25,7 @@ from experiments.k3_llm.k3_config import (
 )
 from experiments.common.harness import read_llm_outputs, read_structured_states
 from experiments.k3_llm.k3_evaluation import (
+    CORRECT_ANSWER,
     TEXT_COLUMNS,
     check_answer_texts,
     collect_answer_texts,
@@ -39,6 +40,9 @@ from src.pipeline.io import (
     run_directory_from_argv,
     user_output_directory,
 )
+
+# in der Tabelle "Antwort je Fall" statt der Klasse, wenn sie stimmt
+CORRECT_ANSWER_LABEL = "✓"
 
 RULE_LABEL = "Regel"
 
@@ -384,7 +388,9 @@ def main() -> None:
         ),
         "result_cases": (
             f"Ebene 1: Antwort je Fall ({CORRECT_ANSWER_LABEL} = richtig, sonst die Antwort, - = ungültig)",
-            summary.case_answers.rename(columns=CASE_HEADERS | model_labels),
+            summary.case_answers.replace(CORRECT_ANSWER, CORRECT_ANSWER_LABEL).rename(
+                columns=CASE_HEADERS | model_labels
+            ),
         ),
         "result_text_checks": (
             "Automatische Textprüfung je Modell (Antworten mit Verstoß oder fehlenden Belegen)",

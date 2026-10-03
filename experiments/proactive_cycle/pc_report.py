@@ -4,6 +4,7 @@
 import pandas as pd
 
 from experiments.common.report import (
+    answer_bullets,
     format_commit,
     format_number,
     key_figures_table,
@@ -40,6 +41,18 @@ DAY_HEADERS = {
     "violations": "Regelverstöße",
     "device_mentions": "Geräte",
 }
+
+WEEKDAY_LABELS = {
+    "Monday": "Montag",
+    "Tuesday": "Dienstag",
+    "Wednesday": "Mittwoch",
+    "Thursday": "Donnerstag",
+    "Friday": "Freitag",
+    "Saturday": "Samstag",
+    "Sunday": "Sonntag",
+}
+
+
 RATING_CRITERIA = ["verständlich", "Empfehlung sinnvoll", "Prognose sinnvoll genutzt"]
 
 
@@ -67,6 +80,35 @@ def build_key_figures(summary: ProactiveCycleSummary) -> pd.DataFrame:
             ("Gerätenennungen", summary.device_mention_count, "Tage, nur Hinweis"),
         ]
     )
+
+
+def answer_lines(days: pd.DataFrame, decimals: int) -> list[str]:
+    lines: list[str] = []
+    for _, row in days.iterrows():
+        comparison = (
+            "kein üblicher Wert verfügbar"
+            if pd.isna(row["usual_kwh"])
+            else f"üblich {format_number(row['usual_kwh'], decimals)} kWh, "
+            f"Abweichung {format_number(row['deviation_pct'], decimals)} %"
+        )
+        lines += [
+            f"**{row['day']}, {WEEKDAY_LABELS[row['weekday']]}**: Prognose "
+            f"{format_number(row['forecast_kwh'], decimals)} kWh, {comparison}",
+            "",
+        ]
+        if row["valid"]:
+            lines += answer_bullets(
+                row["explanation"], row["user_recommendation"], row["uncertainty"]
+            )
+            if row["violations"]:
+                lines.append(f"- Regelverstöße: {row['violations']}")
+            if row["device_mentions"]:
+                lines.append(f"- Geräte genannt: {row['device_mentions']}")
+        else:
+            lines.append(f"- ungültig ({row['error']})")
+        lines.append("")
+
+    return lines
 
 
 def main() -> None:
@@ -99,7 +141,11 @@ def main() -> None:
             "key_figures": ("Kernzahlen", build_key_figures(summary)),
             "outlook_days": (
                 "Ausblick je Tag",
-                relabel(summary.days[list(DAY_HEADERS)], DAY_HEADERS),
+                relabel(
+                    summary.days[list(DAY_HEADERS)],
+                    DAY_HEADERS,
+                    value_labels={"weekday": WEEKDAY_LABELS},
+                ),
             ),
         },
         notes=[
@@ -109,6 +155,7 @@ def main() -> None:
         ],
         images=[],
         decimals=DECIMALS,
+        appendix_text=[("Antworten je Tag", answer_lines(summary.days, DECIMALS))],
     )
 
     print(f"Result written to {output_directory / 'ergebnis.md'}")

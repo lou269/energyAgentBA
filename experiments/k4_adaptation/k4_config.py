@@ -1,8 +1,6 @@
 from dataclasses import dataclass
 from typing import Literal
 
-from experiments.common.evaluation import ALL_DAYS
-
 
 RUN_PREFIX = "k4"
 MASKING_RUN_PREFIX = "k4_mask"
@@ -40,16 +38,3 @@ class K4Config:
     masked_classifications: tuple[str, ...] = ("peak", "low")
     # in den ersten zwei Wochen nach dem Cutover kann der Beginn einer echten Änderung noch als peak ausgeblendet werden
     masking_early_days: int = 14
-
-
-STRATEGY_LABELS: dict[str, str] = {
-    "none": "keine Aktion",
-    "cut": "cut, Historie ab t_c",
-    "step_regressor": "Stufen-Regressor",
-}
-MASKING_PHASE_LABELS: dict[str, str] = {
-    "before_cutover": "vor Cutover",
-    "early": f"Tag 0-{K4Config.masking_early_days - 1}",
-    "late": f"ab Tag {K4Config.masking_early_days}",
-    ALL_DAYS: "alle Tage",
-}

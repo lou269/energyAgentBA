@@ -3,10 +3,41 @@ from typing import Any
 
 import pandas as pd
 
+from experiments.common.standard_config import STANDARD_CONFIG
 from src.pipeline.io import df_to_csv, write_text_atomic
+
+# Beschriftung der Standard-Szenarien in den Reports, Stärken aus der Config bzw. aus dem Namen
+KIND_LABELS: dict[str, str] = {
+    "control": "keine Änderung",
+    "step_30": "Dauerlast +30 W",
+    "step_50": "Dauerlast +50 W",
+    "step": f"Dauerlast +{STANDARD_CONFIG.step_injection_w:g} W",
+    "step_200": "Dauerlast +200 W",
+    "scaled": f"proportional ×{STANDARD_CONFIG.scale_factor:g}".replace(".", ","),
+    "ramp_28": f"Rampe über 28 Tage auf ×{STANDARD_CONFIG.scale_factor:g}".replace(
+        ".", ","
+    ),
+    "ramp_56": f"Rampe über 56 Tage auf ×{STANDARD_CONFIG.scale_factor:g}".replace(
+        ".", ","
+    ),
+    "scaled_down": f"proportional ×{STANDARD_CONFIG.scale_factor_down:g}".replace(
+        ".", ","
+    ),
+    "ramp_28_down": f"Rampe über 28 Tage auf ×{STANDARD_CONFIG.scale_factor_down:g}".replace(
+        ".", ","
+    ),
+    "ramp_56_down": f"Rampe über 56 Tage auf ×{STANDARD_CONFIG.scale_factor_down:g}".replace(
+        ".", ","
+    ),
+    "peak": f"Einzeltag-Spitze +{STANDARD_CONFIG.peak_extra_w:g} W über {STANDARD_CONFIG.peak_hours} h",
+    "peak_6": f"Einzeltag-Spitze +{STANDARD_CONFIG.peak_extra_w:g} W über 6 h",
+    "level_250": "ganzer Einzeltag +250 W",
+    "stuck": f"Festhänger über {STANDARD_CONFIG.stuck_hours} h",
+}
 
 # Vorlage für die Erklärungsbewertung, Texte aus E2 und E5
 EXPLANATION_RATING_FILE = "explanation_ratings_template"
+YES_NO = {True: "ja", False: "nein"}
 NOISE_RULE_NOTE = "belastbar: Betrag der Differenz größer als 2 Standardfehler der gepaarten Differenzen, grobe Faustregel"
 
 
@@ -80,9 +111,13 @@ def write_result_report(
     decimals: int,
     appendix: dict[str, tuple[str, pd.DataFrame]] | None = None,
     appendix_text: list[tuple[str, list[str]]] | None = None,
+    summary: list[str] | None = None,
 ) -> None:
     # ergebnis.md plus je Tabelle eine gerundete CSV, tables/appendix bilden Dateiname auf (Überschrift, Tabelle) ab
-    lines = [f"# {title}", "", "## Setup", ""]
+    lines = [f"# {title}"]
+    if summary:
+        lines += ["", "## Kurzfassung", ""] + [f"- {line}" for line in summary]
+    lines += ["", "## Setup", ""]
     lines += [f"- {key}: {value}" for key, value in setup.items()]
 
     for filename, (heading, table) in tables.items():
@@ -107,6 +142,16 @@ def write_result_report(
     write_text_atomic("\n".join(lines) + "\n", output_directory / "ergebnis.md")
 
 
+def answer_bullets(
+    explanation: str, recommendation: str, uncertainty: str
+) -> list[str]:
+    return [
+        f"- Erklärung: {explanation}",
+        f"- Empfehlung: {recommendation}",
+        f"- Unsicherheit: {uncertainty}",
+    ]
+
+
 def paired_difference_columns(paired: pd.DataFrame, unit: str) -> pd.DataFrame:
     # Lesbare Spalten zu summarize_paired_differences, unit sagt, was gepaart wurde (Tage, Origins)
     return pd.DataFrame(
@@ -115,7 +160,7 @@ def paired_difference_columns(paired: pd.DataFrame, unit: str) -> pd.DataFrame:
             "2 Standardfehler [W]": 2 * paired["delta_standard_error"],
             unit: paired["paired_count"].astype("Int64"),
             f"{unit} besser [%]": paired["better_share"] * 100,
-            "belastbar": paired["exceeds_noise"].map({True: "ja", False: "nein"}),
+            "belastbar": paired["exceeds_noise"].map(YES_NO),
         }
     )
 

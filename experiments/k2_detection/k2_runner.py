@@ -2,32 +2,46 @@
 # python -m experiments.k2_detection.k2_runner
 # danach: python -m experiments.k2_detection.k2_report
 
-# Schwellen der Anomalieerkennung: je Cutover die Standard-Szenarien, erst isoliert (nur Detektor, ohne Reset) -> Einzeltag-Schwelle und Streak-Empfindlichkeit gewählt
-# -> dann im Kreislauf mit Reset (rule, ohne LLM) mit genau diesen Schwellen
-
+# Streak-Schwellen der Anomalieerkennung auf den echten Trends der Train-Reihe
 import logging
 from dataclasses import asdict
+from itertools import product
 from pathlib import Path
 
 import pandas as pd
 
-from experiments.common.harness import run_scenario_in_scratch
-from experiments.common.standard_config import PROJECT_CONFIG, STANDARD_CONFIG
+from experiments.common.harness import COMPARISON_CONFIG
+from experiments.common.scenarios import load_target
+from experiments.common.standard_config import (
+    COLDSTART_DAYS,
+    LOCAL_TIMEZONE,
+    PROJECT_CONFIG,
+    STANDARD_CONFIG,
+)
 from experiments.common.standard_scenarios import build_standard_scenarios
-from experiments.k2_detection.k2_calibration import apply_calibration, calibrate
+from experiments.k2_detection.k2_chain import run_chain, with_thresholds
 from experiments.k2_detection.k2_config import (
-    CALIBRATION_FILES,
-    RESULTS_FILE,
+    DIAGNOSIS_FILE,
+    EVENT_HITS_FILE,
+    EVENTS_FILE,
+    GRID_FILE,
     RUN_PREFIX,
+    STREAK_THRESHOLD_COLUMNS,
     K2Config,
-    build_adaption_configs,
-    build_isolated_configs,
 )
 from experiments.k2_detection.k2_evaluation import (
-    read_scenario_results,
-    summarize_calibration,
+    analysis_days,
+    diagnosis_case,
+    event_hits,
+    events_in_range,
+    find_real_events,
+    scenario_days,
+    summarize_events,
+    summarize_grid,
+    summarize_point,
 )
-from src.config.config_forecasting import CycleConfig, NumericalAnalysisConfig
+from src.config.config_forecasting import NumericalAnalysisConfig
+from src.numerical_analysis.daily_analysis import level_shift_thresholds
 from src.pipeline.io import (
     create_experiment_run,
     df_to_csv,
@@ -38,43 +52,99 @@ from src.pipeline.io import (
 logger = logging.getLogger(__name__)
 
 
-def run_mode(
-    run_directory: Path,
-    *,
-    mode: str,
-    kinds: tuple[str, ...],
-    variants: dict[str, CycleConfig],
+def chain_for(
+    series: pd.Series,
+    days: pd.DatetimeIndex,
+    config: NumericalAnalysisConfig,
+    cache: dict,
 ) -> pd.DataFrame:
-    scenario_results: list[pd.DataFrame] = []
+    return run_chain(
+        series,
+        days,
+        config,
+        cache=cache,
+        local_timezone=LOCAL_TIMEZONE,
+        calendar_lookback_days=COMPARISON_CONFIG.calendar_lookback_days,
+        calendar_lookahead_days=COMPARISON_CONFIG.calendar_lookahead_days,
+    )
+
+
+def run_grid(
+    series: pd.Series,
+    days: pd.DatetimeIndex,
+    events: pd.DataFrame,
+    analysis_config: NumericalAnalysisConfig,
+    k2_config: K2Config,
+) -> tuple[pd.DataFrame, dict[tuple[float, ...], pd.DataFrame]]:
+    threshold_columns = list(STREAK_THRESHOLD_COLUMNS.values())
+    cache: dict = {}
+    chains = {}
+    rows = []
+
+    for weekday, weekly, long_term in product(
+        k2_config.weekday_streak_thresholds,
+        k2_config.weekly_streak_thresholds,
+        k2_config.long_term_streak_thresholds_pct,
+    ):
+        logger.info("K2 Raster %s / %s / %s", weekday, weekly, long_term)
+        chain = chain_for(
+            series,
+            days,
+            with_thresholds(analysis_config, weekday, weekly, long_term),
+            cache,
+        )
+        chains[(weekday, weekly, long_term)] = chain
+        row = dict(zip(threshold_columns, (weekday, weekly, long_term)))
+        row.update(
+            summarize_point(
+                chain,
+                events,
+                hit_days_before=k2_config.hit_days_before,
+                hit_days_after=k2_config.hit_days_after,
+            )
+        )
+        rows.append(row)
+
+    return pd.DataFrame(rows), chains
+
+
+def run_diagnosis(
+    events: pd.DataFrame,
+    configs: dict[str, NumericalAnalysisConfig],
+    k2_config: K2Config,
+) -> pd.DataFrame:
+    cases = []
 
     for cutover_date in STANDARD_CONFIG.cutover_dates:
         scenarios = build_standard_scenarios(
             cutover_date,
-            kinds,
+            k2_config.diagnosis_kinds,
             margin_before_days=STANDARD_CONFIG.monitoring_before_cutover_days,
             margin_after_days=STANDARD_CONFIG.margin_after_days,
         )
 
-        for kind in kinds:
-            scenario_name = f"{kind}_{cutover_date}"
-            logger.info("K2 %s, %s", scenario_name, mode)
-
-            summary, anomaly = run_scenario_in_scratch(
-                scenarios[kind],
-                variants,
-                run_id=f"{run_directory.name}_{scenario_name}_{mode}",
-            )
-            scenario_results.append(
-                read_scenario_results(
-                    summary,
-                    anomaly,
-                    mode=mode,
-                    kind=kind,
-                    cutover_date=cutover_date,
+        for kind in k2_config.diagnosis_kinds:
+            logger.info("K2 Diagnose %s_%s", kind, cutover_date)
+            scenario = scenarios[kind]
+            days = scenario_days(scenario.decision_times, LOCAL_TIMEZONE)
+            # die Scores einer Reihe gelten für beide Einstellungen
+            cache: dict = {}
+            for label, config in configs.items():
+                chain = chain_for(scenario.target_series, days, config, cache)
+                case = diagnosis_case(
+                    chain,
+                    cutover_date,
+                    kind,
+                    events=events,
+                    positive_kinds=k2_config.positive_kinds,
+                    negative_kinds=k2_config.negative_kinds,
+                    hit_days_before=k2_config.hit_days_before,
+                    hit_days_after=k2_config.hit_days_after,
                 )
-            )
+                case["config"] = label
+                cases.append(case)
 
-    return pd.concat(scenario_results, ignore_index=True)
+    return pd.DataFrame(cases)
 
 
 def run(k2_config: K2Config) -> Path:
@@ -87,53 +157,81 @@ def run(k2_config: K2Config) -> Path:
         },
     )
 
-    isolated = run_mode(
-        run_directory,
-        mode="isolated",
-        kinds=k2_config.isolated_kinds,
-        variants=build_isolated_configs(),
-    )
     analysis_config = NumericalAnalysisConfig()
-    calibration = calibrate(
-        isolated,
-        single_day_scales=analysis_config.single_day_scales,
-        target_alarm_pct=k2_config.target_alarm_pct,
-        threshold_values={
-            "weekday": k2_config.weekday_streak_thresholds,
-            "weekly": k2_config.weekly_streak_thresholds,
-            "long_term": k2_config.long_term_streak_thresholds_pct,
-        },
-        streak_tolerance_window_days=analysis_config.streak_tolerance_window_days,
-        rolling_window_min_coverage=analysis_config.rolling_window_min_coverage,
-        sustained_anomaly_streak_days=analysis_config.sustained_anomaly_streak_days,
-        min_sustained_scales=analysis_config.min_sustained_scales,
-        control_reset_tolerance_days=k2_config.control_reset_tolerance_days,
+    series = load_target()[0]
+    days = analysis_days(
+        series,
+        local_timezone=LOCAL_TIMEZONE,
+        coldstart_days=COLDSTART_DAYS,
+        last_day=k2_config.train_end,
     )
-    for name, table in calibration.items():
-        df_to_csv(table, raw_directory, CALIBRATION_FILES[name])
+    all_events = find_real_events(
+        series,
+        local_timezone=LOCAL_TIMEZONE,
+        reference_days=k2_config.event_reference_days,
+        transition_days=k2_config.event_transition_days,
+        min_change_pct=k2_config.event_min_change_pct,
+        min_duration_days=k2_config.event_min_duration_days,
+        smoothing_days=k2_config.event_smoothing_days,
+        share=k2_config.event_share,
+        merge_days=k2_config.event_merge_days,
+    )
+    df_to_csv(all_events, raw_directory, EVENTS_FILE)
+    events = events_in_range(
+        all_events,
+        days[0],
+        pd.Timestamp(k2_config.train_end),
+        hit_days_before=k2_config.hit_days_before,
+        hit_days_after=k2_config.hit_days_after,
+    )
 
-    loop_config = apply_calibration(
+    points, chains = run_grid(series, days, events, analysis_config, k2_config)
+    current = level_shift_thresholds(analysis_config)
+    summary = summarize_grid(points, k2_config.max_false_resets_per_year, current)
+    df_to_csv(summary.ranked, raw_directory, GRID_FILE)
+
+    chosen_config = with_thresholds(
         analysis_config,
-        summarize_calibration(
-            calibration,
-            k2_config.uncounted_cutovers,
-            k2_config.max_false_new_pattern,
-        ),
-        k2_config.gate_threshold_decimals,
+        summary.selected["weekday"],
+        summary.selected["weekly"],
+        summary.selected["long_term"],
     )
-    run_config = read_raw_json(run_directory, "run_config")
-    run_config["numerical_analysis_config"] = asdict(loop_config)
-    save_json(run_config, raw_directory / "run_config.json")
-
-    adaption = run_mode(
-        run_directory,
-        mode="adaption",
-        kinds=k2_config.kinds,
-        variants=build_adaption_configs(loop_config),
+    configs = {"chosen": chosen_config, "current": analysis_config}
+    # die aktuelle Config liegt im Raster, beide Punkte sind schon gerechnet
+    grid_points = {
+        "chosen": tuple(summary.selected.values()),
+        "current": tuple(current.values()),
+    }
+    hits = {
+        label: event_hits(
+            chains[point],
+            events,
+            hit_days_before=k2_config.hit_days_before,
+            hit_days_after=k2_config.hit_days_after,
+        )
+        for label, point in grid_points.items()
+    }
+    df_to_csv(
+        summarize_events(events, hits["chosen"], hits["current"]),
+        raw_directory,
+        EVENT_HITS_FILE,
     )
     df_to_csv(
-        pd.concat([isolated, adaption], ignore_index=True), raw_directory, RESULTS_FILE
+        run_diagnosis(all_events, configs, k2_config), raw_directory, DIAGNOSIS_FILE
     )
+
+    run_config = read_raw_json(run_directory, "run_config")
+    run_config["numerical_analysis_config"] = asdict(chosen_config)
+    run_config["analysis"] = {
+        "first_day": str(days[0].date()),
+        "last_day": str(days[-1].date()),
+        "days": len(days),
+        "events": len(events),
+        "current_thresholds": current,
+        "hit_days_after": k2_config.hit_days_after,
+        "diagnosis_kinds": list(k2_config.diagnosis_kinds),
+    }
+    save_json(run_config, raw_directory / "run_config.json")
 
     logger.info("K2 completed, see %s.", run_directory)
     return run_directory

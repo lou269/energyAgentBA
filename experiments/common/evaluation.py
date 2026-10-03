@@ -88,14 +88,18 @@ def merge_cycle_days(summary: pd.DataFrame, anomaly: pd.DataFrame) -> pd.DataFra
     )
 
 
-def detection_scales(hits: pd.DataFrame, single_day: pd.Series) -> pd.Series:
+def streak_scale_names(hits: pd.DataFrame) -> pd.Series:
+    # Skalen mit anhaltender Abweichung je Zeile, etwa weekly+long_term
     sustained = hits[SCALE_SUSTAINED_COLUMNS].eq(True)
-    streak_scales = sustained.apply(
+
+    return sustained.apply(
         lambda row: "+".join(scale for scale, on in zip(SCALE_NAMES, row) if on),
         axis=1,
     )
 
-    return hits["dominant_scale"].where(single_day, streak_scales)
+
+def detection_scales(hits: pd.DataFrame, single_day: pd.Series) -> pd.Series:
+    return hits["dominant_scale"].where(single_day, streak_scale_names(hits))
 
 
 def add_days_since_cutover(results: pd.DataFrame) -> pd.DataFrame:
@@ -240,6 +244,38 @@ def count_notifications(
     counts["unknown_per_period"] = counts["unknown_days"] / counts["days"] * period_days
 
     return counts
+
+
+def summarize_latency(
+    results: pd.DataFrame,
+    runtimes: pd.DataFrame,
+    *,
+    rule_system: str,
+    llm_system: str,
+) -> pd.DataFrame:
+    """Je Szenario Laufzeit je Tag mit der Regel, LLM-Aufrufe, Ausfalltage und Mehrlaufzeit des LLM-Systems je Aufruf"""
+    llm_days = (
+        results.loc[results["config"].eq(llm_system)]
+        .groupby("scenario")
+        .agg(
+            days=("config", "size"),
+            llm_calls=("classifier_called", "sum"),
+            failed_days=("error", "count"),
+        )
+    )
+    runtime = runtimes.pivot(
+        index="scenario", columns="config", values="runtime_seconds"
+    )
+    latency = llm_days.assign(
+        rule_seconds_per_day=runtime[rule_system] / llm_days["days"],
+        extra_seconds=runtime[llm_system] - runtime[rule_system],
+    )
+    # ohne Aufruf keine Zeit je Aufruf
+    latency["extra_seconds_per_call"] = latency["extra_seconds"] / latency[
+        "llm_calls"
+    ].replace(0, np.nan)
+
+    return latency.reset_index()
 
 
 def summarize_paired_differences(

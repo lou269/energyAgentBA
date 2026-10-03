@@ -1,0 +1,5 @@
+Parameter,aktuelle Config,gewählt
+Einzeltag-Schwelle (Score),"3,2","3,2"
+"weekday (Streak, Score)","2,5","1,25"
+"weekly (Streak, Score)","0,75",1
+"long_term (Streak, %)",20,25

@@ -6,11 +6,12 @@ from pathlib import Path
 import pandas as pd
 
 from experiments.common.report import (
+    KIND_LABELS,
     format_commit,
     key_figures_table,
     write_result_report,
 )
-from experiments.common.standard_config import DECIMALS, KIND_LABELS, PROJECT_CONFIG
+from experiments.common.standard_config import DECIMALS, PROJECT_CONFIG
 from experiments.e3_saisonality.e3_config import RESULTS_FILE, RUN_PREFIX
 from experiments.e3_saisonality.e3_evaluation import summarize_ramp_response
 from src.config.config_forecasting import SYS_LABELS

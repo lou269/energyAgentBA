@@ -8,6 +8,7 @@ import pandas as pd
 
 from docs.plots.plot_k1_forecast_model import build_forecast_model_plot
 from docs.plots.plot_k1_seasonality import build_seasonality_plot
+from src.config.config_forecasting import MODEL_LABELS as FORECAST_MODEL_LABELS
 from experiments.common.report import (
     NOISE_RULE_NOTE,
     format_commit,
@@ -18,9 +19,6 @@ from experiments.common.report import (
 )
 from experiments.common.standard_config import DECIMALS, PROJECT_CONFIG
 from experiments.k1_forecast_model.k1_config import (
-    EXCLUSION_LABELS,
-    MODE_DESCRIPTIONS,
-    MODEL_LABELS,
     REFERENCE_FILE,
     RUN_PREFIX,
     SEASONALITY_METRICS_FILE,
@@ -40,6 +38,20 @@ from src.pipeline.io import (
     run_directory_from_argv,
     user_output_directory,
 )
+
+MODE_DESCRIPTIONS: dict[str, str] = {
+    "rolling": "{coldstart_days} Tage Historie vor Split-Start, wie der Online-Zyklus",
+    "macro": "gesamte Historie vor Split-Start",
+}
+
+EXCLUSION_LABELS: dict[str, str] = {
+    "missing_target": "Messwert fehlt",
+    "target_imputed": "imputiert",
+}
+
+MODEL_LABELS: dict[str, str] = FORECAST_MODEL_LABELS | {
+    "S1": "S1 expanding + Jahressaison"
+}
 
 RESULT_FILES = (
     "overall_metrics",
@@ -277,6 +289,7 @@ def report_seasonality(run_directory: Path) -> Path:
         output_directory,
         model_ids=model_ids,
         reference_model_id=reference_model_id,
+        model_labels=MODEL_LABELS,
     )
 
     write_result_report(

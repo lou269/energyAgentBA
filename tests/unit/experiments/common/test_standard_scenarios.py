@@ -84,6 +84,27 @@ def test_strength_in_the_name_sets_the_step_and_the_ramp_length() -> None:
     )
 
 
+def test_down_suffix() -> None:
+    scenarios = standard_scenarios.build_standard_scenarios(
+        CUTOVER,
+        ("scaled_down", "ramp_28_down"),
+        margin_before_days=14,
+        margin_after_days=60,
+    )
+    cutover_time = local_midnight_utc(CUTOVER, LOCAL_TIMEZONE)
+    scaled = scenarios["scaled_down"].target_series
+    ramp = scenarios["ramp_28_down"].target_series
+    final = 200.0 * STANDARD_CONFIG.scale_factor_down
+
+    after = scaled.index >= cutover_time
+    assert scaled[after].tolist() == pytest.approx([final] * int(after.sum()))
+    assert ramp[cutover_time + pd.Timedelta(days=14)] == pytest.approx(
+        200.0 * (1 + (STANDARD_CONFIG.scale_factor_down - 1) / 2)
+    )
+    plateau = ramp.index >= cutover_time + pd.Timedelta(days=28)
+    assert ramp[plateau].tolist() == pytest.approx([final] * int(plateau.sum()))
+
+
 def test_peak_adds_the_extra_power_on_the_cutover_day_only() -> None:
     scenarios = standard_scenarios.build_standard_scenarios(
         CUTOVER,

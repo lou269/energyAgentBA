@@ -48,9 +48,9 @@ class NumericalAnalysisConfig:
 
     unusual_threshold: float = 3.2
     # Streak-Schwellen: kalibriert in K2
-    weekday_streak_threshold: float = 2.5
+    weekday_streak_threshold: float = 2.0
     weekly_streak_threshold: float = 0.75
-    long_term_streak_threshold_pct: float = 20.0
+    long_term_streak_threshold_pct: float = 12.5
 
     # new_pattern nur aus Skalen, die das Niveau messen, daily misst die Form des Tages
     level_shift_scales: tuple[str, ...] = ("weekday", "weekly", "long_term")

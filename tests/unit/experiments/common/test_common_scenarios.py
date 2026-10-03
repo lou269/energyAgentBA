@@ -3,6 +3,8 @@
 import pandas as pd
 
 from experiments.common.scenarios import (
+    add_stuck_flags,
+    add_stuck_value,
     build_decision_times,
     crop_history_for_coldstart,
     slice_history_window,
@@ -116,3 +118,35 @@ def test_coldstart_history_counts_local_days_across_the_clock_change() -> None:
     # 7 Tage inklusive Vortag, über die Umstellung am 30.03. also 167 statt 168 Stunden
     assert history.index[0] == pd.Timestamp("2014-03-27T00:00:00+00:00")
     assert len(history.loc[: first_decision_time - pd.Timedelta(hours=1)]) == 167
+
+
+def test_stuck_value() -> None:
+    index = pd.date_range("2020-01-01", periods=24, freq="1h", tz="UTC")
+    series = pd.Series(range(24), index=index, dtype=float)
+
+    stuck = add_stuck_value(series, index[10], hours=8)
+
+    assert stuck.iloc[10:18].eq(9.0).all()
+    assert stuck.iloc[:10].equals(series.iloc[:10])
+    assert stuck.iloc[18:].equals(series.iloc[18:])
+
+
+def test_stuck_flags() -> None:
+    index = pd.date_range("2020-01-01", periods=48, freq="1h", tz="UTC")
+    series = pd.Series(range(48), index=index, dtype=float)
+    never = pd.Series(False, index=index)
+
+    flags = add_stuck_flags(add_stuck_value(series, index[10], hours=12), never, never)
+
+    # ab der sechsten Stunde gleich dem Vorgänger, wie bei den echten Daten
+    assert flags[flags].index.tolist() == index[15:22].tolist()
+
+
+def test_stuck_flags_imputed() -> None:
+    index = pd.date_range("2020-01-01", periods=12, freq="1h", tz="UTC")
+    constant = pd.Series(100.0, index=index)
+    never = pd.Series(False, index=index)
+    always = pd.Series(True, index=index)
+
+    assert add_stuck_flags(constant, never, never).any()
+    assert not add_stuck_flags(constant, always, never).any()

@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from docs.plots.plot_style import MODEL_COLORS, save_figure
-from experiments.k1_forecast_model.k1_config import MODEL_LABELS
 from experiments.k1_forecast_model.k1_evaluation import WHOLE_YEAR
 
 
@@ -14,6 +13,7 @@ def build_seasonality_plot(
     *,
     model_ids: list[str],
     reference_model_id: str,
+    model_labels: dict[str, str],
 ) -> None:
     months = by_month.loc[by_month["month"].ne(WHOLE_YEAR)]
 
@@ -26,7 +26,7 @@ def build_seasonality_plot(
             linewidth=2,
             marker="o",
             markersize=3,
-            label=MODEL_LABELS[model_id],
+            label=model_labels[model_id],
         )
     axis.plot(
         months["month"],
@@ -34,7 +34,7 @@ def build_seasonality_plot(
         color=MODEL_COLORS[reference_model_id],
         linewidth=1.5,
         linestyle="--",
-        label=MODEL_LABELS[reference_model_id],
+        label=model_labels[reference_model_id],
     )
 
     axis.set_title("MAE der Tagesprognose je Monat", loc="left")

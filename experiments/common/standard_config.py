@@ -2,7 +2,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from src.config.config_forecasting import ForecastingConfig
+from src.config.config_forecasting import (
+    ForecastingConfig,
+    NumericalAnalysisConfig,
+    PreprocessingConfig,
+)
 from src.config.project_config import ProjectConfig
 
 # für alle Studien gleich, wird deshalb nicht durch die Funktionen gereicht
@@ -12,6 +16,9 @@ LOCAL_TIMEZONE = PROJECT_CONFIG.timezone
 DECIMALS = PROJECT_CONFIG.result_decimals
 # Kaltstart des Online-Zyklus vor dem ersten Entscheidungstag
 COLDSTART_DAYS = ForecastingConfig().cycle_coldstart_days
+# für die Festhänger-Flags nach der Vorverarbeitung eingebauter Reihen, dieselbe Regel wie bei den echten Daten
+STUCK_VALUE_MIN_HOURS = PreprocessingConfig().stuck_value_min_hours
+HOURLY_SAMPLE_PERIOD_HOURS = NumericalAnalysisConfig().sample_period_hours_hourly
 
 # Meldung = Tag, zu dem der Nutzer eine Erklärung bekäme (in SYS3 ein LLM-Aufruf)
 NOTIFICATION_CLASSIFICATIONS: tuple[str, ...] = (
@@ -46,6 +53,8 @@ class StandardScenarioConfig:
     # Additiv gegen multiplikativ, der Stufen-Regressor in K4 lernt wegen log_transform einen Faktor.
     # Zugleich Endniveau der Rampen (ramp_28 = in 28 Tagen auf diesen Faktor)
     scale_factor: float = 1.3
+    # dasselbe nach unten, Arten mit Endung _down (scaled_down, ramp_28_down)
+    scale_factor_down: float = 0.7
 
     # peak: einmalige Zusatzlast am Cutover-Tag ab 17 Uhr, über 3 Stunden im Tagesmittel etwa +125 W (in Haus 1 alle 3 Wochen normal),
     # weitere Dauern über den Namen (peak_6 = 6 Stunden, Tagesmittel +250 W, über dem 99-%-Quantil echter Tage)
@@ -53,29 +62,14 @@ class StandardScenarioConfig:
     peak_start_hour: int = 17
     peak_hours: int = 3
 
+    # stuck: ab lokaler Mitternacht des Cutover-Tags hängt der letzte Wert des Vortags so lange fest, mehr als stuck_value_min_hours (6 h), sonst markiert die Plausibilitätsprüfung nichts
+    stuck_hours: int = 12
+
 
 STANDARD_CONFIG = StandardScenarioConfig()
 
-# Beschriftung der Standard-Szenarien in den Reports, Stärken aus der Config bzw. aus dem Namen
-KIND_LABELS: dict[str, str] = {
-    "control": "keine Änderung",
-    "step_30": "Dauerlast +30 W",
-    "step_50": "Dauerlast +50 W",
-    "step": f"Dauerlast +{STANDARD_CONFIG.step_injection_w:g} W",
-    "step_200": "Dauerlast +200 W",
-    "scaled": f"proportional ×{STANDARD_CONFIG.scale_factor:g}".replace(".", ","),
-    "ramp_28": f"Rampe über 28 Tage auf ×{STANDARD_CONFIG.scale_factor:g}".replace(
-        ".", ","
-    ),
-    "ramp_56": f"Rampe über 56 Tage auf ×{STANDARD_CONFIG.scale_factor:g}".replace(
-        ".", ","
-    ),
-    "peak": f"Einzeltag-Spitze +{STANDARD_CONFIG.peak_extra_w:g} W über {STANDARD_CONFIG.peak_hours} h",
-    "peak_6": f"Einzeltag-Spitze +{STANDARD_CONFIG.peak_extra_w:g} W über 6 h",
-    "level_250": "ganzer Einzeltag +250 W",
-}
 
-# Szenario-Art (ohne Stärke) -> erwartete Klasse, vor den Läufen festgelegt. absence (G2) kommt aus E2, measurement_error (G5) nur aus E5.
+# Szenario-Art (ohne Stärke) -> erwartete Klasse, vor den Läufen festgelegt. absence (G2) kommt aus E2, stuck (G5) nur aus E5.
 # ramp (G4, nach E3 Teil B): öffnet eine Saisonverschiebung das Gate, ist new_pattern mit Reset richtig, still aufgenommen zählt wie control
 GOLDSTANDARD_EXPECTED: dict[str, str] = {
     "control": "normal",
@@ -83,5 +77,5 @@ GOLDSTANDARD_EXPECTED: dict[str, str] = {
     "ramp": "new_pattern",
     "absence": "absence",
     "peak": "peak",
-    "measurement_error": "measurement_error",
+    "stuck": "measurement_error",
 }

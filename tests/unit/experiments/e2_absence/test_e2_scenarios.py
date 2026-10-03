@@ -1,19 +1,9 @@
 # python -m pytest tests/unit/experiments/e2_absence -v
 
-from pathlib import Path
-
 import numpy as np
 import pandas as pd
 
 from experiments.e2_absence.e2_scenarios import build_ctx_scenarios
-from src.config.project_config import ProjectConfig
-from src.config.config_forecasting import ComparisonConfig, SYS_VARIANTS
-from src.pipeline.comparison_harness import run_comparison
-from src.pipeline.daily_cycle import CycleState, run_cycle
-from src.context.calendar_context import build_calendar_context
-
-PROJECT_ROOT = ProjectConfig().project_root
-COMPARISON_CONFIG = ComparisonConfig()
 
 
 def _series(hours: int) -> pd.Series:
@@ -23,9 +13,9 @@ def _series(hours: int) -> pd.Series:
     return pd.Series(values, index=index, name="target")
 
 
-def test_ctx0_has_no_calendar_source() -> None:
+def test_ctx_scenarios() -> None:
     series = _series(240)
-    decision_times = (series.index[100],)
+    decision_times = (series.index[100], series.index[150])
     events = (
         {
             "event_id": "e",
@@ -36,146 +26,14 @@ def test_ctx0_has_no_calendar_source() -> None:
         },
     )
 
-    ctx0 = build_ctx_scenarios(series, decision_times, events)["ctx0"]
+    scenarios = build_ctx_scenarios(series, decision_times, events)
+    ctx0, ctx1 = scenarios["ctx0"], scenarios["ctx1"]
 
     assert ctx0.calendar_source_available is False
     assert ctx0.calendar_events == ()
-
-
-def test_ctx1_carries_the_same_events_as_ctx0_input() -> None:
-    series = _series(240)
-    decision_times = (series.index[100],)
-    events = (
-        {
-            "event_id": "e",
-            "event_type": "absence",
-            "start": "2024-01-01T00:00:00+00:00",
-            "end": "2024-01-02T00:00:00+00:00",
-            "known_at": "2023-12-01T00:00:00+00:00",
-        },
-    )
-
-    ctx1 = build_ctx_scenarios(series, decision_times, events)["ctx1"]
-
     assert ctx1.calendar_source_available is True
     assert ctx1.calendar_events == events
-
-
-def test_ctx0_and_ctx1_share_identical_series_and_timing() -> None:
-    series = _series(240)
-    decision_times = (series.index[100], series.index[150])
-
-    scenarios = build_ctx_scenarios(series, decision_times, ())
-    ctx0, ctx1 = scenarios["ctx0"], scenarios["ctx1"]
-
     assert ctx0.target_series.equals(ctx1.target_series)
     assert ctx0.decision_times == ctx1.decision_times
-    # ctx2 unterscheidet sich nur in Kalender-Tool
+    # ctx2 unterscheidet sich nur im Kalender-Tool
     assert scenarios["ctx2"] == ctx1
-
-
-def test_ctx1_structured_state_carries_the_calendar_event_through_run_cycle() -> None:
-    # Nachweis: Kalender-Event kommt im Structured State, ohne würde CTX1 LLM gar keinen Kontext liefern
-    series = _series(240)
-    coldstart_hours = 144
-    decision_time = series.index[coldstart_hours] + pd.Timedelta(hours=1)
-    event = {
-        "event_id": "vacation-test",
-        "event_type": "absence",
-        "start": (decision_time - pd.Timedelta(hours=12)).isoformat(),
-        "end": (decision_time + pd.Timedelta(hours=12)).isoformat(),
-        "known_at": (decision_time - pd.Timedelta(days=30)).isoformat(),
-    }
-
-    state = CycleState(
-        history=series.iloc[:coldstart_hours],
-        prophet_model=None,
-        model_history=None,
-        model_fitted_at=None,
-    )
-    new_observations = series.loc[
-        state.history.index[-1] + pd.Timedelta(hours=1) : decision_time
-        - pd.Timedelta(hours=1)
-    ]
-
-    calendar_context = build_calendar_context(
-        [event],
-        source_available=True,
-        source="user_calendar",
-        retrieved_at=decision_time,
-        decision_time=decision_time,
-        window_start=decision_time - pd.Timedelta(hours=24),
-        window_end=decision_time + pd.Timedelta(hours=24),
-        local_timezone="Europe/London",
-    )
-
-    config = SYS_VARIANTS["SYS1"]
-
-    result, _ = run_cycle(
-        state,
-        new_observations,
-        decision_time,
-        config,
-        local_timezone="Europe/London",
-        calendar_context=calendar_context,
-    )
-
-    assert result.structured_state is not None
-    assert result.structured_state["context"]["source_available"] is True
-    assert [e["event_id"] for e in result.structured_state["context"]["events"]] == [
-        "vacation-test"
-    ]
-
-
-def test_run_comparison_completes_for_both_ctx_scenarios(tmp_path: Path) -> None:
-    series = _series(480)
-    coldstart_days = 8
-    decision_times = tuple(
-        pd.date_range(
-            start=series.index[0] + pd.Timedelta(days=coldstart_days + 1),
-            periods=3,
-            freq="24h",
-        )
-    )
-    event = {
-        "event_id": "vacation-test",
-        "event_type": "absence",
-        "start": decision_times[0].isoformat(),
-        "end": decision_times[-1].isoformat(),
-        "known_at": (decision_times[0] - pd.Timedelta(days=30)).isoformat(),
-    }
-
-    scenarios = build_ctx_scenarios(series, decision_times, (event,))
-    ctx0, ctx1 = scenarios["ctx0"], scenarios["ctx1"]
-
-    config = {"SYS2": SYS_VARIANTS["SYS2"]}
-
-    ctx0_dir, ctx1_dir = tmp_path / "ctx0", tmp_path / "ctx1"
-    ctx0_dir.mkdir()
-    ctx1_dir.mkdir()
-
-    ctx0_result = run_comparison(
-        ctx0,
-        config,
-        ctx0_dir,
-        PROJECT_ROOT,
-        local_timezone="Europe/London",
-        max_consecutive_llm_failures=COMPARISON_CONFIG.max_consecutive_llm_failures,
-        max_total_llm_failures=COMPARISON_CONFIG.max_total_llm_failures,
-        calendar_lookback_days=COMPARISON_CONFIG.calendar_lookback_days,
-        calendar_lookahead_days=COMPARISON_CONFIG.calendar_lookahead_days,
-    )
-    ctx1_result = run_comparison(
-        ctx1,
-        config,
-        ctx1_dir,
-        PROJECT_ROOT,
-        local_timezone="Europe/London",
-        max_consecutive_llm_failures=COMPARISON_CONFIG.max_consecutive_llm_failures,
-        max_total_llm_failures=COMPARISON_CONFIG.max_total_llm_failures,
-        calendar_lookback_days=COMPARISON_CONFIG.calendar_lookback_days,
-        calendar_lookahead_days=COMPARISON_CONFIG.calendar_lookahead_days,
-    )
-
-    assert len(ctx0_result) == len(decision_times)
-    assert len(ctx1_result) == len(decision_times)

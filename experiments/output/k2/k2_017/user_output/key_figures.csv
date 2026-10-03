@@ -1,0 +1,14 @@
+Kennzahl,Wert,Bezug
+Einzeltag-Schwelle für 5 % Alarme in der Kontrolle,"3,2",gilt im Lauf mit Reset
+"Streak-Schwellen (weekday / weekly / long_term %), Fehlalarm-Budget und früheste Erkennung","1,25 / 1 / 25",gilt im Lauf mit Reset
+"Detektor: Gate offen ohne Ereignis, mit Reset [%]",8.3,Einzeltag-Alarme und Drift zusammen
+"Detektor: falsche Resets im Betrieb je Fenster, alle Ereignisse",0.4,"jeder Reset ab Tag 1 außer dem Treffer, bei langsamen Rampen und Spitzen jeder. Nicht gezählt im Trefferfenster eines echten Trends"
+"Detektor: Resets im Kontrolllauf ohne Ereignis, je Fenster",1.0,"Grundrate, zählt nicht als falsch. Ohne Reset (gewählter Punkt) 0,4, Budget 0,5"
+Detektor: Einzeltag-Spitze +1000 W über 3 h erkannt (Alarm am Ereignistag),2/5,"Skala daily, falsche Resets 0,4 je Fenster"
+Detektor: Einzeltag-Spitze +1000 W über 6 h erkannt (Alarm am Ereignistag),3/5,"Skala daily, weekday, falsche Resets 0,4 je Fenster"
+"Detektor: Rampe über 28 Tage auf ×1,3 erkannt (new_pattern)",3/5,"im Mittel nach 21,0 Tagen, Skala weekly+long_term, falsche Resets 0,2 je Fenster"
+"Detektor: Rampe über 28 Tage auf ×0,7 erkannt (new_pattern)",2/5,"im Mittel nach 23,0 Tagen, Skala weekday+weekly, falsche Resets 0,4 je Fenster"
+"Detektor: Rampe über 56 Tage auf ×1,3 feuert (new_pattern)",2/5,"im Mittel nach 37,0 Tagen, Skala weekday+weekly, weekly+long_term, falsche Resets 0,4 je Fenster"
+"Detektor: Rampe über 56 Tage auf ×0,7 feuert (new_pattern)",1/5,"im Mittel nach 58,0 Tagen, Skala weekday+weekly, falsche Resets 0,2 je Fenster"
+"Detektor: proportional ×1,3 erkannt (new_pattern)",4/5,"im Mittel nach 10,5 Tagen, Skala weekday+weekly, weekly+long_term, falsche Resets 0,2 je Fenster"
+"Detektor: proportional ×0,7 erkannt (new_pattern)",3/5,"im Mittel nach 19,7 Tagen, Skala weekday+weekly, weekly+long_term, falsche Resets 0,6 je Fenster"

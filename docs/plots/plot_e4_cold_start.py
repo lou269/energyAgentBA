@@ -5,7 +5,6 @@ import pandas as pd
 from matplotlib.lines import Line2D
 
 from docs.plots.plot_style import COLDSTART_COLORS, SCALE_COLORS, save_figure
-from experiments.e4_cold_start.e4_config import SCENARIO_LABELS
 from experiments.e4_cold_start.e4_evaluation import ALL_SCALES, SystemSummary
 from src.structured_state.structured_state_schema import SCALE_NAMES
 
@@ -87,6 +86,7 @@ def build_e4_system_plot(
     shortest: int,
     longest: int,
     evaluation_days: int,
+    scenario_labels: dict[str, str],
 ) -> None:
     figure, (scale_axis, gate_axis, injection_axis) = plt.subplots(
         3,
@@ -159,7 +159,7 @@ def build_e4_system_plot(
             zorder=3,
         )
     injection_axis.set_yticks(
-        range(len(kinds)), [SCENARIO_LABELS[kind] for kind in kinds]
+        range(len(kinds)), [scenario_labels[kind] for kind in kinds]
     )
     injection_axis.set_ylim(-0.6, len(kinds) - 0.4)
     injection_axis.set_title(

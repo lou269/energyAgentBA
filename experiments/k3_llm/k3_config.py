@@ -9,8 +9,6 @@ RESULTS_FILE = "results"
 SEQUENCE_RESULTS_FILE = "sequence_results"
 # die Regel läuft in beiden Ebenen unter diesem Namen neben den Modellen mit
 BASELINE_ID = "BASELINE"
-# in der Tabelle "Antwort je Fall" statt der Klasse, wenn sie stimmt
-CORRECT_ANSWER_LABEL = "✓"
 
 
 @dataclass(frozen=True)
@@ -30,11 +28,11 @@ class K3Config:
     repetitions: int = 1
 
     model_variants: tuple[LLMModelVariant, ...] = (
-        #LLMModelVariant(model_id="MDL0", model="qwen3:4b"),
+        # LLMModelVariant(model_id="MDL0", model="qwen3:4b"),
         LLMModelVariant(model_id="MDL1", model="qwen3:8b"),
-        #LLMModelVariant(model_id="MDL2", model="qwen3.5:9b"),
-        #LLMModelVariant(model_id="MDL3", model="gemma4:e4b"),
-        #LLMModelVariant(model_id="MDL4", model="gemma4:e4b-mlx"),
+        # LLMModelVariant(model_id="MDL2", model="qwen3.5:9b"),
+        # LLMModelVariant(model_id="MDL3", model="gemma4:e4b"),
+        # LLMModelVariant(model_id="MDL4", model="gemma4:e4b-mlx"),
         LLMModelVariant(model_id="MDL5", model="ministral-3:8b"),
     )
 

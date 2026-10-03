@@ -12,20 +12,6 @@ REDUCTION_FILE = "e2_reduction_by_day"
 CHANNEL_RANKING_FILE = "absence_channel_ranking"
 CHANNEL_DATA_FILE = "absence_channel_data_hourly"
 
-CONFIG_LABELS = {
-    "SYS1": "SYS1 ohne Adaption",
-    "SYS2": "SYS2 Regel",
-    "SYS3_CTX0": "SYS3 ohne Kalender",
-    "SYS3_CTX1": "SYS3 mit Kalender",
-    "SYS3_CTX2": "SYS3 Kalender per Tool",
-}
-
-PHASE_LABELS = {
-    "before": "vor dem Urlaub",
-    "absence": "Urlaub",
-    "after_return": "nach der Rückkehr",
-}
-
 
 @dataclass(frozen=True)
 class E2Config:

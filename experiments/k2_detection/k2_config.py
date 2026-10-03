@@ -1,20 +1,13 @@
 from dataclasses import dataclass
 
-from src.config.config_forecasting import (
-    CycleConfig,
-    ForecastingConfig,
-    NumericalAnalysisConfig,
-)
-
 
 RUN_PREFIX = "k2"
 # vom Runner geschrieben, vom Report gelesen
-RESULTS_FILE = "k2_results"
-CALIBRATION_FILES = {
-    "gate_threshold": "k2_gate_threshold",
-    "streak_sensitivity": "k2_streak_sensitivity",
-}
-# Spalten der Streak-Schwellen in den Kalibrierungstabellen
+EVENTS_FILE = "k2_events"
+GRID_FILE = "k2_grid"
+EVENT_HITS_FILE = "k2_event_hits"
+DIAGNOSIS_FILE = "k2_diagnosis"
+# Spalten der Streak-Schwellen in den Tabellen
 STREAK_THRESHOLD_COLUMNS = {
     "weekday": "weekday_streak_threshold",
     "weekly": "weekly_streak_threshold",
@@ -25,58 +18,50 @@ STREAK_THRESHOLD_COLUMNS = {
 # Cutover, Zeitfenster und Stärken kommen aus StandardScenarioConfig
 @dataclass(frozen=True)
 class K2Config:
-    # im Kreislauf laufen alle Arten, isolated nur, was die Kalibrierung braucht
-    kinds: tuple[str, ...] = (
-        "control",
-        "step_30",
-        "step_50",
-        "step",
-        "step_200",
-        "peak",
-        "peak_6",
-    )
-    isolated_kinds: tuple[str, ...] = ("control", "step")
-    # erkannt heißt hier Alarm am Ereignistag, nicht new_pattern
-    single_day_kinds: tuple[str, ...] = ("peak", "peak_6")
-    # eigener Reset (ohne Reset: Beginn eines new_pattern) nur, wenn die Kontrolle so viele Tage davor und danach keinen hat
-    control_reset_tolerance_days: int = 7
-    # Beginn der Heizperiode: die Kontrolle liegt knapp unter der Streak-Bedingung, jede Störung löst dort new_pattern aus.
-    # Nur für Dauerlasten, Steht in der Erkennungstabelle, zählt aber nicht
-    uncounted_cutovers: tuple[str, ...] = ("2013-10-15", "2014-10-10")
+    # Train-Split: kalibriert wird nur bis zu diesem lokalen Kalendertag (einschließlich), er beginnt mit der Reihe
+    train_end: str = "2015-04-29"
 
-    # Anteil der Kontrolltage, an denen ein Einzeltag-Alarm gewollt ist
-    target_alarm_pct: float = 5.0
-    gate_threshold_decimals: int = 1
-    max_false_new_pattern: float = 0.5
     # Raster der Streak-Schwellen
     weekday_streak_thresholds: tuple[float, ...] = (1.25, 1.5, 1.75, 2.0, 2.5, 2.75)
     weekly_streak_thresholds: tuple[float, ...] = (0.75, 1.0, 1.25, 1.5)
     long_term_streak_thresholds_pct: tuple[float, ...] = (12.5, 15.0, 20.0, 25.0)
 
+    event_reference_days: int = 28
+    event_transition_days: int = 28
+    event_min_change_pct: float = 20.0
+    event_min_duration_days: int = 10
+    event_smoothing_days: int = 7
+    event_share: float = 0.75
+    # Kandidaten innerhalb dieser Tage gehören zu einem Ereignis
+    event_merge_days: int = 28
 
-DETECTOR_VARIANT = "DETECTOR"
-VARIANT_LABELS: dict[str, str] = {DETECTOR_VARIANT: "Detektor"}
-MODE_LABELS: dict[str, str] = {"isolated": "ohne Reset", "adaption": "mit Reset"}
+    # Treffer: ein Reset ab so vielen Tagen vor dem Beginn eines Ereignisses, bis das Ereignis bestätigt ist
+    hit_days_before: int = 10
+    # falsche Resets je Jahr (außerhalb der Trefferfenster), Grenze für die Wahl der Schwellen
+    max_false_resets_per_year: float = 1.5
 
-
-def _variant(
-    event_adaptation: bool, numerical_analysis_config: NumericalAnalysisConfig
-) -> CycleConfig:
-    return CycleConfig(
-        forecasting_config=ForecastingConfig(),
-        numerical_analysis_config=numerical_analysis_config,
-        event_adaptation=event_adaptation,
-        llm_mode="rule",
+    # Diagnose: Änderungen, die der Detektor erkennen soll, bei langsamer Änderung nicht, Spitzen am Ereignistag
+    positive_kinds: tuple[str, ...] = (
+        "scaled",
+        "scaled_down",
+        "ramp_28",
+        "ramp_28_down",
     )
+    negative_kinds: tuple[str, ...] = ("ramp_56", "ramp_56_down")
+    single_day_kinds: tuple[str, ...] = ("peak", "peak_6")
 
+    # Ziele für die Kurzfassung im Report
+    target_detected_share: float = 0.8
+    max_slow_fired_share: float = 0.2
+    # Zeilen des Rasters im Report, die volle Tabelle steht in der CSV
+    report_grid_rows: int = 10
 
-# nur der Detektor ohne Reset, darauf wird kalibriert (die Scores hängen nicht von den Schwellen ab)
-def build_isolated_configs() -> dict[str, CycleConfig]:
-    return {DETECTOR_VARIANT: _variant(False, NumericalAnalysisConfig())}
+    # erst Übergang plus Haltedauer bestätigen das Ereignis, früher ist es nach der Definition keines
+    @property
+    def hit_days_after(self) -> int:
+        return self.event_transition_days + self.event_min_duration_days
 
-
-# wie im echten Betrieb, Reset durch die Regel wie SYS2 (ohne LLM), mit den kalibrierten Schwellen
-def build_adaption_configs(
-    numerical_analysis_config: NumericalAnalysisConfig,
-) -> dict[str, CycleConfig]:
-    return {DETECTOR_VARIANT: _variant(True, numerical_analysis_config)}
+    # Eingriffe der Diagnose
+    @property
+    def diagnosis_kinds(self) -> tuple[str, ...]:
+        return self.positive_kinds + self.negative_kinds + self.single_day_kinds
