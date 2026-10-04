@@ -57,7 +57,7 @@ class NumericalAnalysisConfig:
 
     unusual_threshold: float = 3.2
     # Streak-Schwellen: kalibriert in K2
-    weekday_streak_threshold: float = 2.0
+    weekday_streak_threshold: float = 2.5
     weekly_streak_threshold: float = 0.75
     long_term_streak_threshold_pct: float = 12.5
 
