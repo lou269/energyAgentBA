@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from src.config.config_forecasting import SPLITS
 from src.pipeline.provenance import (
     build_code_version,
     build_environment_reference,
@@ -38,7 +39,7 @@ def build_forecast_run_manifest(
     if not experiment_id:
         raise ValueError("experiment_id must not be empty.")
 
-    if split not in {"validation", "test"}:
+    if split not in SPLITS:
         raise ValueError(f"Unsupported split: {split}")
 
     if runtime_seconds < 0:

@@ -11,6 +11,12 @@ from experiments.common.scenarios import (
     subtract_channels_in_window,
 )
 
+# Testreihen beginnen 2020 bzw. 2014, der Abschnitt reicht über alle Jahre
+WHOLE_SERIES = (
+    pd.Timestamp("2000-01-01", tz="UTC"),
+    pd.Timestamp("2100-01-01", tz="UTC"),
+)
+
 
 def test_build_decision_times_applies_margins_on_both_sides() -> None:
     # Winter, Ortszeit London = UTC
@@ -84,7 +90,7 @@ def test_slice_history_window_takes_history_days_before_start_and_end_inclusive(
     start, end = series.index[24 * 5], series.index[24 * 7 - 1]
 
     history, targets, targets_imputed = slice_history_window(
-        series, imputed, start=start, end=end, history_days=2
+        series, imputed, start=start, end=end, history_days=2, split_bounds=WHOLE_SERIES
     )
 
     assert history.index[0] == start - pd.Timedelta(days=2)
@@ -100,7 +106,12 @@ def test_slice_history_window_without_history_days_keeps_everything_before_start
     start = series.index[24 * 5]
 
     history, _targets, _imputed = slice_history_window(
-        series, imputed, start=start, end=series.index[-1], history_days=None
+        series,
+        imputed,
+        start=start,
+        end=series.index[-1],
+        history_days=None,
+        split_bounds=WHOLE_SERIES,
     )
 
     assert history.index[0] == series.index[0]
@@ -113,7 +124,9 @@ def test_coldstart_history_counts_local_days_across_the_clock_change() -> None:
     # Mitternacht Ortszeit am 03.04., Sommerzeit
     first_decision_time = pd.Timestamp("2014-04-02T23:00:00+00:00")
 
-    history = crop_history_for_coldstart(series, first_decision_time, 7)
+    history = crop_history_for_coldstart(
+        series, (first_decision_time,), 7, WHOLE_SERIES
+    )
 
     # 7 Tage inklusive Vortag, über die Umstellung am 30.03. also 167 statt 168 Stunden
     assert history.index[0] == pd.Timestamp("2014-03-27T00:00:00+00:00")

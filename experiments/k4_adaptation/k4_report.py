@@ -10,6 +10,7 @@ from docs.plots.plot_k4_adaptation_strategies import build_k4_plot
 from experiments.common.report import (
     KIND_LABELS,
     format_commit,
+    format_cutovers,
     format_number,
     key_figures_table,
     relabel,
@@ -102,7 +103,9 @@ def build_setup(run_config: dict, evaluation_days: int) -> dict[str, str]:
     standard_config, k4_config = run_config["standard_config"], run_config["k4_config"]
 
     return {
-        "Cutover": ", ".join(standard_config["cutover_dates"]),
+        "Cutover": format_cutovers(
+            standard_config["cutover_dates"], k4_config["cutovers"]
+        ),
         "Ereignisse": (
             f"Dauerlast +{format_number(standard_config['step_injection_w'], 0)} W, proportional jede Stunde × "
             f"{format_number(standard_config['scale_factor'], DECIMALS)}"
@@ -281,7 +284,10 @@ def report_masking(run_directory: Path, k4_config: K4Config) -> Path:
         output_directory,
         title=f"K4 Teil 2, {'/'.join(k4_config.masked_classifications)} für Prophet ausblenden, Lauf {run_directory.name}",
         setup={
-            "Cutover": ", ".join(run_config["standard_config"]["cutover_dates"]),
+            "Cutover": format_cutovers(
+                run_config["standard_config"]["cutover_dates"],
+                run_config["k4_config"]["cutovers"],
+            ),
             "Entscheidungen": "SYS2, danach zweimal nachgespielt: nur Resets (replay) und zusätzlich ausgeblendet (mask)",
             "Commit": format_commit(run_config["code_version"]),
         },

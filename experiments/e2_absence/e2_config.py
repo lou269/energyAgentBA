@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from experiments.common.standard_config import GOLDSTANDARD_EXPECTED, REFERENCE_SYSTEM
+
 RUN_PREFIX = "e2"
 PRECHECK_RUN_PREFIX = "e2_precheck"
 # vom Runner geschrieben, vom Report gelesen
@@ -18,11 +20,9 @@ class E2Config:
     calendar_events_file: Path = (
         Path(__file__).resolve().parent / "calendar_events.json"
     )
-    # Kanalauswahl aus e2_select_channels (nilmtk-env), Eingabe für das Szenario, liegt unter e2_output_dir
-    channel_selection_subdir: Path = Path("channel_selection")
+    split: str = "validation"
 
-    # 14 Tage, davor 30 und danach 28 ruhige Tage in der K2-Kontrolle (Gate zu, keine Drift, kein Reset)
-    active_absence_event_id: str = "vacation-2013-09"
+    active_absence_event_id: str = "vacation-2015-08"
 
     decision_time_margin_before_days: int = 30
     # bis die Urlaubstage aus dem long_term-Fenster (30 Tage) wieder herausfallen
@@ -30,9 +30,9 @@ class E2Config:
 
     min_coverage_share_for_subtraction: float = 0.9
 
-    target_classification: str = "absence"
+    target_classification: str = GOLDSTANDARD_EXPECTED["absence"]
     # Prognose je Phase gepaart gegen das System ohne Adaption
-    reference_config: str = "SYS1"
+    reference_config: str = REFERENCE_SYSTEM
     plot_configs: tuple[str, ...] = ("SYS1", "SYS3_CTX0", "SYS3_CTX1")
 
     # je Kontextvariante: Name im Ergebnis -> Systemvariante
@@ -48,3 +48,8 @@ class E2Config:
     precheck_ctx_systems: dict[str, dict[str, str]] = field(
         default_factory=lambda: {"ctx0": {"SYS1": "SYS1", "SYS2": "SYS2"}}
     )
+
+    # Kanalauswahl aus e2_select_channels (nilmtk-env), Eingabe für das Szenario, liegt unter e2_output_dir
+    @property
+    def channel_selection_subdir(self) -> Path:
+        return Path("channel_selection") / self.split

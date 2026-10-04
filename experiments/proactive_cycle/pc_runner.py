@@ -32,6 +32,7 @@ def run(proactive_cycle_config: ProactiveCycleConfig) -> Path:
     scenario = build_standard_scenarios(
         proactive_cycle_config.cutover_date,
         ("control",),
+        split=proactive_cycle_config.split,
         margin_before_days=0,
         margin_after_days=proactive_cycle_config.outlook_days - 1,
     )["control"]

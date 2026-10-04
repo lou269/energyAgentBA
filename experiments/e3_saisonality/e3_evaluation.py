@@ -5,7 +5,6 @@ import pandas as pd
 from experiments.common.evaluation import (
     FIRST_ANALYZED_DAY,
     add_days_since_cutover,
-    merge_cycle_days,
     pair_with_control,
     spread_over_repeats,
     summarize_event_response,
@@ -28,16 +27,6 @@ DRIFT_RESULT_COLUMNS = [
     "new_pattern",
     "reference_reset",
 ]
-
-
-def read_drift_results(
-    summary: pd.DataFrame, anomaly: pd.DataFrame, *, kind: str, cutover_date: str
-) -> pd.DataFrame:
-    results = merge_cycle_days(summary, anomaly).assign(
-        kind=kind, cutover_date=cutover_date
-    )
-
-    return results[DRIFT_RESULT_COLUMNS]
 
 
 @dataclass(frozen=True)

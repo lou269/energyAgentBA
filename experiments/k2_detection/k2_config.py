@@ -18,9 +18,6 @@ STREAK_THRESHOLD_COLUMNS = {
 # Cutover, Zeitfenster und Stärken kommen aus StandardScenarioConfig
 @dataclass(frozen=True)
 class K2Config:
-    # Train-Split: kalibriert wird nur bis zu diesem lokalen Kalendertag (einschließlich), er beginnt mit der Reihe
-    train_end: str = "2015-04-29"
-
     # Raster der Streak-Schwellen
     weekday_streak_thresholds: tuple[float, ...] = (1.75, 2.0, 2.5, 2.75)
     weekly_streak_thresholds: tuple[float, ...] = (0.5, 0.75, 1.0, 1.25, 1.5)
@@ -49,6 +46,9 @@ class K2Config:
     )
     negative_kinds: tuple[str, ...] = ("ramp_56", "ramp_56_down")
     single_day_kinds: tuple[str, ...] = ("peak", "peak_6")
+
+    # Standard-Cutover der Diagnose (Kennungen aus StandardScenarioConfig)
+    cutovers: tuple[str, ...] = ("CO1", "CO2", "CO3", "CO4", "CO5")
 
     # Ziele für die Kurzfassung im Report
     target_detected_share: float = 0.8

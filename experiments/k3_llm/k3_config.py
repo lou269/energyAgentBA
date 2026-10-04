@@ -1,5 +1,6 @@
 from dataclasses import dataclass, replace
 
+from experiments.common.standard_config import LLM_SYSTEM
 from src.config.config_forecasting import SYS_VARIANTS, CycleConfig, LLMConfig
 
 RUN_PREFIX = "k3"
@@ -40,17 +41,17 @@ class K3Config:
 
     # Ebene 2: ein Cutover der Standard-Szenarien, nur für die Modellwahl.
     # Die erwartete Klasse je Art steht in GOLDSTANDARD_EXPECTED, ramp_56 aus E5 fehlt, sie öffnet hier kein Gate und das LLM wird nie gefragt
-    sequence_cutover_date: str = "2014-04-15"
+    sequence_cutover: str = "CO3"
     sequence_kinds: tuple[str, ...] = ("control", "step", "peak_6")
 
 
 def build_sequence_configs(
     model_variants: tuple[LLMModelVariant, ...], base_llm_config: LLMConfig
 ) -> dict[str, CycleConfig]:
-    # SYS3 mit ausgetauschtem Modell
+    # LLM-System mit ausgetauschtem Modell
     return {
         variant.model_id: replace(
-            SYS_VARIANTS["SYS3"],
+            SYS_VARIANTS[LLM_SYSTEM],
             llm_config=replace(base_llm_config, model=variant.model),
         )
         for variant in model_variants

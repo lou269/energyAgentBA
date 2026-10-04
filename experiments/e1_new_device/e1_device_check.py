@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 def run(e1_config: E1Config) -> None:
     output_directory = PROJECT_CONFIG.e1_output_dir / e1_config.device_selection_subdir
 
-    context = load_nilmtk_context()
+    context = load_nilmtk_context(e1_config.split)
 
     logger.info(
         "Ranking all appliance channels over %s to %s...",
@@ -43,7 +43,9 @@ def run(e1_config: E1Config) -> None:
         selection.data_hourly[device_meter_key],
         selection.quality_hourly[quality_column(device_meter_key, "coverage_mask")],
         context.mains,
-        candidate_cutover_times(context.window_start, context.window_end, e1_config),
+        candidate_cutover_times(
+            context.window_start, context.split_start, context.split_end, e1_config
+        ),
         e1_config.margin_after_days,
     )
     windows = select_cutover(windows, e1_config.min_device_coverage)

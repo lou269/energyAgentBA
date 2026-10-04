@@ -19,6 +19,7 @@ from experiments.common.harness import (
     run_scenario_in_scratch,
 )
 from experiments.common.scenarios import (
+    load_split_bounds,
     load_target,
     local_day_window,
     slice_history_window,
@@ -42,7 +43,7 @@ def run_forecasts(
     e4_config: E4Config, forecast_config: ForecastingConfig, run_name: str
 ) -> pd.DataFrame:
     np.random.seed(forecast_config.seed)
-    target_series, target_imputed, _target_value_implausible = load_target()
+    target_series, target_imputed, _target_value_implausible = load_target(e4_config.split)
 
     adaptive = forecast_config.selected_prophet_variant
     static = e4_config.static_variant
@@ -63,6 +64,7 @@ def run_forecasts(
                 start=start,
                 end=end,
                 history_days=coldstart_days,
+                split_bounds=load_split_bounds(e4_config.split),
             )
             _forecasts, evaluation_results = run_forecast_models(
                 (reference, adaptive, static),
@@ -97,6 +99,7 @@ def run_system(e4_config: E4Config, run_name: str) -> pd.DataFrame:
                 start_date,
                 coldstart_days,
                 e4_config.evaluation_days,
+                split=e4_config.split,
                 injection_kinds=e4_config.injection_kinds,
                 injection_days=e4_config.injection_days,
             )

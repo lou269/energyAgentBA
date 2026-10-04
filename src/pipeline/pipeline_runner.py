@@ -11,19 +11,38 @@ import argparse
 import logging
 import subprocess
 
-from src.common.column_naming import imputation_column, plausibility_column, treated_column
-from src.config.config_forecasting import ComparisonConfig, CycleConfig, ForecastingConfig, NumericalAnalysisConfig, PreprocessingConfig, SYS_VARIANTS
+from src.common.column_naming import (
+    imputation_column,
+    plausibility_column,
+    treated_column,
+)
+from src.config.config_forecasting import (
+    SPLITS,
+    ComparisonConfig,
+    CycleConfig,
+    ForecastingConfig,
+    SYS_VARIANTS,
+)
 from src.config.project_config import ProjectConfig, ensure_project_directories
 from src.llm.llm_run_artifacts import load_prompt
 from src.llm.llm_runner import PROMPT_DIRECTORY
-from src.pipeline.comparison_harness import build_scenario_from_split_manifest, create_cycle_run_id, run_comparison
-from src.pipeline.io import read_canonical_frame, read_target_meter_key
-from src.preprocessing.preprocessing_runner import run_preprocessing
+from src.pipeline.comparison_harness import (
+    build_scenario_from_window,
+    create_cycle_run_id,
+    run_comparison,
+)
+from src.pipeline.io import (
+    read_preprocessing_frame,
+    read_split_bounds,
+    read_split_row,
+    read_target_meter_key,
+)
+from src.preprocessing.preprocessing_runner import PreprocessingRunner
 
 logger = logging.getLogger(__name__)
 
-# ingestion/analysis gelten als einmalig erledigt (Rohdaten ändern sich nicht) 
-# -> data_preparation hängt von der Kandidatenwahl ab und läuft hier noch als Subprozess, weil es nilmtk braucht 
+# ingestion/analysis gelten als einmalig erledigt (Rohdaten ändern sich nicht)
+# -> data_preparation hängt von der Kandidatenwahl ab und läuft hier noch als Subprozess, weil es nilmtk braucht
 # und damit nicht in diesem (forecasting-env-)Prozess laufen kann
 DATA_PREPARATION_MODULE = "src.data_preparation.data_preparation_runner"
 DATA_PREPARATION_ENVIRONMENT = "nilmtk-env"
@@ -52,7 +71,9 @@ def _parse_configs(labels: str) -> dict[str, CycleConfig]:
         label = label.strip()
 
         if label not in SYS_VARIANTS:
-            raise ValueError(f"Unknown config '{label}'. Available: {', '.join(SYS_VARIANTS)}")
+            raise ValueError(
+                f"Unknown config '{label}'. Available: {', '.join(SYS_VARIANTS)}"
+            )
 
         selected[label] = SYS_VARIANTS[label]
 
@@ -61,8 +82,13 @@ def _parse_configs(labels: str) -> dict[str, CycleConfig]:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--configs", default="SYS0,SYS1", help="Comma-separated SYS_VARIANTS labels, e.g. SYS0,SYS2")
+    parser.add_argument(
+        "--configs",
+        default="SYS0,SYS1",
+        help="Comma-separated SYS_VARIANTS labels, e.g. SYS0,SYS2",
+    )
     parser.add_argument("--skip-data-preparation", action="store_true")
+    parser.add_argument("--split", default="validation", choices=list(SPLITS))
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO)
@@ -82,37 +108,47 @@ def main() -> None:
 
     logger.info("Running preprocessing for target column %s...", target_column)
 
-    preprocessing_result = run_preprocessing(
-        read_canonical_frame(project_config, "canonical_data_15min"),
-        read_canonical_frame(project_config, "canonical_quality_15min"),
-        read_canonical_frame(project_config, "canonical_data_hourly"),
-        read_canonical_frame(project_config, "canonical_quality_hourly"),
-        PreprocessingConfig(),
-        project_config.timezone,
-        sample_period_hours_15min=NumericalAnalysisConfig().sample_period_hours_15min,
-        sample_period_hours_hourly=NumericalAnalysisConfig().sample_period_hours_hourly,
+    PreprocessingRunner(project_config).run()
+
+    window = read_split_row(project_config, args.split)["window"]
+    split_start, split_end = read_split_bounds(project_config, args.split)
+    treated_hourly = read_preprocessing_frame(project_config, "treated_hourly", window)
+    imputation_mask_hourly = read_preprocessing_frame(
+        project_config, "imputation_mask_hourly", window
+    )
+    plausibility_hourly = read_preprocessing_frame(
+        project_config, "plausibility_hourly", window
     )
 
     configs = _parse_configs(args.configs)
 
     llm_prompt = None
-    real_config = next((config for config in configs.values() if config.llm_mode == "real"), None)
+    real_config = next(
+        (config for config in configs.values() if config.llm_mode == "real"), None
+    )
 
     if real_config is not None:
         assert real_config.llm_config is not None
-        llm_prompt = load_prompt(PROMPT_DIRECTORY / f"prompt_{real_config.llm_config.prompt_version}.txt")
+        llm_prompt = load_prompt(
+            PROMPT_DIRECTORY / f"prompt_{real_config.llm_config.prompt_version}.txt"
+        )
 
-    scenario = build_scenario_from_split_manifest(
-        preprocessing_result.treated_hourly,
-        preprocessing_result.split_manifest,
+    scenario = build_scenario_from_window(
+        treated_hourly,
         target_column,
+        split_start=split_start,
+        split_end=split_end,
         coldstart_days=ForecastingConfig().cycle_coldstart_days,
         local_timezone=project_config.timezone,
-        target_imputed=preprocessing_result.imputation_mask_hourly[imputation_column(target_meter_key)],
-        value_implausible=preprocessing_result.plausibility_hourly[plausibility_column(target_meter_key)],
+        target_imputed=imputation_mask_hourly[imputation_column(target_meter_key)],
+        value_implausible=plausibility_hourly[plausibility_column(target_meter_key)],
     )
 
-    logger.info("Running daily cycle for configs %s over %d decision times...", ", ".join(configs), len(scenario.decision_times))
+    logger.info(
+        "Running daily cycle for configs %s over %d decision times...",
+        ", ".join(configs),
+        len(scenario.decision_times),
+    )
 
     run_id = create_cycle_run_id(project_config.cycle_output_dir, configs)
     run_directory = project_config.cycle_output_dir / run_id
@@ -131,7 +167,11 @@ def main() -> None:
         calendar_lookahead_days=comparison_config.calendar_lookahead_days,
     )
 
-    logger.info("Pipeline completed successfully: %d cycle rows across %d configs.", len(comparison), len(configs))
+    logger.info(
+        "Pipeline completed successfully: %d cycle rows across %d configs.",
+        len(comparison),
+        len(configs),
+    )
 
 
 if __name__ == "__main__":

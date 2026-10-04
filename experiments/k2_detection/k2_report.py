@@ -153,8 +153,8 @@ def build_setup(run_config: dict, k2_config: dict) -> dict[str, str]:
 
     return {
         "Zeitraum": (
-            f"bewertet {analysis['first_day']} bis {analysis['last_day']} ({analysis['days']} Tage), davor der Kaltstart. "
-            "Kalibriert wird nur auf dem Train-Split"
+            f"bewertet {analysis['first_day']} bis {analysis['last_day']} ({analysis['days']} Tage), davor die Historie aus train. "
+            "Kalibriert wird nur auf validation"
         ),
         "Echte Trends": (
             f"{analysis['events']} im Zeitraum: Niveau ändert sich um mindestens {format_number(k2_config['event_min_change_pct'], 0)} % "

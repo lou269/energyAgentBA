@@ -16,13 +16,18 @@ from src.common.timestamps import (
     shift_local_days,
 )
 from src.pipeline.comparison_harness import ScenarioData
+from src.pipeline.io import read_split_bounds
 from src.preprocessing.plausibility_check import flag_implausible_values
 
 
 @cache
-def load_target() -> tuple[pd.Series, pd.Series, pd.Series]:
-    # Mains, Imputationsmaske und Plausibilitätsflags aus der Vorverarbeitung, für alle Studien dieselben, nur einmal gelesen
-    return read_preprocessed_target(PROJECT_CONFIG)
+def load_target(split: str) -> tuple[pd.Series, pd.Series, pd.Series]:
+    # Mains, Imputationsmaske und Plausibilitätsflags des Fensters, in dem der Abschnitt liegt, je Fenster nur einmal gelesen
+    return read_preprocessed_target(PROJECT_CONFIG, split)
+
+
+def load_split_bounds(split: str) -> tuple[pd.Timestamp, pd.Timestamp]:
+    return read_split_bounds(PROJECT_CONFIG, split)
 
 
 def build_decision_times(
@@ -38,12 +43,36 @@ def build_decision_times(
     return tuple(local_calendar_range(start, 1, end, LOCAL_TIMEZONE))
 
 
+def check_inside_split(
+    series: pd.Series,
+    split_bounds: tuple[pd.Timestamp, pd.Timestamp],
+    first_time: pd.Timestamp,
+    last_time: pd.Timestamp,
+    history_start: pd.Timestamp | None,
+) -> None:
+    # die ausgewerteten Zeiten gehören in den Abschnitt, die Historie davor darf im Fenster davor liegen, aber nicht darüber hinaus
+    split_start, split_end = split_bounds
+    history_missing = history_start is not None and history_start < series.index[0]
+
+    if first_time < split_start or last_time > split_end or history_missing:
+        raise ValueError(
+            f"{first_time} to {last_time} with history from {history_start} does not fit into the split {split_start} to {split_end}."
+        )
+
+
 def crop_history_for_coldstart(
-    series: pd.Series, first_decision_time: pd.Timestamp, coldstart_days: int
+    series: pd.Series,
+    decision_times: tuple[pd.Timestamp, ...],
+    coldstart_days: int,
+    split_bounds: tuple[pd.Timestamp, pd.Timestamp],
 ) -> pd.Series:
-    # der Tag vor first_decision_time kommt im ersten Zyklus als new_observations und zählt zu den coldstart_days,
+    # der Tag vor dem ersten Entscheidungstag kommt im ersten Zyklus als new_observations und zählt zu den coldstart_days,
     # am ersten Entscheidungstag liegen also genau coldstart_days Tage vor, wie nach einem Reset
-    crop_start = shift_local_days(first_decision_time, -coldstart_days, LOCAL_TIMEZONE)
+    crop_start = shift_local_days(decision_times[0], -coldstart_days, LOCAL_TIMEZONE)
+    check_inside_split(
+        series, split_bounds, decision_times[0], decision_times[-1], crop_start
+    )
+
     return series.loc[crop_start:]
 
 
@@ -83,6 +112,7 @@ def slice_history_window(
     start: pd.Timestamp,
     end: pd.Timestamp,
     history_days: int | None,
+    split_bounds: tuple[pd.Timestamp, pd.Timestamp],
 ) -> tuple[pd.Series, pd.Series, pd.Series]:
     # history_days Tage Historie vor start, None = alles davor (K1 macro), ausgewertet wird start bis end inklusive
     history_start = (
@@ -90,6 +120,7 @@ def slice_history_window(
         if history_days is None
         else shift_local_days(start, -history_days, LOCAL_TIMEZONE)
     )
+    check_inside_split(target_series, split_bounds, start, end, history_start)
     history = target_series.loc[history_start : start - pd.Timedelta(hours=1)]
 
     return history, target_series.loc[start:end], target_imputed.loc[start:end]

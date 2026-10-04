@@ -9,6 +9,7 @@ import pandas as pd
 from docs.plots.plot_k1_forecast_model import build_forecast_model_plot
 from docs.plots.plot_k1_seasonality import build_seasonality_plot
 from src.common.target_series import read_preprocessed_daily_target
+from src.pipeline.io import read_split_bounds
 from src.config.config_forecasting import MODEL_LABELS as FORECAST_MODEL_LABELS
 from experiments.common.report import (
     NOISE_RULE_NOTE,
@@ -18,7 +19,7 @@ from experiments.common.report import (
     paired_difference_columns,
     write_result_report,
 )
-from experiments.common.standard_config import DECIMALS, PROJECT_CONFIG
+from experiments.common.standard_config import DECIMALS, LOCAL_TIMEZONE, PROJECT_CONFIG
 from experiments.k1_forecast_model.k1_config import (
     REFERENCE_FILE,
     RUN_PREFIX,
@@ -188,7 +189,7 @@ def report_retraining(run_directory: Path) -> Path:
     }
 
     paired = compare_to_best_variant(results_by_mode, variant_ids)
-    actual_daily = read_preprocessed_daily_target(PROJECT_CONFIG)
+    actual_daily = read_preprocessed_daily_target(PROJECT_CONFIG, config["split"])
     modes = summarize_modes(results_by_mode, paired, variant_ids, actual_daily)
 
     output_directory = user_output_directory(run_directory)
@@ -238,6 +239,8 @@ def report_seasonality(run_directory: Path) -> Path:
     config = run_config["k1_config"]
     reference_model_id = config["primary_naive_reference"]
     model_ids = [variant["model_id"] for variant in config["seasonality_variants"]]
+    split_start, _split_end = read_split_bounds(PROJECT_CONFIG, config["split"])
+    seasonality_start = split_start.tz_convert(LOCAL_TIMEZONE).date()
 
     origin_metrics = pd.read_csv(
         run_directory / RAW_SUBDIR / f"{SEASONALITY_METRICS_FILE}.csv",
@@ -307,8 +310,8 @@ def report_seasonality(run_directory: Path) -> Path:
         output_directory,
         title=f"K1 Prognose mit und ohne Jahressaisonalität, Lauf {run_directory.name}",
         setup={
-            "Auswertung": f"{config['seasonality_days']} Tage ab {config['seasonality_start_date']} "
-            f"({config['seasonality_split']}), je Tag eine 24-h-Prognose, Historie ab Datenbeginn",
+            "Auswertung": f"{config['seasonality_days']} Tage ab {seasonality_start} "
+            f"({config['split']}), je Tag eine 24-h-Prognose, Historie ab Datenbeginn",
             "Varianten": ", ".join(MODEL_LABELS[model_id] for model_id in model_ids),
             "Naive Referenz": MODEL_LABELS[reference_model_id],
             "Commit": format_commit(run_config["code_version"]),

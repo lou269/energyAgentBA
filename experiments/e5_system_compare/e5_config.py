@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from experiments.common.standard_config import LLM_SYSTEM, REFERENCE_SYSTEM, RULE_SYSTEM
+
 RUN_PREFIX = "e5"
 # vom Runner geschrieben, vom Report gelesen
 RESULTS_FILE = "e5_results"
@@ -11,13 +13,14 @@ SCENARIO_DIRECTORY = "{series}_{cutover_date}"
 
 @dataclass(frozen=True)
 class E5Config:
-    # bis zum Test-Lauf auf zwei Standard-Cutovern aus dem Train-Split, Zahlen daraus sind kein Beleg.
+    # bis zum Test-Lauf auf zwei Cutovern in validation, Zahlen daraus sind kein Beleg.
     # Beide im Winterhalbjahr wie der spätere Test-Cutover
-    cutover_dates: tuple[str, ...] = ("2013-10-15", "2014-01-15")
+    split: str = "validation"
+    cutover_dates: tuple[str, ...] = ("2014-10-15", "2015-01-15")
 
-    reference_system: str = "SYS1"
-    rule_system: str = "SYS2"
-    llm_system: str = "SYS3"
+    reference_system: str = REFERENCE_SYSTEM
+    rule_system: str = RULE_SYSTEM
+    llm_system: str = LLM_SYSTEM
 
     margin_before_days: int = 14
     # (Tag ab Cutover, Art) nacheinander in einer Reihe. Erst die Spitzen und der Festhänger, die Dauerlast zuletzt, nach ihrem Reset fehlen Skalen.

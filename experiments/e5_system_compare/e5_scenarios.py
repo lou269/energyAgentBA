@@ -26,6 +26,7 @@ def build_e5_scenarios(
     cutover_date: str,
     events: tuple[tuple[int, str], ...],
     *,
+    split: str,
     margin_before_days: int,
     margin_after_days: int,
 ) -> dict[str, ScenarioData]:
@@ -33,6 +34,7 @@ def build_e5_scenarios(
     control = build_standard_scenarios(
         cutover_date,
         ("control",),
+        split=split,
         margin_before_days=margin_before_days,
         margin_after_days=margin_after_days,
     )["control"]

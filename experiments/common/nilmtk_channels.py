@@ -13,7 +13,11 @@ from src.data_preparation.auxiliary_appliance_selection import (
     AuxiliaryApplianceSelection,
     build_auxiliary_appliance_selection,
 )
-from src.pipeline.io import read_preprocessing_frame
+from src.pipeline.io import (
+    read_canonical_manifest,
+    read_preprocessing_frame,
+    read_split_manifest,
+)
 
 
 @dataclass(frozen=True)
@@ -27,17 +31,20 @@ class NilmtkContext:
     mains: pd.Series
     window_start: pd.Timestamp  # Mains-Kandidatenfenster aus canonical_manifest.csv
     window_end: pd.Timestamp
+    # Grenzen des Abschnitts aus split_manifest.csv
+    split_start: pd.Timestamp
+    split_end: pd.Timestamp
 
 
-def load_nilmtk_context() -> NilmtkContext:
-    canonical_manifest = pd.read_csv(
-        PROJECT_CONFIG.canonical_output_dir / "canonical_manifest.csv"
-    )
-
-    if len(canonical_manifest) != 1:
-        raise ValueError("Canonical manifest must contain exactly one mains target.")
-
-    manifest_row = canonical_manifest.iloc[0]
+def load_nilmtk_context(split: str) -> NilmtkContext:
+    # beide Manifeste statt der Fensterkonfiguration, nilmtk-env liest nur Dateien
+    split_manifest = read_split_manifest(PROJECT_CONFIG)
+    split_row = split_manifest.loc[split_manifest["split"].eq(split)].iloc[0]
+    window = split_row["window"]
+    canonical_manifest = read_canonical_manifest(PROJECT_CONFIG)
+    manifest_row = canonical_manifest.loc[canonical_manifest["window"].eq(window)].iloc[
+        0
+    ]
     mains_meter_key = str(manifest_row["meter_key"])
     channel_registry, channel_quality = load_channel_tables(PROJECT_CONFIG)
 
@@ -47,11 +54,13 @@ def load_nilmtk_context() -> NilmtkContext:
         channel_quality=channel_quality,
         house=int(manifest_row["house"]),
         mains_meter_key=mains_meter_key,
-        mains=read_preprocessing_frame(PROJECT_CONFIG, "treated_hourly")[
+        mains=read_preprocessing_frame(PROJECT_CONFIG, "treated_hourly", window)[
             treated_column(mains_meter_key)
         ],
-        window_start=pd.Timestamp(manifest_row["window_start"]),
-        window_end=pd.Timestamp(manifest_row["window_end"]),
+        window_start=manifest_row["window_start"],
+        window_end=manifest_row["window_end"],
+        split_start=split_row["start"],
+        split_end=split_row["end"],
     )
 
 

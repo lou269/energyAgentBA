@@ -13,7 +13,6 @@ import pandas as pd
 from experiments.common.harness import COMPARISON_CONFIG
 from experiments.common.scenarios import load_target
 from experiments.common.standard_config import (
-    COLDSTART_DAYS,
     LOCAL_TIMEZONE,
     PROJECT_CONFIG,
     STANDARD_CONFIG,
@@ -40,12 +39,14 @@ from experiments.k2_detection.k2_evaluation import (
     summarize_grid,
     summarize_point,
 )
+from src.common.timestamps import local_day
 from src.config.config_forecasting import NumericalAnalysisConfig
 from src.numerical_analysis.daily_analysis import level_shift_thresholds
 from src.pipeline.io import (
     create_experiment_run,
     df_to_csv,
     read_raw_json,
+    read_split_bounds,
     save_json,
 )
 
@@ -115,12 +116,11 @@ def run_diagnosis(
 ) -> pd.DataFrame:
     cases = []
 
-    for cutover_date in STANDARD_CONFIG.cutover_dates:
+    for cutover_id in k2_config.cutovers:
+        cutover_date = STANDARD_CONFIG.cutover_dates[cutover_id]
         scenarios = build_standard_scenarios(
             cutover_date,
             k2_config.diagnosis_kinds,
-            margin_before_days=STANDARD_CONFIG.monitoring_before_cutover_days,
-            margin_after_days=STANDARD_CONFIG.margin_after_days,
         )
 
         for kind in k2_config.diagnosis_kinds:
@@ -158,12 +158,17 @@ def run(k2_config: K2Config) -> Path:
     )
 
     analysis_config = NumericalAnalysisConfig()
-    series = load_target()[0]
+    series = load_target(STANDARD_CONFIG.split)[0]
+    split_start, split_end = read_split_bounds(PROJECT_CONFIG, STANDARD_CONFIG.split)
+    first_day, last_day = (
+        local_day(bound, LOCAL_TIMEZONE).tz_localize(None)
+        for bound in (split_start, split_end)
+    )
     days = analysis_days(
         series,
         local_timezone=LOCAL_TIMEZONE,
-        coldstart_days=COLDSTART_DAYS,
-        last_day=k2_config.train_end,
+        first_day=first_day,
+        last_day=last_day,
     )
     all_events = find_real_events(
         series,
@@ -179,8 +184,8 @@ def run(k2_config: K2Config) -> Path:
     df_to_csv(all_events, raw_directory, EVENTS_FILE)
     events = events_in_range(
         all_events,
-        days[0],
-        pd.Timestamp(k2_config.train_end),
+        first_day,
+        last_day,
         hit_days_before=k2_config.hit_days_before,
         hit_days_after=k2_config.hit_days_after,
     )

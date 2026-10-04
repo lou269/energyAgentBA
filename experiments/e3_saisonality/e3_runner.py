@@ -23,7 +23,8 @@ from experiments.e3_saisonality.e3_config import (
     RUN_PREFIX,
     E3Config,
 )
-from experiments.e3_saisonality.e3_evaluation import read_drift_results
+from experiments.common.evaluation import collect_scenario_results
+from experiments.e3_saisonality.e3_evaluation import DRIFT_RESULT_COLUMNS
 from src.config.config_forecasting import SYS_VARIANTS
 from src.pipeline.io import create_experiment_run, df_to_csv
 
@@ -46,12 +47,11 @@ def run(e3_config: E3Config) -> Path:
     )
     scenario_results: list[pd.DataFrame] = []
 
-    for cutover_date in STANDARD_CONFIG.cutover_dates:
+    for cutover_id in e3_config.cutovers:
+        cutover_date = STANDARD_CONFIG.cutover_dates[cutover_id]
         scenarios = build_standard_scenarios(
             cutover_date,
             e3_config.kinds,
-            margin_before_days=STANDARD_CONFIG.monitoring_before_cutover_days,
-            margin_after_days=STANDARD_CONFIG.margin_after_days,
         )
 
         for kind, scenario in scenarios.items():
@@ -66,11 +66,12 @@ def run(e3_config: E3Config) -> Path:
                 run_id=f"{run_directory.name}_{scenario_name}",
             )
             scenario_results.append(
-                read_drift_results(
+                collect_scenario_results(
                     pd.read_csv(scenario_directory / COMPARISON_SUMMARY_FILE),
                     read_anomaly_rows(scenario_directory),
                     kind=kind,
                     cutover_date=cutover_date,
+                    columns=DRIFT_RESULT_COLUMNS,
                 )
             )
 

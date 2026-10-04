@@ -8,7 +8,6 @@ from experiments.common.evaluation import (
     add_days_since_cutover,
     check_answer_text,
     count_notifications,
-    merge_cycle_days,
     pair_with_control,
 )
 from experiments.common.standard_config import (
@@ -142,16 +141,6 @@ def _summarize_cases(results: pd.DataFrame) -> pd.DataFrame:
             lambda values: ",".join(sorted(v for v in values if pd.notna(v))),
         ),
     )
-
-
-def read_sequence_results(
-    summary: pd.DataFrame, anomaly: pd.DataFrame, *, kind: str, cutover_date: str
-) -> pd.DataFrame:
-    results = merge_cycle_days(summary, anomaly).assign(
-        kind=kind, cutover_date=cutover_date
-    )
-
-    return results[SEQUENCE_RESULT_COLUMNS]
 
 
 @dataclass(frozen=True)

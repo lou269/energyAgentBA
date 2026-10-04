@@ -2,54 +2,15 @@ from typing import Literal
 
 import pandas as pd
 
-from src.common.column_naming import imputation_column, meter_key_from_data_column, quality_column, treated_column
+from src.common.column_naming import (
+    imputation_column,
+    meter_key_from_data_column,
+    quality_column,
+    treated_column,
+)
 from src.common.gap_masking import short_gap_mask
 
 GapTreatmentMethod = Literal["ffill", "linear", "none"]
-
-
-def build_gap_treated_data(
-    train_data: pd.DataFrame,
-    train_quality: pd.DataFrame,
-    validation_data: pd.DataFrame,
-    validation_quality: pd.DataFrame,
-    test_data: pd.DataFrame,
-    test_quality: pd.DataFrame,
-    max_gap_intervals: int,
-    resolution: str,
-    method: GapTreatmentMethod = "ffill",
-) -> tuple[
-    pd.DataFrame,
-    pd.DataFrame,
-    pd.DataFrame,
-    pd.DataFrame,
-    pd.DataFrame,
-    pd.DataFrame,
-]:
-
-    if method == "linear":
-        raise ValueError("Linear interpolation must not be applied globally across all splits. Use apply_gap_treatment() only on history available before the relevant forecast cutoff.")
-
-    combined_data = pd.concat([train_data, validation_data, test_data])
-
-    combined_quality = pd.concat([train_quality, validation_quality, test_quality])
-
-    treated, imputation_mask = apply_gap_treatment(
-        combined_data,
-        combined_quality,
-        max_gap_intervals=max_gap_intervals,
-        resolution=resolution,
-        method=method,
-    )
-
-    return (
-        treated.loc[train_data.index],
-        imputation_mask.loc[train_data.index],
-        treated.loc[validation_data.index],
-        imputation_mask.loc[validation_data.index],
-        treated.loc[test_data.index],
-        imputation_mask.loc[test_data.index],
-    )
 
 
 def apply_gap_treatment(
@@ -62,7 +23,9 @@ def apply_gap_treatment(
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     _validate_inputs(data, quality, max_gap_intervals=max_gap_intervals, method=method)
 
-    meter_keys = [meter_key_from_data_column(column, resolution) for column in data.columns]
+    meter_keys = [
+        meter_key_from_data_column(column, resolution) for column in data.columns
+    ]
 
     treated = pd.DataFrame(
         index=data.index,
@@ -78,11 +41,7 @@ def apply_gap_treatment(
 
     for column, meter_key in zip(data.columns, meter_keys):
         coverage_column = quality_column(meter_key, "coverage_mask")
-        coverage_mask = (
-            quality[coverage_column]
-            .fillna(False)
-            .astype(bool)
-        )
+        coverage_mask = quality[coverage_column].fillna(False).astype(bool)
 
         series = data[column].where(coverage_mask)
         missing = series.isna()

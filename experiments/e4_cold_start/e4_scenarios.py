@@ -2,6 +2,7 @@ from dataclasses import replace
 
 from experiments.common.scenarios import (
     crop_history_for_coldstart,
+    load_split_bounds,
     load_target,
     local_day_window,
     scenario_without_calendar,
@@ -18,17 +19,18 @@ def build_system_scenarios(
     coldstart_days: int,
     evaluation_days: int,
     *,
+    split: str,
     injection_kinds: tuple[str, ...],
     injection_days: tuple[int, ...],
 ) -> dict[tuple[str, int | None], ScenarioData]:
     # für jede Kaltstart-Länge dieselben Entscheidungstage, nur Historie davor kürzer
     # je Lauf höchstens eine Injektion, sonst sickert sie in die Referenz der nächsten
-    mains_series, target_imputed, value_implausible = load_target()
+    mains_series, target_imputed, value_implausible = load_target(split)
 
     start, end = local_day_window(start_date, evaluation_days)
     decision_times = tuple(local_calendar_range(start, 1, end, LOCAL_TIMEZONE))
     history = crop_history_for_coldstart(
-        mains_series, decision_times[0], coldstart_days
+        mains_series, decision_times, coldstart_days, load_split_bounds(split)
     )
     clean = scenario_without_calendar(
         history, decision_times, coldstart_days, target_imputed, value_implausible

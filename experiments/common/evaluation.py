@@ -87,14 +87,19 @@ def merge_cycle_days(summary: pd.DataFrame, anomaly: pd.DataFrame) -> pd.DataFra
     )
 
 
+def join_scale_names(flags: pd.DataFrame, separator: str) -> list[str]:
+    # je Zeile die Skalen, deren Flag gesetzt ist, in der Reihenfolge von SCALE_NAMES
+    return [
+        separator.join(scale for scale, flag in zip(SCALE_NAMES, row) if flag)
+        for row in flags.itertuples(index=False)
+    ]
+
+
 def streak_scale_names(hits: pd.DataFrame) -> pd.Series:
     # Skalen mit anhaltender Abweichung je Zeile, etwa weekly+long_term
     sustained = hits[SCALE_SUSTAINED_COLUMNS].eq(True)
 
-    return sustained.apply(
-        lambda row: "+".join(scale for scale, on in zip(SCALE_NAMES, row) if on),
-        axis=1,
-    )
+    return pd.Series(join_scale_names(sustained, "+"), index=hits.index)
 
 
 def detection_scales(hits: pd.DataFrame, single_day: pd.Series) -> pd.Series:
@@ -108,6 +113,22 @@ def add_days_since_cutover(results: pd.DataFrame) -> pd.DataFrame:
             results["decision_time"], results["cutover_date"]
         )
     )
+
+
+def collect_scenario_results(
+    summary: pd.DataFrame,
+    anomaly: pd.DataFrame,
+    *,
+    kind: str,
+    cutover_date: str,
+    columns: list[str],
+) -> pd.DataFrame:
+    # Zyklustage eines Szenarios mit Art und Cutover, die Spalten wählt die Studie
+    results = merge_cycle_days(summary, anomaly).assign(
+        kind=kind, cutover_date=cutover_date
+    )
+
+    return results[columns]
 
 
 def pair_with_control(results: pd.DataFrame, keys: list[str]) -> pd.DataFrame:

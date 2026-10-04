@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from experiments.common.standard_config import LLM_SYSTEM
+
 from src.config.config_forecasting import C1_STATIC, ProphetVariantConfig
 
 RUN_PREFIX = "e4"
@@ -13,14 +15,14 @@ CLEAN_SCENARIO = "clean"
 @dataclass(frozen=True)
 class E4Config:
     experiment_id: str = "E4"
-    split: str = "train"
+    split: str = "validation"
 
-    # je eine Jahreszeit, wie K2, nur Winter einen Monat später: ab 15.01. läge Weihnachten in der CS30-Historie, nicht aber in CS7
+    # je eine Jahreszeit, Winter einen Monat später als im Jahr davor: ab 15.01. läge Weihnachten in der CS30-Historie, nicht aber in CS7
     start_dates: tuple[str, ...] = (
-        "2013-10-15",
-        "2014-02-15",
         "2014-04-15",
         "2014-07-15",
+        "2014-10-15",
+        "2015-02-15",
     )
     evaluation_days: int = 56
 
@@ -31,7 +33,7 @@ class E4Config:
 
     # E4b: im Vorfilter zählt nur die Gesamthistorie N + Tag, der Verlauf steckt schon in der x-Achse von CS7
     system_coldstart_days: tuple[int, ...] = (7, 60)
-    system: str = "SYS3"
+    system: str = LLM_SYSTEM
     # gleiche Tagesenergie, einmal auf 6 h konzentriert (daily), einmal über den Tag verteilt (nur weekday)
     injection_kinds: tuple[str, ...] = ("peak_6", "level_250")
     # um Tag 28, ab dem CS7 weekday hat: 26 wird noch ohne eingeordnet, 35 mit

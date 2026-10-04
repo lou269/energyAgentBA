@@ -6,7 +6,10 @@ import pandas as pd
 import pytest
 
 from src.common.column_naming import channel_data_column
-from src.data_preparation.aggregation.aggregation import build_aggregated_data, build_canonical_data
+from src.data_preparation.aggregation.aggregation import (
+    build_aggregated_data,
+    build_canonical_data,
+)
 
 
 def test_build_aggregated_data_uses_per_channel_sample_period() -> None:
@@ -19,7 +22,7 @@ def test_build_aggregated_data_uses_per_channel_sample_period() -> None:
     }
     sample_periods = {"mains": 1, "submeter": 6}
 
-    _, _, _, quality_hourly = build_aggregated_data(
+    _, quality_hourly = build_aggregated_data(
         channels=channels,
         sample_periods=sample_periods,
         min_coverage_share=0.95,
@@ -41,7 +44,7 @@ def test_build_aggregated_data_flags_low_coverage_independently_per_channel() ->
     }
     sample_periods = {"mains": 1, "sparse": 1}
 
-    _, _, _, quality_hourly = build_aggregated_data(
+    _, quality_hourly = build_aggregated_data(
         channels=channels,
         sample_periods=sample_periods,
         min_coverage_share=0.95,
@@ -54,12 +57,14 @@ def test_build_aggregated_data_flags_low_coverage_independently_per_channel() ->
 
 def test_build_aggregated_data_merges_channels_after_resampling() -> None:
     channels = {
-        "early": pd.Series(1.0, index=pd.date_range("2020-01-01", periods=2, freq="1h")),
+        "early": pd.Series(
+            1.0, index=pd.date_range("2020-01-01", periods=2, freq="1h")
+        ),
         "late": pd.Series(1.0, index=pd.date_range("2020-01-02", periods=2, freq="1h")),
     }
     sample_periods = {"early": 3600, "late": 3600}
 
-    _, _, data_hourly, _ = build_aggregated_data(
+    data_hourly, _ = build_aggregated_data(
         channels=channels,
         sample_periods=sample_periods,
         min_coverage_share=0.95,
@@ -72,11 +77,11 @@ def test_build_aggregated_data_merges_channels_after_resampling() -> None:
 
 def test_build_canonical_data_snaps_a_partial_window_to_full_local_days() -> None:
     meter_key = "H1_M1"
-    index_hourly = pd.date_range("2020-01-01T00:00:00Z", "2020-01-05T00:00:00Z", freq="1h")
-    index_15min = pd.date_range("2020-01-01T00:00:00Z", "2020-01-05T00:00:00Z", freq="15min")
+    index_hourly = pd.date_range(
+        "2020-01-01T00:00:00Z", "2020-01-05T00:00:00Z", freq="1h"
+    )
 
     data_hourly = pd.DataFrame({meter_key: 1.0}, index=index_hourly)
-    data_15min = pd.DataFrame({meter_key: 1.0}, index=index_15min)
 
     quality_values = {
         f"{meter_key}_valid_observation_count": 1,
@@ -84,7 +89,6 @@ def test_build_canonical_data_snaps_a_partial_window_to_full_local_days() -> Non
         f"{meter_key}_coverage_mask": True,
     }
     quality_hourly = pd.DataFrame(quality_values, index=index_hourly)
-    quality_15min = pd.DataFrame(quality_values, index=index_15min)
 
     # 05:00 am ersten und 19:00 am letzten Tag, kein voller Kalendertag an beiden Rändern
     window_start = pd.Timestamp("2020-01-01T05:00:00Z")
@@ -93,13 +97,15 @@ def test_build_canonical_data_snaps_a_partial_window_to_full_local_days() -> Non
     (
         snapped_start,
         snapped_end,
-        canonical_data_15min,
         canonical_data_hourly,
-        canonical_quality_15min,
         canonical_quality_hourly,
     ) = build_canonical_data(
-        data_15min, quality_15min, data_hourly, quality_hourly,
-        meter_key, window_start, window_end, "Europe/London",
+        data_hourly,
+        quality_hourly,
+        meter_key,
+        window_start,
+        window_end,
+        "Europe/London",
     )
 
     assert snapped_start == pd.Timestamp("2020-01-02T00:00:00Z")
@@ -107,10 +113,8 @@ def test_build_canonical_data_snaps_a_partial_window_to_full_local_days() -> Non
     assert canonical_data_hourly.index[0] == snapped_start
     # snapped_end ist exklusiv, die letzte Zeile ist das letzte Intervall vor Mitternacht
     assert canonical_data_hourly.index[-1] == snapped_end - pd.Timedelta(hours=1)
-    assert canonical_data_15min.index[0] == snapped_start
-    assert canonical_data_15min.index[-1] == snapped_end - pd.Timedelta(minutes=15)
 
-    assert list(canonical_data_hourly.columns) == [channel_data_column(meter_key, "hourly")]
-    assert list(canonical_data_15min.columns) == [channel_data_column(meter_key, "15min")]
+    assert list(canonical_data_hourly.columns) == [
+        channel_data_column(meter_key, "hourly")
+    ]
     assert list(canonical_quality_hourly.columns) == list(quality_values)
-    assert list(canonical_quality_15min.columns) == list(quality_values)

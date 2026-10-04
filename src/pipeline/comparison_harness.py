@@ -23,7 +23,6 @@ from src.pipeline.io import (
     append_jsonl,
     df_to_csv,
     find_run_directory,
-    hourly_split_bounds,
     save_json,
 )
 
@@ -46,27 +45,28 @@ class ScenarioData:
     value_implausible: pd.Series | None = None
 
 
-def build_scenario_from_split_manifest(
+def build_scenario_from_window(
     treated_hourly: pd.DataFrame,
-    split_manifest: pd.DataFrame,
     target_column: str,
     *,
+    split_start: pd.Timestamp,
+    split_end: pd.Timestamp,
     coldstart_days: int,
     local_timezone: str,
     target_imputed: pd.Series | None = None,
     value_implausible: pd.Series | None = None,
 ) -> ScenarioData:
-    _test_start, cycle_end = hourly_split_bounds(split_manifest, "test")
+    target_series = treated_hourly.loc[:split_end, target_column]
 
-    target_series = treated_hourly.loc[:cycle_end, target_column]
-
-    cycle_start = shift_local_days(
-        target_series.index[0], coldstart_days, local_timezone
+    # der Zyklus beginnt im Abschnitt, bei test also nach dem Kaltstart am Fensteranfang
+    cycle_start = max(
+        shift_local_days(target_series.index[0], coldstart_days, local_timezone),
+        split_start,
     )
 
     # erster Entscheidungstag direkt nach den coldstart_days, deren letzter Tag kommt im ersten Zyklus als new_observations (coldstart_history)
     decision_times = tuple(
-        local_calendar_range(cycle_start, 1, cycle_end, local_timezone)
+        local_calendar_range(cycle_start, 1, split_end, local_timezone)
     )
 
     return ScenarioData(
@@ -76,10 +76,10 @@ def build_scenario_from_split_manifest(
         calendar_events=(),
         calendar_source_available=False,
         calendar_source="none",
-        target_imputed=target_imputed.loc[:cycle_end]
+        target_imputed=target_imputed.loc[:split_end]
         if target_imputed is not None
         else None,
-        value_implausible=value_implausible.loc[:cycle_end]
+        value_implausible=value_implausible.loc[:split_end]
         if value_implausible is not None
         else None,
     )

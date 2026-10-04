@@ -9,7 +9,7 @@ class ProjectConfig:
     project_root: Path = Path(__file__).resolve().parents[2]
 
     # Data
-    data_dir: Path = project_root / "data_2017"
+    data_dir: Path = project_root / "data"
     archive_path: Path = data_dir / "ukdale.zip"
     raw_dir: Path = data_dir / "raw"
     meta_dir: Path = raw_dir / "metadata"
@@ -21,7 +21,7 @@ class ProjectConfig:
     diagnostics_output_dir: Path = output_dir / "diagnostics"
     selection_output_dir: Path = output_dir / "selection"
     preparation_output_dir: Path = output_dir / "preparation"
-    validation_output_dir: Path = output_dir / "validation"
+    # validation_output_dir: Path = output_dir / "validation"
     canonical_output_dir: Path = output_dir / "canonical"
     preprocessing_output_dir: Path = output_dir / "preprocessing"
     # numerical_analysis_output_dir: Path = output_dir / "numerical_analysis"
@@ -73,7 +73,7 @@ def ensure_project_directories(config: ProjectConfig) -> None:
         config.diagnostics_output_dir,
         config.selection_output_dir,
         config.preparation_output_dir,
-        config.validation_output_dir,
+        # config.validation_output_dir,
         config.canonical_output_dir,
         config.preprocessing_output_dir,
         # config.numerical_analysis_output_dir,

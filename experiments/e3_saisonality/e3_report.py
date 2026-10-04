@@ -8,6 +8,7 @@ import pandas as pd
 from experiments.common.report import (
     KIND_LABELS,
     format_commit,
+    format_cutovers,
     key_figures_table,
     write_result_report,
 )
@@ -81,7 +82,9 @@ def write_report(run_directory: Path) -> Path:
         output_directory,
         title=f"E3 Stufe gegen langsame Rampe, Lauf {run_directory.name}",
         setup={
-            "Cutover": ", ".join(run_config["standard_config"]["cutover_dates"]),
+            "Cutover": format_cutovers(
+                run_config["standard_config"]["cutover_dates"], e3_config["cutovers"]
+            ),
             "Ereignisse": ", ".join(KIND_LABELS[kind] for kind in e3_config["kinds"]),
             "System": f"{SYS_LABELS[e3_config['system_id']]}, Einordnung und Reset wie im Betrieb, ohne LLM",
             "Commit": format_commit(run_config["code_version"]),

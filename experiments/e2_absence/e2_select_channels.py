@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 def run(e2_config: E2Config) -> None:
     output_directory = PROJECT_CONFIG.e2_output_dir / e2_config.channel_selection_subdir
 
-    context = load_nilmtk_context()
+    context = load_nilmtk_context(e2_config.split)
     calendar_events = load_calendar_events(e2_config.calendar_events_file)
     window_start, window_end = resolve_absence_window(
         calendar_events, e2_config.active_absence_event_id

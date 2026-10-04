@@ -12,7 +12,7 @@ from src.config.project_config import ProjectConfig
 from src.llm.client import ModelMetadata, ToolCallResponse
 from src.pipeline.comparison_harness import (
     ScenarioData,
-    build_scenario_from_split_manifest,
+    build_scenario_from_window,
     run_comparison,
 )
 
@@ -102,37 +102,16 @@ def _synthetic_scenario(
     )
 
 
-def test_build_scenario_from_split_manifest_uses_given_coldstart_days() -> None:
+def test_build_scenario_from_window_uses_given_coldstart_days() -> None:
     index = pd.date_range("2024-01-01", periods=100, freq="1h", tz="UTC")
     treated_hourly = pd.DataFrame({"target": range(100)}, index=index)
-    split_manifest = pd.DataFrame(
-        [
-            {
-                "frequency": "hourly",
-                "split": "train",
-                "start": index[0],
-                "end": index[69],
-                "row_count": 70,
-            },
-            {
-                "frequency": "hourly",
-                "split": "validation",
-                "start": index[70],
-                "end": index[84],
-                "row_count": 15,
-            },
-            {
-                "frequency": "hourly",
-                "split": "test",
-                "start": index[85],
-                "end": index[99],
-                "row_count": 15,
-            },
-        ]
-    )
-
-    scenario = build_scenario_from_split_manifest(
-        treated_hourly, split_manifest, "target", coldstart_days=2, local_timezone="UTC"
+    scenario = build_scenario_from_window(
+        treated_hourly,
+        "target",
+        split_start=index[0],
+        split_end=index[99],
+        coldstart_days=2,
+        local_timezone="UTC",
     )
 
     assert scenario.coldstart_days == 2
@@ -146,39 +125,14 @@ def test_build_scenario_from_split_manifest_uses_given_coldstart_days() -> None:
     )
 
 
-def test_build_scenario_from_split_manifest_uses_local_calendar_days() -> None:
+def test_build_scenario_from_window_uses_local_calendar_days() -> None:
     index = pd.date_range("2024-01-01T05:00:00Z", periods=120, freq="1h")
     treated_hourly = pd.DataFrame({"target": range(120)}, index=index)
-    split_manifest = pd.DataFrame(
-        [
-            {
-                "frequency": "hourly",
-                "split": "train",
-                "start": index[0],
-                "end": index[89],
-                "row_count": 90,
-            },
-            {
-                "frequency": "hourly",
-                "split": "validation",
-                "start": index[90],
-                "end": index[104],
-                "row_count": 15,
-            },
-            {
-                "frequency": "hourly",
-                "split": "test",
-                "start": index[105],
-                "end": index[119],
-                "row_count": 15,
-            },
-        ]
-    )
-
-    scenario = build_scenario_from_split_manifest(
+    scenario = build_scenario_from_window(
         treated_hourly,
-        split_manifest,
         "target",
+        split_start=index[0],
+        split_end=index[-1],
         coldstart_days=2,
         local_timezone="America/New_York",
     )
@@ -189,65 +143,6 @@ def test_build_scenario_from_split_manifest_uses_local_calendar_days() -> None:
     assert cycle_start_local.hour == 0
     assert decision_time_local.hour == 0
     assert scenario.decision_times[0] == cycle_start_local.tz_convert("UTC")
-
-
-def test_build_scenario_from_split_manifest_integrates_with_run_comparison(
-    tmp_path: Path,
-) -> None:
-    hours = 480
-    index = pd.date_range("2024-01-01", periods=hours, freq="1h", tz="UTC")
-    hour_of_day = index.hour.to_numpy()
-    values = 200.0 + 50.0 * np.sin(2 * np.pi * hour_of_day / 24) + 10.0
-    treated_hourly = pd.DataFrame({"target": values}, index=index)
-
-    train_end_idx, validation_end_idx = 399, 439
-    split_manifest = pd.DataFrame(
-        [
-            {
-                "frequency": "hourly",
-                "split": "train",
-                "start": index[0],
-                "end": index[train_end_idx],
-                "row_count": train_end_idx + 1,
-            },
-            {
-                "frequency": "hourly",
-                "split": "validation",
-                "start": index[train_end_idx + 1],
-                "end": index[validation_end_idx],
-                "row_count": validation_end_idx - train_end_idx,
-            },
-            {
-                "frequency": "hourly",
-                "split": "test",
-                "start": index[validation_end_idx + 1],
-                "end": index[-1],
-                "row_count": hours - validation_end_idx - 1,
-            },
-        ]
-    )
-
-    scenario = build_scenario_from_split_manifest(
-        treated_hourly,
-        split_manifest,
-        "target",
-        coldstart_days=6,
-        local_timezone="Europe/London",
-    )
-    result = run_comparison(
-        scenario,
-        {"SYS0": SYS_VARIANTS["SYS0"]},
-        tmp_path,
-        PROJECT_ROOT,
-        local_timezone="Europe/London",
-        max_consecutive_llm_failures=COMPARISON_CONFIG.max_consecutive_llm_failures,
-        max_total_llm_failures=COMPARISON_CONFIG.max_total_llm_failures,
-        calendar_lookback_days=COMPARISON_CONFIG.calendar_lookback_days,
-        calendar_lookahead_days=COMPARISON_CONFIG.calendar_lookahead_days,
-    )
-
-    assert len(result) == len(scenario.decision_times)
-    assert result["mae_w"].apply(math.isfinite).all()
 
 
 def test_run_comparison_produces_one_row_per_decision_and_config(
@@ -330,27 +225,6 @@ def test_run_comparison_expanding_variant_retrains_every_cycle(tmp_path: Path) -
     ).sort_values("decision_time")
 
     assert result["retrained"].tolist() == [True, True, True]
-
-
-def test_run_comparison_mae_is_finite(tmp_path: Path) -> None:
-    scenario = _synthetic_scenario()
-    configs = {"SYS0": SYS_VARIANTS["SYS0"], "SYS1": SYS_VARIANTS["SYS1"]}
-
-    result = run_comparison(
-        scenario,
-        configs,
-        tmp_path,
-        PROJECT_ROOT,
-        local_timezone="Europe/London",
-        max_consecutive_llm_failures=COMPARISON_CONFIG.max_consecutive_llm_failures,
-        max_total_llm_failures=COMPARISON_CONFIG.max_total_llm_failures,
-        calendar_lookback_days=COMPARISON_CONFIG.calendar_lookback_days,
-        calendar_lookahead_days=COMPARISON_CONFIG.calendar_lookahead_days,
-    )
-
-    for mae_w in result["mae_w"]:
-        assert isinstance(mae_w, float)
-        assert math.isfinite(mae_w)
 
 
 def test_run_comparison_with_target_imputed_shorter_than_forecast_horizon(

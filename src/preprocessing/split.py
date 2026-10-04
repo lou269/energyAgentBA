@@ -1,59 +1,44 @@
 import pandas as pd
 
 from src.common.timestamps import local_day_index
+from src.common.windows import window_splits
 
 
-def build_chronological_split(
-    data: pd.DataFrame,
-    quality: pd.DataFrame,
-    train_share: float,
-    validation_share: float,
-    local_timezone: str,
-):
-    if not 0 < train_share < 1:
-        raise ValueError("train_share must be greater than 0 and less than 1.")
+def split_index(
+    index: pd.DatetimeIndex, window: str, split: str, local_timezone: str
+) -> pd.DatetimeIndex:
+    local_days = local_day_index(index, local_timezone)
+    day_number = pd.Index(local_days.unique()).get_indexer(local_days)
 
-    if not 0 < validation_share < 1:
-        raise ValueError("validation_share must be greater than 0 and less than 1.")
+    bounds = {}
+    first_day = 0
 
-    if train_share + validation_share >= 1:
-        raise ValueError("train_share and validation_share must sum to less than 1.")
+    for name, days in window_splits(window).items():
+        last_day = day_number.max() + 1 if days is None else first_day + days
+        bounds[name] = (first_day, last_day)
+        first_day = last_day
 
-    if data.empty:
-        raise ValueError("data must not be empty.")
+    first_day, last_day = bounds[split]
 
-    if not data.index.equals(quality.index):
-        raise ValueError("data and quality must use the same index.")
+    return index[(day_number >= first_day) & (day_number < last_day)]
 
-    local_days = local_day_index(data.index, local_timezone).unique()
-    total_days = len(local_days)
 
-    train_days = int(total_days * train_share)
-    validation_days = train_days + int(total_days * validation_share)
+def build_split_manifest(
+    window: str, index: pd.DatetimeIndex, local_timezone: str
+) -> pd.DataFrame:
+    rows = []
 
-    if (
-        train_days == 0
-        or validation_days == train_days
-        or validation_days >= total_days
-    ):
-        raise ValueError("Split shares and data length must produce non-empty train, validation, and test splits.")
+    for split in window_splits(window):
+        part = split_index(index, window, split, local_timezone)
+        rows.append(
+            {
+                "window": window,
+                "split": split,
+                "start": part.min(),
+                "end": part.max(),
+                "days": local_day_index(part, local_timezone).nunique(),
+                "row_count": len(part),
+            }
+        )
 
-    train_end = local_days[train_days].tz_convert("UTC")
-    validation_end = local_days[validation_days].tz_convert("UTC")
-
-    train_data = data.loc[data.index < train_end]
-    validation_data = data.loc[(data.index >= train_end) & (data.index < validation_end)]
-    test_data = data.loc[data.index >= validation_end]
-
-    train_quality = quality.loc[train_data.index]
-    validation_quality = quality.loc[validation_data.index]
-    test_quality = quality.loc[test_data.index]
-
-    return (
-        train_data,
-        train_quality,
-        validation_data,
-        validation_quality,
-        test_data,
-        test_quality,
-    )
+    return pd.DataFrame(rows)

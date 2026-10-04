@@ -8,6 +8,7 @@ from typing import Any
 
 import pandas as pd
 
+from src.config.config_forecasting import SPLITS
 from src.config.project_config import ProjectConfig
 from src.pipeline.provenance import build_code_version
 
@@ -15,54 +16,74 @@ RAW_SUBDIR = "raw"
 USER_OUTPUT_SUBDIR = "user_output"
 
 
-def read_canonical_frame(project_config: ProjectConfig, name: str) -> pd.DataFrame:
+def read_canonical_frame(
+    project_config: ProjectConfig, name: str, window: str
+) -> pd.DataFrame:
     return pd.read_csv(
-        project_config.canonical_output_dir / f"{name}.csv",
+        project_config.canonical_output_dir / window / f"{name}.csv",
         parse_dates=["timestamp"],
         index_col="timestamp",
     )
 
 
-def read_preprocessing_frame(project_config: ProjectConfig, name: str) -> pd.DataFrame:
+def read_preprocessing_frame(
+    project_config: ProjectConfig, name: str, window: str
+) -> pd.DataFrame:
     return pd.read_csv(
-        project_config.preprocessing_output_dir / f"{name}.csv",
+        project_config.preprocessing_output_dir / window / f"{name}.csv",
         parse_dates=["timestamp"],
         index_col="timestamp",
     )
 
 
-def hourly_split_bounds(
-    split_manifest: pd.DataFrame, split: str
-) -> tuple[pd.Timestamp, pd.Timestamp]:
-    hourly_splits = split_manifest.loc[
-        split_manifest["frequency"].eq("hourly")
-    ].set_index("split")
-
-    return pd.Timestamp(hourly_splits["start"].loc[split]), pd.Timestamp(
-        hourly_splits["end"].loc[split]
+def read_split_manifest(project_config: ProjectConfig) -> pd.DataFrame:
+    split_manifest = pd.read_csv(
+        project_config.preprocessing_output_dir / "split_manifest.csv"
     )
+
+    for column in ("start", "end"):
+        split_manifest[column] = pd.to_datetime(split_manifest[column], utc=True)
+
+    return split_manifest
+
+
+def read_split_row(project_config: ProjectConfig, split: str) -> pd.Series:
+    if split not in SPLITS:
+        raise ValueError(f"Unknown split {split!r}, expected one of {list(SPLITS)}.")
+
+    split_manifest = read_split_manifest(project_config)
+
+    return split_manifest.loc[split_manifest["split"].eq(split)].iloc[0]
 
 
 def read_split_bounds(
     project_config: ProjectConfig, split: str
 ) -> tuple[pd.Timestamp, pd.Timestamp]:
-    split_manifest = pd.read_csv(
-        project_config.preprocessing_output_dir / "split_manifest.csv",
-        parse_dates=["start", "end"],
-    )
+    split_row = read_split_row(project_config, split)
 
-    return hourly_split_bounds(split_manifest, split)
+    return split_row["start"], split_row["end"]
 
 
-def read_target_meter_key(project_config: ProjectConfig) -> str:
+def read_canonical_manifest(project_config: ProjectConfig) -> pd.DataFrame:
     canonical_manifest = pd.read_csv(
         project_config.canonical_output_dir / "canonical_manifest.csv"
     )
 
-    if len(canonical_manifest) != 1:
+    for column in ("window_start", "window_end"):
+        canonical_manifest[column] = pd.to_datetime(
+            canonical_manifest[column], utc=True
+        )
+
+    return canonical_manifest
+
+
+def read_target_meter_key(project_config: ProjectConfig) -> str:
+    meter_keys = read_canonical_manifest(project_config)["meter_key"].unique()
+
+    if len(meter_keys) != 1:
         raise ValueError("Canonical manifest must contain exactly one mains target.")
 
-    return str(canonical_manifest.iloc[0]["meter_key"])
+    return str(meter_keys[0])
 
 
 def df_to_csv(df: pd.DataFrame, output_path: Path, filename: str) -> None:

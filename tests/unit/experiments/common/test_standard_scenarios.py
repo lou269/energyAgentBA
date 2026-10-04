@@ -17,7 +17,13 @@ def _constant_mains(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         standard_scenarios,
         "load_target",
-        lambda: (pd.Series(200.0, index=index), flags, flags),
+        lambda split: (pd.Series(200.0, index=index), flags, flags),
+    )
+    # der ganze Testzeitraum gilt als Abschnitt
+    monkeypatch.setattr(
+        standard_scenarios,
+        "load_split_bounds",
+        lambda split: (index[0], index[-1]),
     )
 
 
@@ -25,6 +31,7 @@ def test_all_kinds_share_decision_times_and_differ_only_from_the_cutover() -> No
     scenarios = standard_scenarios.build_standard_scenarios(
         CUTOVER,
         ("control", "step", "scaled"),
+        split="validation",
         margin_before_days=14,
         margin_after_days=30,
     )
@@ -57,14 +64,22 @@ def test_all_kinds_share_decision_times_and_differ_only_from_the_cutover() -> No
 def test_only_the_requested_kinds_are_built() -> None:
     assert list(
         standard_scenarios.build_standard_scenarios(
-            CUTOVER, ("control", "step"), margin_before_days=14, margin_after_days=30
+            CUTOVER,
+            ("control", "step"),
+            split="validation",
+            margin_before_days=14,
+            margin_after_days=30,
         )
     ) == ["control", "step"]
 
 
 def test_strength_in_the_name_sets_the_step_and_the_ramp_length() -> None:
     scenarios = standard_scenarios.build_standard_scenarios(
-        CUTOVER, ("step_30", "ramp_28"), margin_before_days=14, margin_after_days=30
+        CUTOVER,
+        ("step_30", "ramp_28"),
+        split="validation",
+        margin_before_days=14,
+        margin_after_days=30,
     )
     cutover_time = local_midnight_utc(CUTOVER, LOCAL_TIMEZONE)
     step = scenarios["step_30"].target_series
@@ -88,6 +103,7 @@ def test_down_suffix() -> None:
     scenarios = standard_scenarios.build_standard_scenarios(
         CUTOVER,
         ("scaled_down", "ramp_28_down"),
+        split="validation",
         margin_before_days=14,
         margin_after_days=60,
     )
@@ -109,6 +125,7 @@ def test_peak_adds_the_extra_power_on_the_cutover_day_only() -> None:
     scenarios = standard_scenarios.build_standard_scenarios(
         CUTOVER,
         ("control", "peak", "peak_6"),
+        split="validation",
         margin_before_days=14,
         margin_after_days=30,
     )

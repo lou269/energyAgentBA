@@ -5,6 +5,7 @@ import pandas as pd
 from experiments.common.scenarios import (
     build_decision_times,
     crop_history_for_coldstart,
+    load_split_bounds,
     load_target,
     scenario_without_calendar,
     subtract_channels_in_window,
@@ -52,7 +53,7 @@ def build_e1_scenario(
     e1_config: E1Config, apply_device_injection: bool = True
 ) -> ScenarioData:
     # Entscheidungstage um den Cutover, Historie ab Kaltstart, das Gerät vor dem Cutover herausgerechnet
-    mains_series, target_imputed, value_implausible = load_target()
+    mains_series, target_imputed, value_implausible = load_target(e1_config.split)
     cutover_time = local_midnight_utc(e1_config.cutover_date, LOCAL_TIMEZONE)
 
     decision_times = build_decision_times(
@@ -62,7 +63,10 @@ def build_e1_scenario(
         margin_after_days=e1_config.margin_after_days,
     )
     history = crop_history_for_coldstart(
-        mains_series, decision_times[0], COLDSTART_DAYS
+        mains_series,
+        decision_times,
+        COLDSTART_DAYS,
+        load_split_bounds(e1_config.split),
     )
 
     # Kontrolllauf: dieselben Tage, das Gerät ist durchgehend drin

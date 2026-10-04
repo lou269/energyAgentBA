@@ -81,11 +81,15 @@ def find_real_events(
 
 
 def analysis_days(
-    series: pd.Series, *, local_timezone: str, coldstart_days: int, last_day: str
+    series: pd.Series,
+    *,
+    local_timezone: str,
+    first_day: pd.Timestamp,
+    last_day: pd.Timestamp,
 ) -> pd.DatetimeIndex:
-    days = _daily_means(series, local_timezone).index[coldstart_days:]
+    days = _daily_means(series, local_timezone).index
 
-    return pd.DatetimeIndex(days[days <= pd.Timestamp(last_day)])
+    return pd.DatetimeIndex(days[(days >= first_day) & (days <= last_day)])
 
 
 def scenario_days(

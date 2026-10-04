@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from src.config.config_forecasting import (
     ForecastingConfig,
@@ -29,21 +29,31 @@ NOTIFICATION_CLASSIFICATIONS: tuple[str, ...] = (
 )
 NOTIFICATION_PERIOD_DAYS = 30
 
+# Rollen der Systemvarianten in allen Studien: Referenz ohne Adaption, Regel, LLM
+REFERENCE_SYSTEM = "SYS1"
+RULE_SYSTEM = "SYS2"
+LLM_SYSTEM = "SYS3"
+
 
 # Standard-Szenarien der Komponentenstudien K2, K3 (Ebene 2) und K4. Experimente laufen nicht auf diesen Cutovern, weil K2 und K3 darauf eingestellt wurden
 @dataclass(frozen=True)
 class StandardScenarioConfig:
-    # lokale Kalendertage im Train-Split, 120 Tage auseinander: Überwachung und Zeit danach (je 60 Tage) überlappen sich zwischen den Fenstern nicht
-    cutover_dates: tuple[str, ...] = (
-        "2013-10-15",
-        "2014-02-12",
-        "2014-06-12",
-        "2014-10-10",
-        "2015-02-07",
+    # Abschnitt, in dem die Standard-Cutover liegen
+    split: str = "validation"
+    # lokale Kalendertage in validation -> Entscheidungstage der Fenster (Überwachung davor bis margin_after_days danach) überlappen sich nicht
+    # keines enthält Weihnachten und Neujahr
+    cutover_dates: dict[str, str] = field(
+        default_factory=lambda: {
+            "CO1": "2014-07-15",  # Sommer zum Herbst
+            "CO2": "2014-10-24",  # Herbstanstieg
+            "CO3": "2015-03-01",  # Winterende, ohne echtes Ereignis
+            "CO4": "2015-06-10",  # Frühsommer, ohne echtes Ereignis
+            "CO5": "2015-10-22",  # Herbstanstieg im zweiten Jahr
+        }
     )
 
     # Historie beginnt Kaltstart + diese Tage vor dem Cutover
-    monitoring_before_cutover_days: int = 60
+    monitoring_before_cutover_days: int = 40
     margin_after_days: int = 60
 
     # Standard-Stufe "step", weitere Stärken über den Namen (step_30 = +30 W)

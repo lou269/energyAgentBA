@@ -3,6 +3,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
+from experiments.common.standard_config import (
+    GOLDSTANDARD_EXPECTED,
+    LLM_SYSTEM,
+    REFERENCE_SYSTEM,
+    RULE_SYSTEM,
+)
+
 RUN_PREFIX = "e1"
 CONTROL_RUN_PREFIX = "e1_control"
 # von e1_device_check geschrieben (nilmtk-env), von e1_scenarios gelesen
@@ -11,11 +18,11 @@ DEVICES_HOURLY_FILE = "e1_devices_hourly"
 
 @dataclass(frozen=True)
 class E1Config:
-    device_selection_subdir: Path = Path("device_selection")
+    split: str = "validation"
 
-    reference_config: str = "SYS1"
-    target_classification: str = "new_pattern"
-    systems: tuple[str, ...] = ("SYS1", "SYS2", "SYS3")
+    reference_config: str = REFERENCE_SYSTEM
+    target_classification: str = GOLDSTANDARD_EXPECTED["step"]
+    systems: tuple[str, ...] = (REFERENCE_SYSTEM, RULE_SYSTEM, LLM_SYSTEM)
 
     # Waschtrockner, größter Anteil am Mains-Verbrauch (e1_device_check)
     device_meter_keys: tuple[str, ...] = ("H1_M5",)
@@ -30,3 +37,7 @@ class E1Config:
     # Cutover-Kandidaten alle 4 Wochen, damit jeder auf denselben Wochentag fällt
     cutover_step_days: int = 28
     min_device_coverage: float = 0.9
+
+    @property
+    def device_selection_subdir(self) -> Path:
+        return Path("device_selection") / self.split

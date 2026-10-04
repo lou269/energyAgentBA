@@ -165,15 +165,21 @@ def summarize_e1(
 
 
 def candidate_cutover_times(
-    window_start: pd.Timestamp, window_end: pd.Timestamp, e1_config: E1Config
+    window_start: pd.Timestamp,
+    split_start: pd.Timestamp,
+    split_end: pd.Timestamp,
+    e1_config: E1Config,
 ) -> pd.DatetimeIndex:
-    # vor dem ersten Cutover braucht E1 den Kaltstart und die Tage vor dem Cutover, +1, falls das Fenster nicht auf lokaler Mitternacht beginnt
-    lead_days = COLDSTART_DAYS + e1_config.margin_before_days + 1
+    first_decision = max(
+        split_start, shift_local_days(window_start, COLDSTART_DAYS, LOCAL_TIMEZONE)
+    )
     first = shift_local_days(
-        local_day(window_start, LOCAL_TIMEZONE), lead_days + 1, LOCAL_TIMEZONE
+        local_day(first_decision, LOCAL_TIMEZONE),
+        e1_config.margin_before_days,
+        LOCAL_TIMEZONE,
     )
     last = shift_local_days(
-        local_day(window_end, LOCAL_TIMEZONE),
+        local_day(split_end, LOCAL_TIMEZONE),
         -e1_config.margin_after_days,
         LOCAL_TIMEZONE,
     )

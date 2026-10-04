@@ -63,7 +63,7 @@ def build_setup(run_config: dict, summary: ProactiveCycleSummary) -> dict[str, s
     return {
         "Modell": f"{llm_config['model']}, Prompt {llm_config['prompt_version']}, temperature {format_number(llm_config['temperature'], 1)}",
         "Prognose": f"{config['cycle_system']} ohne Adaption und ohne Aufruf 1, ohne Kalender",
-        "Tage": f"{summary.day_count} ab {config['cutover_date']} (Train-Split)",
+        "Tage": f"{summary.day_count} ab {config['cutover_date']} ({config['split']})",
         "Commit": format_commit(run_config["code_version"]),
     }
 

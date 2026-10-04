@@ -55,7 +55,7 @@ def run(e2_config: E2Config, run_prefix: str) -> Path:
     # wie stark die Urlaubswoche Mains überhaupt senkt, unabhängig von den Schwellen
     df_to_csv(
         summarize_reduction_by_day(
-            load_target()[0],
+            load_target(e2_config.split)[0],
             scenarios["ctx0"].target_series,
             window_start=window_start,
             window_end=window_end,

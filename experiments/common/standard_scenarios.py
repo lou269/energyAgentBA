@@ -9,6 +9,7 @@ from experiments.common.scenarios import (
     add_stuck_value,
     build_decision_times,
     crop_history_for_coldstart,
+    load_split_bounds,
     load_target,
     scale_from,
     scenario_without_calendar,
@@ -26,11 +27,12 @@ def build_standard_scenarios(
     cutover_date: str,
     kinds: tuple[str, ...],
     *,
-    margin_before_days: int,
-    margin_after_days: int,
+    split: str = STANDARD_CONFIG.split,
+    margin_before_days: int = STANDARD_CONFIG.monitoring_before_cutover_days,
+    margin_after_days: int = STANDARD_CONFIG.margin_after_days,
 ) -> dict[str, ScenarioData]:
     # Szenarien für einen Cutover, alle mit denselben decision_times, also tageweise gepaart auswertbar
-    mains_series, target_imputed, value_implausible = load_target()
+    mains_series, target_imputed, value_implausible = load_target(split)
 
     # lokale Mitternacht, damit der Cutover genau auf eine Tagesgrenze der Anomalieerkennung fällt
     cutover_time = local_midnight_utc(cutover_date, LOCAL_TIMEZONE)
@@ -42,7 +44,7 @@ def build_standard_scenarios(
         margin_after_days=margin_after_days,
     )
     history = crop_history_for_coldstart(
-        mains_series, decision_times[0], COLDSTART_DAYS
+        mains_series, decision_times, COLDSTART_DAYS, load_split_bounds(split)
     )
     control = scenario_without_calendar(
         history, decision_times, COLDSTART_DAYS, target_imputed, value_implausible

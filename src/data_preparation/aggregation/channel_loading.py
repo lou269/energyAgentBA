@@ -22,7 +22,7 @@ def build_loaded_channels(
 ) -> dict[str, pd.Series]:
     """Lädt jeden Kanal roh im eigenen Fenster; Merge zu einem DataFrame passiert erst nach dem Resampling in aggregation.py.
 
-    include_meter_keys/window_start/window_end für auxiliary_appliance_selection.py 
+    include_meter_keys/window_start/window_end für auxiliary_appliance_selection.py
     """
     require_columns(channel_quality, REQUIRED_QUALITY_COLUMNS, "channel_quality")
 

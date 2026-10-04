@@ -19,7 +19,7 @@ from experiments.common.scenarios import (
     local_day_window,
     slice_history_window,
 )
-from experiments.common.standard_config import PROJECT_CONFIG
+from experiments.common.standard_config import LOCAL_TIMEZONE, PROJECT_CONFIG
 from experiments.k1_forecast_model.k1_config import (
     REFERENCE_FILE,
     RUN_PREFIX,
@@ -37,8 +37,8 @@ logger = logging.getLogger(__name__)
 def run_retraining(k1_config: K1Config) -> Path:
     np.random.seed(k1_config.seed)
 
-    target_series, target_imputed, _target_value_implausible = load_target()
     split = k1_config.split
+    target_series, target_imputed, _target_value_implausible = load_target(split)
     split_start, split_end = read_split_bounds(PROJECT_CONFIG, split)
 
     run_directory, raw_directory = create_experiment_run(
@@ -57,6 +57,7 @@ def run_retraining(k1_config: K1Config) -> Path:
             start=split_start,
             end=split_end,
             history_days=k1_config.mode_history_days[mode],
+            split_bounds=(split_start, split_end),
         )
 
         run_id = f"{run_directory.name}_{mode}_{split}"
@@ -106,13 +107,20 @@ def run_retraining(k1_config: K1Config) -> Path:
 def run_seasonality(k1_config: K1Config) -> Path:
     np.random.seed(k1_config.seed)
 
-    target_series, target_imputed, _target_value_implausible = load_target()
+    target_series, target_imputed, _target_value_implausible = load_target(k1_config.split)
+    split_start, split_end = read_split_bounds(PROJECT_CONFIG, k1_config.split)
     start, end = local_day_window(
-        k1_config.seasonality_start_date, k1_config.seasonality_days
+        split_start.tz_convert(LOCAL_TIMEZONE).date().isoformat(),
+        k1_config.seasonality_days,
     )
     # die ganze Historie vor dem Start, C3_30 schneidet sich davon selbst die letzten 30 Tage ab
     history, targets, targets_imputed = slice_history_window(
-        target_series, target_imputed, start=start, end=end, history_days=None
+        target_series,
+        target_imputed,
+        start=start,
+        end=end,
+        history_days=None,
+        split_bounds=(split_start, split_end),
     )
 
     run_directory, raw_directory = create_experiment_run(
@@ -130,7 +138,7 @@ def run_seasonality(k1_config: K1Config) -> Path:
         k1_config,
         run_id=run_directory.name,
         experiment_id=k1_config.experiment_id,
-        split=k1_config.seasonality_split,
+        split=k1_config.split,
         comparison_model_ids=tuple(
             variant.model_id for variant in k1_config.seasonality_variants
         ),

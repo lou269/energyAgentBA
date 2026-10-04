@@ -1,3 +1,4 @@
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -5,6 +6,15 @@ import pandas as pd
 
 from experiments.common.standard_config import STANDARD_CONFIG
 from src.pipeline.io import df_to_csv, write_text_atomic
+
+
+def format_cutovers(
+    cutover_dates: Mapping[str, str], cutover_ids: Sequence[str]
+) -> str:
+    return ", ".join(
+        f"{cutover_id} ({cutover_dates[cutover_id]})" for cutover_id in cutover_ids
+    )
+
 
 # Beschriftung der Standard-Szenarien in den Reports, Stärken aus der Config bzw. aus dem Namen
 KIND_LABELS: dict[str, str] = {

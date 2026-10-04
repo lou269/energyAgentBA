@@ -7,18 +7,28 @@ ProductionGapMethod = Literal["ffill", "none"]
 HistoryMode = Literal["fixed_train", "expanding", "rolling"]
 NegativeForecastHandling = Literal["raw", "clip_zero"]
 LLMMode = Literal["off", "rule", "real"]
-ExperimentSplit = Literal["validation", "test"]
+
+
+@dataclass(frozen=True)
+class SplitDefinition:
+    window: str  # Datenspanne, in der der Abschnitt liegt
+    days: int | None  # Länge in lokalen Kalendertagen, None = Rest
+
+
+# Abschnitte in zeitlicher Reihenfolge. train ist nur Historie, ein Jahr für die Jahressaisonalität in K1, die am Anfang von validation beginnt.
+# Eingestellt wird in validation, getestet im späteren Fenster test
+SPLITS: dict[str, SplitDefinition] = {
+    "train": SplitDefinition(window="development", days=365),
+    "validation": SplitDefinition(window="development", days=None),
+    "test": SplitDefinition(window="test", days=None),
+}
 
 """ PREPROCESSING """
 
 
 @dataclass(frozen=True)
 class PreprocessingConfig:
-    train_share: float = 0.7
-    validation_share: float = 0.15
-
     gap_treatment_method: ProductionGapMethod = "ffill"
-    max_imputation_gap_15min: int = 4
     max_imputation_gap_hourly: int = 3
 
     stuck_value_min_hours: float = 6.0
@@ -31,7 +41,6 @@ class PreprocessingConfig:
 
 @dataclass(frozen=True)
 class NumericalAnalysisConfig:
-    sample_period_hours_15min: float = 0.25
     sample_period_hours_hourly: float = 1.0
 
     min_daily_reference_samples: int = 7

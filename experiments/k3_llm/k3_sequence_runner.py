@@ -17,7 +17,11 @@ from experiments.common.harness import (
     read_llm_prompt,
     run_scenario,
 )
-from experiments.common.standard_config import PROJECT_CONFIG, STANDARD_CONFIG
+from experiments.common.standard_config import (
+    PROJECT_CONFIG,
+    RULE_SYSTEM,
+    STANDARD_CONFIG,
+)
 from experiments.common.standard_scenarios import build_standard_scenarios
 from experiments.k3_llm.k3_config import (
     BASELINE_ID,
@@ -26,7 +30,8 @@ from experiments.k3_llm.k3_config import (
     K3Config,
     build_sequence_configs,
 )
-from experiments.k3_llm.k3_evaluation import read_sequence_results
+from experiments.common.evaluation import collect_scenario_results
+from experiments.k3_llm.k3_evaluation import SEQUENCE_RESULT_COLUMNS
 from src.config.config_forecasting import SYS_VARIANTS
 from src.pipeline.io import create_experiment_run, df_to_csv
 
@@ -34,18 +39,17 @@ logger = logging.getLogger(__name__)
 
 
 def run(k3_config: K3Config) -> Path:
+    cutover_date = STANDARD_CONFIG.cutover_dates[k3_config.sequence_cutover]
     scenarios = build_standard_scenarios(
-        k3_config.sequence_cutover_date,
+        cutover_date,
         k3_config.sequence_kinds,
-        margin_before_days=STANDARD_CONFIG.monitoring_before_cutover_days,
-        margin_after_days=STANDARD_CONFIG.margin_after_days,
     )
 
     configs = build_sequence_configs(
         k3_config.model_variants, k3_config.base_llm_config
     )
     if k3_config.include_rule_based_baseline:
-        configs[BASELINE_ID] = SYS_VARIANTS["SYS2"]
+        configs[BASELINE_ID] = SYS_VARIANTS[RULE_SYSTEM]
 
     llm_prompt = read_llm_prompt(k3_config.base_llm_config.prompt_version)
 
@@ -62,7 +66,7 @@ def run(k3_config: K3Config) -> Path:
         logger.info(
             "Running K3 model sequence %s (cutover=%s) over %d decision times, %d configs...",
             kind,
-            k3_config.sequence_cutover_date,
+            cutover_date,
             len(scenario.decision_times),
             len(configs),
         )
@@ -74,11 +78,12 @@ def run(k3_config: K3Config) -> Path:
             llm_prompt=llm_prompt,
         )
         scenario_results.append(
-            read_sequence_results(
+            collect_scenario_results(
                 pd.read_csv(scenario_directory / COMPARISON_SUMMARY_FILE),
                 read_anomaly_rows(scenario_directory),
                 kind=kind,
-                cutover_date=k3_config.sequence_cutover_date,
+                cutover_date=cutover_date,
+                columns=SEQUENCE_RESULT_COLUMNS,
             )
         )
 

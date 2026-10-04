@@ -4,6 +4,7 @@ import pandas as pd
 
 from experiments.common.evaluation import (
     FIRST_ANALYZED_DAY,
+    join_scale_names,
     SCALE_VALUE_COLUMNS,
     SCALE_SUSTAINED_COLUMNS,
     count_notifications,
@@ -253,13 +254,6 @@ def summarize_forecast(
 # E4b Kreislauf
 
 
-def _scale_names(flags: pd.DataFrame) -> list[str]:
-    return [
-        ", ".join(scale for scale, flag in zip(SCALE_NAMES, row) if flag)
-        for row in flags.itertuples(index=False)
-    ]
-
-
 def summarize_scale_days(
     clean: pd.DataFrame, *, single_day_scales: tuple[str, ...]
 ) -> pd.DataFrame:
@@ -314,8 +308,10 @@ def list_resets_in_settling(days: pd.DataFrame) -> pd.DataFrame:
             "classification",
         ]
     ].assign(
-        available_scales=_scale_names(resets[SCALE_VALUE_COLUMNS].notna()),
-        sustained_scales=_scale_names(resets[SCALE_SUSTAINED_COLUMNS].eq(True)),
+        available_scales=join_scale_names(resets[SCALE_VALUE_COLUMNS].notna(), ", "),
+        sustained_scales=join_scale_names(
+            resets[SCALE_SUSTAINED_COLUMNS].eq(True), ", "
+        ),
     )
 
 

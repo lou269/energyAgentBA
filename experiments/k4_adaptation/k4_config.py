@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Literal
 
+from experiments.common.standard_config import REFERENCE_SYSTEM, RULE_SYSTEM
+
 
 RUN_PREFIX = "k4"
 MASKING_RUN_PREFIX = "k4_mask"
@@ -16,7 +18,10 @@ K4Strategy = Literal["none", "cut", "step_regressor"]
 @dataclass(frozen=True)
 class K4Config:
     # Zyklus wie dieses System, die Adaptionen gibt das Orakel vor
-    cycle_system: str = "SYS1"
+    cycle_system: str = REFERENCE_SYSTEM
+
+    # Standard-Cutover (Kennungen aus StandardScenarioConfig)
+    cutovers: tuple[str, ...] = ("CO1", "CO2", "CO3", "CO4", "CO5")
 
     # 6 = frühestmögliches new_pattern (6 von 7 Tagen auffällig, ausgewertet um Mitternacht danach), 19 = späte Erkennung, so spät erkennt der Detektor +100 W im Mittel in K2
     trigger_days: tuple[int, ...] = (6, 19)
@@ -38,7 +43,7 @@ class K4Config:
     key_figure_kind: str = "step"
 
     # Teil 2, peak/low ausblenden: decision_system zeichnet die Entscheidungen auf, das Orakel spielt sie ohne und mit Ausblenden nach
-    decision_system: str = "SYS2"
+    decision_system: str = RULE_SYSTEM
     masking_kinds: tuple[str, ...] = ("control", "step")
     masked_classifications: tuple[str, ...] = ("peak", "low")
     # in den ersten zwei Wochen nach dem Cutover kann der Beginn einer echten Änderung noch als peak ausgeblendet werden

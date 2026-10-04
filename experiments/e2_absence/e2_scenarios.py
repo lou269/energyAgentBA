@@ -7,6 +7,7 @@ import pandas as pd
 from experiments.common.scenarios import (
     build_decision_times,
     crop_history_for_coldstart,
+    load_split_bounds,
     load_target,
     scenario_without_calendar,
     subtract_channels_in_window,
@@ -65,7 +66,7 @@ def build_absence_scenarios(
     window_end: pd.Timestamp,
 ) -> dict[str, ScenarioData]:
     # Urlaubswoche: die gewählten Kanäle im Fenster aus Mains herausgerechnet, ohne (CTX0), mit (CTX1) und per Tool (CTX2) Kalender
-    mains_series, target_imputed, value_implausible = load_target()
+    mains_series, target_imputed, value_implausible = load_target(e2_config.split)
     ranking, appliance_data_hourly = read_channel_selection(e2_config)
     # die Auswahl hat e2_select_channels schon getroffen
     selected_channels = ranking.loc[ranking["is_selected"], "meter_key"].tolist()
@@ -82,7 +83,12 @@ def build_absence_scenarios(
         margin_after_days=e2_config.decision_time_margin_after_days,
     )
     absence_adjusted_series = subtract_channels_in_window(
-        crop_history_for_coldstart(mains_series, decision_times[0], COLDSTART_DAYS),
+        crop_history_for_coldstart(
+            mains_series,
+            decision_times,
+            COLDSTART_DAYS,
+            load_split_bounds(e2_config.split),
+        ),
         appliance_data_hourly,
         selected_channels,
         window_start=window_start,

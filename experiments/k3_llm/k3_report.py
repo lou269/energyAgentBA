@@ -9,13 +9,14 @@ from docs.plots.plot_k3_llm_model import build_k3_plot
 from experiments.common.report import (
     KIND_LABELS,
     format_commit,
+    format_cutovers,
     format_number,
     key_figures_table,
     markdown_table,
     relabel,
     write_result_report,
 )
-from experiments.common.standard_config import DECIMALS, PROJECT_CONFIG
+from experiments.common.standard_config import DECIMALS, LLM_SYSTEM, PROJECT_CONFIG
 from experiments.k3_llm.k3_config import (
     BASELINE_ID,
     RESULTS_FILE,
@@ -135,7 +136,7 @@ def build_setup(
         "LLM": f"temperature {format_number(llm_config['temperature'], 1)}, höchstens {llm_config['max_attempts']} Versuche je Aufruf",
         "Ebene 1": f"{case_count} synthetische Fälle, je Modell {k3_config['repetitions']} Aufruf je Fall, Regel ({BASELINE_ID}) läuft mit",
         "Ebene 2": (
-            f"Standard-Szenarien, Cutover {sequence_config['sequence_cutover_date']}, "
+            f"Standard-Szenarien, Cutover {format_cutovers(standard_config['cutover_dates'], (sequence_config['sequence_cutover'],))}, "
             f"{standard_config['monitoring_before_cutover_days']} Tage davor, {standard_config['margin_after_days']} danach, "
             "jedes Modell als eigener Kreislauf wie SYS3 mit Adaption"
         ),
@@ -315,7 +316,7 @@ def build_key_figures(
 
 def main() -> None:
     k3_output_dir = PROJECT_CONFIG.k3_output_dir
-    production_llm_config = SYS_VARIANTS["SYS3"].llm_config
+    production_llm_config = SYS_VARIANTS[LLM_SYSTEM].llm_config
     assert production_llm_config is not None
     production_model = production_llm_config.model
 
@@ -356,7 +357,7 @@ def main() -> None:
     )
     text_check_config = TextCheckConfig()
     # die Fensterlängen aus der Skalenbeschreibung im Prompt stehen nicht im State, kommen aber im Text vor
-    analysis_config = SYS_VARIANTS["SYS3"].numerical_analysis_config
+    analysis_config = SYS_VARIANTS[LLM_SYSTEM].numerical_analysis_config
     window_numbers = (
         float(analysis_config.weekly_window_days),
         float(analysis_config.long_term_window_days),

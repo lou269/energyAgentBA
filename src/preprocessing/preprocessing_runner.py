@@ -6,13 +6,14 @@ import logging
 import pandas as pd
 
 from src.common.timestamps import local_daily_mean
-from src.pipeline.io import df_to_csv
+from src.pipeline.io import df_to_csv, read_canonical_frame
+from src.common.windows import window_names
 from src.config.config_forecasting import NumericalAnalysisConfig, PreprocessingConfig
 from src.config.project_config import ProjectConfig, ensure_project_directories
 from src.preprocessing.day_quality import exclude_incomplete_days
-from src.preprocessing.gap_treatment import build_gap_treated_data
+from src.preprocessing.gap_treatment import apply_gap_treatment
 from src.preprocessing.plausibility_check import build_plausibility_flags
-from src.preprocessing.split import build_chronological_split
+from src.preprocessing.split import build_split_manifest
 
 
 logger = logging.getLogger(__name__)
@@ -20,35 +21,20 @@ logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True)
 class PreprocessingResult:
-    split_manifest: pd.DataFrame
-    treated_15min: pd.DataFrame
-    imputation_mask_15min: pd.DataFrame
     treated_hourly: pd.DataFrame
     treated_daily: pd.DataFrame
     imputation_mask_hourly: pd.DataFrame
-    plausibility_15min: pd.DataFrame
     plausibility_hourly: pd.DataFrame
 
 
 def run_preprocessing(
-    data_15min: pd.DataFrame,
-    quality_15min: pd.DataFrame,
     data_hourly: pd.DataFrame,
     quality_hourly: pd.DataFrame,
     config: PreprocessingConfig,
     local_timezone: str,
     *,
-    sample_period_hours_15min: float,
     sample_period_hours_hourly: float,
 ) -> PreprocessingResult:
-    plausibility_15min = build_plausibility_flags(
-        data_15min,
-        quality_15min,
-        stuck_value_min_hours=config.stuck_value_min_hours,
-        sample_period_hours=sample_period_hours_15min,
-        resolution="15min",
-    )
-
     plausibility_hourly = build_plausibility_flags(
         data_hourly,
         quality_hourly,
@@ -57,143 +43,12 @@ def run_preprocessing(
         resolution="hourly",
     )
 
-    (
-        train_15min,
-        train_quality_15min,
-        validation_15min,
-        validation_quality_15min,
-        test_15min,
-        test_quality_15min,
-    ) = build_chronological_split(
-        data_15min,
-        quality_15min,
-        train_share=config.train_share,
-        validation_share=config.validation_share,
-        local_timezone=local_timezone,
-    )
-
-    (
-        train_hourly,
-        train_quality_hourly,
-        validation_hourly,
-        validation_quality_hourly,
-        test_hourly,
-        test_quality_hourly,
-    ) = build_chronological_split(
+    treated_hourly, imputation_mask_hourly = apply_gap_treatment(
         data_hourly,
         quality_hourly,
-        train_share=config.train_share,
-        validation_share=config.validation_share,
-        local_timezone=local_timezone,
-    )
-
-    split_manifest = pd.DataFrame(
-        [
-            {
-                "frequency": "15min",
-                "split": "train",
-                "start": train_15min.index.min(),
-                "end": train_15min.index.max(),
-                "row_count": len(train_15min),
-            },
-            {
-                "frequency": "15min",
-                "split": "validation",
-                "start": validation_15min.index.min(),
-                "end": validation_15min.index.max(),
-                "row_count": len(validation_15min),
-            },
-            {
-                "frequency": "15min",
-                "split": "test",
-                "start": test_15min.index.min(),
-                "end": test_15min.index.max(),
-                "row_count": len(test_15min),
-            },
-            {
-                "frequency": "hourly",
-                "split": "train",
-                "start": train_hourly.index.min(),
-                "end": train_hourly.index.max(),
-                "row_count": len(train_hourly),
-            },
-            {
-                "frequency": "hourly",
-                "split": "validation",
-                "start": validation_hourly.index.min(),
-                "end": validation_hourly.index.max(),
-                "row_count": len(validation_hourly),
-            },
-            {
-                "frequency": "hourly",
-                "split": "test",
-                "start": test_hourly.index.min(),
-                "end": test_hourly.index.max(),
-                "row_count": len(test_hourly),
-            },
-        ]
-    )
-
-    (
-        train_treated_15min,
-        train_imputation_mask_15min,
-        validation_treated_15min,
-        validation_imputation_mask_15min,
-        test_treated_15min,
-        test_imputation_mask_15min,
-    ) = build_gap_treated_data(
-        train_15min,
-        train_quality_15min,
-        validation_15min,
-        validation_quality_15min,
-        test_15min,
-        test_quality_15min,
-        max_gap_intervals=config.max_imputation_gap_15min,
-        resolution="15min",
-        method=config.gap_treatment_method,
-    )
-
-    (
-        train_treated_hourly,
-        train_imputation_mask_hourly,
-        validation_treated_hourly,
-        validation_imputation_mask_hourly,
-        test_treated_hourly,
-        test_imputation_mask_hourly,
-    ) = build_gap_treated_data(
-        train_hourly,
-        train_quality_hourly,
-        validation_hourly,
-        validation_quality_hourly,
-        test_hourly,
-        test_quality_hourly,
         max_gap_intervals=config.max_imputation_gap_hourly,
         resolution="hourly",
         method=config.gap_treatment_method,
-    )
-
-    treated_15min = pd.concat(
-        [train_treated_15min, validation_treated_15min, test_treated_15min]
-    )
-
-    imputation_mask_15min = pd.concat(
-        [
-            train_imputation_mask_15min,
-            validation_imputation_mask_15min,
-            test_imputation_mask_15min,
-        ]
-    )
-
-    treated_hourly = pd.concat(
-        [train_treated_hourly, validation_treated_hourly, test_treated_hourly]
-    )
-
-    imputation_mask_hourly = pd.concat(
-        [
-            train_imputation_mask_hourly,
-            validation_imputation_mask_hourly,
-            test_imputation_mask_hourly,
-        ]
     )
 
     treated_hourly, imputation_mask_hourly = exclude_incomplete_days(
@@ -210,13 +65,9 @@ def run_preprocessing(
     treated_daily.index = daily_index.tz_convert("UTC").rename("timestamp")
 
     return PreprocessingResult(
-        split_manifest=split_manifest,
-        treated_15min=treated_15min,
-        imputation_mask_15min=imputation_mask_15min,
         treated_hourly=treated_hourly,
         treated_daily=treated_daily,
         imputation_mask_hourly=imputation_mask_hourly,
-        plausibility_15min=plausibility_15min,
         plausibility_hourly=plausibility_hourly,
     )
 
@@ -234,66 +85,41 @@ class PreprocessingRunner:
             numerical_analysis_config or NumericalAnalysisConfig()
         )
 
-    def _read_canonical(self, name: str) -> pd.DataFrame:
-        return pd.read_csv(
-            self.project_config.canonical_output_dir / f"{name}.csv",
-            parse_dates=["timestamp"],
-            index_col="timestamp",
-        )
-
     def run(self) -> None:
         ensure_project_directories(self.project_config)
 
-        logger.info("Starting preprocessing pipeline...")
+        split_manifests = []
 
-        data_15min = self._read_canonical("canonical_data_15min")
-        quality_15min = self._read_canonical("canonical_quality_15min")
-        data_hourly = self._read_canonical("canonical_data_hourly")
-        quality_hourly = self._read_canonical("canonical_quality_hourly")
+        for window in window_names():
+            logger.info("Starting preprocessing for window %s...", window)
 
-        result = run_preprocessing(
-            data_15min,
-            quality_15min,
-            data_hourly,
-            quality_hourly,
-            self.preprocessing_config,
-            self.project_config.timezone,
-            sample_period_hours_15min=self.numerical_analysis_config.sample_period_hours_15min,
-            sample_period_hours_hourly=self.numerical_analysis_config.sample_period_hours_hourly,
-        )
-
-        df_to_csv(
-            result.split_manifest,
-            self.project_config.preprocessing_output_dir,
-            "split_manifest",
-        )
-
-        logger.info(
-            "Chronological split and causal gap treatment completed: %d rows (15min), %d rows (hourly).",
-            len(result.treated_15min),
-            len(result.treated_hourly),
-        )
-
-        preprocessing_outputs = {
-            "treated_15min": result.treated_15min,
-            "imputation_mask_15min": result.imputation_mask_15min,
-            "treated_hourly": result.treated_hourly,
-            "treated_daily": result.treated_daily,
-            "imputation_mask_hourly": result.imputation_mask_hourly,
-            "plausibility_15min": result.plausibility_15min,
-            "plausibility_hourly": result.plausibility_hourly,
-        }
-
-        for name, frame in preprocessing_outputs.items():
-            df_to_csv(
-                frame.reset_index(),
-                self.project_config.preprocessing_output_dir,
-                name,
+            result = run_preprocessing(
+                read_canonical_frame(
+                    self.project_config, "canonical_data_hourly", window
+                ),
+                read_canonical_frame(
+                    self.project_config, "canonical_quality_hourly", window
+                ),
+                self.preprocessing_config,
+                self.project_config.timezone,
+                sample_period_hours_hourly=self.numerical_analysis_config.sample_period_hours_hourly,
             )
 
-        logger.info(
-            "Preprocessing completed successfully: %d output artifacts.",
-            len(preprocessing_outputs) + 1,
+            output_directory = self.project_config.preprocessing_output_dir / window
+            output_directory.mkdir(parents=True, exist_ok=True)
+
+            for name, frame in vars(result).items():
+                df_to_csv(frame.reset_index(), output_directory, name)
+
+            hourly_index = pd.DatetimeIndex(result.treated_hourly.index)
+            split_manifests.append(
+                build_split_manifest(window, hourly_index, self.project_config.timezone)
+            )
+
+        df_to_csv(
+            pd.concat(split_manifests, ignore_index=True),
+            self.project_config.preprocessing_output_dir,
+            "split_manifest",
         )
 
 

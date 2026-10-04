@@ -58,12 +58,11 @@ def run_strategies(k4_config: K4Config) -> Path:
             runs.append((action, day))
     results: list[pd.DataFrame] = []
 
-    for cutover_date in STANDARD_CONFIG.cutover_dates:
+    for cutover_id in k4_config.cutovers:
+        cutover_date = STANDARD_CONFIG.cutover_dates[cutover_id]
         for kind, scenario in build_standard_scenarios(
             cutover_date,
             k4_config.kinds,
-            margin_before_days=STANDARD_CONFIG.monitoring_before_cutover_days,
-            margin_after_days=STANDARD_CONFIG.margin_after_days,
         ).items():
             for strategy, trigger_day in runs:
                 logger.info(
@@ -111,12 +110,11 @@ def run_masking(k4_config: K4Config) -> Path:
     decisions: list[pd.DataFrame] = []
     results: list[pd.DataFrame] = []
 
-    for cutover_date in STANDARD_CONFIG.cutover_dates:
+    for cutover_id in k4_config.cutovers:
+        cutover_date = STANDARD_CONFIG.cutover_dates[cutover_id]
         for kind, scenario in build_standard_scenarios(
             cutover_date,
             k4_config.masking_kinds,
-            margin_before_days=STANDARD_CONFIG.monitoring_before_cutover_days,
-            margin_after_days=STANDARD_CONFIG.margin_after_days,
         ).items():
             logger.info("K4 masking %s_%s", kind, cutover_date)
 

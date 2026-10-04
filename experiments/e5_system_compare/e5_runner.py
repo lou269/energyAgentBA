@@ -56,6 +56,7 @@ def run(e5_config: E5Config) -> Path:
         scenarios = build_e5_scenarios(
             cutover_date,
             e5_config.events,
+            split=e5_config.split,
             margin_before_days=e5_config.margin_before_days,
             margin_after_days=e5_config.margin_after_days,
         )
