@@ -29,19 +29,19 @@ def build_k4_plot(
             ]
             axis.plot(
                 line["week_since_trigger"],
-                line["mae_delta_w"],
+                line["mae_w_delta"],
                 color=color,
                 linestyle=linestyle,
                 marker="o",
-                label=f"{strategy_labels[strategy]}, Trigger Tag {trigger_day:.0f}",
+                label=f"{strategy_labels[strategy]}, Aktion an Tag {trigger_day:.0f}",
             )
 
     axis.axhline(0, color="#333333", linewidth=0.8)
     axis.set_title(
-        f"MAE-Differenz zu keiner Aktion nach dem Trigger ({kind_label}, Mittel über Cutover)",
+        f"MAE-Differenz zu keiner Aktion ab dem Tag der Aktion ({kind_label}, Mittel über Cutover)",
         loc="left",
     )
-    axis.set_xlabel("Woche seit Trigger")
+    axis.set_xlabel("Woche seit der Aktion")
     axis.xaxis.set_major_locator(MaxNLocator(integer=True))
     axis.set_ylabel("MAE-Differenz (W), negativ = besser")
     axis.grid(axis="y", alpha=0.25)

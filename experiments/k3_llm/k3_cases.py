@@ -125,6 +125,8 @@ def _anomaly_block(
         "scale_exceeding_since": since_block,
         "scale_deviation_pct": deviation_block,
         "sustained_scales": sustained_scales,
+        "sustained_drift": len(sustained_scales)
+        >= ANALYSIS_CONFIG.min_sustained_scales,
         "available_scales": available,
     }
 
@@ -138,6 +140,7 @@ def _empty_anomaly_block() -> dict[str, object]:
         "scale_exceeding_since": {scale: None for scale in DEVIATION_SCALE_NAMES},
         "scale_deviation_pct": {scale: None for scale in DEVIATION_SCALE_NAMES},
         "sustained_scales": [],
+        "sustained_drift": False,
         "available_scales": [],
     }
 
@@ -339,6 +342,7 @@ def llm_relevant_cases() -> tuple[LLMEvaluationCase, ...]:
 _SINGLE_DAY_PATHS = frozenset({"anomaly.level", "anomaly.direction"})
 _DRIFT_PATHS = frozenset(
     {
+        "anomaly.sustained_drift",
         "anomaly.scale_anomaly_streak_days.weekday",
         "anomaly.scale_anomaly_streak_days.weekly",
     }
@@ -357,6 +361,7 @@ EXPECTED_EVIDENCE_PATHS: dict[str, frozenset[str]] = {
     "measurement_error_missing_day": frozenset({"observation.value_implausible"}),
     "new_pattern_drift_down": frozenset(
         {
+            "anomaly.sustained_drift",
             "anomaly.scale_anomaly_streak_days.weekly",
             "anomaly.scale_anomaly_streak_days.long_term",
         }

@@ -22,9 +22,9 @@ class K2Config:
     train_end: str = "2015-04-29"
 
     # Raster der Streak-Schwellen
-    weekday_streak_thresholds: tuple[float, ...] = (1.25, 1.5, 1.75, 2.0, 2.5, 2.75)
-    weekly_streak_thresholds: tuple[float, ...] = (0.75, 1.0, 1.25, 1.5)
-    long_term_streak_thresholds_pct: tuple[float, ...] = (12.5, 15.0, 20.0, 25.0)
+    weekday_streak_thresholds: tuple[float, ...] = (1.75, 2.0, 2.5, 2.75)
+    weekly_streak_thresholds: tuple[float, ...] = (0.5, 0.75, 1.0, 1.25, 1.5)
+    long_term_streak_thresholds_pct: tuple[float, ...] = (10.0, 12.5, 15.0, 20.0, 25.0)
 
     event_reference_days: int = 28
     event_transition_days: int = 28

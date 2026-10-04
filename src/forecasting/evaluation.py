@@ -5,7 +5,13 @@ from src.forecasting.forecast_schema import validate_forecast_output
 
 
 BASE_GROUP_COLUMNS = ["run_id", "split", "model_id"]
-ORIGIN_GROUP_COLUMNS = ["run_id", "split", "model_id", "forecast_origin", "forecast_day"]
+ORIGIN_GROUP_COLUMNS = [
+    "run_id",
+    "split",
+    "model_id",
+    "forecast_origin",
+    "forecast_day",
+]
 ERROR_METRIC_COLUMNS = ["mae_w", "rmse_w", "mape_pct"]
 
 
@@ -24,15 +30,23 @@ def evaluate_forecasts(
         reference_model_ids=reference_model_ids,
     )
 
-    overall_metrics = _calculate_grouped_metrics(forecasts, BASE_GROUP_COLUMNS, mape_min_eligible_watts)
+    overall_metrics = _calculate_grouped_metrics(
+        forecasts, BASE_GROUP_COLUMNS, mape_min_eligible_watts
+    )
     overall_metrics = _add_operational_metrics(overall_metrics, forecasts)
-    origin_metrics = _calculate_grouped_metrics(forecasts, ORIGIN_GROUP_COLUMNS, mape_min_eligible_watts)
-    horizon_metrics = _calculate_grouped_metrics(forecasts, [*BASE_GROUP_COLUMNS, "horizon_step"], mape_min_eligible_watts)
+    origin_metrics = _calculate_grouped_metrics(
+        forecasts, ORIGIN_GROUP_COLUMNS, mape_min_eligible_watts
+    )
+    horizon_metrics = _calculate_grouped_metrics(
+        forecasts, [*BASE_GROUP_COLUMNS, "horizon_step"], mape_min_eligible_watts
+    )
 
     return {
         "overall_metrics": overall_metrics,
         "origin_metrics": origin_metrics,
-        "origin_metric_distribution": _calculate_origin_metric_distribution(origin_metrics),
+        "origin_metric_distribution": _calculate_origin_metric_distribution(
+            origin_metrics
+        ),
         "horizon_metrics": horizon_metrics,
         "paired_origin_differences": _calculate_paired_origin_differences(
             origin_metrics,
@@ -44,7 +58,9 @@ def evaluate_forecasts(
             comparison_model_ids=comparison_model_ids,
             reference_model_ids=reference_model_ids,
         ),
-        "interval_metrics": _calculate_interval_metrics(forecasts, nominal_interval_level=nominal_interval_level),
+        "interval_metrics": _calculate_interval_metrics(
+            forecasts, nominal_interval_level=nominal_interval_level
+        ),
         "target_exclusions": _calculate_target_exclusions(forecasts, overall_metrics),
     }
 
@@ -59,7 +75,10 @@ def select_primary_naive_reference(
     missing_columns = required_columns.difference(overall_metrics.columns)
 
     if missing_columns:
-        raise ValueError("overall_metrics is missing required columns: " + ", ".join(sorted(missing_columns)))
+        raise ValueError(
+            "overall_metrics is missing required columns: "
+            + ", ".join(sorted(missing_columns))
+        )
 
     if not baseline_model_ids:
         raise ValueError("baseline_model_ids must not be empty.")
@@ -73,17 +92,26 @@ def select_primary_naive_reference(
         raise ValueError(f"No naive baseline metrics found for split {split!r}.")
 
     if candidates["run_id"].nunique() != 1:
-        raise ValueError("Primary naive reference must be selected from exactly one run.")
+        raise ValueError(
+            "Primary naive reference must be selected from exactly one run."
+        )
 
     missing_models = set(baseline_model_ids).difference(candidates["model_id"])
 
     if missing_models:
-        raise ValueError("Naive baseline metrics are missing for: " + ", ".join(sorted(missing_models)))
+        raise ValueError(
+            "Naive baseline metrics are missing for: "
+            + ", ".join(sorted(missing_models))
+        )
 
-    candidates = candidates.sort_values(["mae_w", "rmse_w", "model_id"], na_position="last")
+    candidates = candidates.sort_values(
+        ["mae_w", "rmse_w", "model_id"], na_position="last"
+    )
 
     if pd.isna(candidates.iloc[0]["mae_w"]):
-        raise ValueError("Primary naive reference cannot be selected without evaluable targets.")
+        raise ValueError(
+            "Primary naive reference cannot be selected without evaluable targets."
+        )
 
     return str(candidates.iloc[0]["model_id"])
 
@@ -110,7 +138,10 @@ def _validate_evaluation_input(
         missing_model_ids = required_model_ids.difference(available_model_ids)
 
         if missing_model_ids:
-            raise ValueError(f"Run {run_id!r}, split {split!r} is missing models: " + ", ".join(sorted(missing_model_ids)))
+            raise ValueError(
+                f"Run {run_id!r}, split {split!r} is missing models: "
+                + ", ".join(sorted(missing_model_ids))
+            )
 
     model_counts = (
         forecasts.groupby(["run_id", "split"])["model_id"]
@@ -119,7 +150,9 @@ def _validate_evaluation_input(
         .reset_index()
     )
     target_model_counts = (
-        forecasts.groupby(["run_id", "split", "forecast_origin", "target_timestamp"])["model_id"]
+        forecasts.groupby(["run_id", "split", "forecast_origin", "target_timestamp"])[
+            "model_id"
+        ]
         .nunique()
         .rename("actual_model_count")
         .reset_index()
@@ -127,11 +160,14 @@ def _validate_evaluation_input(
     )
 
     unequal_target_sets = (
-        target_model_counts["actual_model_count"] != target_model_counts["expected_model_count"]
+        target_model_counts["actual_model_count"]
+        != target_model_counts["expected_model_count"]
     )
 
     if unequal_target_sets.any():
-        raise ValueError("Models must use identical forecast origins and target timestamps.")
+        raise ValueError(
+            "Models must use identical forecast origins and target timestamps."
+        )
 
     finite_values = forecasts[
         ["y_pred", "y_pred_raw", "refit_runtime_seconds"]
@@ -183,22 +219,49 @@ def score_cycle_forecast(
     target_imputed: pd.Series | None,
     mape_min_eligible_watts: float,
 ) -> tuple[float, float]:
-    actual = target_series.reindex(forecast["target_timestamp"])
+    actual, eligible = _actual_and_eligible(forecast, target_series, target_imputed)
     predicted = forecast["y_pred"].to_numpy()
 
-    # ffill-imputierte Zielstunden zählen nicht, gleiche Regel wie target_eligible
-    eligible = actual.notna().to_numpy()
-    if target_imputed is not None:
-        imputed = target_imputed.reindex(actual.index).fillna(False).to_numpy(dtype=bool)
-        eligible = eligible & ~imputed
-
-    mae_w = calculate_mae(actual.to_numpy(), predicted, eligible)
-    mape_pct = calculate_mape(actual.to_numpy(), predicted, eligible, mape_min_eligible_watts)
+    mae_w = calculate_mae(actual, predicted, eligible)
+    mape_pct = calculate_mape(actual, predicted, eligible, mape_min_eligible_watts)
 
     return mae_w, mape_pct
 
 
-def calculate_mae(y_true: np.ndarray, y_pred: np.ndarray, eligible: np.ndarray) -> float:
+def score_daily_mean_bias(
+    forecast: pd.DataFrame,
+    target_series: pd.Series,
+    target_imputed: pd.Series | None,
+) -> float:
+    # Prognose minus Messung beim Tagesmittel (= Tagesenergie), nicht Mittel der Stundenfehler. Wie K1 nur bei lauter bewerteten Stunden, negativ = Prognose zu niedrig
+    actual, eligible = _actual_and_eligible(forecast, target_series, target_imputed)
+    if not eligible.all():
+        return float("nan")
+
+    return float(forecast["y_pred"].to_numpy().mean() - actual.mean())
+
+
+def _actual_and_eligible(
+    forecast: pd.DataFrame,
+    target_series: pd.Series,
+    target_imputed: pd.Series | None,
+) -> tuple[np.ndarray, np.ndarray]:
+    actual = target_series.reindex(forecast["target_timestamp"])
+
+    # ffill-imputierte Zielstunden zählen nicht, gleiche Regel wie target_eligible
+    eligible = actual.notna().to_numpy()
+    if target_imputed is not None:
+        imputed = (
+            target_imputed.reindex(actual.index).fillna(False).to_numpy(dtype=bool)
+        )
+        eligible = eligible & ~imputed
+
+    return actual.to_numpy(), eligible
+
+
+def calculate_mae(
+    y_true: np.ndarray, y_pred: np.ndarray, eligible: np.ndarray
+) -> float:
     if not eligible.any():
         return float("nan")
 
@@ -206,13 +269,20 @@ def calculate_mae(y_true: np.ndarray, y_pred: np.ndarray, eligible: np.ndarray) 
     return float(np.mean(np.abs(errors)))
 
 
-def calculate_mape(y_true: np.ndarray, y_pred: np.ndarray, eligible: np.ndarray, mape_min_eligible_watts: float) -> float:
+def calculate_mape(
+    y_true: np.ndarray,
+    y_pred: np.ndarray,
+    eligible: np.ndarray,
+    mape_min_eligible_watts: float,
+) -> float:
     mape_eligible = eligible & (y_true > mape_min_eligible_watts)
 
     if not mape_eligible.any():
         return float("nan")
 
-    absolute_percentage_errors = np.abs((y_pred[mape_eligible] - y_true[mape_eligible]) / y_true[mape_eligible])
+    absolute_percentage_errors = np.abs(
+        (y_pred[mape_eligible] - y_true[mape_eligible]) / y_true[mape_eligible]
+    )
     return float(np.mean(absolute_percentage_errors) * 100)
 
 
@@ -236,7 +306,9 @@ def _calculate_error_metrics(
     if evaluated.empty:
         rmse = np.nan
     else:
-        errors = evaluated["y_pred"].to_numpy(dtype="float64") - evaluated["y_true"].to_numpy(dtype="float64")
+        errors = evaluated["y_pred"].to_numpy(dtype="float64") - evaluated[
+            "y_true"
+        ].to_numpy(dtype="float64")
         rmse = float(np.sqrt(np.mean(np.square(errors))))
 
     mape_eligible = eligible & forecasts["y_true"].gt(mape_min_eligible_watts)
@@ -264,8 +336,16 @@ def _calculate_error_metrics(
         "mape_pct": mape,
         "mape_target_count": mape_count,
         "mape_excluded_target_count": possible_count - mape_count,
-        "mape_non_positive_target_count": int((eligible & forecasts["y_true"].le(0)).sum()),
-        "mape_below_floor_target_count": int((eligible & forecasts["y_true"].gt(0) & forecasts["y_true"].le(mape_min_eligible_watts)).sum()),
+        "mape_non_positive_target_count": int(
+            (eligible & forecasts["y_true"].le(0)).sum()
+        ),
+        "mape_below_floor_target_count": int(
+            (
+                eligible
+                & forecasts["y_true"].gt(0)
+                & forecasts["y_true"].le(mape_min_eligible_watts)
+            ).sum()
+        ),
         "negative_forecast_count": negative_count,
         "negative_forecast_share": negative_count / possible_count,
         "negative_interval_lower_count": negative_interval_lower_count,
@@ -338,14 +418,14 @@ def _calculate_paired_origin_differences(
 ) -> pd.DataFrame:
     key_columns = ["run_id", "split", "forecast_origin", "forecast_day"]
     difference_columns = [f"{metric}_difference" for metric in ERROR_METRIC_COLUMNS]
-    
+
     output_columns = [
         *key_columns,
         "model_id",
         "reference_model_id",
         *difference_columns,
     ]
-    
+
     result_frames: list[pd.DataFrame] = []
 
     comparisons = origin_metrics.loc[
@@ -357,15 +437,10 @@ def _calculate_paired_origin_differences(
             origin_metrics["model_id"].eq(reference_model_id),
             [*key_columns, *ERROR_METRIC_COLUMNS],
         ].rename(
-            columns={
-                metric: f"reference_{metric}"
-                for metric in ERROR_METRIC_COLUMNS
-            }
+            columns={metric: f"reference_{metric}" for metric in ERROR_METRIC_COLUMNS}
         )
 
-        paired = comparisons.loc[
-            comparisons["model_id"].ne(reference_model_id)
-        ].merge(
+        paired = comparisons.loc[comparisons["model_id"].ne(reference_model_id)].merge(
             reference,
             on=key_columns,
             how="inner",
@@ -374,7 +449,9 @@ def _calculate_paired_origin_differences(
         paired["reference_model_id"] = reference_model_id
 
         for metric in ERROR_METRIC_COLUMNS:
-            paired[f"{metric}_difference"] = paired[metric] - paired[f"reference_{metric}"]
+            paired[f"{metric}_difference"] = (
+                paired[metric] - paired[f"reference_{metric}"]
+            )
 
         result_frames.append(paired[output_columns])
 
@@ -423,9 +500,7 @@ def _calculate_mae_skill(
             overall_metrics["model_id"].eq(reference_model_id), [*key_columns, "mae_w"]
         ].rename(columns={"mae_w": "reference_mae_w"})
 
-        skill = comparisons.loc[
-            comparisons["model_id"].ne(reference_model_id)
-        ].merge(
+        skill = comparisons.loc[comparisons["model_id"].ne(reference_model_id)].merge(
             reference,
             on=key_columns,
             how="inner",
@@ -488,10 +563,9 @@ def _calculate_interval_metrics(
                 coverage = np.nan
                 mean_width = np.nan
             else:
-                covered = (
-                    evaluable["y_true"].ge(evaluable["y_lower"])
-                    & evaluable["y_true"].le(evaluable["y_upper"])
-                )
+                covered = evaluable["y_true"].ge(evaluable["y_lower"]) & evaluable[
+                    "y_true"
+                ].le(evaluable["y_upper"])
                 coverage = float(covered.mean())
                 mean_width = float((evaluable["y_upper"] - evaluable["y_lower"]).mean())
 
@@ -553,13 +627,12 @@ def _calculate_target_exclusions(
         how="left",
         validate="many_to_one",
     )
-    exclusions["excluded_target_share"] = exclusions["excluded_target_count"] / exclusions["possible_target_count"]
+    exclusions["excluded_target_share"] = (
+        exclusions["excluded_target_count"] / exclusions["possible_target_count"]
+    )
 
     return (
         exclusions[columns]
         .sort_values([*BASE_GROUP_COLUMNS, "target_exclusion_reason"])
         .reset_index(drop=True)
     )
-    
-    
-    

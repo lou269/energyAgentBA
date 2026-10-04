@@ -13,7 +13,7 @@ from src.context.calendar_schema import (
 from src.pipeline.schema_validation import is_real_number, validate_fields
 
 
-SCHEMA_VERSION = "2.2"
+SCHEMA_VERSION = "2.3"
 
 DATE_PATTERN = re.compile(r"\d{4}-\d{2}-\d{2}")
 
@@ -51,6 +51,7 @@ ANOMALY_FIELDS = frozenset(
         "alarm_scales",
         "scale_exceeding_since",
         "sustained_scales",
+        "sustained_drift",
         "available_scales",
     }
 )
@@ -101,6 +102,7 @@ class AnomalyState(TypedDict):
     scale_exceeding_since: ScaleExceedingSince
     scale_deviation_pct: ScaleDeviationPct
     sustained_scales: list[ScaleName]
+    sustained_drift: bool
     available_scales: list[ScaleName]
 
 

@@ -180,12 +180,13 @@ def test_spread_over_repeats_counts_repeats_in_direction_of_the_mean() -> None:
     )
 
     row = spread_over_repeats(
-        summary, ["strategy"], "delta", count_same_direction=True
+        summary, ["strategy"], "delta", count_same_direction=True, count_improved=True
     ).to_dict("records")[0]
 
     assert row["mean"] == pytest.approx(-4 / 3)
     # der fehlende Cutover zählt weder mit noch als Gegenrichtung
     assert row["same_direction"] == "2/3"
+    assert row["improved"] == "2/3"
 
 
 def test_event_response_only_counts_new_pattern_the_control_run_did_not_see() -> None:

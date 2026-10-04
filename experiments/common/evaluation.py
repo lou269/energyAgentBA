@@ -367,9 +367,11 @@ def spread_over_repeats(
     *,
     repeat: str = "cutover_date",
     count_same_direction: bool = False,
+    count_improved: bool = False,
     count_detected: bool = False,
 ) -> pd.DataFrame:
     """Eine Spalte je Wiederholung (Cutover, Starttermin) plus Mittel, bei Differenzen optional die Zahl der Wiederholungen mit demselben Vorzeichen wie das Mittel,
+    bei Differenzen mit negativ = besser optional die Zahl der Wiederholungen mit einem Wert unter null,
     bei Erkennungstagen optional die Zahl der Wiederholungen mit einem Tag (NaN = nicht erkannt)
     """
     wide = summary.pivot(index=keys, columns=repeat, values=value).rename_axis(
@@ -387,6 +389,13 @@ def spread_over_repeats(
             + "/"
             + wide[repeats].notna().sum(axis=1).astype(str)
         ).where(wide["mean"].ne(0))
+
+    if count_improved:
+        wide["improved"] = (
+            wide[repeats].lt(0).sum(axis=1).astype(str)
+            + "/"
+            + wide[repeats].notna().sum(axis=1).astype(str)
+        )
 
     if count_detected:
         wide["detected"] = (

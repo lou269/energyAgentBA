@@ -3,24 +3,26 @@
 import pandas as pd
 import pytest
 
-from src.forecasting.evaluation import evaluate_forecasts, select_primary_naive_reference
+from src.forecasting.evaluation import (
+    evaluate_forecasts,
+    score_daily_mean_bias,
+    select_primary_naive_reference,
+)
 from src.forecasting.walk_forward import build_walk_forward_forecasts
 
 
-def _hourly(
-    start, 
-    values: list[float]
-) -> pd.Series:
+def _hourly(start, values: list[float]) -> pd.Series:
     index = pd.date_range(start, periods=len(values), freq="1h", tz="UTC")
     return pd.Series(values, index=index)
 
 
-def _b1_forecasts(
-    y_true: list[float]
-) -> pd.DataFrame:
+def _b1_forecasts(y_true: list[float]) -> pd.DataFrame:
     # Horizont ist ein ganzer Tag ab Mitternacht, die restlichen Stunden treffen B1 exakt
     fixed_history = _hourly("2019-12-31T22:00", [100.0, 100.0])
-    evaluation_targets = _hourly(fixed_history.index[-1] + pd.Timedelta(hours=1), y_true + [100.0] * (24 - len(y_true)))
+    evaluation_targets = _hourly(
+        fixed_history.index[-1] + pd.Timedelta(hours=1),
+        y_true + [100.0] * (24 - len(y_true)),
+    )
     mask = pd.Series(False, index=evaluation_targets.index)
 
     return build_walk_forward_forecasts(
@@ -122,3 +124,25 @@ def test_select_primary_naive_reference_raises_without_evaluable_targets() -> No
 
     with pytest.raises(ValueError, match="without evaluable targets"):
         select_primary_naive_reference(overall_metrics, ("B1", "B2"))
+
+
+def test_daily_mean_bias_lets_opposite_hourly_errors_cancel() -> None:
+    target = _hourly("2024-01-01", [100.0, 100.0, 100.0, 100.0])
+    forecast = pd.DataFrame(
+        {"target_timestamp": target.index, "y_pred": [150.0, 50.0, 130.0, 100.0]}
+    )
+
+    # Stundenfehler +50, -50, +30, 0: Tagesmittel 7,5 W zu hoch, mit umgekehrtem Vorzeichen zu niedrig
+    assert score_daily_mean_bias(forecast, target, None) == 7.5
+    low = forecast.assign(y_pred=[50.0, 150.0, 70.0, 100.0])
+    assert score_daily_mean_bias(low, target, None) == -7.5
+
+
+def test_daily_mean_bias_is_nan_for_incomplete_days() -> None:
+    target = _hourly("2024-01-01", [100.0, 100.0, 100.0])
+    imputed = pd.Series([False, True, False], index=target.index)
+    forecast = pd.DataFrame(
+        {"target_timestamp": target.index, "y_pred": [110.0, 500.0, 90.0]}
+    )
+
+    assert pd.isna(score_daily_mean_bias(forecast, target, imputed))

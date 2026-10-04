@@ -59,7 +59,7 @@ class NumericalAnalysisConfig:
     # run_cycle rechnet die Anomalieerkennung auf Tagesmittelwerten statt Einzelstunden
     sample_period_hours_daily: float = 24.0
     trend_window_days: int = 7  # unkalibriert, Startwert wie trend_threshold seinerzeit
-    long_term_window_days: int = 30
+    long_term_window_days: int = 28
     weekly_window_days: int = 7  # eigenständig von trend_window_days
 
     # Mindestabdeckung für weekly_mean/long_term_window_mean (rolling): ein einzelner NaN-Tag (z.B. measurement_error)
@@ -74,7 +74,7 @@ class NumericalAnalysisConfig:
 
     # weekly: Anzahl 7-Tage-Mittel in der Referenz, long_term: gültige Tage im Referenzfenster
     min_weekly_reference_samples: int = 1
-    min_longterm_reference_samples: int = 1
+    min_longterm_reference_samples: int = 14
 
     # Fenstergröße für scale_anomaly_streak_days: wie viele Tage zurück gezählt wird
     streak_tolerance_window_days: int = 7
@@ -92,7 +92,7 @@ class ProphetVariantConfig:
     history_mode: HistoryMode
     rolling_window_days: int | None
     retraining_interval_days: int | None
-    weekly_seasonality: bool = False
+    weekly_seasonality: bool = True
     yearly_seasonality: bool = False
 
 
@@ -181,8 +181,9 @@ class ForecastingConfig:
     growth: str = "linear"
     daily_seasonality: bool = True
     country_holidays: str | None = "UK"
+    weekly_seasonality: bool = False
     # Prophet fitted auf log(y) statt y, Rücktransformation via exp() nach dem Predict
-    log_transform: bool = False
+    log_transform: bool = True
     interval_width: float = 0.80
     uncertainty_samples: int = 1000
     seed: int = 42
@@ -201,7 +202,7 @@ class ForecastingConfig:
 @dataclass(frozen=True)
 class LLMConfig:
     model: str = "ministral-3:8b"  # in K3 gewählt
-    prompt_version: str = "v23"
+    prompt_version: str = "v24"
     temperature: float = 0.0
     # qwen3.5:9b liefert das selbst als Modelfile-Default, gegen Wiederholungsschleifen bei greedy decoding
     presence_penalty: float = 1.5

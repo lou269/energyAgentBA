@@ -1,0 +1,9 @@
+Modus,Modell,Referenz,Differenz [W],2 Standardfehler [W],Origins,Origins besser [%],belastbar
+rolling,C2 expanding,C3_60 rolling 60 Tage,0.8,1.6,161,49.7,nein
+rolling,C3_30 rolling 30 Tage,C3_60 rolling 60 Tage,1.2,1.8,161,51.6,nein
+rolling,C1 statisch,C3_60 rolling 60 Tage,5.9,3.3,161,43.5,ja
+rolling,C3_7 rolling 7 Tage,C3_60 rolling 60 Tage,8.7,4.5,161,39.1,ja
+macro,C1 statisch,C2 expanding,0.2,0.2,161,44.7,nein
+macro,C3_60 rolling 60 Tage,C2 expanding,1.8,1.7,161,43.5,ja
+macro,C3_30 rolling 30 Tage,C2 expanding,3.0,2.7,161,46.6,ja
+macro,C3_7 rolling 7 Tage,C2 expanding,10.5,4.9,161,32.9,ja

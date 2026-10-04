@@ -16,7 +16,10 @@ from src.common.timestamps import (
     local_day_index,
     local_midnight_utc,
 )
-from src.forecasting.evaluation import score_cycle_forecast
+from src.forecasting.evaluation import (
+    score_cycle_forecast,
+    score_daily_mean_bias,
+)
 from src.pipeline.comparison_harness import (
     ScenarioData,
     coldstart_history,
@@ -52,6 +55,7 @@ def run_oracle(
         model_fitted_at=None,
     )
     mae_values: list[float] = []
+    daily_bias_values: list[float] = []
 
     for decision_time in scenario.decision_times:
         # vor dem Fit, wirkt also schon auf die Prognose dieses Tages wie der Neu-Fit nach einer Adaption in run_cycle
@@ -81,8 +85,22 @@ def run_oracle(
             cycle_config.forecasting_config.mape_min_eligible_watts,
         )
         mae_values.append(mae_w)
+        daily_bias_values.append(
+            score_daily_mean_bias(
+                result.forecast,
+                scenario.target_series,
+                scenario.target_imputed,
+            )
+        )
 
-    return pd.DataFrame({"decision_time": scenario.decision_times, "mae_w": mae_values})
+    return pd.DataFrame(
+        {
+            "decision_time": scenario.decision_times,
+            "mae_w": mae_values,
+            "day_bias_w": daily_bias_values,
+            "day_error_w": np.abs(daily_bias_values),
+        }
+    )
 
 
 # fester Triggertag, none hat keinen

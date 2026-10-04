@@ -1,0 +1,3 @@
+Kennzahl,Wert,Bezug
+"Ausblenden, Szenario keine Änderung: Tagesfehler-Differenz [W]",-0.1,"bei 74,5 W ohne Ausblenden, 37 von 603 Tagen ausgeblendet, bei 4/5 Cutover besser"
+"Ausblenden, Szenario Dauerlast +100 W: Tagesfehler-Differenz [W]",1.7,"bei 74,1 W ohne Ausblenden, 38 von 603 Tagen ausgeblendet, bei 3/5 Cutover besser"

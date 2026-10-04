@@ -47,17 +47,23 @@ def test_masking_is_paired_with_replay_on_the_same_day() -> None:
     results = pd.concat(
         [
             decisions[["kind", "cutover_date", "decision_time"]].assign(
-                strategy="replay", mae_w=[100.0, 110.0, 120.0]
+                strategy="replay",
+                mae_w=[100.0, 110.0, 120.0],
+                day_error_w=[10.0, float("nan"), 12.0],
             ),
             decisions[["kind", "cutover_date", "decision_time"]].assign(
-                strategy="mask", mae_w=[100.0, 104.0, 120.0]
+                strategy="mask",
+                mae_w=[100.0, 104.0, 120.0],
+                day_error_w=[4.0, float("nan"), 12.0],
             ),
         ],
         ignore_index=True,
     ).assign(days_since_cutover=[-14, -13, -12] * 2)
 
-    paired = pair_masking(results, decisions, ("peak", "low"))
+    paired = pair_masking(results, decisions, ("peak", "low"), ("mae_w", "day_error_w"))
 
-    assert paired["mae_delta_w"].tolist() == [0.0, -6.0, 0.0]
+    assert paired["mae_w_delta"].tolist() == [0.0, -6.0, 0.0]
+    # ein Tag ohne Tagesfehler bleibt NaN und wird erst in der Zusammenfassung ausgelassen
+    assert paired["day_error_w_delta"].dropna().tolist() == [-6.0, 0.0]
     assert paired["replay_matches_sys2"].all()
     assert paired["masked_day"].tolist() == [True, False, False]

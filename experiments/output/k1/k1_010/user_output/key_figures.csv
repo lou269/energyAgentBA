@@ -1,0 +1,7 @@
+Kennzahl,Wert,Bezug
+rolling: MAE bestes Modell C2 expanding [W],133.3,"B2 173,5 W"
+rolling: Skill der Prophet-Varianten ggü. B2 [%],23.2,"Spanne -11,6 bis 23,2 %"
+rolling: Varianten belastbar schlechter als das beste Modell,2.0,von 4
+macro: MAE bestes Modell C2 expanding [W],132.0,"B2 173,5 W"
+macro: Skill der Prophet-Varianten ggü. B2 [%],23.9,"Spanne -11,6 bis 23,9 %"
+macro: Varianten belastbar schlechter als das beste Modell,1.0,von 4

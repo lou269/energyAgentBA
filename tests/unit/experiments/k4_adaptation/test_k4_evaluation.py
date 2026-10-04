@@ -3,9 +3,8 @@
 import pandas as pd
 
 from experiments.k4_adaptation.k4_evaluation import (
-    summarize_excess_without_action,
-    net_of_control,
     pair_with_none,
+    summarize_bias_after_cutover,
 )
 
 
@@ -35,46 +34,33 @@ def test_actions_are_paired_with_none_on_the_same_scenario_and_day() -> None:
         ignore_index=True,
     )
 
-    paired = pair_with_none(results, evaluation_days=2)
+    paired = pair_with_none(results, evaluation_days=2, metric="mae_w")
 
     assert paired["days_since_trigger"].tolist() == [0, 1]
-    assert paired["mae_none_w"].tolist() == [150.0, 140.0]
-    assert paired["mae_delta_w"].tolist() == [-30.0, -30.0]
+    assert paired["mae_w_none"].tolist() == [150.0, 140.0]
+    assert paired["mae_w_delta"].tolist() == [-30.0, -30.0]
 
 
-def test_net_effect_subtracts_what_the_same_action_does_without_a_change() -> None:
-    summary = pd.DataFrame(
-        {
-            "kind": ["step", "control", "step"],
-            "trigger_day": [6.0, 6.0, 12.0],
-            "strategy": "cut",
-            "cutover_date": "2014-04-15",
-            "mae_delta_w": [-5.0, -1.0, -2.0],
-        }
-    )
+def test_bias_after_cutover_averages_the_cutovers_without_action() -> None:
+    rows = []
+    for cutover, bias in [
+        ("2014-04-15", [-100.0, -40.0]),
+        ("2014-07-15", [-80.0, -20.0]),
+    ]:
+        for day, value in zip([0, 1], bias):
+            rows.append(
+                {
+                    "kind": "step",
+                    "cutover_date": cutover,
+                    "strategy": "none",
+                    "days_since_cutover": day,
+                    "day_bias_w": value,
+                }
+            )
+    # Aktionen und Tage außerhalb des Fensters zählen nicht
+    rows.append({**rows[0], "strategy": "cut", "day_bias_w": 999.0})
+    rows.append({**rows[0], "days_since_cutover": 5, "day_bias_w": 999.0})
 
-    net = net_of_control(summary)
+    bias = summarize_bias_after_cutover(pd.DataFrame(rows), 0, 1)
 
-    # ohne control-Zeile zum selben Trigger gibt es keinen Nettowert
-    assert net["trigger_day"].tolist() == [6.0]
-    assert net["net_delta_w"].tolist() == [-4.0]
-
-
-def test_summarize_excess_without_action_is_none_minus_control_per_week() -> None:
-    days = list(range(-1, 8))
-    results = pd.concat(
-        [
-            _results("none", float("nan"), [100.0] * 9, kind="control").assign(
-                days_since_cutover=days
-            ),
-            _results(
-                "none", float("nan"), [100.0] + [130.0] * 7 + [110.0], kind="step"
-            ).assign(days_since_cutover=days),
-        ],
-        ignore_index=True,
-    )
-
-    excess = summarize_excess_without_action(results).to_dict("index")
-
-    # Tag -1 liegt vor dem Cutover und zählt nicht
-    assert excess["step"] == {0: 30.0, 1: 10.0}
+    assert bias.loc["step"].tolist() == [-90.0, -30.0]  # type: ignore

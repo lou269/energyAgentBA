@@ -1,0 +1,3 @@
+Kennzahl,Wert,Bezug
+"Ausblenden, Szenario keine Änderung: MAE-Differenz [W]",0.2,"bei 155,4 W ohne Ausblenden, 37 von 603 Tagen ausgeblendet, bei 4/5 Cutover besser"
+"Ausblenden, Szenario Dauerlast +100 W: MAE-Differenz [W]",0.4,"bei 155,3 W ohne Ausblenden, 38 von 603 Tagen ausgeblendet, bei 4/5 Cutover besser"

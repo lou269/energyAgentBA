@@ -1,0 +1,9 @@
+Szenario,Sollverhalten,gewählt: erkannt bzw. feuert (n von N Fenstern),gewählt: Tage (Mittel),aktuelle Config: erkannt bzw. feuert (n von N Fenstern),aktuelle Config: Tage (Mittel)
+Sprung +30 %,erkennen,5/5,13.6,5/5,16.4
+Sprung −30 %,erkennen,5/5,24.0,5/5,23.6
+Rampe über 28 Tage +30 %,erkennen,5/5,19.4,5/5,16.6
+Rampe über 28 Tage −30 %,erkennen,5/5,32.2,5/5,28.6
+Rampe über 56 Tage +30 %,nicht feuern,4/5,35.8,3/5,31.3
+Rampe über 56 Tage −30 %,nicht feuern,3/5,45.0,2/5,50.0
+Einzeltag-Spitze +1000 W über 3 h,Alarm am Ereignistag,1/5,1.0,1/5,1.0
+Einzeltag-Spitze +1000 W über 6 h,Alarm am Ereignistag,3/5,1.0,3/5,1.0

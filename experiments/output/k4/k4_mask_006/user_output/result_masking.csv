@@ -1,0 +1,9 @@
+Ereignis,Zeitraum,Tage,ausgeblendet,2013-10-15,2014-02-12,2014-06-12,2014-10-10,2015-02-07,Mittel,Cutover besser
+keine Änderung,vor Cutover,300,10,0.2,-1.7,-0.8,0.0,21.2,3.8,2/5
+keine Änderung,Tag 0-13,70,2,-5.6,0.0,0.0,0.0,0.0,-1.1,1/5
+keine Änderung,ab Tag 14,233,25,-11.3,-1.4,-5.9,-8.6,7.4,-4.0,4/5
+keine Änderung,alle Tage,603,37,-4.9,-1.4,-2.7,-3.3,13.4,0.2,4/5
+Dauerlast +100 W,vor Cutover,300,10,0.2,-1.7,-0.8,0.0,21.2,3.8,2/5
+Dauerlast +100 W,Tag 0-13,70,5,-5.9,0.0,0.0,-3.1,0.0,-1.8,2/5
+Dauerlast +100 W,ab Tag 14,233,23,-6.4,-3.0,0.0,-13.6,6.8,-3.2,3/5
+Dauerlast +100 W,alle Tage,603,38,-3.1,-2.0,-0.4,-5.6,13.1,0.4,4/5
