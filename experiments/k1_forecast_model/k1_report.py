@@ -52,7 +52,7 @@ EXCLUSION_LABELS: dict[str, str] = {
 }
 
 MODEL_LABELS: dict[str, str] = FORECAST_MODEL_LABELS | {
-    "S1": "S1 expanding + Jahressaison"
+    "Y1": "Y1 expanding + Jahressaison"
 }
 
 RESULT_FILES = (
@@ -318,7 +318,7 @@ def report_seasonality(run_directory: Path) -> Path:
         },
         tables=tables,
         notes=[
-            "S1 − C2 ist der Effekt der Jahressaisonalität allein, C2 − C3_30 der der längeren Historie",
+            "Y1 − C2 ist der Effekt der Jahressaisonalität allein, C2 − C3_30 der der längeren Historie",
             "Monat 2014-04 und 2015-04 sind je ein halber Monat",
             NOISE_RULE_NOTE,
         ],

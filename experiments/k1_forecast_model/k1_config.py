@@ -16,7 +16,7 @@ REFERENCE_FILE = "primary_naive_reference"
 SEASONALITY_METRICS_FILE = "origin_metrics"
 
 # unterscheidet sich von C2 nur in der Jahressaisonalität
-S1_EXPANDING_YEARLY = replace(C2_EXPANDING, model_id="S1", yearly_seasonality=True)
+Y1_EXPANDING_YEARLY = replace(C2_EXPANDING, model_id="Y1", yearly_seasonality=True)
 
 # Ordnerendung je Split, k1_001 liegt schon unter rolling_val/macro_val
 SPLIT_DIRECTORY_SUFFIX: dict[str, str] = {"validation": "val", "test": "test"}
@@ -44,11 +44,11 @@ class K1Config(ForecastingConfig):
     seasonality_variants: tuple[ProphetVariantConfig, ...] = (
         C3_ROLLING_30,
         C2_EXPANDING,
-        S1_EXPANDING_YEARLY,
+        Y1_EXPANDING_YEARLY,
     )
     # (Variante, Referenz): Jahressaisonalität allein, längere Historie allein, beides gegen das produktive Modell
     seasonality_comparisons: tuple[tuple[str, str], ...] = (
-        ("S1", "C2"),
+        ("Y1", "C2"),
         ("C2", "C3_30"),
-        ("S1", "C3_30"),
+        ("Y1", "C3_30"),
     )

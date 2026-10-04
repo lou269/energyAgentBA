@@ -101,7 +101,7 @@ class ProphetVariantConfig:
     history_mode: HistoryMode
     rolling_window_days: int | None
     retraining_interval_days: int | None
-    weekly_seasonality: bool = True
+    weekly_seasonality: bool = False
     yearly_seasonality: bool = False
 
 
