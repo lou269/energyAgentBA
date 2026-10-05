@@ -22,10 +22,11 @@ class E2Config:
     )
     split: str = "validation"
 
-    active_absence_event_id: str = "vacation-2015-08"
+    # je Urlaub ein eigenes Szenario, 14 und 21 Tage
+    absence_event_ids: tuple[str, ...] = ("vacation-2014-08", "vacation-2015-10")
 
     decision_time_margin_before_days: int = 30
-    # bis die Urlaubstage aus dem long_term-Fenster (30 Tage) wieder herausfallen
+    # bis die Urlaubstage aus dem long_term-Fenster (28 Tage) wieder herausfallen
     decision_time_margin_after_days: int = 30
 
     min_coverage_share_for_subtraction: float = 0.9
@@ -49,7 +50,6 @@ class E2Config:
         default_factory=lambda: {"ctx0": {"SYS1": "SYS1", "SYS2": "SYS2"}}
     )
 
-    # Kanalauswahl aus e2_select_channels (nilmtk-env), Eingabe für das Szenario, liegt unter e2_output_dir
-    @property
-    def channel_selection_subdir(self) -> Path:
-        return Path("channel_selection") / self.split
+    # Kanalauswahl aus e2_select_channels (nilmtk-env) je Urlaub, Eingabe für das Szenario, liegt unter e2_output_dir
+    def channel_selection_subdir(self, event_id: str) -> Path:
+        return Path("channel_selection") / event_id

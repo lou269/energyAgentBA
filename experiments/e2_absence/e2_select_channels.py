@@ -27,37 +27,42 @@ logger = logging.getLogger(__name__)
 
 
 def run(e2_config: E2Config) -> None:
-    output_directory = PROJECT_CONFIG.e2_output_dir / e2_config.channel_selection_subdir
-
     context = load_nilmtk_context(e2_config.split)
     calendar_events = load_calendar_events(e2_config.calendar_events_file)
-    window_start, window_end = resolve_absence_window(
-        calendar_events, e2_config.active_absence_event_id
-    )
 
-    logger.info(
-        "Selecting auxiliary appliance channels for house %d, window %s to %s...",
-        context.house,
-        window_start,
-        window_end,
-    )
+    # je Urlaub getrennt, die Abdeckung der Kanäle hängt am Fenster
+    for event_id in e2_config.absence_event_ids:
+        output_directory = (
+            PROJECT_CONFIG.e2_output_dir / e2_config.channel_selection_subdir(event_id)
+        )
+        window_start, window_end = resolve_absence_window(calendar_events, event_id)
 
-    selection = select_appliance_channels(context, window_start, window_end)
+        logger.info(
+            "Selecting auxiliary appliance channels for house %d, %s from %s to %s...",
+            context.house,
+            event_id,
+            window_start,
+            window_end,
+        )
 
-    ranking = selection.ranking.copy()
-    ranking["is_selected"] = channels_meeting_thresholds(
-        ranking, min_coverage_share=e2_config.min_coverage_share_for_subtraction
-    )
+        selection = select_appliance_channels(context, window_start, window_end)
 
-    output_directory.mkdir(parents=True, exist_ok=True)
-    df_to_csv(ranking, output_directory, CHANNEL_RANKING_FILE)
-    df_to_csv(selection.data_hourly.reset_index(), output_directory, CHANNEL_DATA_FILE)
+        ranking = selection.ranking.copy()
+        ranking["is_selected"] = channels_meeting_thresholds(
+            ranking, min_coverage_share=e2_config.min_coverage_share_for_subtraction
+        )
 
-    logger.info(
-        "Done: %d ranked candidate(s), see %s.",
-        len(selection.ranking),
-        output_directory / f"{CHANNEL_RANKING_FILE}.csv",
-    )
+        output_directory.mkdir(parents=True, exist_ok=True)
+        df_to_csv(ranking, output_directory, CHANNEL_RANKING_FILE)
+        df_to_csv(
+            selection.data_hourly.reset_index(), output_directory, CHANNEL_DATA_FILE
+        )
+
+        logger.info(
+            "Done: %d ranked candidate(s), see %s.",
+            len(selection.ranking),
+            output_directory / f"{CHANNEL_RANKING_FILE}.csv",
+        )
 
 
 def main() -> None:

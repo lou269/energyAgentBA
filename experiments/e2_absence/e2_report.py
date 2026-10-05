@@ -102,6 +102,22 @@ def build_calendar_table(calendar_use: pd.DataFrame) -> pd.DataFrame:
     )
 
 
+def build_calendar_call_table(
+    calendar_calls: pd.DataFrame, tool_configs: list[str]
+) -> pd.DataFrame:
+    calls = calendar_calls.loc[calendar_calls["config"].isin(tool_configs)]
+
+    return pd.DataFrame(
+        {
+            "System": calls["config"],
+            "nützlich": calls["useful"],
+            "überflüssig": calls["superfluous"],
+            "verpasst": calls["missed"],
+            "zu Recht nicht abgerufen": calls["saved"],
+        }
+    )
+
+
 def build_forecast_table(forecast: pd.DataFrame, reference_config: str) -> pd.DataFrame:
     return pd.DataFrame(
         {
@@ -129,19 +145,20 @@ def build_reduction_table(reduction: pd.DataFrame) -> pd.DataFrame:
 
 def build_setup(
     e2_config: dict,
-    summary: E2Summary,
-    window_start: pd.Timestamp,
-    window_end: pd.Timestamp,
+    summaries: dict[str, E2Summary],
+    windows: dict[str, tuple[pd.Timestamp, pd.Timestamp]],
     code_version: dict,
 ) -> dict[str, str]:
     setup = {
-        "Abwesenheit": (
-            f"{e2_config['active_absence_event_id']}, {window_start.tz_convert(LOCAL_TIMEZONE):%Y-%m-%d} "
-            f"bis vor {window_end.tz_convert(LOCAL_TIMEZONE):%Y-%m-%d}, Beginn = Tag 0"
-        ),
-        "Analysierte Tage": f"{summary.first_analyzed_day} bis {summary.last_analyzed_day}",
-        "Kanäle": f"im Urlaubsfenster aus Mains herausgerechnet, Coverage ab {e2_config['min_coverage_share_for_subtraction'] * 100:.0f} %",
+        f"Urlaub {event_id}": (
+            f"{window_start.tz_convert(LOCAL_TIMEZONE):%Y-%m-%d} bis vor {window_end.tz_convert(LOCAL_TIMEZONE):%Y-%m-%d}, "
+            f"Beginn = Tag 0, analysierte Tage {summaries[event_id].first_analyzed_day} bis {summaries[event_id].last_analyzed_day}"
+        )
+        for event_id, (window_start, window_end) in windows.items()
     }
+    setup["Kanäle"] = (
+        f"je Urlaub im Fenster aus Mains herausgerechnet, Coverage ab {e2_config['min_coverage_share_for_subtraction'] * 100:.0f} %"
+    )
     for ctx, systems in e2_config["ctx_systems"].items():
         setup[f"Systeme {ctx}"] = ", ".join(systems)
     setup["Commit"] = format_commit(code_version)
@@ -190,6 +207,7 @@ def build_phase_table(phases: pd.DataFrame, target_classification: str) -> pd.Da
             "Gate offen": phases["gate_open_days"],
             "davon Einzeltag": phases["alarm_days"],
             "davon Drift": phases["drift_gate_days"],
+            "davon nur eine Skala": phases["single_scale_gate_days"],
             "new_pattern": phases["new_pattern_days"],
             "low": phases["low_days"],
             "peak": phases["peak_days"],
@@ -227,105 +245,135 @@ def build_precheck_days_table(summary: GatePrecheckSummary) -> pd.DataFrame:
     )
 
 
+def summarize_event(
+    raw_directory: Path,
+    comparison: pd.DataFrame,
+    reduction: pd.DataFrame,
+    e2_config: dict,
+    event_id: str,
+    window: tuple[pd.Timestamp, pd.Timestamp],
+) -> E2Summary:
+    event_directory = raw_directory / event_id
+    ctxs = e2_config["ctx_systems"]
+
+    return summarize_e2(
+        comparison.loc[comparison["event_id"].eq(event_id)],
+        read_ctx_anomaly(event_directory, ctxs),
+        pd.concat(
+            [read_calendar_availability(event_directory / ctx) for ctx in ctxs],
+            ignore_index=True,
+        ),
+        pd.concat(
+            [pd.read_csv(event_directory / ctx / FORECASTS_FILE) for ctx in ctxs],
+            ignore_index=True,
+        ),
+        reduction.loc[reduction["event_id"].eq(event_id)],
+        window_start=window[0],
+        window_end=window[1],
+        target_classification=e2_config["target_classification"],
+        absence_event_id=event_id,
+        reference_config=e2_config["reference_config"],
+    )
+
+
+def build_event_tables(
+    summary: E2Summary, e2_config: dict, event_id: str
+) -> dict[str, tuple[str, pd.DataFrame]]:
+    target_classification = e2_config["target_classification"]
+
+    return {
+        f"key_figures_{event_id}": (
+            f"{event_id}: Kennzahlen",
+            build_key_figures(summary, target_classification),
+        ),
+        f"result_phases_{event_id}": (
+            f"{event_id}: Einordnung je Phase",
+            build_phase_table(summary.phases, target_classification),
+        ),
+        f"result_absence_{event_id}": (
+            f"{event_id}: Einordnung im Urlaub",
+            build_absence_table(summary.absence_classification, target_classification),
+        ),
+        f"result_calendar_{event_id}": (
+            f"{event_id}: Kalender im State",
+            build_calendar_table(summary.calendar_use),
+        ),
+        f"result_calendar_calls_{event_id}": (
+            f"{event_id}: Kalenderabruf per Tool, an Tagen mit Einordnung",
+            build_calendar_call_table(
+                summary.calendar_calls, list(e2_config["ctx_systems"]["ctx2"])
+            ),
+        ),
+        f"result_forecast_{event_id}": (
+            f"{event_id}: Prognose je Phase",
+            build_forecast_table(summary.forecast, e2_config["reference_config"]),
+        ),
+    }
+
+
 def write_full_report(run_directory: Path) -> None:
     run_config = read_raw_json(run_directory, "run_config")
     e2_config = run_config["e2_config"]
     target_classification = e2_config["target_classification"]
 
     calendar_events = load_calendar_events(Path(e2_config["calendar_events_file"]))
-    window_start, window_end = resolve_absence_window(
-        calendar_events, e2_config["active_absence_event_id"]
-    )
+    windows = {
+        event_id: resolve_absence_window(calendar_events, event_id)
+        for event_id in e2_config["absence_event_ids"]
+    }
 
     raw_directory = run_directory / RAW_SUBDIR
     comparison = pd.read_csv(
         raw_directory / f"{COMPARISON_FILE}.csv", parse_dates=["decision_time"]
     )
     reduction = pd.read_csv(raw_directory / f"{REDUCTION_FILE}.csv")
-    summary = summarize_e2(
-        comparison,
-        read_ctx_anomaly(raw_directory, e2_config["ctx_systems"]),
-        pd.concat(
-            [
-                read_calendar_availability(raw_directory / ctx)
-                for ctx in e2_config["ctx_systems"]
-            ],
-            ignore_index=True,
-        ),
-        pd.concat(
-            [
-                pd.read_csv(raw_directory / ctx / FORECASTS_FILE)
-                for ctx in e2_config["ctx_systems"]
-            ],
-            ignore_index=True,
-        ),
-        reduction,
-        window_start=window_start,
-        window_end=window_end,
-        target_classification=target_classification,
-        absence_event_id=e2_config["active_absence_event_id"],
-        reference_config=e2_config["reference_config"],
-    )
+    summaries = {
+        event_id: summarize_event(
+            raw_directory, comparison, reduction, e2_config, event_id, window
+        )
+        for event_id, window in windows.items()
+    }
 
     output_directory = user_output_directory(run_directory)
-    build_e2_plot(
-        summary.timeline,
-        output_directory,
-        configs=tuple(e2_config["plot_configs"]),
-        config_labels=CONFIG_LABELS,
-    )
+    tables: dict[str, tuple[str, pd.DataFrame]] = {}
+    appendix: dict[str, tuple[str, pd.DataFrame]] = {}
+    for event_id, summary in summaries.items():
+        build_e2_plot(
+            summary.timeline,
+            output_directory,
+            configs=tuple(e2_config["plot_configs"]),
+            config_labels=CONFIG_LABELS,
+            name=f"e2_timeline_{event_id}",
+        )
+        tables.update(build_event_tables(summary, e2_config, event_id))
+        appendix[f"result_reduction_{event_id}"] = (
+            f"{event_id}: Absenkung je Tag im Urlaubsfenster",
+            build_reduction_table(summary.reduction),
+        )
+
     write_result_report(
         output_directory,
         title=f"E2 Abwesenheit, Lauf {run_directory.name}",
-        setup=build_setup(
-            e2_config, summary, window_start, window_end, run_config["code_version"]
-        ),
-        tables={
-            "key_figures": (
-                "Kennzahlen",
-                build_key_figures(summary, target_classification),
-            ),
-            "result_phases": (
-                "Einordnung je Phase",
-                build_phase_table(summary.phases, target_classification),
-            ),
-            "result_absence": (
-                "Einordnung im Urlaub",
-                build_absence_table(
-                    summary.absence_classification, target_classification
-                ),
-            ),
-            "result_calendar": (
-                "Kalender im State",
-                build_calendar_table(summary.calendar_use),
-            ),
-            "result_forecast": (
-                "Prognose je Phase",
-                build_forecast_table(summary.forecast, e2_config["reference_config"]),
-            ),
-        },
+        setup=build_setup(e2_config, summaries, windows, run_config["code_version"]),
+        tables=tables,
         notes=[
             "Urlaubstag = analysierter Tag seit Beginn der Abwesenheit, 0 = erster Urlaubstag",
             f"Treffer = {target_classification} mit passendem Kalendereintrag. {target_classification} ohne Beleg (ohne Kalender, "
             "Kalender nicht abgerufen oder nach der Rückkehr) zählt als Fehlklassifikation, über alle Phasen",
             "Treffer: von den Urlaubstagen mit offenem Gate, an den übrigen wird nicht eingeordnet. Wenige Tage, deshalb als Anzahl",
-            "Einordnung je Phase: im Urlaub ist jede Meldung außer einem Treffer ein Fehlalarm, Ausfalltage = LLM ohne gültige Antwort",
+            f"Einordnung je Phase: {target_classification} ist keine Meldung, im Urlaub ist jede Meldung ein Fehlalarm. Ausfalltage = LLM ohne gültige Antwort",
+            "Gate offen: Einzeltag, Drift (weekly und long_term halten an) oder nur eine anhaltende Skala",
             f"Differenz zu {e2_config['reference_config']}: gepaart am selben Tag, negativ = besser",
             "ctx0 ohne, ctx1 mit Kalender im State, ctx2 Kalender per Tool. SYS1 und SYS2 lesen keinen Kalender und laufen nur in ctx0",
             "Kalender im State: bei ctx2 hat das LLM an diesen Tagen nachgeschaut, jeder ctx2-Tag mit LLM kostet einen zusätzlichen Aufruf für die Tool-Entscheidung",
+            "Kalenderabruf: nützlich = abgerufen an einem Urlaubstag (ein Eintrag deckt den Tag), überflüssig = abgerufen ohne deckenden Eintrag, "
+            "verpasst = nicht abgerufen an einem Urlaubstag. Vergleich: ctx1 schaut immer nach",
         ],
-        images=["e2_timeline.png"],
+        images=[f"e2_timeline_{event_id}.png" for event_id in summaries],
         decimals=STANDARD_CONFIG.decimals,
-        appendix={
-            "result_reduction": (
-                "Absenkung je Tag im Urlaubsfenster",
-                build_reduction_table(summary.reduction),
-            ),
-        },
+        appendix=appendix,
     )
-    write_explanation_rating_template(
-        read_llm_outputs(run_directory / RAW_SUBDIR), output_directory
-    )
+    write_explanation_rating_template(read_llm_outputs(raw_directory), output_directory)
 
     print(f"Result written to {output_directory / 'ergebnis.md'}")
 
@@ -333,59 +381,59 @@ def write_full_report(run_directory: Path) -> None:
 def write_precheck_report(run_directory: Path) -> None:
     run_config = read_raw_json(run_directory, "run_config")
     e2_config = run_config["e2_config"]
+    target_classification = e2_config["target_classification"]
 
     calendar_events = load_calendar_events(Path(e2_config["calendar_events_file"]))
-    window_start, window_end = resolve_absence_window(
-        calendar_events, e2_config["active_absence_event_id"]
-    )
-
     raw_directory = run_directory / RAW_SUBDIR
     comparison = pd.read_csv(raw_directory / f"{COMPARISON_FILE}.csv")
-    summary = summarize_gate_precheck(
-        comparison,
-        read_ctx_anomaly(raw_directory, e2_config["ctx_systems"]),
-        window_start=window_start,
-        window_end=window_end,
-        target_classification=e2_config["target_classification"],
-        absence_event_id=e2_config["active_absence_event_id"],
-    )
+
+    setup: dict[str, str] = {}
+    tables: dict[str, tuple[str, pd.DataFrame]] = {}
+    appendix: dict[str, tuple[str, pd.DataFrame]] = {}
+    for event_id in e2_config["absence_event_ids"]:
+        window_start, window_end = resolve_absence_window(calendar_events, event_id)
+        summary = summarize_gate_precheck(
+            comparison.loc[comparison["event_id"].eq(event_id)],
+            read_ctx_anomaly(raw_directory / event_id, e2_config["ctx_systems"]),
+            window_start=window_start,
+            window_end=window_end,
+            target_classification=target_classification,
+            absence_event_id=event_id,
+        )
+        setup[f"Urlaub {event_id}"] = (
+            f"{window_start.tz_convert(LOCAL_TIMEZONE):%Y-%m-%d} bis vor {window_end.tz_convert(LOCAL_TIMEZONE):%Y-%m-%d}"
+        )
+        tables[f"precheck_first_days_{event_id}"] = (
+            f"{event_id}: Erste Tage ab Urlaubsbeginn",
+            build_precheck_first_days_table(summary),
+        )
+        tables[f"precheck_phases_{event_id}"] = (
+            f"{event_id}: Gate und Einordnung je Phase",
+            build_phase_table(summary.phases, target_classification),
+        )
+        appendix[f"precheck_days_{event_id}"] = (
+            f"{event_id}: Je Tag ab Urlaubsbeginn",
+            build_precheck_days_table(summary),
+        )
+
+    setup["Systeme"] = ", ".join(e2_config["ctx_systems"]["ctx0"])
+    setup["Tage nach der Rückkehr"] = str(e2_config["decision_time_margin_after_days"])
+    setup["Commit"] = format_commit(run_config["code_version"])
 
     output_directory = user_output_directory(run_directory)
     write_result_report(
         output_directory,
         title=f"E2 Vorprüfung Gate, Lauf {run_directory.name}",
-        setup={
-            "Abwesenheit": (
-                f"{e2_config['active_absence_event_id']}, {window_start.tz_convert(LOCAL_TIMEZONE):%Y-%m-%d} "
-                f"bis vor {window_end.tz_convert(LOCAL_TIMEZONE):%Y-%m-%d}"
-            ),
-            "Systeme": ", ".join(e2_config["ctx_systems"]["ctx0"]),
-            "Tage nach der Rückkehr": str(e2_config["decision_time_margin_after_days"]),
-            "Commit": format_commit(run_config["code_version"]),
-        },
-        tables={
-            "precheck_first_days": (
-                "Erste Tage ab Urlaubsbeginn",
-                build_precheck_first_days_table(summary),
-            ),
-            "precheck_phases": (
-                "Gate und Einordnung je Phase",
-                build_phase_table(summary.phases, e2_config["target_classification"]),
-            ),
-        },
+        setup=setup,
+        tables=tables,
         notes=[
             "Urlaubstag = analysierter Tag seit Beginn der Abwesenheit, 0 = erster Urlaubstag",
-            "Gate Einzeltag: daily/weekday über ihrer Schwelle, Gate Drift: sustained_drift (Streak auf mindestens zwei Niveau-Skalen)",
+            "Gate offen: Einzeltag (daily/weekday über ihrer Schwelle), Drift (weekly und long_term halten an) oder nur eine anhaltende Skala",
             "Reset = new_pattern mit advance_history_start, bei SYS1 nie",
         ],
         images=[],
         decimals=STANDARD_CONFIG.decimals,
-        appendix={
-            "precheck_days": (
-                "Je Tag ab Urlaubsbeginn",
-                build_precheck_days_table(summary),
-            ),
-        },
+        appendix=appendix,
     )
 
     print(f"Result written to {output_directory / 'ergebnis.md'}")

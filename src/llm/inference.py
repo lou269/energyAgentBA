@@ -7,7 +7,6 @@ from typing import Any, cast
 
 from src.llm.calendar_tool import (
     CALENDAR_TOOL,
-    CALENDAR_TOOL_PROMPT,
     CalendarLookup,
     calendar_requested,
 )
@@ -77,6 +76,7 @@ def infer_llm_output(
             state,
             calendar_lookup,
             client=client,
+            prompt=prompt,
             model=model.strip(),
             temperature=float(temperature),
             presence_penalty=float(presence_penalty),
@@ -225,13 +225,13 @@ def state_messages(prompt: str, state: Mapping[str, object]) -> list[dict[str, s
     ]
 
 
-# erster Aufruf: das LLM entscheidet, ob es den Kalender abruft. Die Einträge kommen danach in context,
-# die eigentliche Einordnung läuft dann wie mit vorab gebautem Kalender und kann sie als Beleg nennen
+# erster Aufruf mit demselben Prompt wie die Einordnung, damit das LLM den State versteht, wenn es entscheidet Kalender abzurufen
 def _fetch_calendar(
     state: StructuredState,
     calendar_lookup: CalendarLookup,
     *,
     client: LLMClient,
+    prompt: str,
     model: str,
     temperature: float,
     presence_penalty: float,
@@ -246,7 +246,7 @@ def _fetch_calendar(
     try:
         response = client.request_tool_calls(
             model=model,
-            messages=state_messages(CALENDAR_TOOL_PROMPT, state),
+            messages=state_messages(prompt, state),
             tools=[CALENDAR_TOOL],
             temperature=temperature,
             presence_penalty=presence_penalty,

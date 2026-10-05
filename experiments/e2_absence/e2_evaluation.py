@@ -92,12 +92,19 @@ def label_absence_days(
         absence_event_id, regex=False
     )
 
+    drift_gate = days["sustained_drift"].eq(True)
+
     return days.assign(
         phase=np.select(
             [analyzed < start_day, analyzed < end_day], PHASES[:2], PHASES[2]
         ),
         absence_day=(analyzed - start_day).dt.days,
-        drift_gate=days["sustained_drift"].eq(True),
+        drift_gate=drift_gate,
+        # das Gate öffnet auch über eine einzelne anhaltende Skala, ohne auffälligen Tag und ohne Drift
+        single_scale_gate=days["gate_open"]
+        & ~days["alarm"]
+        & ~drift_gate
+        & ~days["value_implausible"].eq(True),
         reset=days["adaption_action"].eq("advance_history_start"),
         absence_hit=supported,
         unsupported_absence=target & ~supported,
@@ -117,6 +124,7 @@ def summarize_phases(days: pd.DataFrame) -> pd.DataFrame:
         gate_open_days=("gate_open", "sum"),
         alarm_days=("alarm", "sum"),
         drift_gate_days=("drift_gate", "sum"),
+        single_scale_gate_days=("single_scale_gate", "sum"),
         new_pattern_days=("new_pattern", "sum"),
         low_days=("low", "sum"),
         peak_days=("peak", "sum"),
@@ -147,6 +155,7 @@ class E2Summary:
     phases: pd.DataFrame
     absence_classification: pd.DataFrame
     calendar_use: pd.DataFrame
+    calendar_calls: pd.DataFrame
     forecast: pd.DataFrame
     timeline: pd.DataFrame
     reduction: pd.DataFrame
@@ -196,15 +205,25 @@ def summarize_e2(
         "unsupported_absence"
     ].sum()
 
-    calendar_use = (
-        calendar_availability.merge(
-            days[["config", "analyzed_day", "phase"]], on=["config", "analyzed_day"]
+    classified = calendar_availability.merge(
+        days[["config", "analyzed_day", "phase"]], on=["config", "analyzed_day"]
+    )
+    calendar_use = classified.groupby(["config", "phase"], as_index=False).agg(
+        classified_days=("calendar_available", "size"),
+        calendar_days=("calendar_available", "sum"),
+    )
+    # mit Kalender-Tool steht der Kalender nur nach einem Abruf im State, nützlich ist er, wenn ein Eintrag den Tag abdeckt
+    called = classified["calendar_available"].eq(True)
+    covered = classified["phase"].eq("absence")
+    calendar_calls = (
+        classified.assign(
+            useful=called & covered,
+            superfluous=called & ~covered,
+            missed=~called & covered,
+            saved=~called & ~covered,
         )
-        .groupby(["config", "phase"], as_index=False)
-        .agg(
-            classified_days=("calendar_available", "size"),
-            calendar_days=("calendar_available", "sum"),
-        )
+        .groupby("config", as_index=False)[["useful", "superfluous", "missed", "saved"]]
+        .sum()
     )
 
     # gepaart am selben Tag, so zählen nur Tage, die beide Systeme haben
@@ -255,6 +274,7 @@ def summarize_e2(
         phases=summarize_phases(days),
         absence_classification=absence_classification.reset_index(),
         calendar_use=calendar_use.sort_values(["config", "phase"], key=by_phase),
+        calendar_calls=calendar_calls,
         forecast=forecast,
         timeline=timeline.sort_values(["config", "absence_day"]).reset_index(drop=True),
         reduction=reduction,

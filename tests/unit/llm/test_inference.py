@@ -292,6 +292,8 @@ def test_fetched_calendar_replaces_the_context_and_can_ground_absence() -> None:
     assert [event["event_id"] for event in context["events"]] == ["vacation"]
     assert result.output["classification"] == "absence"
     assert json.loads(client.calls[0]["messages"][1]["content"])["context"] == context
+    # über den Abruf entscheidet das LLM mit demselben Prompt wie bei der Einordnung
+    assert client.tool_requests[0][0]["content"] == "system prompt"
 
 
 def test_without_a_tool_call_the_state_stays_as_it_was() -> None:

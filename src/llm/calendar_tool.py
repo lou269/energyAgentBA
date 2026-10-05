@@ -5,14 +5,6 @@ from src.llm.client import ToolCall
 
 CALENDAR_TOOL_NAME = "get_calendar_events"
 
-# nur für die Tool-Entscheidung, eingeordnet wird weiter mit dem normalen Prompt
-CALENDAR_TOOL_PROMPT = (
-    "You decide whether the household calendar must be checked before the electricity data "
-    "is interpreted. The calendar is not loaded yet and can only be read with the tool "
-    "get_calendar_events. Call it if consumption is reduced and a planned absence could explain it. "
-    "Otherwise do not call it."
-)
-
 # ohne Argumente: ein Aufruf liefert dasselbe Fenster wie bei CTX1, CTX2 unterscheidet sich nur darin, ob das LLM nachschaut
 CALENDAR_TOOL: dict[str, object] = {
     "type": "function",

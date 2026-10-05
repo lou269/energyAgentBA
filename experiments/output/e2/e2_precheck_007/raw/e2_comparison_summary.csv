@@ -1,0 +1,287 @@
+decision_time,analyzed_day,config,classification,explanation,adaption_action,adaption_reason,retrained,reference_reset,mae_w,mape_pct,error,event_id
+2015-01-23 00:00:00+00:00,2015-01-22,SYS1,normal,,none,,True,False,169.9252750723658,33.37491139117518,,vacation-2015-02
+2015-01-24 00:00:00+00:00,2015-01-23,SYS1,normal,,none,,True,False,248.94069666001712,54.2777606380768,,vacation-2015-02
+2015-01-25 00:00:00+00:00,2015-01-24,SYS1,normal,,none,,True,False,143.57688265986562,39.94401071034995,,vacation-2015-02
+2015-01-26 00:00:00+00:00,2015-01-25,SYS1,normal,,none,,True,False,108.5385008177355,42.40526834999117,,vacation-2015-02
+2015-01-27 00:00:00+00:00,2015-01-26,SYS1,normal,,none,,True,False,146.84404958419682,34.10417549947106,,vacation-2015-02
+2015-01-28 00:00:00+00:00,2015-01-27,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,158.84861273339223,29.960876718859918,,vacation-2015-02
+2015-01-29 00:00:00+00:00,2015-01-28,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,105.52305508242317,28.851977295072835,,vacation-2015-02
+2015-01-30 00:00:00+00:00,2015-01-29,SYS1,normal,,none,,True,False,225.9951937873972,30.293868460677096,,vacation-2015-02
+2015-01-31 00:00:00+00:00,2015-01-30,SYS1,normal,,none,,True,False,109.36668629874255,28.225945102936418,,vacation-2015-02
+2015-02-01 00:00:00+00:00,2015-01-31,SYS1,normal,,none,,True,False,155.69031820918354,47.66932535245328,,vacation-2015-02
+2015-02-02 00:00:00+00:00,2015-02-01,SYS1,normal,,none,,True,False,202.33823558539459,32.08705147466809,,vacation-2015-02
+2015-02-03 00:00:00+00:00,2015-02-02,SYS1,normal,,none,,True,False,115.84141503325365,21.442232056597533,,vacation-2015-02
+2015-02-04 00:00:00+00:00,2015-02-03,SYS1,normal,,none,,True,False,176.08657742228266,46.96527802253783,,vacation-2015-02
+2015-02-05 00:00:00+00:00,2015-02-04,SYS1,normal,,none,,True,False,151.6878092909502,64.99777422448761,,vacation-2015-02
+2015-02-06 00:00:00+00:00,2015-02-05,SYS1,normal,,none,,True,False,192.87640023157908,27.594583733368566,,vacation-2015-02
+2015-02-07 00:00:00+00:00,2015-02-06,SYS1,normal,,none,,True,False,122.02731500079597,32.66584338806568,,vacation-2015-02
+2015-02-08 00:00:00+00:00,2015-02-07,SYS1,normal,,none,,True,False,141.51656166209497,32.216034397986384,,vacation-2015-02
+2015-02-09 00:00:00+00:00,2015-02-08,SYS1,normal,,none,,True,False,123.95635314379949,36.997853180262055,,vacation-2015-02
+2015-02-10 00:00:00+00:00,2015-02-09,SYS1,normal,,none,,True,False,223.44303479147663,42.7587243722724,,vacation-2015-02
+2015-02-11 00:00:00+00:00,2015-02-10,SYS1,normal,,none,,True,False,104.47377782331972,38.27636023043268,,vacation-2015-02
+2015-02-12 00:00:00+00:00,2015-02-11,SYS1,normal,,none,,True,False,187.00113474481034,27.51796225097612,,vacation-2015-02
+2015-02-13 00:00:00+00:00,2015-02-12,SYS1,normal,,none,,True,False,157.27573923955563,32.50153780409934,,vacation-2015-02
+2015-02-14 00:00:00+00:00,2015-02-13,SYS1,normal,,none,,True,False,122.40643384675597,37.531148556900376,,vacation-2015-02
+2015-02-15 00:00:00+00:00,2015-02-14,SYS1,normal,,none,,True,False,150.81697395834738,34.42449011750827,,vacation-2015-02
+2015-02-16 00:00:00+00:00,2015-02-15,SYS1,normal,,none,,True,False,214.5531900605805,86.07978720151014,,vacation-2015-02
+2015-02-17 00:00:00+00:00,2015-02-16,SYS1,normal,,none,,True,False,130.9992893624711,43.73837582335645,,vacation-2015-02
+2015-02-18 00:00:00+00:00,2015-02-17,SYS1,normal,,none,,True,False,170.78346927346476,33.790911316304744,,vacation-2015-02
+2015-02-19 00:00:00+00:00,2015-02-18,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,146.31913014280963,31.163710369423793,,vacation-2015-02
+2015-02-20 00:00:00+00:00,2015-02-19,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,116.19986500354821,35.15185034893914,,vacation-2015-02
+2015-02-21 00:00:00+00:00,2015-02-20,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,170.7306964541893,34.20677751994107,,vacation-2015-02
+2015-02-22 00:00:00+00:00,2015-02-21,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,,True,False,161.47479157043526,93.33274491475476,,vacation-2015-02
+2015-02-23 00:00:00+00:00,2015-02-22,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,,True,False,86.51843491411323,45.373652385751875,,vacation-2015-02
+2015-02-24 00:00:00+00:00,2015-02-23,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,70.35557581073247,36.204426352589714,,vacation-2015-02
+2015-02-25 00:00:00+00:00,2015-02-24,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,51.27276680149303,25.57749205862832,,vacation-2015-02
+2015-02-26 00:00:00+00:00,2015-02-25,SYS1,normal,,none,,True,False,43.12022935719589,18.96782263856423,,vacation-2015-02
+2015-02-27 00:00:00+00:00,2015-02-26,SYS1,normal,,none,,True,False,41.59143069851978,25.182814926344292,,vacation-2015-02
+2015-02-28 00:00:00+00:00,2015-02-27,SYS1,normal,,none,,True,False,95.45681102190362,34.12243298490023,,vacation-2015-02
+2015-03-01 00:00:00+00:00,2015-02-28,SYS1,normal,,none,,True,False,234.2004467295711,41.95844835919112,,vacation-2015-02
+2015-03-02 00:00:00+00:00,2015-03-01,SYS1,normal,,none,,True,False,236.7859003224438,36.77709522868455,,vacation-2015-02
+2015-03-03 00:00:00+00:00,2015-03-02,SYS1,normal,,none,,True,False,163.0773542324097,30.699183589251362,,vacation-2015-02
+2015-03-04 00:00:00+00:00,2015-03-03,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,181.6667787877802,47.14212558337961,,vacation-2015-02
+2015-03-05 00:00:00+00:00,2015-03-04,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,217.36025769319667,33.013892491720824,,vacation-2015-02
+2015-03-06 00:00:00+00:00,2015-03-05,SYS1,normal,,none,,True,False,205.99352342614156,66.44526405789766,,vacation-2015-02
+2015-03-07 00:00:00+00:00,2015-03-06,SYS1,normal,,none,,True,False,180.80056308575595,68.13182734852538,,vacation-2015-02
+2015-03-08 00:00:00+00:00,2015-03-07,SYS1,normal,,none,,True,False,214.13933081487517,85.39935741180308,,vacation-2015-02
+2015-03-09 00:00:00+00:00,2015-03-08,SYS1,normal,,none,,True,False,156.8548288300778,42.98884110660992,,vacation-2015-02
+2015-03-10 00:00:00+00:00,2015-03-09,SYS1,normal,,none,,True,False,186.29399812099587,30.238534451078714,,vacation-2015-02
+2015-03-11 00:00:00+00:00,2015-03-10,SYS1,normal,,none,,True,False,118.6877165810511,37.5229273946527,,vacation-2015-02
+2015-03-12 00:00:00+00:00,2015-03-11,SYS1,normal,,none,,True,False,201.76571528009927,52.088947131482456,,vacation-2015-02
+2015-03-13 00:00:00+00:00,2015-03-12,SYS1,normal,,none,,True,False,196.42268586250853,39.037261299879475,,vacation-2015-02
+2015-03-14 00:00:00+00:00,2015-03-13,SYS1,normal,,none,,True,False,208.446701310868,126.68718950570327,,vacation-2015-02
+2015-03-15 00:00:00+00:00,2015-03-14,SYS1,normal,,none,,True,False,155.483466532938,114.76936699524344,,vacation-2015-02
+2015-03-16 00:00:00+00:00,2015-03-15,SYS1,normal,,none,,True,False,265.07641721725946,46.199892170782626,,vacation-2015-02
+2015-03-17 00:00:00+00:00,2015-03-16,SYS1,normal,,none,,True,False,289.1953862294833,40.55500558839666,,vacation-2015-02
+2015-03-18 00:00:00+00:00,2015-03-17,SYS1,normal,,none,,True,False,225.10026806732103,31.67088869896837,,vacation-2015-02
+2015-03-19 00:00:00+00:00,2015-03-18,SYS1,normal,,none,,True,False,119.83032612892093,28.472663689603838,,vacation-2015-02
+2015-03-20 00:00:00+00:00,2015-03-19,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,78.24829436313799,31.469679697000497,,vacation-2015-02
+2015-03-21 00:00:00+00:00,2015-03-20,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,236.47841738832116,42.87618479782633,,vacation-2015-02
+2015-03-22 00:00:00+00:00,2015-03-21,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,,True,False,185.9450510340208,33.06827899669116,,vacation-2015-02
+2015-03-23 00:00:00+00:00,2015-03-22,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,,True,False,146.8705253709679,49.99400335690902,,vacation-2015-02
+2015-03-24 00:00:00+00:00,2015-03-23,SYS1,normal,,none,,True,False,231.03677278850435,48.734527430640775,,vacation-2015-02
+2015-03-25 00:00:00+00:00,2015-03-24,SYS1,normal,,none,,True,False,152.19706115412214,58.76341039447107,,vacation-2015-02
+2015-03-26 00:00:00+00:00,2015-03-25,SYS1,normal,,none,,True,False,213.14229703377953,47.62933750101581,,vacation-2015-02
+2015-03-27 00:00:00+00:00,2015-03-26,SYS1,normal,,none,,True,False,153.62999578542428,33.99062588497906,,vacation-2015-02
+2015-03-28 00:00:00+00:00,2015-03-27,SYS1,normal,,none,,True,False,188.4636384630547,37.04029407535931,,vacation-2015-02
+2015-03-29 00:00:00+00:00,2015-03-28,SYS1,normal,,none,,True,False,216.45800836763175,40.890124138078136,,vacation-2015-02
+2015-03-29 23:00:00+00:00,2015-03-29,SYS1,normal,,none,,True,False,119.17891537314313,52.94202566455696,,vacation-2015-02
+2015-03-30 23:00:00+00:00,2015-03-30,SYS1,normal,,none,,True,False,184.96481757261117,36.78558563120249,,vacation-2015-02
+2015-01-23 00:00:00+00:00,2015-01-22,SYS2,normal,,none,normal: no action,True,False,169.9252750723658,33.37491139117518,,vacation-2015-02
+2015-01-24 00:00:00+00:00,2015-01-23,SYS2,normal,,none,normal: no action,True,False,248.94069666001712,54.2777606380768,,vacation-2015-02
+2015-01-25 00:00:00+00:00,2015-01-24,SYS2,normal,,none,normal: no action,True,False,143.57688265986562,39.94401071034995,,vacation-2015-02
+2015-01-26 00:00:00+00:00,2015-01-25,SYS2,normal,,none,normal: no action,True,False,108.5385008177355,42.40526834999117,,vacation-2015-02
+2015-01-27 00:00:00+00:00,2015-01-26,SYS2,normal,,none,normal: no action,True,False,146.84404958419682,34.10417549947106,,vacation-2015-02
+2015-01-28 00:00:00+00:00,2015-01-27,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,158.84861273339223,29.960876718859918,,vacation-2015-02
+2015-01-29 00:00:00+00:00,2015-01-28,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,105.52305508242317,28.851977295072835,,vacation-2015-02
+2015-01-30 00:00:00+00:00,2015-01-29,SYS2,normal,,none,normal: no action,True,False,225.9951937873972,30.293868460677096,,vacation-2015-02
+2015-01-31 00:00:00+00:00,2015-01-30,SYS2,normal,,none,normal: no action,True,False,109.36668629874255,28.225945102936418,,vacation-2015-02
+2015-02-01 00:00:00+00:00,2015-01-31,SYS2,normal,,none,normal: no action,True,False,155.69031820918354,47.66932535245328,,vacation-2015-02
+2015-02-02 00:00:00+00:00,2015-02-01,SYS2,normal,,none,normal: no action,True,False,202.33823558539459,32.08705147466809,,vacation-2015-02
+2015-02-03 00:00:00+00:00,2015-02-02,SYS2,normal,,none,normal: no action,True,False,115.84141503325365,21.442232056597533,,vacation-2015-02
+2015-02-04 00:00:00+00:00,2015-02-03,SYS2,normal,,none,normal: no action,True,False,176.08657742228266,46.96527802253783,,vacation-2015-02
+2015-02-05 00:00:00+00:00,2015-02-04,SYS2,normal,,none,normal: no action,True,False,151.6878092909502,64.99777422448761,,vacation-2015-02
+2015-02-06 00:00:00+00:00,2015-02-05,SYS2,normal,,none,normal: no action,True,False,192.87640023157908,27.594583733368566,,vacation-2015-02
+2015-02-07 00:00:00+00:00,2015-02-06,SYS2,normal,,none,normal: no action,True,False,122.02731500079597,32.66584338806568,,vacation-2015-02
+2015-02-08 00:00:00+00:00,2015-02-07,SYS2,normal,,none,normal: no action,True,False,141.51656166209497,32.216034397986384,,vacation-2015-02
+2015-02-09 00:00:00+00:00,2015-02-08,SYS2,normal,,none,normal: no action,True,False,123.95635314379949,36.997853180262055,,vacation-2015-02
+2015-02-10 00:00:00+00:00,2015-02-09,SYS2,normal,,none,normal: no action,True,False,223.44303479147663,42.7587243722724,,vacation-2015-02
+2015-02-11 00:00:00+00:00,2015-02-10,SYS2,normal,,none,normal: no action,True,False,104.47377782331972,38.27636023043268,,vacation-2015-02
+2015-02-12 00:00:00+00:00,2015-02-11,SYS2,normal,,none,normal: no action,True,False,187.00113474481034,27.51796225097612,,vacation-2015-02
+2015-02-13 00:00:00+00:00,2015-02-12,SYS2,normal,,none,normal: no action,True,False,157.27573923955563,32.50153780409934,,vacation-2015-02
+2015-02-14 00:00:00+00:00,2015-02-13,SYS2,normal,,none,normal: no action,True,False,122.40643384675597,37.531148556900376,,vacation-2015-02
+2015-02-15 00:00:00+00:00,2015-02-14,SYS2,normal,,none,normal: no action,True,False,150.81697395834738,34.42449011750827,,vacation-2015-02
+2015-02-16 00:00:00+00:00,2015-02-15,SYS2,normal,,none,normal: no action,True,False,214.5531900605805,86.07978720151014,,vacation-2015-02
+2015-02-17 00:00:00+00:00,2015-02-16,SYS2,normal,,none,normal: no action,True,False,130.9992893624711,43.73837582335645,,vacation-2015-02
+2015-02-18 00:00:00+00:00,2015-02-17,SYS2,normal,,none,normal: no action,True,False,170.78346927346476,33.790911316304744,,vacation-2015-02
+2015-02-19 00:00:00+00:00,2015-02-18,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,146.31913014280963,31.163710369423793,,vacation-2015-02
+2015-02-20 00:00:00+00:00,2015-02-19,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,116.19986500354821,35.15185034893914,,vacation-2015-02
+2015-02-21 00:00:00+00:00,2015-02-20,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,170.7306964541893,34.20677751994107,,vacation-2015-02
+2015-02-22 00:00:00+00:00,2015-02-21,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,normal: no action,True,False,161.47479157043526,93.33274491475476,,vacation-2015-02
+2015-02-23 00:00:00+00:00,2015-02-22,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,normal: no action,True,False,86.51843491411323,45.373652385751875,,vacation-2015-02
+2015-02-24 00:00:00+00:00,2015-02-23,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,70.35557581073247,36.204426352589714,,vacation-2015-02
+2015-02-25 00:00:00+00:00,2015-02-24,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,51.27276680149303,25.57749205862832,,vacation-2015-02
+2015-02-26 00:00:00+00:00,2015-02-25,SYS2,normal,,none,normal: no action,True,False,43.12022935719589,18.96782263856423,,vacation-2015-02
+2015-02-27 00:00:00+00:00,2015-02-26,SYS2,normal,,none,normal: no action,True,False,41.59143069851978,25.182814926344292,,vacation-2015-02
+2015-02-28 00:00:00+00:00,2015-02-27,SYS2,normal,,none,normal: no action,True,False,95.45681102190362,34.12243298490023,,vacation-2015-02
+2015-03-01 00:00:00+00:00,2015-02-28,SYS2,normal,,none,normal: no action,True,False,234.2004467295711,41.95844835919112,,vacation-2015-02
+2015-03-02 00:00:00+00:00,2015-03-01,SYS2,normal,,none,normal: no action,True,False,236.7859003224438,36.77709522868455,,vacation-2015-02
+2015-03-03 00:00:00+00:00,2015-03-02,SYS2,normal,,none,normal: no action,True,False,163.0773542324097,30.699183589251362,,vacation-2015-02
+2015-03-04 00:00:00+00:00,2015-03-03,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,181.6667787877802,47.14212558337961,,vacation-2015-02
+2015-03-05 00:00:00+00:00,2015-03-04,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,217.36025769319667,33.013892491720824,,vacation-2015-02
+2015-03-06 00:00:00+00:00,2015-03-05,SYS2,normal,,none,normal: no action,True,False,205.99352342614156,66.44526405789766,,vacation-2015-02
+2015-03-07 00:00:00+00:00,2015-03-06,SYS2,normal,,none,normal: no action,True,False,180.80056308575595,68.13182734852538,,vacation-2015-02
+2015-03-08 00:00:00+00:00,2015-03-07,SYS2,normal,,none,normal: no action,True,False,214.13933081487517,85.39935741180308,,vacation-2015-02
+2015-03-09 00:00:00+00:00,2015-03-08,SYS2,normal,,none,normal: no action,True,False,156.8548288300778,42.98884110660992,,vacation-2015-02
+2015-03-10 00:00:00+00:00,2015-03-09,SYS2,normal,,none,normal: no action,True,False,186.29399812099587,30.238534451078714,,vacation-2015-02
+2015-03-11 00:00:00+00:00,2015-03-10,SYS2,normal,,none,normal: no action,True,False,118.6877165810511,37.5229273946527,,vacation-2015-02
+2015-03-12 00:00:00+00:00,2015-03-11,SYS2,normal,,none,normal: no action,True,False,201.76571528009927,52.088947131482456,,vacation-2015-02
+2015-03-13 00:00:00+00:00,2015-03-12,SYS2,normal,,none,normal: no action,True,False,196.42268586250853,39.037261299879475,,vacation-2015-02
+2015-03-14 00:00:00+00:00,2015-03-13,SYS2,normal,,none,normal: no action,True,False,208.446701310868,126.68718950570327,,vacation-2015-02
+2015-03-15 00:00:00+00:00,2015-03-14,SYS2,normal,,none,normal: no action,True,False,155.483466532938,114.76936699524344,,vacation-2015-02
+2015-03-16 00:00:00+00:00,2015-03-15,SYS2,normal,,none,normal: no action,True,False,265.07641721725946,46.199892170782626,,vacation-2015-02
+2015-03-17 00:00:00+00:00,2015-03-16,SYS2,normal,,none,normal: no action,True,False,289.1953862294833,40.55500558839666,,vacation-2015-02
+2015-03-18 00:00:00+00:00,2015-03-17,SYS2,normal,,none,normal: no action,True,False,225.10026806732103,31.67088869896837,,vacation-2015-02
+2015-03-19 00:00:00+00:00,2015-03-18,SYS2,normal,,none,normal: no action,True,False,119.83032612892093,28.472663689603838,,vacation-2015-02
+2015-03-20 00:00:00+00:00,2015-03-19,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,78.24829436313799,31.469679697000497,,vacation-2015-02
+2015-03-21 00:00:00+00:00,2015-03-20,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,236.47841738832116,42.87618479782633,,vacation-2015-02
+2015-03-22 00:00:00+00:00,2015-03-21,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,normal: no action,True,False,185.9450510340208,33.06827899669116,,vacation-2015-02
+2015-03-23 00:00:00+00:00,2015-03-22,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,normal: no action,True,False,146.8705253709679,49.99400335690902,,vacation-2015-02
+2015-03-24 00:00:00+00:00,2015-03-23,SYS2,normal,,none,normal: no action,True,False,231.03677278850435,48.734527430640775,,vacation-2015-02
+2015-03-25 00:00:00+00:00,2015-03-24,SYS2,normal,,none,normal: no action,True,False,152.19706115412214,58.76341039447107,,vacation-2015-02
+2015-03-26 00:00:00+00:00,2015-03-25,SYS2,normal,,none,normal: no action,True,False,213.14229703377953,47.62933750101581,,vacation-2015-02
+2015-03-27 00:00:00+00:00,2015-03-26,SYS2,normal,,none,normal: no action,True,False,153.62999578542428,33.99062588497906,,vacation-2015-02
+2015-03-28 00:00:00+00:00,2015-03-27,SYS2,normal,,none,normal: no action,True,False,188.4636384630547,37.04029407535931,,vacation-2015-02
+2015-03-29 00:00:00+00:00,2015-03-28,SYS2,normal,,none,normal: no action,True,False,216.45800836763175,40.890124138078136,,vacation-2015-02
+2015-03-29 23:00:00+00:00,2015-03-29,SYS2,normal,,none,normal: no action,True,False,119.17891537314313,52.94202566455696,,vacation-2015-02
+2015-03-30 23:00:00+00:00,2015-03-30,SYS2,normal,,none,normal: no action,True,False,184.96481757261117,36.78558563120249,,vacation-2015-02
+2014-07-03 23:00:00+00:00,2014-07-03,SYS1,normal,,none,,True,False,59.04714731209214,30.773202939290893,,vacation-2014-08
+2014-07-04 23:00:00+00:00,2014-07-04,SYS1,normal,,none,,True,False,55.61124102844952,30.69943093965574,,vacation-2014-08
+2014-07-05 23:00:00+00:00,2014-07-05,SYS1,normal,,none,,True,False,38.00947199905317,22.468080284841072,,vacation-2014-08
+2014-07-06 23:00:00+00:00,2014-07-06,SYS1,normal,,none,,True,False,224.76625985918645,42.59213871521069,,vacation-2014-08
+2014-07-07 23:00:00+00:00,2014-07-07,SYS1,normal,,none,,True,False,119.18918769667322,33.880713588349835,,vacation-2014-08
+2014-07-08 23:00:00+00:00,2014-07-08,SYS1,normal,,none,,True,False,82.96921512113275,21.20914911968046,,vacation-2014-08
+2014-07-09 23:00:00+00:00,2014-07-09,SYS1,normal,,none,,True,False,175.9507132038825,27.23169471993694,,vacation-2014-08
+2014-07-10 23:00:00+00:00,2014-07-10,SYS1,normal,,none,,True,False,158.8730096061382,70.07153771699171,,vacation-2014-08
+2014-07-11 23:00:00+00:00,2014-07-11,SYS1,normal,,none,,True,False,158.81845393639057,51.37356953718083,,vacation-2014-08
+2014-07-12 23:00:00+00:00,2014-07-12,SYS1,normal,,none,,True,False,124.90505749818207,60.25222764177865,,vacation-2014-08
+2014-07-13 23:00:00+00:00,2014-07-13,SYS1,normal,,none,,True,False,130.9508827801594,48.994770985420885,,vacation-2014-08
+2014-07-14 23:00:00+00:00,2014-07-14,SYS1,normal,,none,,True,False,86.39673047131708,44.16420193509056,,vacation-2014-08
+2014-07-15 23:00:00+00:00,2014-07-15,SYS1,normal,,none,,True,False,146.13566954272287,27.03162939672879,,vacation-2014-08
+2014-07-16 23:00:00+00:00,2014-07-16,SYS1,normal,,none,,True,False,124.69296925501139,43.13087410144558,,vacation-2014-08
+2014-07-17 23:00:00+00:00,2014-07-17,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,124.76566049187392,42.45322832993999,,vacation-2014-08
+2014-07-18 23:00:00+00:00,2014-07-18,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,81.44750147916143,30.837751352245274,,vacation-2014-08
+2014-07-19 23:00:00+00:00,2014-07-19,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,,True,False,116.95952698497014,34.423144749990236,,vacation-2014-08
+2014-07-20 23:00:00+00:00,2014-07-20,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,,True,False,,,,vacation-2014-08
+2014-07-21 23:00:00+00:00,2014-07-21,SYS1,measurement_error,observation.value_implausible is set (weekday).,none,,True,False,180.87828630629065,32.38124319585338,,vacation-2014-08
+2014-07-22 23:00:00+00:00,2014-07-22,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,78.22267923925028,30.21967957804779,,vacation-2014-08
+2014-07-23 23:00:00+00:00,2014-07-23,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,201.98532355101096,42.48146735882951,,vacation-2014-08
+2014-07-24 23:00:00+00:00,2014-07-24,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,86.39022937136883,44.64834193431589,,vacation-2014-08
+2014-07-25 23:00:00+00:00,2014-07-25,SYS1,normal,,none,,True,False,79.14256839697173,29.574951878288907,,vacation-2014-08
+2014-07-26 23:00:00+00:00,2014-07-26,SYS1,normal,,none,,True,False,149.78892461962295,33.64304828149844,,vacation-2014-08
+2014-07-27 23:00:00+00:00,2014-07-27,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,,True,False,151.42161580988926,99.47026166132837,,vacation-2014-08
+2014-07-28 23:00:00+00:00,2014-07-28,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,96.61378081911066,64.34603687835732,,vacation-2014-08
+2014-07-29 23:00:00+00:00,2014-07-29,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,148.54633343872072,33.39930104163114,,vacation-2014-08
+2014-07-30 23:00:00+00:00,2014-07-30,SYS1,normal,,none,,True,False,121.96111993014911,32.19404484937772,,vacation-2014-08
+2014-07-31 23:00:00+00:00,2014-07-31,SYS1,normal,,none,,True,False,176.74379880087545,34.17128139172686,,vacation-2014-08
+2014-08-01 23:00:00+00:00,2014-08-01,SYS1,normal,,none,,True,False,127.05785489960924,62.176674181629366,,vacation-2014-08
+2014-08-02 23:00:00+00:00,2014-08-02,SYS1,normal,,none,,True,False,109.12128283460913,81.29414094495108,,vacation-2014-08
+2014-08-03 23:00:00+00:00,2014-08-03,SYS1,normal,,none,,True,False,78.99881973116645,62.33688419551392,,vacation-2014-08
+2014-08-04 23:00:00+00:00,2014-08-04,SYS1,normal,,none,,True,False,41.32166559469539,32.53210500836226,,vacation-2014-08
+2014-08-05 23:00:00+00:00,2014-08-05,SYS1,normal,,none,,True,False,29.291137178098392,22.672003968147607,,vacation-2014-08
+2014-08-06 23:00:00+00:00,2014-08-06,SYS1,normal,,none,,True,False,38.68420344986716,23.069435869459564,,vacation-2014-08
+2014-08-07 23:00:00+00:00,2014-08-07,SYS1,normal,,none,,True,False,31.98448585020472,22.78042436562994,,vacation-2014-08
+2014-08-08 23:00:00+00:00,2014-08-08,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,68.2450218704203,34.77443041834832,,vacation-2014-08
+2014-08-09 23:00:00+00:00,2014-08-09,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,,True,False,53.06318077596327,28.326410722873558,,vacation-2014-08
+2014-08-10 23:00:00+00:00,2014-08-10,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,,True,False,21.947444356293232,12.862440421939771,,vacation-2014-08
+2014-08-11 23:00:00+00:00,2014-08-11,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,25.775662687870412,16.971368042878453,,vacation-2014-08
+2014-08-12 23:00:00+00:00,2014-08-12,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,32.22469608214067,14.751413965095796,,vacation-2014-08
+2014-08-13 23:00:00+00:00,2014-08-13,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,28.555655358519676,13.84579462777019,,vacation-2014-08
+2014-08-14 23:00:00+00:00,2014-08-14,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,45.818387045496486,19.676412892208088,,vacation-2014-08
+2014-08-15 23:00:00+00:00,2014-08-15,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,51.65907286995449,27.34124750582177,,vacation-2014-08
+2014-08-16 23:00:00+00:00,2014-08-16,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,,True,False,89.89640726128648,28.36132958995629,,vacation-2014-08
+2014-08-17 23:00:00+00:00,2014-08-17,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,,True,False,134.18196555261406,28.959188457823508,,vacation-2014-08
+2014-08-18 23:00:00+00:00,2014-08-18,SYS1,new_pattern,"sustained deviation across multiple scales at once (weekly, long_term), on a weekday.",none,,True,False,140.01309214988467,38.432744075486696,,vacation-2014-08
+2014-08-19 23:00:00+00:00,2014-08-19,SYS1,new_pattern,"sustained deviation across multiple scales at once (weekly, long_term), on a weekday.",none,,True,False,116.37355342919055,30.010436274901714,,vacation-2014-08
+2014-08-20 23:00:00+00:00,2014-08-20,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,124.51366077999872,57.73973177338354,,vacation-2014-08
+2014-08-21 23:00:00+00:00,2014-08-21,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,153.34301886447702,110.98333505514265,,vacation-2014-08
+2014-08-22 23:00:00+00:00,2014-08-22,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,91.6512173988287,65.98529252918681,,vacation-2014-08
+2014-08-23 23:00:00+00:00,2014-08-23,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,,True,False,40.97370215923834,33.44820804918354,,vacation-2014-08
+2014-08-24 23:00:00+00:00,2014-08-24,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,,True,False,352.4060722020146,61.42490226566376,,vacation-2014-08
+2014-08-25 23:00:00+00:00,2014-08-25,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,208.54862024077474,40.1070849128415,,vacation-2014-08
+2014-08-26 23:00:00+00:00,2014-08-26,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,70.12682575535356,18.835909772420358,,vacation-2014-08
+2014-08-27 23:00:00+00:00,2014-08-27,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,125.58895012819771,26.19124613619127,,vacation-2014-08
+2014-08-28 23:00:00+00:00,2014-08-28,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,161.2227610613839,40.18545135806343,,vacation-2014-08
+2014-08-29 23:00:00+00:00,2014-08-29,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,228.17946962724469,105.87688342346439,,vacation-2014-08
+2014-08-30 23:00:00+00:00,2014-08-30,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,,True,False,137.684906822602,46.4802083056561,,vacation-2014-08
+2014-08-31 23:00:00+00:00,2014-08-31,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,,True,False,146.97798817112826,55.498466640879776,,vacation-2014-08
+2014-09-01 23:00:00+00:00,2014-09-01,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,266.7282703762243,49.66104457526549,,vacation-2014-08
+2014-09-02 23:00:00+00:00,2014-09-02,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,151.68991159558018,74.56335121365998,,vacation-2014-08
+2014-09-03 23:00:00+00:00,2014-09-03,SYS1,normal,,none,,True,False,108.22394227363829,43.34860293320449,,vacation-2014-08
+2014-09-04 23:00:00+00:00,2014-09-04,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,119.94366010637331,43.598417945568016,,vacation-2014-08
+2014-09-05 23:00:00+00:00,2014-09-05,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,150.9598471980072,36.01621606507098,,vacation-2014-08
+2014-09-06 23:00:00+00:00,2014-09-06,SYS1,normal,,none,,True,False,133.40992324367627,30.928769468841864,,vacation-2014-08
+2014-09-07 23:00:00+00:00,2014-09-07,SYS1,normal,,none,,True,False,108.850396411805,29.75794637345026,,vacation-2014-08
+2014-09-08 23:00:00+00:00,2014-09-08,SYS1,normal,,none,,True,False,119.91096773326812,28.615638575465546,,vacation-2014-08
+2014-09-09 23:00:00+00:00,2014-09-09,SYS1,normal,,none,,True,False,90.57913379777324,34.04732034958705,,vacation-2014-08
+2014-09-10 23:00:00+00:00,2014-09-10,SYS1,normal,,none,,True,False,213.58148670335518,36.82973215053006,,vacation-2014-08
+2014-09-11 23:00:00+00:00,2014-09-11,SYS1,normal,,none,,True,False,133.83207379991467,34.662434269165615,,vacation-2014-08
+2014-09-12 23:00:00+00:00,2014-09-12,SYS1,normal,,none,,True,False,100.77063497460257,41.70578489576731,,vacation-2014-08
+2014-09-13 23:00:00+00:00,2014-09-13,SYS1,normal,,none,,True,False,148.45392784746113,34.12395030150854,,vacation-2014-08
+2014-09-14 23:00:00+00:00,2014-09-14,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,,True,False,128.37679319788072,46.9415661726476,,vacation-2014-08
+2014-09-15 23:00:00+00:00,2014-09-15,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,123.90755429550991,34.31526996460744,,vacation-2014-08
+2014-07-03 23:00:00+00:00,2014-07-03,SYS2,normal,,none,normal: no action,True,False,59.04714731209214,30.773202939290893,,vacation-2014-08
+2014-07-04 23:00:00+00:00,2014-07-04,SYS2,normal,,none,normal: no action,True,False,55.61124102844952,30.69943093965574,,vacation-2014-08
+2014-07-05 23:00:00+00:00,2014-07-05,SYS2,normal,,none,normal: no action,True,False,38.00947199905317,22.468080284841072,,vacation-2014-08
+2014-07-06 23:00:00+00:00,2014-07-06,SYS2,normal,,none,normal: no action,True,False,224.76625985918645,42.59213871521069,,vacation-2014-08
+2014-07-07 23:00:00+00:00,2014-07-07,SYS2,normal,,none,normal: no action,True,False,119.18918769667322,33.880713588349835,,vacation-2014-08
+2014-07-08 23:00:00+00:00,2014-07-08,SYS2,normal,,none,normal: no action,True,False,82.96921512113275,21.20914911968046,,vacation-2014-08
+2014-07-09 23:00:00+00:00,2014-07-09,SYS2,normal,,none,normal: no action,True,False,175.9507132038825,27.23169471993694,,vacation-2014-08
+2014-07-10 23:00:00+00:00,2014-07-10,SYS2,normal,,none,normal: no action,True,False,158.8730096061382,70.07153771699171,,vacation-2014-08
+2014-07-11 23:00:00+00:00,2014-07-11,SYS2,normal,,none,normal: no action,True,False,158.81845393639057,51.37356953718083,,vacation-2014-08
+2014-07-12 23:00:00+00:00,2014-07-12,SYS2,normal,,none,normal: no action,True,False,124.90505749818207,60.25222764177865,,vacation-2014-08
+2014-07-13 23:00:00+00:00,2014-07-13,SYS2,normal,,none,normal: no action,True,False,130.9508827801594,48.994770985420885,,vacation-2014-08
+2014-07-14 23:00:00+00:00,2014-07-14,SYS2,normal,,none,normal: no action,True,False,86.39673047131708,44.16420193509056,,vacation-2014-08
+2014-07-15 23:00:00+00:00,2014-07-15,SYS2,normal,,none,normal: no action,True,False,146.13566954272287,27.03162939672879,,vacation-2014-08
+2014-07-16 23:00:00+00:00,2014-07-16,SYS2,normal,,none,normal: no action,True,False,124.69296925501139,43.13087410144558,,vacation-2014-08
+2014-07-17 23:00:00+00:00,2014-07-17,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,124.76566049187392,42.45322832993999,,vacation-2014-08
+2014-07-18 23:00:00+00:00,2014-07-18,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,81.44750147916143,30.837751352245274,,vacation-2014-08
+2014-07-19 23:00:00+00:00,2014-07-19,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,normal: no action,True,False,116.95952698497014,34.423144749990236,,vacation-2014-08
+2014-07-20 23:00:00+00:00,2014-07-20,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,normal: no action,True,False,,,,vacation-2014-08
+2014-07-21 23:00:00+00:00,2014-07-21,SYS2,measurement_error,observation.value_implausible is set (weekday).,exclude_window,"measurement_error, excluding 2014-07-21",True,False,180.87828630629065,32.38124319585338,,vacation-2014-08
+2014-07-22 23:00:00+00:00,2014-07-22,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,78.22267923925028,30.21967957804779,,vacation-2014-08
+2014-07-23 23:00:00+00:00,2014-07-23,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,201.98532355101096,42.48146735882951,,vacation-2014-08
+2014-07-24 23:00:00+00:00,2014-07-24,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,86.39022937136883,44.64834193431589,,vacation-2014-08
+2014-07-25 23:00:00+00:00,2014-07-25,SYS2,normal,,none,normal: no action,True,False,79.14256839697173,29.574951878288907,,vacation-2014-08
+2014-07-26 23:00:00+00:00,2014-07-26,SYS2,normal,,none,normal: no action,True,False,149.78892461962295,33.64304828149844,,vacation-2014-08
+2014-07-27 23:00:00+00:00,2014-07-27,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,normal: no action,True,False,151.42161580988926,99.47026166132837,,vacation-2014-08
+2014-07-28 23:00:00+00:00,2014-07-28,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,96.61378081911066,64.34603687835732,,vacation-2014-08
+2014-07-29 23:00:00+00:00,2014-07-29,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,148.54633343872072,33.39930104163114,,vacation-2014-08
+2014-07-30 23:00:00+00:00,2014-07-30,SYS2,normal,,none,normal: no action,True,False,121.96111993014911,32.19404484937772,,vacation-2014-08
+2014-07-31 23:00:00+00:00,2014-07-31,SYS2,normal,,none,normal: no action,True,False,176.74379880087545,34.17128139172686,,vacation-2014-08
+2014-08-01 23:00:00+00:00,2014-08-01,SYS2,normal,,none,normal: no action,True,False,127.05785489960924,62.176674181629366,,vacation-2014-08
+2014-08-02 23:00:00+00:00,2014-08-02,SYS2,normal,,none,normal: no action,True,False,109.12128283460913,81.29414094495108,,vacation-2014-08
+2014-08-03 23:00:00+00:00,2014-08-03,SYS2,normal,,none,normal: no action,True,False,78.99881973116645,62.33688419551392,,vacation-2014-08
+2014-08-04 23:00:00+00:00,2014-08-04,SYS2,normal,,none,normal: no action,True,False,41.32166559469539,32.53210500836226,,vacation-2014-08
+2014-08-05 23:00:00+00:00,2014-08-05,SYS2,normal,,none,normal: no action,True,False,29.291137178098392,22.672003968147607,,vacation-2014-08
+2014-08-06 23:00:00+00:00,2014-08-06,SYS2,normal,,none,normal: no action,True,False,38.68420344986716,23.069435869459564,,vacation-2014-08
+2014-08-07 23:00:00+00:00,2014-08-07,SYS2,normal,,none,normal: no action,True,False,31.98448585020472,22.78042436562994,,vacation-2014-08
+2014-08-08 23:00:00+00:00,2014-08-08,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,68.2450218704203,34.77443041834832,,vacation-2014-08
+2014-08-09 23:00:00+00:00,2014-08-09,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,normal: no action,True,False,53.06318077596327,28.326410722873558,,vacation-2014-08
+2014-08-10 23:00:00+00:00,2014-08-10,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,normal: no action,True,False,21.947444356293232,12.862440421939771,,vacation-2014-08
+2014-08-11 23:00:00+00:00,2014-08-11,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,25.775662687870412,16.971368042878453,,vacation-2014-08
+2014-08-12 23:00:00+00:00,2014-08-12,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,32.22469608214067,14.751413965095796,,vacation-2014-08
+2014-08-13 23:00:00+00:00,2014-08-13,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,28.555655358519676,13.84579462777019,,vacation-2014-08
+2014-08-14 23:00:00+00:00,2014-08-14,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,45.818387045496486,19.676412892208088,,vacation-2014-08
+2014-08-15 23:00:00+00:00,2014-08-15,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,51.65907286995449,27.34124750582177,,vacation-2014-08
+2014-08-16 23:00:00+00:00,2014-08-16,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,normal: no action,True,False,89.89640726128648,28.36132958995629,,vacation-2014-08
+2014-08-17 23:00:00+00:00,2014-08-17,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,normal: no action,True,False,134.18196555261406,28.959188457823508,,vacation-2014-08
+2014-08-18 23:00:00+00:00,2014-08-18,SYS2,new_pattern,"sustained deviation across multiple scales at once (weekly, long_term), on a weekday.",advance_history_start,"new_pattern, cutting back 7 days to 2014-08-12T00:00:00+01:00",True,True,155.37040073857014,61.552466692918706,,vacation-2014-08
+2014-08-19 23:00:00+00:00,2014-08-19,SYS2,peak,"unusual (unusual), but no sustained multi-scale signature (weekday).",none,peak: no action,True,False,134.38309895134518,40.829720004015684,,vacation-2014-08
+2014-08-20 23:00:00+00:00,2014-08-20,SYS2,peak,"unusual (unusual), but no sustained multi-scale signature (weekday).",none,peak: no action,True,False,134.87768316852234,65.62710930064739,,vacation-2014-08
+2014-08-21 23:00:00+00:00,2014-08-21,SYS2,normal,,none,normal: no action,True,False,126.5902225612421,92.51419647765606,,vacation-2014-08
+2014-08-22 23:00:00+00:00,2014-08-22,SYS2,normal,,none,normal: no action,True,False,27.896436489211897,18.953876319744026,,vacation-2014-08
+2014-08-23 23:00:00+00:00,2014-08-23,SYS2,normal,,none,normal: no action,True,False,32.25174188656401,23.2422902850389,,vacation-2014-08
+2014-08-24 23:00:00+00:00,2014-08-24,SYS2,normal,,none,normal: no action,True,False,375.4854163220748,69.07570142779336,,vacation-2014-08
+2014-08-25 23:00:00+00:00,2014-08-25,SYS2,peak,"unusual (unusual), but no sustained multi-scale signature (weekday).",none,peak: no action,True,False,133.20582513426015,22.99442070308949,,vacation-2014-08
+2014-08-26 23:00:00+00:00,2014-08-26,SYS2,normal,,none,normal: no action,True,False,226.3334573710605,89.08292720036975,,vacation-2014-08
+2014-08-27 23:00:00+00:00,2014-08-27,SYS2,normal,,none,normal: no action,True,False,114.37651221061977,33.490356076786995,,vacation-2014-08
+2014-08-28 23:00:00+00:00,2014-08-28,SYS2,normal,,none,normal: no action,True,False,177.634750095386,48.612698635627034,,vacation-2014-08
+2014-08-29 23:00:00+00:00,2014-08-29,SYS2,normal,,none,normal: no action,True,False,240.20142152363633,112.64014982746333,,vacation-2014-08
+2014-08-30 23:00:00+00:00,2014-08-30,SYS2,normal,,none,normal: no action,True,False,123.77007071238425,32.85588128748376,,vacation-2014-08
+2014-08-31 23:00:00+00:00,2014-08-31,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,normal: no action,True,False,122.59963769389147,37.91813918833149,,vacation-2014-08
+2014-09-01 23:00:00+00:00,2014-09-01,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,264.14280004418134,43.93699372914725,,vacation-2014-08
+2014-09-02 23:00:00+00:00,2014-09-02,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,135.4215466489222,64.1498430485331,,vacation-2014-08
+2014-09-03 23:00:00+00:00,2014-09-03,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,100.1270462560254,39.17151622111383,,vacation-2014-08
+2014-09-04 23:00:00+00:00,2014-09-04,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,114.10575372166029,40.19338127423387,,vacation-2014-08
+2014-09-05 23:00:00+00:00,2014-09-05,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,146.22988674588848,33.71093653962098,,vacation-2014-08
+2014-09-06 23:00:00+00:00,2014-09-06,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,normal: no action,True,False,130.70982107787745,29.21676632562034,,vacation-2014-08
+2014-09-07 23:00:00+00:00,2014-09-07,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,normal: no action,True,False,106.89550944444592,28.6825460861936,,vacation-2014-08
+2014-09-08 23:00:00+00:00,2014-09-08,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,118.6286424877497,28.49344048633346,,vacation-2014-08
+2014-09-09 23:00:00+00:00,2014-09-09,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,91.02899642710354,34.65488539564283,,vacation-2014-08
+2014-09-10 23:00:00+00:00,2014-09-10,SYS2,normal,,none,normal: no action,True,False,213.58148670335518,36.82973215053006,,vacation-2014-08
+2014-09-11 23:00:00+00:00,2014-09-11,SYS2,normal,,none,normal: no action,True,False,133.83207379991467,34.662434269165615,,vacation-2014-08
+2014-09-12 23:00:00+00:00,2014-09-12,SYS2,normal,,none,normal: no action,True,False,100.77063497460257,41.70578489576731,,vacation-2014-08
+2014-09-13 23:00:00+00:00,2014-09-13,SYS2,normal,,none,normal: no action,True,False,148.45392784746113,34.12395030150854,,vacation-2014-08
+2014-09-14 23:00:00+00:00,2014-09-14,SYS2,normal,,none,normal: no action,True,False,128.37679319788072,46.9415661726476,,vacation-2014-08
+2014-09-15 23:00:00+00:00,2014-09-15,SYS2,normal,,none,normal: no action,True,False,123.90755429550991,34.31526996460744,,vacation-2014-08

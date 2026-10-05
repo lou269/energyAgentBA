@@ -16,6 +16,7 @@ def build_e2_plot(
     *,
     configs: tuple[str, ...],
     config_labels: dict[str, str],
+    name: str,
 ) -> None:
     figure, (consumption_axis, decision_axis) = plt.subplots(
         2,
@@ -116,4 +117,4 @@ def build_e2_plot(
         frameon=False,
     )
 
-    save_figure(figure, output_directory, "e2_timeline")
+    save_figure(figure, output_directory, name)

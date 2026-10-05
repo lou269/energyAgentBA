@@ -203,7 +203,7 @@ class ForecastingConfig:
 @dataclass(frozen=True)
 class LLMConfig:
     model: str = "ministral-3:8b"  # in K3 gewählt
-    prompt_version: str = "v26"
+    prompt_version: str = "v27"
     temperature: float = 0.0
     # qwen3.5:9b liefert das selbst als Modelfile-Default, gegen Wiederholungsschleifen bei greedy decoding
     presence_penalty: float = 1.5

@@ -4,7 +4,8 @@
 # vorher einmal in nilmtk-env: python -m experiments.e2_absence.e2_select_channels
 # danach: python -m experiments.e2_absence.e2_report [full|precheck]
 
-# Systeme je Kontextvariante aus E2Config.ctx_systems: ohne (CTX0) und mit (CTX1) und per Tool (CTX2) Kalenderkontext
+# je Urlaub aus E2Config.absence_event_ids die Systeme je Kontextvariante aus E2Config.ctx_systems: ohne (CTX0),
+# mit (CTX1) und per Tool (CTX2) Kalenderkontext
 # precheck: nur SYS1/SYS2 ohne LLM, zeigt ob und wann der Urlaub das Gate öffnet
 
 import logging
@@ -38,12 +39,6 @@ logger = logging.getLogger(__name__)
 
 def run(e2_config: E2Config, run_prefix: str) -> Path:
     calendar_events = load_calendar_events(e2_config.calendar_events_file)
-    window_start, window_end = resolve_absence_window(
-        calendar_events, e2_config.active_absence_event_id
-    )
-    scenarios = build_absence_scenarios(
-        e2_config, calendar_events, window_start, window_end
-    )
     llm_prompt = read_llm_prompt(LLMConfig.prompt_version)
 
     run_directory, raw_directory = create_experiment_run(
@@ -52,35 +47,44 @@ def run(e2_config: E2Config, run_prefix: str) -> Path:
         {"e2_config": asdict(e2_config)},
     )
 
-    # wie stark die Urlaubswoche Mains überhaupt senkt, unabhängig von den Schwellen
-    df_to_csv(
-        summarize_reduction_by_day(
-            load_target(e2_config.split)[0],
-            scenarios["ctx0"].target_series,
-            window_start=window_start,
-            window_end=window_end,
-        ),
-        raw_directory,
-        REDUCTION_FILE,
-    )
-
     results = []
-    for ctx, systems in e2_config.ctx_systems.items():
-        scenario = scenarios[ctx]
-        logger.info(
-            "Running E2/%s over %d decision times...", ctx, len(scenario.decision_times)
-        )
-        configs = {label: SYS_VARIANTS[system] for label, system in systems.items()}
-        results.append(
-            run_scenario(
-                scenario,
-                configs,
-                raw_directory / ctx,
-                run_id=f"{run_directory.name}_{ctx}",
-                llm_prompt=llm_prompt,
-            )
+    reductions = []
+    for event_id in e2_config.absence_event_ids:
+        window_start, window_end = resolve_absence_window(calendar_events, event_id)
+        scenarios = build_absence_scenarios(
+            e2_config, calendar_events, event_id, window_start, window_end
         )
 
+        # wie stark der Urlaub Mains überhaupt senkt, unabhängig von den Schwellen
+        reductions.append(
+            summarize_reduction_by_day(
+                load_target(e2_config.split)[0],
+                scenarios["ctx0"].target_series,
+                window_start=window_start,
+                window_end=window_end,
+            ).assign(event_id=event_id)
+        )
+
+        for ctx, systems in e2_config.ctx_systems.items():
+            scenario = scenarios[ctx]
+            logger.info(
+                "Running E2/%s/%s over %d decision times...",
+                event_id,
+                ctx,
+                len(scenario.decision_times),
+            )
+            configs = {label: SYS_VARIANTS[system] for label, system in systems.items()}
+            results.append(
+                run_scenario(
+                    scenario,
+                    configs,
+                    raw_directory / event_id / ctx,
+                    run_id=f"{run_directory.name}_{event_id}_{ctx}",
+                    llm_prompt=llm_prompt,
+                ).assign(event_id=event_id)
+            )
+
+    df_to_csv(pd.concat(reductions, ignore_index=True), raw_directory, REDUCTION_FILE)
     combined = pd.concat(results, ignore_index=True)
     df_to_csv(combined, raw_directory, COMPARISON_FILE)
 

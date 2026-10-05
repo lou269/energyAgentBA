@@ -79,7 +79,14 @@ def test_absence_only_counts_as_a_hit_with_the_calendar_event() -> None:
     summary = summarize_e2(
         comparison,
         anomaly,
-        pd.DataFrame(columns=["config", "analyzed_day", "calendar_available"]),
+        # Kalender abgerufen vor dem Urlaub, nicht an Urlaubstag 0, abgerufen an Tag 1, nicht nach der Rückkehr
+        pd.DataFrame(
+            {
+                "config": "SYS3_CTX1",
+                "analyzed_day": [DAYS[0], DAYS[1], DAYS[2], DAYS[4]],
+                "calendar_available": [True, False, True, False],
+            }
+        ),
         pd.DataFrame(columns=["config", "forecast_day", "y_pred"]),
         pd.DataFrame({"reduction_w": [100.0]}),
         window_start=WINDOW_START,
@@ -107,6 +114,11 @@ def test_absence_only_counts_as_a_hit_with_the_calendar_event() -> None:
             ["absence_classified_days", "new_pattern_days", "notification_days"],
         ]
     ) == [2, 1, 1]
+
+    calls = summary.calendar_calls.set_index("config")
+    assert list(
+        calls.loc["SYS3_CTX1", ["useful", "superfluous", "missed", "saved"]]
+    ) == [1, 1, 1, 1]
 
     forecast = summary.forecast.set_index(["config", "phase"])
     assert forecast.loc[("SYS3_CTX1", "after_return"), "mean_delta"] == -10.0

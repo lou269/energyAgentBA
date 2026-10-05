@@ -44,10 +44,12 @@ def build_ctx_scenarios(
     return {"ctx0": ctx0, "ctx1": ctx1, "ctx2": ctx1}
 
 
-def read_channel_selection(e2_config: E2Config) -> tuple[pd.DataFrame, pd.DataFrame]:
+def read_channel_selection(
+    e2_config: E2Config, event_id: str
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     # Ausgabe von e2_select_channels (nilmtk-env)
     selection_directory = (
-        PROJECT_CONFIG.e2_output_dir / e2_config.channel_selection_subdir
+        PROJECT_CONFIG.e2_output_dir / e2_config.channel_selection_subdir(event_id)
     )
     ranking = pd.read_csv(selection_directory / f"{CHANNEL_RANKING_FILE}.csv")
     data_hourly = pd.read_csv(
@@ -62,12 +64,13 @@ def read_channel_selection(e2_config: E2Config) -> tuple[pd.DataFrame, pd.DataFr
 def build_absence_scenarios(
     e2_config: E2Config,
     calendar_events: tuple[Mapping[str, object], ...],
+    event_id: str,
     window_start: pd.Timestamp,
     window_end: pd.Timestamp,
 ) -> dict[str, ScenarioData]:
-    # Urlaubswoche: die gewählten Kanäle im Fenster aus Mains herausgerechnet, ohne (CTX0), mit (CTX1) und per Tool (CTX2) Kalender
+    # Urlaub: die gewählten Kanäle im Fenster aus Mains herausgerechnet, ohne (CTX0), mit (CTX1) und per Tool (CTX2) Kalender
     mains_series, target_imputed, value_implausible = load_target(e2_config.split)
-    ranking, appliance_data_hourly = read_channel_selection(e2_config)
+    ranking, appliance_data_hourly = read_channel_selection(e2_config, event_id)
     # die Auswahl hat e2_select_channels schon getroffen
     selected_channels = ranking.loc[ranking["is_selected"], "meter_key"].tolist()
     logger.info(
