@@ -1,0 +1,5 @@
+Ereignis,Aktion an Tag nach Cutover,Aktion,2014-07-15,2014-10-24,2015-03-01,2015-06-10,2015-10-22,Mittel,Cutover besser,Mittel in % des Fehlers ohne Aktion
+Sprung +20 %,6,"Reset, Historie ab t_c",5.9,-4.5,2.9,2.1,-4.6,0.3,2/5,0.2
+Sprung +20 %,6,Stufen-Regressor,0.3,-0.1,-2.4,2.2,-0.8,-0.2,3/5,-0.1
+Sprung +20 %,19,"Reset, Historie ab t_c",-2.0,1.6,6.3,0.7,4.1,2.1,1/5,1.2
+Sprung +20 %,19,Stufen-Regressor,1.8,-1.1,1.6,0.3,0.9,0.7,1/5,0.4

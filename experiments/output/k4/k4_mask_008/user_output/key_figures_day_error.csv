@@ -1,0 +1,3 @@
+Kennzahl,Wert,Bezug
+"Ausblenden, Szenario keine Änderung: Tagesfehler-Differenz [W]",99.0,"bei 78,5 W ohne Ausblenden, 29 von 502 Tagen ausgeblendet, bei 4/5 Cutover besser"
+"Ausblenden, Szenario Sprung +20 %: Tagesfehler-Differenz [W]",1.6,"bei 85,1 W ohne Ausblenden, 29 von 502 Tagen ausgeblendet, bei 1/5 Cutover besser"
