@@ -47,8 +47,6 @@ def channels_meeting_thresholds(
     *,
     min_coverage_share: float,
 ) -> pd.Series:
-    return ranking[
-        "coverage_share"
-    ].ge(
+    return ranking["coverage_share"].ge(
         min_coverage_share
     )  # activity_share zählt nicht rein, seltene aber starke Geräte sollen nicht rausfallen

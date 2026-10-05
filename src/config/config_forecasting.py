@@ -56,8 +56,8 @@ class NumericalAnalysisConfig:
 
     unusual_threshold: float = 3.2
     # Streak-Schwellen: kalibriert in K2
-    weekly_streak_threshold: float = 0.75
-    long_term_streak_threshold_pct: float = 12.5
+    weekly_streak_threshold: float = 1.02
+    long_term_streak_threshold_pct: float = 14.2
 
     # new_pattern nur aus weekly und longterm
     level_shift_scales: tuple[str, ...] = ("weekly", "long_term")
@@ -203,7 +203,7 @@ class ForecastingConfig:
 @dataclass(frozen=True)
 class LLMConfig:
     model: str = "ministral-3:8b"  # in K3 gewählt
-    prompt_version: str = "v25"
+    prompt_version: str = "v26"
     temperature: float = 0.0
     # qwen3.5:9b liefert das selbst als Modelfile-Default, gegen Wiederholungsschleifen bei greedy decoding
     presence_penalty: float = 1.5
@@ -220,26 +220,6 @@ class LLMConfig:
 
 @dataclass(frozen=True)
 class TextCheckConfig:
-    # Wortstämme in Kleinbuchstaben, die als Hinweis auf eine Gerätenennung zählen (erlaubt als Möglichkeit, nie als Ursache)
-    device_words: tuple[str, ...] = (
-        "waschmaschine",
-        "trockner",
-        "spülmaschine",
-        "geschirrspüler",
-        "herd",
-        "backofen",
-        "kühlschrank",
-        "gefrierschrank",
-        "heizlüfter",
-        "heizung",
-        "wärmepumpe",
-        "boiler",
-        "durchlauferhitzer",
-        "klimaanlage",
-        "fernseher",
-        "wallbox",
-        "e-auto",
-    )
     control_words: tuple[str, ...] = (
         "schalte",
         "ausschalt",
@@ -253,6 +233,8 @@ class TextCheckConfig:
     )
     # erlaubte Abweichung einer genannten Zahl von den Zahlen im State (Rundung im Text)
     number_tolerance: float = 0.5
+    # auf diese Stufe gerundete Zahlen („etwa 70 %“) dürfen um die halbe Stufe abweichen
+    rounding_step: float = 10.0
 
 
 @dataclass(frozen=True)

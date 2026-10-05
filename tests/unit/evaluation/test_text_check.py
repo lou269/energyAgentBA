@@ -4,7 +4,6 @@ from src.config.config_forecasting import TextCheckConfig
 from src.evaluation.text_check import (
     TextViolation,
     collect_state_values,
-    find_device_mentions,
     find_violations,
 )
 from tests.unit.llm._state_fixture import valid_structured_state
@@ -20,7 +19,8 @@ def _check(text: str) -> tuple[TextViolation, ...]:
         date_parts=date_parts,
         control_words=config.control_words,
         number_tolerance=config.number_tolerance,
-        prompt_numbers=(7.0, 30.0),
+        rounding_step=config.rounding_step,
+        prompt_numbers=(7.0, 28.0),
     )
 
 
@@ -36,18 +36,24 @@ def test_foreign_numbers_found() -> None:
     assert [violation.kind for violation in violations] == ["number", "number"]
 
 
-def test_control_vs_device_words() -> None:
+def test_control_words() -> None:
     text = "Schalte die Waschmaschine aus."
 
     assert [violation.kind for violation in _check(text)] == ["control"]
-    assert find_device_mentions(text, device_words=TextCheckConfig().device_words) == (
-        "waschmaschine",
-    )
+
+
+def test_rounded_to_tens() -> None:
+    # 311 im State: etwa 310 passt, 320 und 315 nicht
+    assert _check("Etwa 310 % mehr.") == ()
+    assert [violation.found for violation in _check("Etwa 320 oder 315 % mehr.")] == [
+        "320",
+        "315",
+    ]
 
 
 def test_month_dates_and_windows() -> None:
     text = (
-        "Abwesenheit vom 15. bis 22. Dezember, über die letzten 30 Tage 14 % weniger."
+        "Abwesenheit vom 15. bis 22. Dezember, über die letzten 28 Tage 14 % weniger."
     )
 
     assert [violation.found for violation in _check(text)] == ["14"]

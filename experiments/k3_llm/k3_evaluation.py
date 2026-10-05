@@ -358,28 +358,28 @@ def _check_answer(
     answer: pd.Series,
     state: StructuredState,
     *,
-    device_words: tuple[str, ...],
     control_words: tuple[str, ...],
     number_tolerance: float,
+    rounding_step: float,
     prompt_numbers: tuple[float, ...],
-) -> tuple[str, str, str]:
+) -> tuple[str, str]:
     text = " ".join(
         answer[column]
         for column in ["explanation", "user_recommendation", "uncertainty"]
     )
-    violations, devices = check_answer_text(
+    violations = check_answer_text(
         text,
         state,
-        device_words=device_words,
         control_words=control_words,
         number_tolerance=number_tolerance,
+        rounding_step=rounding_step,
         prompt_numbers=prompt_numbers,
     )
     missing = missing_evidence_paths(
         answer["classification"], answer["evidence_paths"].split(";"), state
     )
 
-    return violations, "; ".join(missing), devices
+    return violations, "; ".join(missing)
 
 
 def check_answer_texts(
@@ -389,15 +389,15 @@ def check_answer_texts(
     sequence_states: pd.DataFrame,
     *,
     model_order: list[str],
-    device_words: tuple[str, ...],
     control_words: tuple[str, ...],
     number_tolerance: float,
+    rounding_step: float,
     prompt_numbers: tuple[float, ...],
 ) -> TextChecks:
     rules = {
-        "device_words": device_words,
         "control_words": control_words,
         "number_tolerance": number_tolerance,
+        "rounding_step": rounding_step,
         "prompt_numbers": prompt_numbers,
     }
     single = single_answers.merge(
@@ -429,21 +429,19 @@ def check_answer_texts(
         _check_answer(row, row["state"], **rules) for _, row in checked.iterrows()
     ]
     checked = checked.assign(
-        violations=[violations for violations, _, _ in checks],
-        missing_evidence=[missing for _, missing, _ in checks],
-        device_mentions=[devices for _, _, devices in checks],
+        violations=[violations for violations, _ in checks],
+        missing_evidence=[missing for _, missing in checks],
     )
 
     counts = checked.groupby(["model_id", "level"]).agg(
         answers=("item", "size"),
         violations=("violations", lambda values: values.ne("").sum()),
         missing_evidence=("missing_evidence", lambda values: values.ne("").sum()),
-        device_mentions=("device_mentions", lambda values: values.ne("").sum()),
     )
     # beide Ebenen immer als Spalten, auch wenn eine ohne geprüfte Antworten bleibt
     all_columns = pd.MultiIndex.from_product(
         [
-            ["answers", "violations", "missing_evidence", "device_mentions"],
+            ["answers", "violations", "missing_evidence"],
             ["single", "sequence"],
         ]
     )
@@ -456,17 +454,8 @@ def check_answer_texts(
     models.columns = [f"{level}_{name}" for name, level in models.columns]
     findings = (
         checked.loc[
-            checked["violations"].ne("")
-            | checked["missing_evidence"].ne("")
-            | checked["device_mentions"].ne(""),
-            [
-                "level",
-                "model_id",
-                "item",
-                "violations",
-                "missing_evidence",
-                "device_mentions",
-            ],
+            checked["violations"].ne("") | checked["missing_evidence"].ne(""),
+            ["level", "model_id", "item", "violations", "missing_evidence"],
         ]
         .assign(
             model_id=lambda frame: pd.Categorical(

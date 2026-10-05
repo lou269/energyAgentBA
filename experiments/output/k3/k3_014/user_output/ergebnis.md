@@ -11,7 +11,7 @@
 - Ereignisse Ebene 2: control = keine Änderung, scaled_strong = Sprung +30 %, peak_strong = Spitze +1000 W über 6 h
 - Produktivmodell SYS3: ministral-3:8b
 - Commit (Ebene 1 / Ebene 2): 261041e / 261041e (mit lokalen Änderungen)
-- Textprüfung: 17 Gerätewörter, 9 Steuerungswörter, Zahlentoleranz 0,5, Fensterzahlen aus dem Prompt 7, 28
+- Textprüfung: 9 Steuerungswörter, Zahlentoleranz 0,5, gerundet auf 10 erlaubt, Fensterzahlen aus dem Prompt 7, 28
 
 ## Kennzahlen
 
@@ -23,7 +23,7 @@
 | ministral-3:8b: Ebene 2 Ereignis-Arten erkannt | 2/2 | Regel 2/2 |
 | ministral-3:8b: Ebene 2 Tage mit anderer Klasse als die Regel | 4 | 2015-04-06 new_pattern statt normal; 2015-04-07 peak statt normal; 2015-04-08 peak statt normal; 2015-04-20 new_pattern statt normal |
 | ministral-3:8b: ungültige Antworten Ebene 1 | 0 | Ausfalltage Ebene 2: 0 |
-| ministral-3:8b: Antworten mit Textverstoß (Ebene 1 / Ebene 2) | 1/9 / 8/115 | Gerät, Steuerung oder Zahl, Datum, Uhrzeit nicht im State |
+| ministral-3:8b: Antworten mit Textverstoß (Ebene 1 / Ebene 2) | 1/9 / 1/115 | Steuerung oder Zahl, Datum, Uhrzeit nicht im State |
 | ministral-3:8b: Antworten mit fehlenden Belegen (Ebene 1 / Ebene 2) | 0/9 / 0/115 | zitierte Belege passen nicht zur eigenen Klasse |
 
 ## Ebene 1: Modellvergleich auf den Einzelfällen
@@ -49,9 +49,9 @@
 
 ## Automatische Textprüfung je Modell (Antworten mit Verstoß oder fehlenden Belegen)
 
-| Modell | E1 Antworten | E1 mit Verstoß | E1 Belege fehlen | E1 Gerät genannt | E2 Antworten | E2 mit Verstoß | E2 Belege fehlen | E2 Gerät genannt |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| ministral-3:8b | 9 | 1 | 0 | 3 | 115 | 8 | 0 | 8 |
+| Modell | E1 Antworten | E1 mit Verstoß | E1 Belege fehlen | E2 Antworten | E2 mit Verstoß | E2 Belege fehlen |
+|---|---:|---:|---:|---:|---:|---:|
+| ministral-3:8b | 9 | 1 | 0 | 115 | 1 | 0 |
 
 ## Ebene 2: je Modell über alle Ereignis-Arten
 
@@ -88,7 +88,7 @@
 - Ebene 2, erkannt: erwartete Klasse an einem Tag, an dem nur das Ereignis das Gate öffnet (gepaart mit dem Kontrolllauf desselben Modells)
 - Ebene 2, anders als die Regel: gleiche Art und gleicher analysierter Tag, Regel gegen Modell. Nach einem Reset an verschiedenen Tagen laufen die Reihen auseinander, spätere Abweichungen können daraus folgen
 - Antwortzeit: gemessen auf dem Rechner des Laufs, nur zum Vergleich der Modelle untereinander
-- Textprüfung: Verstoß heißt, ein Steuerungswort oder eine Zahl, ein Datum oder eine Uhrzeit steht im Text, aber nicht im State des Falls. Ein genanntes Gerät ist nur ein Hinweis, als Möglichkeit ist es erlaubt, ob es als Ursache behauptet wird, beurteilen die Bewertenden. Zahlwörter („sechs Wochen“) und nicht gelistete Geräte findet sie nicht. Die Fensterlängen 7 und 30 aus der Skalenbeschreibung im Prompt gelten als erlaubt
+- Textprüfung: Verstoß heißt, ein Steuerungswort oder eine Zahl, ein Datum oder eine Uhrzeit steht im Text, aber nicht im State des Falls. Zahlwörter („sechs Wochen“) findet sie nicht. Die Fensterlängen 7 und 28 aus der Skalenbeschreibung im Prompt gelten als erlaubt
 - Fehlende Belege: der Prompt verlangt je Klasse bestimmte Pfade (new_pattern: sustained_drift, Streaks, peak/low: level, direction, absence: level, Kalendereintrag, measurement_error: Flag). Geprüft wird gegen die eigene Klasse des Modells, nicht gegen die erwartete. Ebene 1 wird nur für Läufe geprüft, die den State der Fälle in der Antwortdatei speichern, ältere Läufe haben in der Tabelle 0 Antworten
 - Antworttexte und Auffälligkeiten der Textprüfung im Anhang, Antworten für alle Modelle in Ebene 1 und Ebene 2. Als CSV: answers_single.csv für Ebene 1, answers_sequence.csv für Ebene 2 nur vom Produktivmodell, result_text_findings.csv für die Auffälligkeiten
 
@@ -536,24 +536,7 @@
 
 ### Auffälligkeiten der Textprüfung
 
-| Ebene | Modell | Fall oder Tag | Verstoß | fehlende Belege | Gerät genannt (Hinweis) |
-|---|---|---|---|---|---|
-| Ebene 2 | ministral-3:8b | 2015-01-28 control | number: 10 |  |  |
-| Ebene 2 | ministral-3:8b | 2015-01-28 peak_strong | number: 10 |  |  |
-| Ebene 2 | ministral-3:8b | 2015-01-28 scaled_strong | number: 10 |  |  |
-| Ebene 2 | ministral-3:8b | 2015-03-01 peak_strong | number: 70 |  |  |
-| Ebene 2 | ministral-3:8b | 2015-03-12 scaled_strong | number: 20 |  |  |
-| Ebene 2 | ministral-3:8b | 2015-03-19 scaled_strong |  |  | heizung |
-| Ebene 2 | ministral-3:8b | 2015-03-22 scaled_strong |  |  | heizung |
-| Ebene 2 | ministral-3:8b | 2015-04-03 scaled_strong | number: 20 |  | heizung |
-| Ebene 2 | ministral-3:8b | 2015-04-05 control |  |  | heizung |
-| Ebene 2 | ministral-3:8b | 2015-04-06 scaled_strong |  |  | heizung |
-| Ebene 2 | ministral-3:8b | 2015-04-09 peak_strong |  |  | heizung |
-| Ebene 2 | ministral-3:8b | 2015-04-19 scaled_strong | number: 50 |  |  |
-| Ebene 2 | ministral-3:8b | 2015-04-22 peak_strong | number: 12 |  |  |
-| Ebene 2 | ministral-3:8b | 2015-04-29 control |  |  | heizung |
-| Ebene 2 | ministral-3:8b | 2015-04-29 peak_strong |  |  | heizung |
-| Ebene 1 | ministral-3:8b | absence_drift_down | number: 21. Dezember |  |  |
-| Ebene 1 | ministral-3:8b | new_pattern |  |  | heizung |
-| Ebene 1 | ministral-3:8b | new_pattern_at_min_scales_boundary |  |  | heizung |
-| Ebene 1 | ministral-3:8b | new_pattern_drift_down |  |  | heizung |
+| Ebene | Modell | Fall oder Tag | Verstoß | fehlende Belege |
+|---|---|---|---|---|
+| Ebene 2 | ministral-3:8b | 2015-04-22 peak_strong | number: 12 |  |
+| Ebene 1 | ministral-3:8b | absence_drift_down | number: 21. Dezember |  |

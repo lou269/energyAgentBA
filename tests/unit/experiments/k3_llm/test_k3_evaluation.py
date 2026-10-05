@@ -139,16 +139,14 @@ def test_text_check_counts() -> None:
         no_outputs,
         no_states,
         model_order=["MDL0", "MDL1"],
-        device_words=config.device_words,
         control_words=config.control_words,
         number_tolerance=config.number_tolerance,
-        prompt_numbers=(7.0, 30.0),
+        rounding_step=config.rounding_step,
+        prompt_numbers=(7.0, 28.0),
     ).models.set_index("model_id")
 
     assert checks.loc["MDL0", "single_violations"] == 0
     assert checks.loc["MDL0", "single_missing_evidence"] == 0
     assert checks.loc["MDL1", "single_violations"] == 1
     assert checks.loc["MDL1", "single_missing_evidence"] == 1
-    assert checks.loc["MDL1", "single_device_mentions"] == 1
-    assert checks.loc["MDL0", "single_device_mentions"] == 0
     assert checks["sequence_answers"].sum() == 0

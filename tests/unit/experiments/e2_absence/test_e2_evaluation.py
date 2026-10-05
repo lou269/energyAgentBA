@@ -72,6 +72,9 @@ def test_absence_only_counts_as_a_hit_with_the_calendar_event() -> None:
     anomaly["analyzed_day"] = comparison["analyzed_day"]
     anomaly["anomaly_level"] = ["normal", "unusual", "unusual", "normal", "unusual"] * 3
     anomaly["sustained_drift"] = [False, False, False, True, False] * 3
+    # die Drift kommt aus beiden Niveau-Skalen, über sie öffnet das Gate
+    anomaly["weekly_sustained"] = anomaly["sustained_drift"]
+    anomaly["long_term_sustained"] = anomaly["sustained_drift"]
 
     summary = summarize_e2(
         comparison,

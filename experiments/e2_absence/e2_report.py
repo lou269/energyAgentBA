@@ -19,7 +19,11 @@ from experiments.common.report import (
     write_explanation_rating_template,
     write_result_report,
 )
-from experiments.common.standard_config import DECIMALS, LOCAL_TIMEZONE, PROJECT_CONFIG
+from experiments.common.standard_config import (
+    LOCAL_TIMEZONE,
+    PROJECT_CONFIG,
+    STANDARD_CONFIG,
+)
 from experiments.e2_absence.e2_config import (
     COMPARISON_FILE,
     PRECHECK_RUN_PREFIX,
@@ -311,7 +315,7 @@ def write_full_report(run_directory: Path) -> None:
             "Kalender im State: bei ctx2 hat das LLM an diesen Tagen nachgeschaut, jeder ctx2-Tag mit LLM kostet einen zusätzlichen Aufruf für die Tool-Entscheidung",
         ],
         images=["e2_timeline.png"],
-        decimals=DECIMALS,
+        decimals=STANDARD_CONFIG.decimals,
         appendix={
             "result_reduction": (
                 "Absenkung je Tag im Urlaubsfenster",
@@ -375,7 +379,7 @@ def write_precheck_report(run_directory: Path) -> None:
             "Reset = new_pattern mit advance_history_start, bei SYS1 nie",
         ],
         images=[],
-        decimals=DECIMALS,
+        decimals=STANDARD_CONFIG.decimals,
         appendix={
             "precheck_days": (
                 "Je Tag ab Urlaubsbeginn",

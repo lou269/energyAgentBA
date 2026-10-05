@@ -93,11 +93,9 @@ TEXT_CHECK_HEADERS = {
     "single_answers": "E1 Antworten",
     "single_violations": "E1 mit Verstoß",
     "single_missing_evidence": "E1 Belege fehlen",
-    "single_device_mentions": "E1 Gerät genannt",
     "sequence_answers": "E2 Antworten",
     "sequence_violations": "E2 mit Verstoß",
     "sequence_missing_evidence": "E2 Belege fehlen",
-    "sequence_device_mentions": "E2 Gerät genannt",
 }
 FINDING_HEADERS = {
     "level": "Ebene",
@@ -105,7 +103,6 @@ FINDING_HEADERS = {
     "item": "Fall oder Tag",
     "violations": "Verstoß",
     "missing_evidence": "fehlende Belege",
-    "device_mentions": "Gerät genannt (Hinweis)",
 }
 LEVEL_LABELS = {"single": "Ebene 1", "sequence": "Ebene 2"}
 CASE_HEADERS = {"case_id": "Fall", "expected_classification": "erwartet"}
@@ -306,7 +303,7 @@ def build_key_figures(
                 f"{name}: Antworten mit Textverstoß (Ebene 1 / Ebene 2)",
                 f"{checked['single_violations']}/{checked['single_answers']} / "
                 f"{checked['sequence_violations']}/{checked['sequence_answers']}",
-                "Gerät, Steuerung oder Zahl, Datum, Uhrzeit nicht im State",
+                "Steuerung oder Zahl, Datum, Uhrzeit nicht im State",
             ),
             (
                 f"{name}: Antworten mit fehlenden Belegen (Ebene 1 / Ebene 2)",
@@ -374,9 +371,9 @@ def main() -> None:
         model_order=[
             model_id for model_id in models["model_id"] if model_id != BASELINE_ID
         ],
-        device_words=text_check_config.device_words,
         control_words=text_check_config.control_words,
         number_tolerance=text_check_config.number_tolerance,
+        rounding_step=text_check_config.rounding_step,
         prompt_numbers=window_numbers,
     )
 
@@ -450,8 +447,9 @@ def main() -> None:
         "Ebene 2, anders als die Regel: gleiche Art und gleicher analysierter Tag, Regel gegen Modell. Nach einem Reset an verschiedenen Tagen "
         "laufen die Reihen auseinander, spätere Abweichungen können daraus folgen",
         "Antwortzeit: gemessen auf dem Rechner des Laufs, nur zum Vergleich der Modelle untereinander",
-        "Textprüfung: Verstoß heißt, ein Steuerungswort oder eine Zahl, ein Datum oder eine Uhrzeit steht im Text, aber nicht im State des Falls. Ein genanntes Gerät ist nur ein Hinweis, als Möglichkeit ist es erlaubt, ob es als Ursache behauptet wird, beurteilen die Bewertenden. "
-        "Zahlwörter („sechs Wochen“) und nicht gelistete Geräte findet sie nicht. Die Fensterlängen 7 und 30 aus der Skalenbeschreibung im Prompt gelten als erlaubt",
+        "Textprüfung: Verstoß heißt, ein Steuerungswort oder eine Zahl, ein Datum oder eine Uhrzeit steht im Text, aber nicht im State des Falls. "
+        "Zahlwörter („sechs Wochen“) findet sie nicht. Die Fensterlängen "
+        f"{' und '.join(format_number(n, 0) for n in window_numbers)} aus der Skalenbeschreibung im Prompt gelten als erlaubt",
         "Fehlende Belege: der Prompt verlangt je Klasse bestimmte Pfade (new_pattern: sustained_drift, Streaks, peak/low: level, direction, absence: level, Kalendereintrag, measurement_error: Flag). Geprüft wird gegen die eigene Klasse des Modells, nicht gegen die erwartete. Ebene 1 wird nur für Läufe geprüft, die den State der Fälle in der Antwortdatei speichern, ältere Läufe haben in der Tabelle 0 Antworten",
         "Antworttexte und Auffälligkeiten der Textprüfung im Anhang, Antworten für alle Modelle in Ebene 1 und Ebene 2. "
         "Als CSV: answers_single.csv für Ebene 1, answers_sequence.csv für Ebene 2 nur vom Produktivmodell, result_text_findings.csv für die Auffälligkeiten",
@@ -505,9 +503,9 @@ def main() -> None:
             run_names,
         )
         | {
-            "Textprüfung": f"{len(text_check_config.device_words)} Gerätewörter, "
-            f"{len(text_check_config.control_words)} Steuerungswörter, "
+            "Textprüfung": f"{len(text_check_config.control_words)} Steuerungswörter, "
             f"Zahlentoleranz {format_number(text_check_config.number_tolerance, 1)}, "
+            f"gerundet auf {format_number(text_check_config.rounding_step, 0)} erlaubt, "
             f"Fensterzahlen aus dem Prompt {', '.join(format_number(n, 0) for n in window_numbers)}"
         },
         tables=tables,

@@ -23,15 +23,14 @@ class ProactiveCycleSummary:
     day_count: int
     validity_percent: float
     violation_count: int
-    device_mention_count: int
 
 
 def check_day(
     record: dict,
     *,
     control_words: Collection[str],
-    device_words: Collection[str],
     number_tolerance: float,
+    rounding_step: float,
 ) -> dict:
     state = record["state"]
     output = record["output"]
@@ -44,7 +43,6 @@ def check_day(
         "valid": output is not None,
         "error": record["error"],
         "violations": "",
-        "device_mentions": "",
     }
     for field in TEXT_FIELDS:
         row[field] = "" if output is None else output[field]
@@ -53,12 +51,12 @@ def check_day(
         return row
 
     text = " ".join(output[field] for field in TEXT_FIELDS)
-    row["violations"], row["device_mentions"] = check_answer_text(
+    row["violations"] = check_answer_text(
         text,
         state,
-        device_words=device_words,
         control_words=control_words,
         number_tolerance=number_tolerance,
+        rounding_step=rounding_step,
     )
 
     return row
@@ -68,16 +66,16 @@ def summarize_outlook(
     records: list[dict],
     *,
     control_words: Collection[str],
-    device_words: Collection[str],
     number_tolerance: float,
+    rounding_step: float,
 ) -> ProactiveCycleSummary:
     days = pd.DataFrame(
         [
             check_day(
                 record,
                 control_words=control_words,
-                device_words=device_words,
                 number_tolerance=number_tolerance,
+                rounding_step=rounding_step,
             )
             for record in records
         ]
@@ -88,7 +86,6 @@ def summarize_outlook(
         day_count=len(days),
         validity_percent=float(days["valid"].mean() * 100),
         violation_count=int(days["violations"].ne("").sum()),
-        device_mention_count=int(days["device_mentions"].ne("").sum()),
     )
 
 

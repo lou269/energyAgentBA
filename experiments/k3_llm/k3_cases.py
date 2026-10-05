@@ -280,6 +280,22 @@ def llm_relevant_cases() -> tuple[LLMEvaluationCase, ...]:
             context=_context_block(source_available=True),
         ),
         _case(
+            case_id="normal_weekly_after_reset",
+            expected="normal",
+            reasoning=(
+                "Wie in Wochen nach einem Reset: long_term ohne Wert, nur weekly seit 7 Tagen erhöht, der Tag selbst etwas niedriger "
+                "(direction=low). Ohne long_term kein sustained_drift -> normal, die Woche liegt höher, nicht niedriger."
+            ),
+            value_implausible=False,
+            anomaly=_anomaly_block(
+                scores={"daily": 0.5, "weekday": -0.9, "weekly": 2.0},
+                direction="low",
+                streak_days={"weekly": 7.0},
+                deviation_pct={"weekday": -10.0, "weekly": 32.0},
+            ),
+            context=_context_block(source_available=False),
+        ),
+        _case(
             case_id="new_pattern_at_min_scales_boundary",
             expected="new_pattern",
             reasoning=(
@@ -357,6 +373,9 @@ EXPECTED_EVIDENCE_PATHS: dict[str, frozenset[str]] = {
     "peak": _SINGLE_DAY_PATHS,
     "new_pattern": _DRIFT_PATHS,
     "normal_single_sustained_scale": frozenset(
+        {"anomaly.level", "anomaly.scale_anomaly_streak_days.weekly"}
+    ),
+    "normal_weekly_after_reset": frozenset(
         {"anomaly.level", "anomaly.scale_anomaly_streak_days.weekly"}
     ),
     "low_single_scale": _SINGLE_DAY_PATHS,

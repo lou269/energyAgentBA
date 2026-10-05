@@ -21,7 +21,7 @@ class LLMModelVariant:
 @dataclass(frozen=True)
 class K3Config:
     experiment_id: str = "K3_1_llm_model"
-    config_version: str = "llm-model-0.6"
+    config_version: str = "llm-model-0.7"
 
     base_llm_config: LLMConfig = LLMConfig(model="", keep_alive=-1)
 

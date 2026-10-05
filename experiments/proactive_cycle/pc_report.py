@@ -11,7 +11,7 @@ from experiments.common.report import (
     relabel,
     write_result_report,
 )
-from experiments.common.standard_config import DECIMALS, PROJECT_CONFIG
+from experiments.common.standard_config import PROJECT_CONFIG, STANDARD_CONFIG
 from experiments.proactive_cycle.pc_config import (
     OUTLOOK_FILE,
     RATING_TEMPLATE_FILE,
@@ -39,7 +39,6 @@ DAY_HEADERS = {
     "usual_kwh": "üblich [kWh]",
     "deviation_pct": "Abweichung [%]",
     "violations": "Regelverstöße",
-    "device_mentions": "Geräte",
 }
 
 WEEKDAY_LABELS = {
@@ -77,7 +76,6 @@ def build_key_figures(summary: ProactiveCycleSummary) -> pd.DataFrame:
                 summary.violation_count,
                 "Tage (Steuerung, State-fremde Zahlen und Daten)",
             ),
-            ("Gerätenennungen", summary.device_mention_count, "Tage, nur Hinweis"),
         ]
     )
 
@@ -102,8 +100,6 @@ def answer_lines(days: pd.DataFrame, decimals: int) -> list[str]:
             )
             if row["violations"]:
                 lines.append(f"- Regelverstöße: {row['violations']}")
-            if row["device_mentions"]:
-                lines.append(f"- Geräte genannt: {row['device_mentions']}")
         else:
             lines.append(f"- ungültig ({row['error']})")
         lines.append("")
@@ -121,8 +117,8 @@ def main() -> None:
     summary = summarize_outlook(
         read_jsonl(run_directory / RAW_SUBDIR / OUTLOOK_FILE),
         control_words=text_check_config.control_words,
-        device_words=text_check_config.device_words,
         number_tolerance=text_check_config.number_tolerance,
+        rounding_step=text_check_config.rounding_step,
     )
     output_directory = user_output_directory(run_directory)
 
@@ -154,8 +150,10 @@ def main() -> None:
             "Die Prognose enthält keine Wirkung der Adaption, der Zyklus läuft ohne Aufruf 1.",
         ],
         images=[],
-        decimals=DECIMALS,
-        appendix_text=[("Antworten je Tag", answer_lines(summary.days, DECIMALS))],
+        decimals=STANDARD_CONFIG.decimals,
+        appendix_text=[
+            ("Antworten je Tag", answer_lines(summary.days, STANDARD_CONFIG.decimals))
+        ],
     )
 
     print(f"Result written to {output_directory / 'ergebnis.md'}")

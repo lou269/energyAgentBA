@@ -5,5 +5,5 @@ ministral-3:8b: Antwortzeit je Aufruf im Mittel [s],20.4,"p95 35,5 s, Regel 0,0 
 ministral-3:8b: Ebene 2 Ereignis-Arten erkannt,2/2,Regel 2/2
 ministral-3:8b: Ebene 2 Tage mit anderer Klasse als die Regel,4,2015-04-06 new_pattern statt normal; 2015-04-07 peak statt normal; 2015-04-08 peak statt normal; 2015-04-20 new_pattern statt normal
 ministral-3:8b: ungültige Antworten Ebene 1,0,Ausfalltage Ebene 2: 0
-ministral-3:8b: Antworten mit Textverstoß (Ebene 1 / Ebene 2),1/9 / 8/115,"Gerät, Steuerung oder Zahl, Datum, Uhrzeit nicht im State"
+ministral-3:8b: Antworten mit Textverstoß (Ebene 1 / Ebene 2),1/9 / 1/115,"Steuerung oder Zahl, Datum, Uhrzeit nicht im State"
 ministral-3:8b: Antworten mit fehlenden Belegen (Ebene 1 / Ebene 2),0/9 / 0/115,zitierte Belege passen nicht zur eigenen Klasse

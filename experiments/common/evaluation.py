@@ -9,7 +9,6 @@ from experiments.common.standard_config import LOCAL_TIMEZONE
 from src.common.timestamps import local_day_index
 from src.evaluation.text_check import (
     collect_state_values,
-    find_device_mentions,
     find_violations,
 )
 from src.structured_state.structured_state_schema import SCALE_NAMES
@@ -430,11 +429,11 @@ def check_answer_text(
     text: str,
     state: Mapping[str, object],
     *,
-    device_words: Collection[str],
     control_words: Collection[str],
     number_tolerance: float,
+    rounding_step: float,
     prompt_numbers: Collection[float] = (),
-) -> tuple[str, str]:
+) -> str:
     quantities, date_parts = collect_state_values(state)
     violations = find_violations(
         text,
@@ -442,14 +441,11 @@ def check_answer_text(
         date_parts=date_parts,
         control_words=control_words,
         number_tolerance=number_tolerance,
+        rounding_step=rounding_step,
         prompt_numbers=prompt_numbers,
     )
-    devices = find_device_mentions(text, device_words=device_words)
 
-    return (
-        "; ".join(f"{item.kind}: {item.found}" for item in violations),
-        "; ".join(devices),
-    )
+    return "; ".join(f"{item.kind}: {item.found}" for item in violations)
 
 
 def summarize_scenario_real_data(

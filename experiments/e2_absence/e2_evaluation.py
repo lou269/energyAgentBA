@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 
 from experiments.common.evaluation import (
+    SCALE_SUSTAINED_COLUMNS,
     add_gate_flags,
     count_notifications,
     local_dates,
@@ -44,7 +45,8 @@ def summarize_reduction_by_day(
     return comparison.reset_index()
 
 
-# Spalten aus anomaly.csv, an denen sich ablesen lässt, wie weit der Urlaub von den Schwellen entfernt ist
+# Spalten aus anomaly.csv, an denen sich ablesen lässt, wie weit der Urlaub von den Schwellen entfernt ist,
+# dazu die anhaltenden Skalen, über die das Gate auch öffnet
 PRECHECK_ANOMALY_COLUMNS = [
     "today_mean",
     "weekday_expected",
@@ -57,7 +59,7 @@ PRECHECK_ANOMALY_COLUMNS = [
     "anomaly_level",
     "sustained_drift",
     "value_implausible",
-]
+] + SCALE_SUSTAINED_COLUMNS
 
 PHASES = ("before", "absence", "after_return")
 

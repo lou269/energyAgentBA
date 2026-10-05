@@ -37,6 +37,7 @@ def find_violations(
     date_parts: Collection[int],
     control_words: Collection[str],
     number_tolerance: float,
+    rounding_step: float,
     prompt_numbers: Collection[float] = (),
 ) -> tuple[TextViolation, ...]:
     lowered = text.lower()
@@ -54,23 +55,17 @@ def find_violations(
                     break
         text = pattern.sub(" ", text)
 
+    known_values = [*quantities, *prompt_numbers]
     for match in NUMBER_IN_TEXT.findall(text):
         value = float(match.replace(",", "."))
-        known_values = [*quantities, *prompt_numbers]
-        if not any(abs(value - known) <= number_tolerance for known in known_values):
+        # „etwa 70 %“ bei 71 %: eine auf rounding_step gerundete Zahl darf bis zur halben Stufe abweichen
+        tolerance = (
+            rounding_step / 2 if value % rounding_step == 0 else number_tolerance
+        )
+        if not any(abs(value - known) <= tolerance for known in known_values):
             violations.append(TextViolation("number", match))
 
     return tuple(violations)
-
-
-def find_device_mentions(
-    text: str, *, device_words: Collection[str]
-) -> tuple[str, ...]:
-    lowered = text.lower()
-
-    return tuple(
-        word for word in device_words if re.search(rf"\b{re.escape(word)}", lowered)
-    )
 
 
 def _collect(value: object, quantities: set[float], date_parts: set[int]) -> None:
