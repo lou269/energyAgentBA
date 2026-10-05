@@ -1,0 +1,564 @@
+{
+  "llm_outputs": [
+    {
+      "classification": "normal",
+      "config": "MDL5",
+      "decision_time": "2015-01-25T00:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "normal"
+        }
+      ],
+      "explanation": "Gestern war der Stromverbrauch im Vergleich zum üblichen Winterverbrauch um etwa ein Viertel niedriger, aber die Abweichung ist nicht groß genug für eine Warnung.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob die Abweichung auf einen geplanten Urlaub oder eine andere Veränderung zurückzuführen ist, kann nicht geprüft werden.",
+      "user_recommendation": "Es gibt nichts zu beachten, da der Verbrauch im Rahmen liegt und keine ungewöhnlichen Ereignisse vorlagen. Die Abweichung könnte mit kürzeren Tagen oder weniger Heizbedarf zusammenhängen."
+    },
+    {
+      "classification": "normal",
+      "config": "MDL5",
+      "decision_time": "2015-01-26T00:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "normal"
+        }
+      ],
+      "explanation": "Gestern lag der Verbrauch im Vergleich zum üblichen Winterverlauf etwa 22 % niedriger als erwartet, was auf eine ungewöhnlich geringe Nutzung hindeutet.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob die Verbrauchsminderung auf einen geplanten Urlaub zurückzuführen ist, kann nur durch Rücksprache mit Ihrem Kalender geklärt werden.",
+      "user_recommendation": "Da keine Kalenderdaten verfügbar sind, prüfen Sie bitte, ob gestern oder in der letzten Woche ein geplanter Aufenthalt im Ausland oder eine längere Abwesenheit stattfand."
+    },
+    {
+      "classification": "normal",
+      "config": "MDL5",
+      "decision_time": "2015-01-27T00:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "normal"
+        },
+        {
+          "path": "anomaly.scale_anomaly_streak_days.long_term",
+          "value": 7.0
+        }
+      ],
+      "explanation": "Der Verbrauch lag gestern im üblichen Bereich, aber die letzten vier Wochen waren insgesamt etwa 19 % niedriger als sonst.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob es einen konkreten Grund für den geringeren Verbrauch gibt, lässt sich ohne Kalender oder weitere Informationen nicht klären.",
+      "user_recommendation": "Da die Verbrauchsmuster sich nicht verändert haben, ist nichts weiter zu prüfen. Die niedrigere Gesamtmenge der letzten vier Wochen könnte mit dem Jahreszeitenwechsel zusammenhängen."
+    },
+    {
+      "classification": "normal",
+      "config": "MDL5",
+      "decision_time": "2015-01-28T00:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "normal"
+        },
+        {
+          "path": "anomaly.scale_anomaly_streak_days.long_term",
+          "value": 7.0
+        }
+      ],
+      "explanation": "Gestern lag der Verbrauch um etwa 15 % unter dem üblichen Winterwert seit dem 19. Januar, aber gestern selbst war er nur leicht niedriger als sonst an einem Dienstag.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob die Abweichung auf eine geplante Veränderung zurückzuführen ist, kann nicht geprüft werden, da keine Kalendereinträge verfügbar sind.",
+      "user_recommendation": "Da der Verbrauch seit Anfang Januar insgesamt niedriger ist, prüfen Sie bitte, ob sich etwas am Haushalt geändert hat – etwa weniger Heizung oder Beleuchtung durch kürzere Tage im Winter."
+    },
+    {
+      "classification": "normal",
+      "config": "MDL5",
+      "decision_time": "2015-01-29T00:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "normal"
+        },
+        {
+          "path": "anomaly.scale_anomaly_streak_days.long_term",
+          "value": 6.0
+        }
+      ],
+      "explanation": "Gestern lag der Verbrauch im Vergleich zum langfristigen Durchschnitt etwa 11 % niedriger, aber die Abweichung begann bereits vor über einer Woche und ist nicht neu.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob der Verbrauch in den nächsten Tagen wieder normal bleibt, hängt davon ab, ob sich die Ursache für die niedrigere Nutzung geändert hat.",
+      "user_recommendation": "Es gibt nichts zu überprüfen, da die Abweichung bereits länger besteht und sich nicht verschärft hat."
+    },
+    {
+      "classification": "normal",
+      "config": "MDL5",
+      "decision_time": "2015-02-19T00:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "normal"
+        },
+        {
+          "path": "anomaly.scale_anomaly_streak_days.long_term",
+          "value": 6.0
+        }
+      ],
+      "explanation": "Gestern lag der Stromverbrauch im Vergleich zum langfristigen Durchschnitt etwa 26 % höher, aber das ist nicht ungewöhnlich für diesen Zeitraum.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob die höhere Nutzung auf ungewöhnliche Aktivitäten oder äußere Umstände wie Wetter zurückzuführen ist, kann nur durch Rückfrage nach den letzten Tagen ermittelt werden.",
+      "user_recommendation": "Es gibt keine Handlungsbedarf, da der erhöhte Verbrauch seit dem 13. Februar besteht und sich nicht weiter verschärft hat."
+    },
+    {
+      "classification": "normal",
+      "config": "MDL5",
+      "decision_time": "2015-02-20T00:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "normal"
+        }
+      ],
+      "explanation": "Gestern lag der Verbrauch im Vergleich zum üblichen Winterverlauf etwa 28 % höher als sonst in dieser Zeit, aber es gab keine ungewöhnliche Abweichung am Tag selbst.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob der erhöhte Verbrauch auf eine dauerhafte Veränderung oder nur auf die aktuelle Jahreszeit zurückzuführen ist, lässt sich ohne weitere Informationen nicht abschließend klären.",
+      "user_recommendation": "Da der Verbrauch im Winter oft höher ist und die Abweichung bereits seit über einer Woche besteht, gibt es nichts Ungewöhnliches zu beachten. Sie können prüfen, ob sich Ihr Konsumverhalten oder äußere Umstände wie kälteres Wetter in dieser Zeit verändert haben."
+    },
+    {
+      "classification": "normal",
+      "config": "MDL5",
+      "decision_time": "2015-02-21T00:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "normal"
+        }
+      ],
+      "explanation": "Gestern war der Stromverbrauch etwas niedriger als sonst, aber das ist nicht ungewöhnlich und bleibt im Rahmen.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob der aktuelle niedrigere Wert auf einen geplanten Urlaub oder eine andere Veränderung zurückzuführen ist, lässt sich ohne Kalender nicht klären.",
+      "user_recommendation": "Es gibt nichts zu beachten. Der Verbrauch liegt weiterhin im üblichen Bereich, auch wenn er in den letzten Wochen etwas höher war als sonst."
+    },
+    {
+      "classification": "normal",
+      "config": "MDL5",
+      "decision_time": "2015-02-22T00:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "normal"
+        },
+        {
+          "path": "anomaly.scale_anomaly_streak_days.long_term",
+          "value": 7.0
+        }
+      ],
+      "explanation": "Der Verbrauch lag gestern im üblichen Bereich, aber die letzten vier Wochen waren insgesamt etwa 22 % höher als sonst.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob es einen Grund für die erhöhte Nutzung über vier Wochen gibt, kann nur durch Rücksprache mit Ihrem Energieversorger oder eine detaillierte Analyse der Gerätenutzung geklärt werden.",
+      "user_recommendation": "Da der Verbrauch gestern normal war, ist nichts zu tun. Sie können prüfen, ob sich die Nutzung in den letzten Wochen insgesamt erhöht hat."
+    },
+    {
+      "classification": "normal",
+      "config": "MDL5",
+      "decision_time": "2015-02-23T00:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "normal"
+        },
+        {
+          "path": "anomaly.scale_anomaly_streak_days.long_term",
+          "value": 7.0
+        }
+      ],
+      "explanation": "Der Verbrauch lag gestern im üblichen Bereich, aber die letzten vier Wochen waren insgesamt etwa 20 % höher als sonst.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob es einen konkreten Grund für die erhöhte Nutzung über vier Wochen gibt, kann nur durch Rücksprache mit Ihrem Energieversorger oder eine detaillierte Analyse der Gerätenutzung geklärt werden.",
+      "user_recommendation": "Da der Verbrauch gestern normal war, ist nichts weiter zu tun. Sie können prüfen, ob sich die Nutzung in den letzten Wochen insgesamt erhöht hat."
+    },
+    {
+      "classification": "normal",
+      "config": "MDL5",
+      "decision_time": "2015-02-24T00:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "normal"
+        }
+      ],
+      "explanation": "Der Verbrauch gestern war zwar etwas höher als sonst, aber nicht ungewöhnlich für die letzten Wochen.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob es sich um eine geplante Veränderung handelt, kann nicht geprüft werden.",
+      "user_recommendation": "Es gibt nichts zu beachten. Der erhöhte Verbrauch ist seit Anfang Februar bekannt und liegt im üblichen Bereich der letzten vier Wochen."
+    },
+    {
+      "classification": "normal",
+      "config": "MDL5",
+      "decision_time": "2015-02-25T00:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "normal"
+        }
+      ],
+      "explanation": "Gestern war der Stromverbrauch etwas niedriger als sonst, aber das ist nicht ungewöhnlich und kein Grund zur Sorge.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob der Verbrauch tatsächlich niedriger bleibt oder nur kurzzeitig war, lässt sich erst nach weiteren Tagen beurteilen.",
+      "user_recommendation": "Es gibt nichts zu überprüfen. Der Verbrauch liegt im üblichen Bereich für diese Zeit des Jahres, auch wenn er aktuell etwas niedriger ist als sonst."
+    },
+    {
+      "classification": "normal",
+      "config": "MDL5",
+      "decision_time": "2015-02-26T00:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "normal"
+        }
+      ],
+      "explanation": "Gestern war der Stromverbrauch etwas niedriger als sonst, aber nicht ungewöhnlich für einen einzelnen Tag.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob der niedrigere Verbrauch auf einen geplanten Urlaub oder andere Gründe zurückzuführen ist, kann nicht geprüft werden.",
+      "user_recommendation": "Es gibt nichts zu überprüfen, da es sich um eine normale Abweichung handelt. Die Verbrauchswerte liegen im üblichen Rahmen für diese Zeit des Jahres."
+    },
+    {
+      "classification": "peak",
+      "config": "MDL5",
+      "decision_time": "2015-03-02T00:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "unusual"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        }
+      ],
+      "explanation": "Gestern war der Stromverbrauch ungewöhnlich hoch, sowohl über den Tag verteilt als auch insgesamt für einen Wochentag. Der Verbrauch lag etwa 70 % höher als sonst an einem solchen Tag.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob es sich um einen einmaligen Ausreißer handelt oder der Verbrauch dauerhaft angestiegen ist, lässt sich erst nach weiteren Tagen beurteilen.",
+      "user_recommendation": "Überprüfen Sie, ob gestern ungewöhnlich viele Geräte gleichzeitig genutzt wurden oder ob ein Gerät länger lief als sonst."
+    },
+    {
+      "classification": "low",
+      "config": "MDL5",
+      "decision_time": "2015-03-16T00:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "unusual"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "low"
+        }
+      ],
+      "explanation": "Gestern war der Stromverbrauch um etwa zwei Drittel niedriger als an einem normalen Wochentag. Seit dem 12. März liegt er insgesamt rund 14 % unter dem üblichen Wert für eine Woche.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob es sich um eine geplante Abwesenheit handelt, kann nicht geprüft werden, da keine Kalenderdaten verfügbar sind.",
+      "user_recommendation": "Überprüfen Sie, ob Sie gestern oder in der letzten Woche weniger Strom verbraucht haben als sonst – etwa durch einen längeren Aufenthalt außerhalb des Hauses oder eine geplante Abwesenheit."
+    },
+    {
+      "classification": "low",
+      "config": "MDL5",
+      "decision_time": "2015-04-02T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "unusual"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "low"
+        }
+      ],
+      "explanation": "Gestern war der Stromverbrauch um etwa 57 % niedriger als an einem normalen Dienstag. Das ist ungewöhnlich für einen einzelnen Tag.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob es sich um eine geplante Abwesenheit handelt, kann nicht geprüft werden, da keine Kalenderdaten verfügbar sind.",
+      "user_recommendation": "Überprüfen Sie, ob gestern jemand zu Hause war oder ob ein geplanter Urlaub oder eine Abwesenheit stattgefunden hat."
+    },
+    {
+      "classification": "low",
+      "config": "MDL5",
+      "decision_time": "2015-04-03T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "unusual"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "low"
+        }
+      ],
+      "explanation": "Gestern war der Stromverbrauch um etwa zwei Drittel niedriger als an einem normalen Wochentag.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob es sich um einen geplanten Ausfall handelt, kann nicht geprüft werden.",
+      "user_recommendation": "Überprüfen Sie, ob Sie gestern zu Hause waren oder ob ein geplanter Ausfall des Stroms stattfand."
+    },
+    {
+      "classification": "low",
+      "config": "MDL5",
+      "decision_time": "2015-04-04T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "unusual"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "low"
+        }
+      ],
+      "explanation": "Gestern war der Stromverbrauch um etwa zwei Drittel niedriger als an einem normalen Wochentag.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob es sich um einen geplanten Ausfall handelt, kann nicht geprüft werden, da keine Kalenderdaten verfügbar sind.",
+      "user_recommendation": "Überprüfen Sie, ob gestern ein geplanter Ausfall oder eine Abwesenheit stattgefunden hat, die den Verbrauch erklären könnte."
+    },
+    {
+      "classification": "low",
+      "config": "MDL5",
+      "decision_time": "2015-04-05T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "unusual"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "low"
+        }
+      ],
+      "explanation": "Gestern war der Stromverbrauch um etwa zwei Drittel niedriger als an einem normalen Wochentag. Seit dem 2. April liegt er dauerhaft unter dem üblichen Niveau.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob es sich um eine geplante Abwesenheit handelt, kann nicht geprüft werden, da keine Kalenderdaten verfügbar sind.",
+      "user_recommendation": "Überprüfen Sie, ob Sie oder jemand anderes in den letzten Tagen weniger Strom verbraucht haben könnten – etwa durch einen geplanten Aufenthalt außerhalb der Wohnung oder eine längere Abwesenheit."
+    },
+    {
+      "classification": "normal",
+      "config": "MDL5",
+      "decision_time": "2015-04-07T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "normal"
+        },
+        {
+          "path": "anomaly.scale_anomaly_streak_days.weekly",
+          "value": 6.0
+        }
+      ],
+      "explanation": "Der Stromverbrauch war gestern im Vergleich zur Woche zuvor um etwa 45 % niedriger, aber die Abweichung ist nicht langfristig und betrifft nur den letzten Zeitraum von einer Woche.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob es sich um eine dauerhafte Veränderung handelt, lässt sich erst nach weiteren Tagen beurteilen.",
+      "user_recommendation": "Da die Abweichung nur kurzfristig ist, prüfen Sie bitte, ob gestern oder in der letzten Woche etwas Ungewöhnliches passiert ist, das den Verbrauch beeinflussen könnte."
+    },
+    {
+      "classification": "normal",
+      "config": "MDL5",
+      "decision_time": "2015-04-08T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "normal"
+        },
+        {
+          "path": "anomaly.scale_anomaly_streak_days.weekly",
+          "value": 7.0
+        }
+      ],
+      "explanation": "Gestern war der Stromverbrauch etwas niedriger als sonst an einem Dienstag, aber die Abweichung ist nicht ungewöhnlich für einen einzelnen Tag und hat sich nicht über mehrere Tage gehalten.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob es einen Grund für den niedrigeren Verbrauch gab, können Sie selbst prüfen, indem Sie gestern mit Ihrem üblichen Verbrauch vergleichen.",
+      "user_recommendation": "Es gibt nichts Ungewöhnliches zu beachten, da die Abweichung nur kurzfristig war und sich nicht wiederholt hat."
+    },
+    {
+      "classification": "normal",
+      "config": "MDL5",
+      "decision_time": "2015-04-09T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "normal"
+        },
+        {
+          "path": "anomaly.scale_anomaly_streak_days.weekly",
+          "value": 7.0
+        }
+      ],
+      "explanation": "Gestern war der Stromverbrauch um etwa 34 % niedriger als an einem typischen Dienstag, aber die Abweichung ist nicht groß genug für eine Warnung.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob der Verbrauch gestern tatsächlich ungewöhnlich niedrig war oder ob es sich um eine kurzfristige Ausnahme handelt, lässt sich ohne weitere Informationen nicht abschließend klären.",
+      "user_recommendation": "Da die Abweichung nur einen Tag betrifft und keine weiteren Hinweise auf ein Problem vorliegen, ist nichts weiter zu tun."
+    },
+    {
+      "classification": "normal",
+      "config": "MDL5",
+      "decision_time": "2015-04-10T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "normal"
+        }
+      ],
+      "explanation": "Gestern war der Verbrauch etwas niedriger als sonst an Wochentagen, aber die Abweichung ist nicht ungewöhnlich und hält nur kurz an.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob der Verbrauch gestern tatsächlich niedriger war oder ob es ein Messfehler ist, kann ohne weitere Daten nicht sicher beurteilt werden.",
+      "user_recommendation": "Es gibt nichts Ungewöhnliches zu beachten. Der Verbrauch hat sich bereits wieder normalisiert, da die Abweichung nur eine Woche anhielt und nicht nachhaltig war."
+    },
+    {
+      "classification": "normal",
+      "config": "MDL5",
+      "decision_time": "2015-04-11T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "normal"
+        }
+      ],
+      "explanation": "Gestern war der Verbrauch für einen Dienstag ungewöhnlich hoch, aber die Abweichung hat sich nicht über mehrere Tage gehalten.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob der Verbrauch gestern tatsächlich ungewöhnlich hoch war, hängt davon ab, ob es einen Grund gab, der den Verbrauch kurzfristig erhöht hat.",
+      "user_recommendation": "Es gibt nichts zu tun. Der erhöhte Verbrauch war nur ein kurzes Ereignis und kein neues Muster."
+    },
+    {
+      "classification": "normal",
+      "config": "MDL5",
+      "decision_time": "2015-04-12T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "normal"
+        },
+        {
+          "path": "anomaly.scale_anomaly_streak_days.weekly",
+          "value": 7.0
+        }
+      ],
+      "explanation": "Gestern war der Stromverbrauch um etwa 40 % niedriger als an einem typischen Dienstag, aber die Abweichung hat sich nur über eine Woche gehalten und ist nicht nachhaltig.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob der Verbrauch gestern tatsächlich niedriger war oder ob es sich um einen Messfehler handelt, kann nicht sicher beurteilt werden.",
+      "user_recommendation": "Da die Abweichung nur eine Woche anhielt und keine weiteren Hinweise auf ein Problem vorliegen, ist nichts weiter zu tun."
+    },
+    {
+      "classification": "normal",
+      "config": "MDL5",
+      "decision_time": "2015-04-13T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "normal"
+        }
+      ],
+      "explanation": "Gestern war der Verbrauch für einen Wochentag ungewöhnlich hoch, aber die Abweichung ist nur kurzfristig und nicht nachhaltig.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob der erhöhte Verbrauch durch ungewöhnliche Aktivitäten wie Gäste oder technische Geräte verursacht wurde, können Sie selbst prüfen.",
+      "user_recommendation": "Es gibt nichts zu tun. Der Verbrauch hat sich bereits wieder normalisiert und es gibt keine Hinweise auf ein neues Muster oder eine Störung."
+    },
+    {
+      "classification": "normal",
+      "config": "MDL5",
+      "decision_time": "2015-04-24T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "normal"
+        },
+        {
+          "path": "anomaly.scale_anomaly_streak_days.long_term",
+          "value": 6.0
+        }
+      ],
+      "explanation": "Der Verbrauch lag gestern im üblichen Bereich, aber die letzten vier Wochen waren insgesamt etwa 17 % niedriger als sonst.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob es sich um eine dauerhafte Veränderung handelt, hängt davon ab, ob der Verbrauch in den nächsten Tagen wieder steigt.",
+      "user_recommendation": "Da der Verbrauch gestern normal war, ist nichts zu tun. Die niedrigere Gesamtmenge der letzten vier Wochen könnte mit dem Wetter oder einem kürzeren Aufenthalt im Haushalt zusammenhängen – das können Sie überprüfen, indem Sie die Zeit nach dem 15. April betrachten."
+    },
+    {
+      "classification": "normal",
+      "config": "MDL5",
+      "decision_time": "2015-04-25T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "normal"
+        },
+        {
+          "path": "anomaly.scale_anomaly_streak_days.long_term",
+          "value": 6.0
+        }
+      ],
+      "explanation": "Der Stromverbrauch lag gestern im üblichen Bereich, aber die letzten vier Wochen waren insgesamt etwa 18 % niedriger als sonst.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob die Veränderung auf einen konkreten Grund zurückzuführen ist, hängt davon ab, ob Sie eine Abwesenheit hatten oder andere Gewohnheiten angepasst haben.",
+      "user_recommendation": "Da der Verbrauch seit Mitte April niedriger ist, prüfen Sie bitte, ob sich etwas im Haushalt geändert hat – etwa weniger Heizung oder kürzere Gerätenutzung."
+    },
+    {
+      "classification": "normal",
+      "config": "MDL5",
+      "decision_time": "2015-04-26T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "normal"
+        }
+      ],
+      "explanation": "Gestern war der Stromverbrauch im Vergleich zum üblichen Verbrauch in den letzten vier Wochen um etwa 19 % niedriger, aber dies ist nicht ungewöhnlich für einen einzelnen Tag.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob ein geplanter Urlaub oder eine andere Abwesenheit den niedrigeren Verbrauch erklärt, kann nicht geprüft werden, da kein Kalender verfügbar ist.",
+      "user_recommendation": "Es gibt keine Handlungsbedarf. Der Verbrauch liegt im üblichen Bereich und es sind keine besonderen Maßnahmen nötig."
+    },
+    {
+      "classification": "normal",
+      "config": "MDL5",
+      "decision_time": "2015-04-27T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "normal"
+        }
+      ],
+      "explanation": "Gestern lag der Verbrauch im Vergleich zum üblichen Niveau für einen Dienstag um etwa 23 % höher, aber die Abweichung ist nicht ungewöhnlich und hat sich nicht über mehrere Tage gehalten.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob ein geplanter Aufenthalt im Haushalt oder besondere Aktivitäten wie Gäste den höheren Verbrauch erklärt haben, kann nicht geprüft werden.",
+      "user_recommendation": "Es gibt keine Handlungsbedarf. Der Verbrauch war zwar höher als sonst, aber dies ist kein Grund zur Sorge und nichts zu überprüfen."
+    },
+    {
+      "classification": "normal",
+      "config": "MDL5",
+      "decision_time": "2015-04-28T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "normal"
+        },
+        {
+          "path": "anomaly.scale_anomaly_streak_days.long_term",
+          "value": 7.0
+        }
+      ],
+      "explanation": "Der Verbrauch lag gestern im üblichen Bereich, aber die letzten vier Wochen waren insgesamt etwa 18 % niedriger als sonst.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob die Veränderung auf einen konkreten Grund zurückzuführen ist, hängt davon ab, ob der Verbrauch seit Mitte April tatsächlich niedriger bleibt.",
+      "user_recommendation": "Da der Verbrauch seit Mitte April insgesamt niedriger ist, prüfen Sie bitte, ob sich etwas im Haushalt geändert hat – etwa weniger Heizung oder Beleuchtung durch längere Tage."
+    },
+    {
+      "classification": "normal",
+      "config": "MDL5",
+      "decision_time": "2015-04-29T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "normal"
+        },
+        {
+          "path": "anomaly.scale_anomaly_streak_days.long_term",
+          "value": 7.0
+        }
+      ],
+      "explanation": "Gestern lag der Verbrauch im Vergleich zum langfristigen Durchschnitt etwa 17 % niedriger, aber die Abweichung begann bereits am 15. April und ist nicht neu.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob ein geplanter Urlaub oder eine andere Veränderung den Verbrauch beeinflusst hat, ist ohne Kalender nicht nachvollziehbar.",
+      "user_recommendation": "Da die Abweichung schon länger besteht, gibt es nichts weiter zu prüfen. Sie können sich fragen, ob sich der Verbrauch im Vergleich zum letzten Winter verändert hat."
+    }
+  ]
+}
