@@ -46,7 +46,6 @@ class NumericalAnalysisConfig:
     min_daily_reference_samples: int = 7
     min_weekday_reference_samples: int = 4
 
-    trend_threshold: float = 0.30
     min_reference_power_w: float = 10.0
 
     min_residual_std_w: float = 1.0
@@ -57,29 +56,23 @@ class NumericalAnalysisConfig:
 
     unusual_threshold: float = 3.2
     # Streak-Schwellen: kalibriert in K2
-    weekday_streak_threshold: float = 2.5
     weekly_streak_threshold: float = 0.75
     long_term_streak_threshold_pct: float = 12.5
 
-    # new_pattern nur aus Skalen, die das Niveau messen, daily misst die Form des Tages
-    level_shift_scales: tuple[str, ...] = ("weekday", "weekly", "long_term")
+    # new_pattern nur aus weekly und longterm
+    level_shift_scales: tuple[str, ...] = ("weekly", "long_term")
     min_sustained_scales: int = 2
 
-    # run_cycle rechnet die Anomalieerkennung auf Tagesmittelwerten statt Einzelstunden
-    sample_period_hours_daily: float = 24.0
-    trend_window_days: int = 7  # unkalibriert, Startwert wie trend_threshold seinerzeit
     long_term_window_days: int = 28
-    weekly_window_days: int = 7  # eigenständig von trend_window_days
+    weekly_window_days: int = 7
 
     # Mindestabdeckung für weekly_mean/long_term_window_mean (rolling): ein einzelner NaN-Tag (z.B. measurement_error)
     # soll die Skala nicht gleich für die ganze Fensterlänge lahmlegen, siehe anomalieerkennung_neu.md
     rolling_window_min_coverage: float = 0.8
 
-    # Rolling 60 statt eingefroren nach 60 Tagen (K2 Stufe 3/4), Statisch veraltet saisonal
-    # Fenster liegt vor dem Beobachtungsfenster der Skala
+    long_term_reference_days: int = 28
+
     reference_window_rolling_days: int = 60
-    # long_term vergleicht die letzten 30 Tage mit den Tagen direkt davor
-    long_term_reference_days: int = 30
 
     # weekly: Anzahl 7-Tage-Mittel in der Referenz, long_term: gültige Tage im Referenzfenster
     min_weekly_reference_samples: int = 1

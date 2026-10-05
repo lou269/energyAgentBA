@@ -4,12 +4,13 @@ import pandas as pd
 
 from experiments.common.evaluation import SCALE_SUSTAINED_COLUMNS
 from src.adaption.adaption_policy import adaption_policy
-from src.common.timestamps import shift_local_days
+from src.common.timestamps import local_midnight_utc, shift_local_days
 from src.config.config_forecasting import NumericalAnalysisConfig
 from src.context.calendar_context import build_calendar_context
 from src.llm.gate import gate_classification
 from src.llm.rule_based_classifier import rule_based_classify
 from src.numerical_analysis.daily_analysis import (
+    LEVEL_SHIFT_VALUE_COLUMNS,
     add_level_shift_streaks,
     compute_analysis_row,
 )
@@ -17,14 +18,10 @@ from src.structured_state.builder import build_structured_state
 
 
 def with_thresholds(
-    config: NumericalAnalysisConfig,
-    weekday: float,
-    weekly: float,
-    long_term: float,
+    config: NumericalAnalysisConfig, weekly: float, long_term: float
 ) -> NumericalAnalysisConfig:
     return replace(
         config,
-        weekday_streak_threshold=weekday,
         weekly_streak_threshold=weekly,
         long_term_streak_threshold_pct=long_term,
     )
@@ -55,6 +52,35 @@ def _score_row(
     return cache[key]
 
 
+def level_shift_values(
+    series: pd.Series,
+    analysis_days: pd.DatetimeIndex,
+    config: NumericalAnalysisConfig,
+    *,
+    cache: dict,
+    local_timezone: str,
+) -> pd.DataFrame:
+    # Werte der Niveau-Skalen ohne Reset, die Referenz läuft ab Beginn der Reihe
+    history_start = series.index[0]
+    values = {}
+    for day in analysis_days:
+        row = _score_row(
+            series,
+            history_start,
+            local_midnight_utc(day, local_timezone, days_offset=1),
+            config=config,
+            cache=cache,
+            local_timezone=local_timezone,
+        )
+        if row is not None:
+            values[day] = {
+                scale: row[LEVEL_SHIFT_VALUE_COLUMNS[scale]]
+                for scale in config.level_shift_scales
+            }
+
+    return pd.DataFrame.from_dict(values, orient="index")
+
+
 def run_chain(
     series: pd.Series,
     analysis_days: pd.DatetimeIndex,
@@ -72,9 +98,7 @@ def run_chain(
     records = []
 
     for day in analysis_days:
-        decision_time = (
-            (day + pd.DateOffset(days=1)).tz_localize(local_timezone).tz_convert("UTC")
-        )
+        decision_time = local_midnight_utc(day, local_timezone, days_offset=1)
         row = _score_row(
             series,
             history_start,

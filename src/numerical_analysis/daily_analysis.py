@@ -34,7 +34,6 @@ LEVEL_SHIFT_VALUE_COLUMNS = {
 
 def level_shift_thresholds(config: NumericalAnalysisConfig) -> dict[str, float]:
     return {
-        "weekday": config.weekday_streak_threshold,
         "weekly": config.weekly_streak_threshold,
         "long_term": config.long_term_streak_threshold_pct,
     }
@@ -58,14 +57,11 @@ def compute_analysis_row(
         history,
         analyzed_day=target_day,
         reference_window_rolling_days=config.reference_window_rolling_days,
-        short_term_window=config.trend_window_days,
-        sample_period_hours=config.sample_period_hours_daily,
         long_term_window=config.long_term_window_days,
         long_term_reference_days=config.long_term_reference_days,
         weekly_window_days=config.weekly_window_days,
         min_weekday_reference_samples=config.min_weekday_reference_samples,
         min_longterm_reference_samples=config.min_longterm_reference_samples,
-        trend_threshold=config.trend_threshold,
         min_reference_power_w=config.min_reference_power_w,
         rolling_window_min_coverage=config.rolling_window_min_coverage,
         robust_scales=config.single_day_scales,

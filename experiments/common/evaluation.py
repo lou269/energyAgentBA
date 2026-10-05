@@ -450,3 +450,38 @@ def check_answer_text(
         "; ".join(f"{item.kind}: {item.found}" for item in violations),
         "; ".join(devices),
     )
+
+
+def summarize_scenario_real_data(
+    series: pd.Series,
+    *,
+    reference_days: int,
+    peak_hours: int,
+    quantile: float,
+    autumn_months: tuple[str, str],
+) -> pd.Series:
+    """Woran die Stärken von level und peak gemessen sind, dazu der Herbstanstieg
+    level = Tagesmittel minus Median der reference_days Tage davor, quantile über die Tage
+    peak = mittlere Mehrleistung im stärksten Block aus peak_hours Stunden, je Stunde gegen den Median
+    derselben Stunde an den reference_days Tagen davor, quantile über die Tage
+    Herbstanstieg = Monatsmittel bis gegen von in Prozent
+    """
+    days = local_dates(series.index)
+    daily = series.groupby(days).mean()
+    level = (daily - daily.rolling(reference_days).median().shift(1)).dropna()
+
+    hourly = series.groupby([days, series.index.tz_convert(LOCAL_TIMEZONE).hour]).mean()
+    hourly = hourly.unstack()
+    excess = hourly - hourly.rolling(reference_days).median().shift(1)
+    strongest_block = excess.T.rolling(peak_hours).mean().T.max(axis=1).dropna()
+
+    month_from, month_to = (daily.loc[month].mean() for month in autumn_months)
+
+    return pd.Series(
+        {
+            "level_w": level.quantile(quantile),
+            "peak_w": strongest_block.quantile(quantile),
+            "evaluable_days": len(level),
+            "autumn_rise_pct": 100 * (month_to / month_from - 1),
+        }
+    )

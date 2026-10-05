@@ -16,7 +16,11 @@ from experiments.common.report import (
     relabel,
     write_result_report,
 )
-from experiments.common.standard_config import DECIMALS, LLM_SYSTEM, PROJECT_CONFIG
+from experiments.common.standard_config import (
+    LLM_SYSTEM,
+    PROJECT_CONFIG,
+    STANDARD_CONFIG,
+)
 from experiments.k3_llm.k3_config import (
     BASELINE_ID,
     RESULTS_FILE,
@@ -272,8 +276,8 @@ def build_key_figures(
             (
                 f"{name}: Antwortzeit je Aufruf im Mittel [s]",
                 production["mean_generation_seconds"],
-                f"p95 {format_number(production['p95_generation_seconds'], DECIMALS)} s, "
-                f"Regel {format_number(rule['mean_generation_seconds'], DECIMALS)} s",
+                f"p95 {format_number(production['p95_generation_seconds'], STANDARD_CONFIG.decimals)} s, "
+                f"Regel {format_number(rule['mean_generation_seconds'], STANDARD_CONFIG.decimals)} s",
             ),
             (
                 f"{name}: Ebene 2 Ereignis-Arten erkannt",
@@ -471,7 +475,7 @@ def main() -> None:
         + [
             (
                 "Auffälligkeiten der Textprüfung",
-                markdown_table(findings, DECIMALS).splitlines(),
+                markdown_table(findings, STANDARD_CONFIG.decimals).splitlines(),
             )
         ]
     )
@@ -509,7 +513,7 @@ def main() -> None:
         tables=tables,
         notes=notes,
         images=["k3_quality_vs_time.png"],
-        decimals=DECIMALS,
+        decimals=STANDARD_CONFIG.decimals,
         appendix=appendix,
         appendix_text=appendix_text,
     )

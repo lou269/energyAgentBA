@@ -13,14 +13,11 @@ def build_multi_scale_analysis(
     *,
     analyzed_day: pd.Timestamp,
     reference_window_rolling_days: int,
-    short_term_window: int,
-    sample_period_hours: float,
     long_term_window: int,
     long_term_reference_days: int,
     weekly_window_days: int,
     min_weekday_reference_samples: int,
     min_longterm_reference_samples: int,
-    trend_threshold: float,
     min_reference_power_w: float,
     rolling_window_min_coverage: float,
     robust_scales: Sequence[str],
@@ -35,36 +32,6 @@ def build_multi_scale_analysis(
     result = pd.DataFrame(index=daily_mean.index)
     result["today_mean"] = daily_mean
     result["daily_std"] = daily_std
-
-    previous_power = result["today_mean"].shift(1)
-
-    result["trend_daily_mean"] = previous_power.rolling(
-        window=short_term_window, min_periods=short_term_window
-    ).mean()
-
-    trend_time = np.arange(short_term_window) * sample_period_hours
-    centered_trend_time = trend_time - trend_time.mean()
-    trend_denominator = np.square(centered_trend_time).sum()
-
-    result["trend_slope_w_per_hour"] = previous_power.rolling(
-        window=short_term_window, min_periods=short_term_window
-    ).apply(
-        lambda values: np.dot(values, centered_trend_time) / trend_denominator,
-        raw=True,
-    )
-
-    trend_reference = result["trend_daily_mean"].where(
-        result["trend_daily_mean"].abs() >= min_reference_power_w
-    )
-    trend_window_hours = short_term_window * sample_period_hours
-    result["trend_change"] = (
-        result["trend_slope_w_per_hour"] * trend_window_hours
-    ) / trend_reference
-
-    result["trend"] = "stable"
-    result.loc[result["trend_change"] > trend_threshold, "trend"] = "increasing"
-    result.loc[result["trend_change"] < -trend_threshold, "trend"] = "decreasing"
-    result.loc[result["trend_change"].isna(), "trend"] = pd.NA
 
     # Erwartung und Referenz gelten für analyzed_day, die Spalten tragen sie in jeder Zeile
     # Tagesskalen: Referenz sind die Tage vor dem eingeordneten Tag

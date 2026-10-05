@@ -158,8 +158,7 @@ def summarize_sequence(results: pd.DataFrame) -> SequenceSummary:
     paired = pair_with_control(results, SEQUENCE_PAIR_KEYS)
     after_cutover = paired.loc[paired["days_since_cutover"].ge(FIRST_ANALYZED_DAY)]
 
-    # Stärke steht im Namen (peak_6, ramp_56), erwartet wird je Art ohne Stärke
-    expected = after_cutover["kind"].str.partition("_")[0].map(GOLDSTANDARD_EXPECTED)
+    expected = after_cutover["kind"].map(GOLDSTANDARD_EXPECTED)
     correct_days = after_cutover["days_since_cutover"].where(
         after_cutover["event_gate_open"] & after_cutover["classification"].eq(expected)
     )

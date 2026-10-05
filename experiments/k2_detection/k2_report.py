@@ -6,145 +6,95 @@ from pathlib import Path
 import pandas as pd
 
 from experiments.common.report import (
+    DETECTION_LABELS,
     KIND_LABELS,
     format_commit,
     format_number,
     write_result_report,
 )
-from experiments.common.standard_config import (
-    DECIMALS,
-    PROJECT_CONFIG,
-    STANDARD_CONFIG,
-)
+from experiments.common.standard_config import PROJECT_CONFIG, STANDARD_CONFIG
 from experiments.k2_detection.k2_config import (
     DIAGNOSIS_FILE,
-    EVENT_HITS_FILE,
     GRID_FILE,
+    RESETS_FILE,
     RUN_PREFIX,
     STREAK_THRESHOLD_COLUMNS,
 )
-from experiments.k2_detection.k2_evaluation import (
-    Headline,
-    summarize_diagnosis,
-    summarize_headline,
-)
+from experiments.k2_detection.k2_evaluation import K2Summary, summarize_k2
 from src.pipeline.io import (
     RAW_SUBDIR,
-    df_to_csv,
     read_raw_json,
     run_directory_from_argv,
     user_output_directory,
 )
 
-
-def _change_label(prefix: str, factor: float) -> str:
-    # ×1,3 als +30 %, ×0,7 als −30 %
-    return f"{prefix} {(factor - 1) * 100:+.0f} %".replace("-", "−")
-
-
-# Beschriftung der Änderungen im K2-Report, Spitzen stehen in KIND_LABELS
-CHANGE_LABELS: dict[str, str] = {
-    "scaled": _change_label("Sprung", STANDARD_CONFIG.scale_factor),
-    "scaled_down": _change_label("Sprung", STANDARD_CONFIG.scale_factor_down),
-    "ramp_28": _change_label("Rampe über 28 Tage", STANDARD_CONFIG.scale_factor),
-    "ramp_28_down": _change_label(
-        "Rampe über 28 Tage", STANDARD_CONFIG.scale_factor_down
-    ),
-    "ramp_56": _change_label("Rampe über 56 Tage", STANDARD_CONFIG.scale_factor),
-    "ramp_56_down": _change_label(
-        "Rampe über 56 Tage", STANDARD_CONFIG.scale_factor_down
-    ),
+CONFIG_LABELS: dict[str, str] = {
+    "chosen": "neue Schwellen",
+    "current": "bisherige Schwellen",
 }
 
-EXPECTATION_LABELS: dict[str, str] = {
-    "positive": "erkennen",
-    "negative": "nicht feuern",
-    "single_day": "Alarm am Ereignistag",
-}
-
-CONFIG_LABELS: dict[str, str] = {"chosen": "gewählt", "current": "aktuelle Config"}
-
-SCENARIO_LABELS = KIND_LABELS | CHANGE_LABELS
-
-RESULT_HEADERS = {
-    "config": "Einstellung",
-    "thresholds": "weekday / weekly / long_term %",
-    "detected": "echte Trends erkannt",
-    "mean_delay": "Tage bis Erkennung (Mittel)",
-    "resets": "Resets gesamt",
-    "false_per_year": "falsche Resets je Jahr",
-    "limit": "Grenze",
-}
-EVENT_HEADERS = {
-    "start": "Beginn",
-    "change_pct": "Änderung [%]",
-    "chosen_reset": "gewählt: Reset am",
-    "chosen_delay": "gewählt: Tage seit Beginn",
-    "current_reset": "aktuelle Config: Reset am",
-    "current_delay": "aktuelle Config: Tage seit Beginn",
+GRID_HEADERS = {
+    "share": "Anteil der Tage, an denen eine Skala anhält (ohne Reset)",
+    "weekly_streak_threshold": "Schwelle weekly",
+    "long_term_streak_threshold_pct": "Schwelle long_term [%]",
+    "resets": "Resets auf validation",
+    "resets_per_year": "Resets je Jahr",
+    "selected": "gewählt",
 }
 DIAGNOSIS_HEADERS = {
-    "kind": "Szenario",
-    "expectation": "Sollverhalten",
-    "chosen_detected": "gewählt: erkannt bzw. feuert (n von N Fenstern)",
-    "chosen_day": "gewählt: Tage (Mittel)",
-    "current_detected": "aktuelle Config: erkannt bzw. feuert (n von N Fenstern)",
-    "current_day": "aktuelle Config: Tage (Mittel)",
-}
-GRID_HEADERS = {
-    "weekday_streak_threshold": "weekday",
-    "weekly_streak_threshold": "weekly",
-    "long_term_streak_threshold_pct": "long_term [%]",
-    "detected": "echte Trends erkannt",
-    "mean_delay": "Tage bis Erkennung (Mittel)",
-    "false_per_year": "falsche Resets je Jahr",
-    "selected": "gewählt",
-    "current": "aktuelle Config",
+    "kind": "eingebautes Ereignis",
+    "expected": "soll",
+    "chosen_resets": "neue Schwellen: Reset wegen des Ereignisses",
+    "chosen_day": "neue Schwellen: Tage bis zum Reset",
+    "chosen_alarms": "neue Schwellen: Ereignistag gemeldet",
+    "current_resets": "bisherige Schwellen: Reset wegen des Ereignisses",
+    "current_day": "bisherige Schwellen: Tage bis zum Reset",
+    "current_alarms": "bisherige Schwellen: Ereignistag gemeldet",
 }
 
 
-def format_threshold(value: float) -> str:
-    # Schwellen wie 1,25 würden mit einer Nachkommastelle zu 1,2
-    return f"{value:g}".replace(".", ",")
-
-
-def format_thresholds(values: list[float]) -> str:
-    return " / ".join(format_threshold(value) for value in values)
-
-
-def _date_text(dates: pd.Series) -> pd.Series:
-    return dates.dt.strftime("%d.%m.%Y").fillna("nicht erkannt")
+def format_thresholds(thresholds: pd.Series | dict) -> str:
+    return " / ".join(
+        format_number(float(thresholds[column]), 2)
+        for column in STREAK_THRESHOLD_COLUMNS.values()
+    )
 
 
 def _ratio(hits: pd.Series, total: pd.Series) -> list[str]:
     return [f"{int(hit)}/{int(count)}" for hit, count in zip(hits, total)]
 
 
-def _grid_table(ranked: pd.DataFrame) -> pd.DataFrame:
-    table = ranked.assign(detected=_ratio(ranked["hits"], ranked["events"]))[
+def build_grid_table(grid: pd.DataFrame) -> pd.DataFrame:
+    return grid.assign(selected=grid["selected"].map({True: "ja", False: ""}))[
         list(GRID_HEADERS)
-    ].copy()
-    table["selected"] = ranked["selected"].map({True: "ja", False: ""})
-    table["current"] = ranked["current"].map(
-        {True: CONFIG_LABELS["current"], False: ""}
+    ].rename(columns=GRID_HEADERS)
+
+
+def build_reset_table(resets: pd.DataFrame, share: float) -> pd.DataFrame:
+    chosen = resets.loc[resets["share"].eq(share), "analyzed_day"]
+
+    return pd.DataFrame({"Reset am": chosen.dt.strftime("%d.%m.%Y")})
+
+
+def build_diagnosis_table(diagnosis: pd.DataFrame, kinds: list[str]) -> pd.DataFrame:
+    by_config = {
+        label: diagnosis.loc[diagnosis["config"].eq(label)].set_index("kind").loc[kinds]
+        for label in CONFIG_LABELS
+    }
+    chosen, current = by_config["chosen"], by_config["current"]
+
+    return pd.DataFrame(
+        {
+            "kind": [KIND_LABELS[kind] for kind in kinds],
+            "expected": chosen["expected"].map(DETECTION_LABELS).to_numpy(),
+            "chosen_resets": _ratio(chosen["own_resets"], chosen["windows"]),
+            "chosen_day": chosen["median_reset_day"].to_numpy(),
+            "chosen_alarms": _ratio(chosen["event_alarms"], chosen["windows"]),
+            "current_resets": _ratio(current["own_resets"], current["windows"]),
+            "current_day": current["median_reset_day"].to_numpy(),
+            "current_alarms": _ratio(current["event_alarms"], current["windows"]),
+        }
     )
-    for column in STREAK_THRESHOLD_COLUMNS.values():
-        table[column] = table[column].map(format_threshold)
-
-    return table.rename(columns=GRID_HEADERS)
-
-
-def _expectation(kind: str, k2_config: dict) -> str:
-    if kind in k2_config["positive_kinds"]:
-        return EXPECTATION_LABELS["positive"]
-    if kind in k2_config["negative_kinds"]:
-        return EXPECTATION_LABELS["negative"]
-
-    return EXPECTATION_LABELS["single_day"]
-
-
-def verdict(met: bool) -> str:
-    return "erreicht" if met else "nicht erreicht"
 
 
 def build_setup(run_config: dict, k2_config: dict) -> dict[str, str]:
@@ -153,106 +103,43 @@ def build_setup(run_config: dict, k2_config: dict) -> dict[str, str]:
 
     return {
         "Zeitraum": (
-            f"bewertet {analysis['first_day']} bis {analysis['last_day']} ({analysis['days']} Tage), davor die Historie aus train. "
-            "Kalibriert wird nur auf validation"
+            f"{analysis['first_day']} bis {analysis['last_day']} ({analysis['days']} Tage, validation), "
+            "durchgehend mit Reset, Historie davor aus train"
         ),
-        "Echte Trends": (
-            f"{analysis['events']} im Zeitraum: Niveau ändert sich um mindestens {format_number(k2_config['event_min_change_pct'], 0)} % "
-            f"gegen die {k2_config['event_reference_days']} Tage davor, der Übergang ist nach {k2_config['event_transition_days']} Tagen abgeschlossen "
-            f"und das neue Niveau hält mindestens {k2_config['event_min_duration_days']} Tage"
+        "Regel": (
+            f"weekly und long_term halten ohne Reset an gleich vielen Tagen an ({detector['sustained_anomaly_streak_days']} "
+            f"von {detector['streak_tolerance_window_days']} Tagen über der Schwelle). Gewählt wird der größte Anteil mit "
+            f"höchstens {k2_config['max_resets']} Resets"
         ),
-        "Treffer": (
-            f"ein Reset von {k2_config['hit_days_before']} Tagen vor bis {analysis['hit_days_after']} Tage nach dem Beginn eines echten Trends. "
-            "Jeder andere Reset ist falsch"
-        ),
-        "Modus": "mit Reset: schlanke Kette (Analyse, Streak, Einordnung nach Regel, Reset) über die ganze Reihe, ohne Prognose und ohne LLM",
-        "Detektor": (
-            f"Referenz Rolling {detector['reference_window_rolling_days']} vor dem Beobachtungsfenster, "
-            f"Median/MAD für {' und '.join(detector['single_day_scales'])}"
+        "Kette": "Analyse, Streak, Einordnung nach Regel und Reset wie im Zyklus, ohne Prognose und ohne LLM",
+        "Diagnose": (
+            f"Katalog-Arten an {len(analysis['cutovers'])} Cutovern im Abstand von {STANDARD_CONFIG.margin_after_days} Tagen, "
+            f"je {STANDARD_CONFIG.monitoring_before_cutover_days} Tage davor und {STANDARD_CONFIG.margin_after_days} danach. "
+            "Nicht Teil der Wahl"
         ),
         "Commit": format_commit(run_config["code_version"]),
     }
 
 
-def build_summary(
-    headline: Headline,
-    selected: pd.Series,
-    current: pd.Series,
-    thresholds: dict[str, str],
-    k2_config: dict,
-) -> list[str]:
-    target = format_number(k2_config["target_detected_share"] * 100, 0)
-    slow_target = format_number(k2_config["max_slow_fired_share"] * 100, 0)
-    limit = format_number(k2_config["max_false_resets_per_year"], DECIMALS)
+def build_summary(summary: K2Summary, run_config: dict, k2_config: dict) -> list[str]:
+    selected = summary.selected
+    current = run_config["analysis"]["current_thresholds"]
 
     return [
-        f"Gewählt: weekday / weekly / long_term % = {thresholds['chosen']} (aktuelle Config {thresholds['current']})",
-        f"Echte Trends mit Reset: {selected['hits']} von {selected['events']} erkannt, im Mittel nach {format_number(selected['mean_delay'], 1)} Tagen. Ziel mindestens {target} %: {verdict(headline.detection_met)}. Aktuelle Config: {current['hits']} von {current['events']}",
-        f"Falsche Resets: {format_number(selected['false_per_year'], DECIMALS)} je Jahr (Grenze {limit}: {verdict(headline.false_met)}), aktuelle Config {format_number(current['false_per_year'], DECIMALS)}",
-        f"Diagnose mit Eingriffen: Sprung und Rampe 28 Tage erkannt in {headline.diagnosis_hits} von {headline.diagnosis_windows} Fällen, langsame Rampen feuern in {headline.slow_fired} von {headline.slow_windows} (Ziel höchstens {slow_target} %: {verdict(headline.slow_met)})",
+        f"Gewählt: weekly / long_term % = {format_thresholds(selected)} bei Anteil {format_number(selected['share'], 2)} "
+        f"(aktuelle Config {format_thresholds({STREAK_THRESHOLD_COLUMNS[scale]: value for scale, value in current.items()})})",
+        f"{selected['resets']} Resets auf validation, {format_number(selected['resets_per_year'], 2)} je Jahr "
+        f"(Grenze höchstens {k2_config['max_resets']})",
     ]
 
 
-def build_result_table(
-    selected: pd.Series,
-    current: pd.Series,
-    thresholds: dict[str, str],
-    limit: float,
-) -> pd.DataFrame:
-    rows = pd.DataFrame([selected, current]).reset_index(drop=True)
-
-    return pd.DataFrame(
-        {
-            "config": [CONFIG_LABELS["chosen"], CONFIG_LABELS["current"]],
-            "thresholds": [thresholds["chosen"], thresholds["current"]],
-            "detected": _ratio(rows["hits"], rows["events"]),
-            "mean_delay": rows["mean_delay"],
-            "resets": rows["resets"],
-            "false_per_year": rows["false_per_year"],
-            "limit": limit,
-        }
-    )
-
-
-def build_event_table(event_hits: pd.DataFrame) -> pd.DataFrame:
-    return event_hits.assign(
-        start=event_hits["start"].dt.strftime("%d.%m.%Y"),
-        chosen_reset=_date_text(event_hits["chosen_reset"]),
-        current_reset=_date_text(event_hits["current_reset"]),
-    )
-
-
-def build_diagnosis_table(
-    diagnosis: pd.DataFrame, kinds: list[str], k2_config: dict
-) -> pd.DataFrame:
-    chosen = (
-        diagnosis.loc[diagnosis["config"].eq("chosen")].set_index("kind").loc[kinds]
-    )
-    current = (
-        diagnosis.loc[diagnosis["config"].eq("current")].set_index("kind").loc[kinds]
-    )
-
-    return pd.DataFrame(
-        {
-            "kind": [SCENARIO_LABELS[kind] for kind in kinds],
-            "expectation": [_expectation(kind, k2_config) for kind in kinds],
-            "chosen_detected": _ratio(chosen["hits"], chosen["windows"]),
-            "chosen_day": chosen["mean_day"].to_numpy(),
-            "current_detected": _ratio(current["hits"], current["windows"]),
-            "current_day": current["mean_day"].to_numpy(),
-        }
-    )
-
-
-def build_notes(run_config: dict, k2_config: dict) -> list[str]:
-    limit = format_number(k2_config["max_false_resets_per_year"], DECIMALS)
-    blind_days = run_config["numerical_analysis_config"]["long_term_window_days"]
+def build_notes(run_config: dict) -> list[str]:
+    analysis = run_config["analysis"]
 
     return [
-        f"Gewählt wird unter der Grenze für falsche Resets je Jahr ({limit}) der Punkt mit den meisten erkannten echten Trends, dann dem kürzesten mittleren Verzug. Das Raster steht vollständig in result_streak_sensitivity.csv",
-        f"Ein Reset im Trefferfenster eines Trends zählt als Treffer, auch wenn ein Reset zwei nahe Ereignisse trifft. Nach einem Reset fehlen weekday und long_term etwa {blind_days} Tage, das ist im Lauf enthalten",
-        f"Diagnose: positive Art = erster Reset in Tag 1 bis {run_config['analysis']['hit_days_after']} nach dem Cutover. Langsame Rampe = erster Reset außerhalb der Trefferfenster echter Trends (soll nie vorkommen). Spitze = Alarm am Ereignistag. Beginne des natürlichen Hintergrunds zählen mit",
-        "Grenzen: wenige echte Trends in einem Haushalt, ein Treffer mehr oder weniger sind mehrere Prozentpunkte. Der Unterschied zwischen benachbarten Rasterpunkten ist nicht belastbar. Mindeständerung, Übergangs- und Haltedauer, Trefferfenster und die Grenze für falsche Resets sind Setzungen",
+        "Gezählt wird jeder Reset im durchgehenden Lauf, auch an echten Wechseln (Urlaub, Saison). Die Grenze ist eine Setzung über die Blindzeit nach einem Reset",
+        f"Der Anteil anhaltender Tage legt nur das Verhältnis der beiden Schwellen fest. Er wird ohne Reset auf {analysis['days']} Tagen bestimmt, gezählt wird mit Reset",
+        f"Diagnose: Die Zeitpunkte liegen in den Kalibrierdaten, die Zahlen sind eine Ansicht, kein Beleg. Bei {len(analysis['cutovers'])} Zeitpunkten verschiebt schon ein einzelner Fall die Anteile deutlich",
         "Die gewählten Schwellen sind in NumericalAnalysisConfig zu übernehmen, gerundet",
     ]
 
@@ -260,76 +147,52 @@ def build_notes(run_config: dict, k2_config: dict) -> list[str]:
 def write_report(run_directory: Path) -> Path:
     run_config = read_raw_json(run_directory, "run_config")
     k2_config = run_config["k2_config"]
-    chosen = run_config["numerical_analysis_config"]
-    thresholds = {
-        "chosen": format_thresholds(
-            [chosen[column] for column in STREAK_THRESHOLD_COLUMNS.values()]
-        ),
-        "current": format_thresholds(
-            list(run_config["analysis"]["current_thresholds"].values())
-        ),
-    }
 
     raw = run_directory / RAW_SUBDIR
-    ranked = pd.read_csv(raw / f"{GRID_FILE}.csv")
-    event_hits = pd.read_csv(
-        raw / f"{EVENT_HITS_FILE}.csv",
-        parse_dates=["start", "chosen_reset", "current_reset"],
-    )
+    grid = pd.read_csv(raw / f"{GRID_FILE}.csv")
+    resets = pd.read_csv(raw / f"{RESETS_FILE}.csv", parse_dates=["analyzed_day"])
     cases = pd.read_csv(raw / f"{DIAGNOSIS_FILE}.csv", dtype={"cutover_date": str})
-    diagnosis = summarize_diagnosis(cases)
-
-    selected = ranked.loc[ranked["selected"]].iloc[0]
-    current = ranked.loc[ranked["current"]].iloc[0]
-    headline = summarize_headline(
-        selected,
-        diagnosis,
-        positive_kinds=tuple(k2_config["positive_kinds"]),
-        negative_kinds=tuple(k2_config["negative_kinds"]),
-        target_detected_share=k2_config["target_detected_share"],
-        max_false_per_year=k2_config["max_false_resets_per_year"],
-        max_slow_fired_share=k2_config["max_slow_fired_share"],
+    summary = summarize_k2(
+        grid,
+        resets,
+        cases,
+        days=run_config["analysis"]["days"],
+        max_resets=k2_config["max_resets"],
     )
-    excerpt = pd.concat(
-        [ranked.head(k2_config["report_grid_rows"]), ranked.loc[ranked["current"]]]
-    ).drop_duplicates(subset=list(STREAK_THRESHOLD_COLUMNS.values()))
 
     tables = {
-        "result_thresholds": (
-            "Ergebnis auf den echten Daten: gewählte Schwellen gegen aktuelle Config",
-            build_result_table(
-                selected, current, thresholds, k2_config["max_false_resets_per_year"]
-            ).rename(columns=RESULT_HEADERS),
+        "result_grid": (
+            "Schwellen je Anteil anhaltender Tage und Resets im durchgehenden Lauf",
+            build_grid_table(summary.grid),
         ),
-        "result_events": (
-            "Echte Trends: wann meldet der Detektor (mit Reset)?",
-            build_event_table(event_hits).rename(columns=EVENT_HEADERS),
+        "result_resets": (
+            "Resets mit den gewählten Schwellen",
+            build_reset_table(resets, summary.selected["share"]),
         ),
         "result_diagnosis": (
-            "Diagnose mit Eingriffen: ab welcher Änderung erkennt er? (Cutover-Fenster, mit Reset)",
+            (
+                f"Was der Detektor mit eingebauten Ereignissen macht, an {len(run_config['analysis']['cutovers'])} Zeitpunkten in validation "
+                "(Ansicht, nicht zur Wahl). Reset wegen des Ereignisses: so oft setzt das System zurück, und zwar früher als "
+                "zur selben Zeit ohne Ereignis. Tage bis zum Reset: Median ab dem Ereignistag. Ereignistag gemeldet: der Tag "
+                "selbst ist auffällig, nur für Spitze und ganzen Tag gedacht"
+            ),
             build_diagnosis_table(
-                diagnosis, run_config["analysis"]["diagnosis_kinds"], k2_config
+                summary.diagnosis, k2_config["diagnosis_kinds"]
             ).rename(columns=DIAGNOSIS_HEADERS),
-        ),
-        "result_grid_excerpt": (
-            f"Raster der Schwellen nach Rang (die besten {k2_config['report_grid_rows']} und die aktuelle Config)",
-            _grid_table(excerpt),
         ),
     }
 
     output_directory = user_output_directory(run_directory)
-
     write_result_report(
         output_directory,
-        title=f"K2 Schwellen der Anomalieerkennung, Lauf {run_directory.name}",
-        summary=build_summary(headline, selected, current, thresholds, k2_config),
+        title=f"K2 Schwellen der Niveau-Skalen, Lauf {run_directory.name}",
+        summary=build_summary(summary, run_config, k2_config),
         setup=build_setup(run_config, k2_config),
         tables=tables,
-        notes=build_notes(run_config, k2_config),
+        notes=build_notes(run_config),
         images=[],
-        decimals=DECIMALS,
+        decimals=STANDARD_CONFIG.decimals,
     )
-    df_to_csv(_grid_table(ranked), output_directory, "result_streak_sensitivity")
 
     return output_directory
 

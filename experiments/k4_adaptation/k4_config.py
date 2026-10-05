@@ -14,7 +14,7 @@ MASKING_DECISIONS_FILE = "k4_mask_decisions"
 K4Strategy = Literal["none", "cut", "step_regressor"]
 
 
-# Cutover, Zeitfenster, Stufe und Faktor kommen aus StandardScenarioConfig, damit K2 und K4 auf denselben Szenarien laufen
+# Cutover, Zeitfenster und Faktor kommen aus StandardScenarioConfig
 @dataclass(frozen=True)
 class K4Config:
     # Zyklus wie dieses System, die Adaptionen gibt das Orakel vor
@@ -23,7 +23,7 @@ class K4Config:
     # Standard-Cutover (Kennungen aus StandardScenarioConfig)
     cutovers: tuple[str, ...] = ("CO1", "CO2", "CO3", "CO4", "CO5")
 
-    # 6 = frühestmögliches new_pattern (6 von 7 Tagen auffällig, ausgewertet um Mitternacht danach), 19 = späte Erkennung, so spät erkennt der Detektor +100 W im Mittel in K2
+    # 6 = frühestmögliches new_pattern (6 von 7 Tagen auffällig, ausgewertet um Mitternacht danach), 19 = späte Erkennung, etwa so spät setzt der Detektor bei scaled im Median zurück (K2-Diagnose)
     trigger_days: tuple[int, ...] = (6, 19)
     # Trainingsfenster minus Schnitt bei Trigger minus streak_tolerance_window_days: nach so vielen Tagen trainieren Aktion und keine Aktion auf denselben Tagen, die Differenz ist danach null
     evaluation_days = 23
@@ -33,18 +33,17 @@ class K4Config:
     bias_first_day: int = -3
     bias_last_day: int = 10
 
-    # scaled ist das zweite Ereignis neben der Dauerlast: additiv gegen multiplikativ
-    kinds: tuple[str, ...] = ("step", "scaled")
+    kinds: tuple[str, ...] = ("scaled",)
 
     # none läuft einmal je Szenario ohne Trigger mit
     strategies: tuple[K4Strategy, ...] = ("cut", "step_regressor")
 
     # Kennzahlen zu diesem Ereignis
-    key_figure_kind: str = "step"
+    key_figure_kind: str = "scaled"
 
     # Teil 2, peak/low ausblenden: decision_system zeichnet die Entscheidungen auf, das Orakel spielt sie ohne und mit Ausblenden nach
     decision_system: str = RULE_SYSTEM
-    masking_kinds: tuple[str, ...] = ("control", "step")
+    masking_kinds: tuple[str, ...] = ("control", "scaled")
     masked_classifications: tuple[str, ...] = ("peak", "low")
     # in den ersten zwei Wochen nach dem Cutover kann der Beginn einer echten Änderung noch als peak ausgeblendet werden
     masking_early_days: int = 14

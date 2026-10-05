@@ -107,7 +107,9 @@ def run_retraining(k1_config: K1Config) -> Path:
 def run_seasonality(k1_config: K1Config) -> Path:
     np.random.seed(k1_config.seed)
 
-    target_series, target_imputed, _target_value_implausible = load_target(k1_config.split)
+    target_series, target_imputed, _target_value_implausible = load_target(
+        k1_config.split
+    )
     split_start, split_end = read_split_bounds(PROJECT_CONFIG, k1_config.split)
     start, end = local_day_window(
         split_start.tz_convert(LOCAL_TIMEZONE).date().isoformat(),

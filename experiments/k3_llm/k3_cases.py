@@ -106,8 +106,12 @@ def _anomaly_block(
         for scale in DEVIATION_SCALE_NAMES
     }
     since_block = {
-        scale: _exceeding_since(
-            streak_block[scale], level_values[scale], thresholds[scale]
+        scale: (
+            _exceeding_since(
+                streak_block[scale], level_values[scale], thresholds[scale]
+            )
+            if scale in ANALYSIS_CONFIG.level_shift_scales
+            else None
         )
         for scale in DEVIATION_SCALE_NAMES
     }
@@ -194,7 +198,7 @@ def llm_relevant_cases() -> tuple[LLMEvaluationCase, ...]:
             anomaly=_anomaly_block(
                 scores={"daily": 0.4, "weekday": 0.5, "weekly": 0.3},
                 direction="high",
-                streak_days={"weekday": 1.0, "weekly": 1.0, "long_term": 1.0},
+                streak_days={"weekly": 1.0, "long_term": 1.0},
                 deviation_pct={"weekday": 6.0, "weekly": 4.0, "long_term": 2.0},
             ),
             context=_context_block(source_available=True),
@@ -207,7 +211,7 @@ def llm_relevant_cases() -> tuple[LLMEvaluationCase, ...]:
             anomaly=_anomaly_block(
                 scores={"daily": 1.1, "weekday": 3.77, "weekly": 1.4},
                 direction="high",
-                streak_days={"weekday": 1.0, "weekly": 1.0, "long_term": 1.0},
+                streak_days={"weekly": 1.0, "long_term": 1.0},
                 deviation_pct={"weekday": 45.0, "weekly": 12.0, "long_term": 6.0},
             ),
             context=_context_block(source_available=True),
@@ -216,15 +220,15 @@ def llm_relevant_cases() -> tuple[LLMEvaluationCase, ...]:
             case_id="new_pattern",
             expected="new_pattern",
             reasoning=(
-                "Abweichung nach oben, auf 2 von 3 Niveau-Skalen (weekday, weekly) seit mindestens sustained_anomaly_streak_days=6 Tagen anhaltend "
+                "Abweichung nach oben, beide Niveau-Skalen (weekly, long_term) seit mindestens sustained_anomaly_streak_days=6 Tagen anhaltend "
                 "(min_sustained_scales=2) -> new_pattern."
             ),
             value_implausible=False,
             anomaly=_anomaly_block(
                 scores={"daily": 0.9, "weekday": 3.5, "weekly": 3.1},
                 direction="high",
-                streak_days={"weekday": 7.0, "weekly": 7.0, "long_term": 1.0},
-                deviation_pct={"weekday": 38.0, "weekly": 36.0, "long_term": 9.0},
+                streak_days={"weekly": 7.0, "long_term": 7.0},
+                deviation_pct={"weekday": 38.0, "weekly": 36.0, "long_term": 22.0},
             ),
             context=_context_block(source_available=True),
         ),
@@ -238,7 +242,7 @@ def llm_relevant_cases() -> tuple[LLMEvaluationCase, ...]:
             anomaly=_anomaly_block(
                 scores={"weekday": -3.4},
                 direction="low",
-                streak_days={"weekday": 1.0},
+                streak_days={},
                 deviation_pct={"weekday": -30.0},
             ),
             context=_context_block(source_available=False),
@@ -247,15 +251,15 @@ def llm_relevant_cases() -> tuple[LLMEvaluationCase, ...]:
             case_id="peak_single_sustained_scale",
             expected="peak",
             reasoning=(
-                "Nur eine von drei Niveau-Skalen ist sustained (Streak=6 auf weekday), "
-                "min_sustained_scales=2 verlangt aber mindestens zwei - bleibt peak trotz langer Einzel-Skalen-Streak."
+                "Einzeltag-Alarm nach oben, dazu ist nur weekly sustained (Streak=6), "
+                "min_sustained_scales=2 verlangt aber beide Niveau-Skalen - bleibt peak trotz langer Einzel-Skalen-Streak."
             ),
             value_implausible=False,
             anomaly=_anomaly_block(
-                scores={"daily": 1.0, "weekday": 3.5, "weekly": 0.4},
+                scores={"daily": 1.0, "weekday": 3.5, "weekly": 1.6},
                 direction="high",
-                streak_days={"weekday": 6.0, "weekly": 1.0, "long_term": 1.0},
-                deviation_pct={"weekday": 40.0, "weekly": 5.0, "long_term": 4.0},
+                streak_days={"weekly": 6.0, "long_term": 1.0},
+                deviation_pct={"weekday": 40.0, "weekly": 12.0, "long_term": 4.0},
             ),
             context=_context_block(source_available=True),
         ),
@@ -270,7 +274,7 @@ def llm_relevant_cases() -> tuple[LLMEvaluationCase, ...]:
             anomaly=_anomaly_block(
                 scores={"daily": 0.5, "weekday": 0.9, "weekly": 1.4},
                 direction="high",
-                streak_days={"weekday": 2.0, "weekly": 6.0, "long_term": 1.0},
+                streak_days={"weekly": 6.0, "long_term": 1.0},
                 deviation_pct={"weekday": 7.0, "weekly": 9.0, "long_term": 3.0},
             ),
             context=_context_block(source_available=True),
@@ -279,15 +283,15 @@ def llm_relevant_cases() -> tuple[LLMEvaluationCase, ...]:
             case_id="new_pattern_at_min_scales_boundary",
             expected="new_pattern",
             reasoning=(
-                "Exakt an der min_sustained_scales-Schwelle: genau 2 von 3 Niveau-Skalen sustained "
-                "(weekday+weekly mit je 6 Tagen), long_term nicht - reicht für new_pattern."
+                "Genau an der Streak-Grenze: weekly und long_term je sustained_anomaly_streak_days=6 von 7 Tagen, "
+                "beide Niveau-Skalen sustained (min_sustained_scales=2) - reicht für new_pattern."
             ),
             value_implausible=False,
             anomaly=_anomaly_block(
                 scores={"daily": 0.8, "weekday": 3.2, "weekly": 3.0},
                 direction="high",
-                streak_days={"weekday": 6.0, "weekly": 6.0, "long_term": 1.0},
-                deviation_pct={"weekday": 35.0, "weekly": 30.0, "long_term": 10.0},
+                streak_days={"weekly": 6.0, "long_term": 6.0},
+                deviation_pct={"weekday": 35.0, "weekly": 30.0, "long_term": 16.0},
             ),
             context=_context_block(source_available=True),
         ),
@@ -312,7 +316,7 @@ def llm_relevant_cases() -> tuple[LLMEvaluationCase, ...]:
             anomaly=_anomaly_block(
                 scores={"daily": 0.6, "weekday": 0.8, "weekly": -3.2},
                 direction="high",
-                streak_days={"weekday": 1.0, "weekly": 7.0, "long_term": 6.0},
+                streak_days={"weekly": 7.0, "long_term": 6.0},
                 deviation_pct={"weekday": 8.0, "weekly": -40.0, "long_term": -25.0},
             ),
             context=_context_block(source_available=True),
@@ -328,7 +332,7 @@ def llm_relevant_cases() -> tuple[LLMEvaluationCase, ...]:
             anomaly=_anomaly_block(
                 scores={"daily": 0.6, "weekday": 0.8, "weekly": -3.2},
                 direction="high",
-                streak_days={"weekday": 1.0, "weekly": 7.0, "long_term": 6.0},
+                streak_days={"weekly": 7.0, "long_term": 6.0},
                 deviation_pct={"weekday": 8.0, "weekly": -40.0, "long_term": -25.0},
             ),
             context=_context_block(source_available=True, with_event=True),
@@ -343,8 +347,8 @@ _SINGLE_DAY_PATHS = frozenset({"anomaly.level", "anomaly.direction"})
 _DRIFT_PATHS = frozenset(
     {
         "anomaly.sustained_drift",
-        "anomaly.scale_anomaly_streak_days.weekday",
         "anomaly.scale_anomaly_streak_days.weekly",
+        "anomaly.scale_anomaly_streak_days.long_term",
     }
 )
 
@@ -359,13 +363,7 @@ EXPECTED_EVIDENCE_PATHS: dict[str, frozenset[str]] = {
     "peak_single_sustained_scale": _SINGLE_DAY_PATHS,
     "new_pattern_at_min_scales_boundary": _DRIFT_PATHS,
     "measurement_error_missing_day": frozenset({"observation.value_implausible"}),
-    "new_pattern_drift_down": frozenset(
-        {
-            "anomaly.sustained_drift",
-            "anomaly.scale_anomaly_streak_days.weekly",
-            "anomaly.scale_anomaly_streak_days.long_term",
-        }
-    ),
+    "new_pattern_drift_down": _DRIFT_PATHS,
     "absence_drift_down": frozenset(
         {
             "anomaly.level",

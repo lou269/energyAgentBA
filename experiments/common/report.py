@@ -16,33 +16,44 @@ def format_cutovers(
     )
 
 
-# Beschriftung der Standard-Szenarien in den Reports, Stärken aus der Config bzw. aus dem Namen
+def _change_label(prefix: str, factor: float) -> str:
+    # ×1,2 als +20 %, ×0,8 als −20 %
+    return f"{prefix} {(factor - 1) * 100:+.0f} %".replace("-", "−")
+
+
+# Beschriftung der Katalog-Arten in den Reports, Stärken aus STANDARD_CONFIG
 KIND_LABELS: dict[str, str] = {
     "control": "keine Änderung",
-    "step_30": "Dauerlast +30 W",
-    "step_50": "Dauerlast +50 W",
-    "step": f"Dauerlast +{STANDARD_CONFIG.step_injection_w:g} W",
-    "step_200": "Dauerlast +200 W",
-    "scaled": f"proportional ×{STANDARD_CONFIG.scale_factor:g}".replace(".", ","),
-    "ramp_28": f"Rampe über 28 Tage auf ×{STANDARD_CONFIG.scale_factor:g}".replace(
-        ".", ","
+    "scaled": _change_label("Sprung", STANDARD_CONFIG.scale_factor),
+    "scaled_strong": _change_label("Sprung", STANDARD_CONFIG.strong_scale_factor),
+    "ramp_28": _change_label(
+        f"Rampe über {STANDARD_CONFIG.ramp_fast_days} Tage",
+        STANDARD_CONFIG.scale_factor,
     ),
-    "ramp_56": f"Rampe über 56 Tage auf ×{STANDARD_CONFIG.scale_factor:g}".replace(
-        ".", ","
+    "ramp_28_down": _change_label(
+        f"Rampe über {STANDARD_CONFIG.ramp_fast_days} Tage",
+        STANDARD_CONFIG.scale_factor_down,
     ),
-    "scaled_down": f"proportional ×{STANDARD_CONFIG.scale_factor_down:g}".replace(
-        ".", ","
+    "ramp_56": _change_label(
+        f"Rampe über {STANDARD_CONFIG.ramp_slow_days} Tage",
+        STANDARD_CONFIG.scale_factor,
     ),
-    "ramp_28_down": f"Rampe über 28 Tage auf ×{STANDARD_CONFIG.scale_factor_down:g}".replace(
-        ".", ","
+    "ramp_56_down": _change_label(
+        f"Rampe über {STANDARD_CONFIG.ramp_slow_days} Tage",
+        STANDARD_CONFIG.scale_factor_down,
     ),
-    "ramp_56_down": f"Rampe über 56 Tage auf ×{STANDARD_CONFIG.scale_factor_down:g}".replace(
-        ".", ","
-    ),
-    "peak": f"Einzeltag-Spitze +{STANDARD_CONFIG.peak_extra_w:g} W über {STANDARD_CONFIG.peak_hours} h",
-    "peak_6": f"Einzeltag-Spitze +{STANDARD_CONFIG.peak_extra_w:g} W über 6 h",
-    "level_250": "ganzer Einzeltag +250 W",
+    "peak": f"Spitze +{STANDARD_CONFIG.peak_extra_w:g} W über {STANDARD_CONFIG.peak_hours} h",
+    "peak_strong": f"Spitze +{STANDARD_CONFIG.strong_peak_extra_w:g} W über {STANDARD_CONFIG.peak_hours} h",
+    "level": f"ganzer Tag +{STANDARD_CONFIG.level_extra_w:g} W",
     "stuck": f"Festhänger über {STANDARD_CONFIG.stuck_hours} h",
+}
+
+# Sollverhalten des Vorfilters (EXPECTED_DETECTION)
+DETECTION_LABELS: dict[str, str] = {
+    "reset": "erkennen (Reset)",
+    "alarm": "Alarm am Ereignistag",
+    "silent": "still bleiben",
+    "flag": "als Messfehler markieren",
 }
 
 # Vorlage für die Erklärungsbewertung, Texte aus E2 und E5

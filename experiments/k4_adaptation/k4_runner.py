@@ -2,7 +2,7 @@
 # python -m experiments.k4_adaptation.k4_runner [strategies|masking]
 # danach: python -m experiments.k4_adaptation.k4_report [strategies|masking] [run_directory]
 
-# strategies: Adaptionsaktion mit festem Trigger (Orakel), none / cut / step_regressor auf den Standard-Szenarien step/scaled
+# strategies: Adaptionsaktion mit festem Trigger (Orakel), none / cut / step_regressor auf dem Standard-Szenario scaled
 # masking: peak/low-Tage nur für Prophet ausblenden. SYS2 zeichnet die Entscheidungen auf, das Orakel spielt sie ohne und mit Ausblenden nach
 
 import logging

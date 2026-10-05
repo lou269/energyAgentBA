@@ -78,7 +78,7 @@ def shift_local_days(
 
 
 def local_midnight_utc(
-    date: str, local_timezone: str, days_offset: int = 0
+    date: str | pd.Timestamp, local_timezone: str, days_offset: int = 0
 ) -> pd.Timestamp:
     return shift_local_days(
         pd.Timestamp(date, tz=local_timezone), days_offset, local_timezone

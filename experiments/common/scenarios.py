@@ -3,12 +3,7 @@ from functools import cache
 
 import pandas as pd
 
-from experiments.common.standard_config import (
-    HOURLY_SAMPLE_PERIOD_HOURS,
-    LOCAL_TIMEZONE,
-    PROJECT_CONFIG,
-    STUCK_VALUE_MIN_HOURS,
-)
+from experiments.common.standard_config import LOCAL_TIMEZONE, PROJECT_CONFIG
 from src.common.target_series import read_preprocessed_target
 from src.common.timestamps import (
     local_calendar_range,
@@ -17,7 +12,6 @@ from src.common.timestamps import (
 )
 from src.pipeline.comparison_harness import ScenarioData
 from src.pipeline.io import read_split_bounds
-from src.preprocessing.plausibility_check import flag_implausible_values
 
 
 @cache
@@ -150,65 +144,3 @@ def subtract_channels_in_window(
     )
 
     return adjusted
-
-
-def add_constant_step(
-    series: pd.Series, start: pd.Timestamp, watts: float
-) -> pd.Series:
-    stepped = series.copy()
-    stepped.loc[stepped.index >= start] += watts
-
-    return stepped
-
-
-def scale_from(series: pd.Series, start: pd.Timestamp, factor: float) -> pd.Series:
-    scaled = series.copy()
-    scaled.loc[scaled.index >= start] *= factor
-
-    return scaled
-
-
-def add_linear_ramp(
-    series: pd.Series, start: pd.Timestamp, *, days: int, factor: float
-) -> pd.Series:
-    # Faktor steigt stündlich linear von 1 auf factor und bleibt nach days Tagen dort, vor start bleibt er 1
-    ramped = series.copy()
-    elapsed = ramped.index.to_series() - start
-    progress = (elapsed / pd.Timedelta(days=days)).clip(0.0, 1.0)
-    ramped *= 1 + (factor - 1) * progress.to_numpy()
-
-    return ramped
-
-
-def add_single_day_peak(
-    series: pd.Series, start: pd.Timestamp, *, hours: int, extra_w: float
-) -> pd.Series:
-    peaked = series.copy()
-    in_peak = (peaked.index >= start) & (
-        peaked.index < start + pd.Timedelta(hours=hours)
-    )
-    peaked.loc[in_peak] += extra_w
-
-    return peaked
-
-
-def add_stuck_value(series: pd.Series, start: pd.Timestamp, *, hours: int) -> pd.Series:
-    # der letzte Wert vor start bleibt hängen
-    stuck = series.copy()
-    in_stuck = (stuck.index >= start) & (
-        stuck.index < start + pd.Timedelta(hours=hours)
-    )
-    stuck.loc[in_stuck] = series.loc[start - pd.Timedelta(hours=1)]
-
-    return stuck
-
-
-def add_stuck_flags(
-    series: pd.Series, imputed: pd.Series, implausible: pd.Series
-) -> pd.Series:
-    # die Flags aus der Vorverarbeitung kennen eingebaute Festhänger nicht, aufgefüllte Stunden zählen nicht als Messwert
-    return implausible | flag_implausible_values(
-        series.where(imputed.eq(False)),
-        stuck_value_min_hours=STUCK_VALUE_MIN_HOURS,
-        sample_period_hours=HOURLY_SAMPLE_PERIOD_HOURS,
-    )

@@ -42,7 +42,6 @@ def _run(
 def test_sequence_counts_the_expected_class_only_on_days_the_event_opened_the_gate() -> (
     None
 ):
-    normal = ["normal"] * 6
     runs = [
         _run(
             "control",
@@ -50,32 +49,36 @@ def test_sequence_counts_the_expected_class_only_on_days_the_event_opened_the_ga
             ["normal", "normal", "normal", "normal", "low", "normal"],
         ),
         _run(
-            "step",
+            "scaled_strong",
             [False, False, True, True, True, False],
             ["normal", "normal", "peak", "new_pattern", "new_pattern", "normal"],
             resets=[False, False, False, True, False, False],
             errors=[None, None, None, None, None, "timeout"],
         ),
         _run(
-            "peak_6",
+            "peak_strong",
             [False, False, True, False, False, False],
             ["normal", "normal", "peak", "normal", "normal", "normal"],
         ),
         # Gate nur dort offen, wo es auch im Kontrolllauf offen ist
-        _run("ramp_56", [False, False, False, False, True, False], normal),
+        _run(
+            "level",
+            [False, False, False, False, True, False],
+            ["normal", "normal", "normal", "normal", "peak", "normal"],
+        ),
     ]
 
     summary = summarize_sequence(pd.concat(runs, ignore_index=True))
     events = summary.events.set_index("kind")
     models = summary.models.set_index("config")
 
-    assert events.loc["step", "expected_classification"] == "new_pattern"
+    assert events.loc["scaled_strong", "expected_classification"] == "new_pattern"
     # Tag 3 zählt nicht, dort ist das Gate auch ohne Stufe offen
-    assert events.loc["step", "correct_days"] == 1
-    assert events.loc["step", "first_correct_day"] == 2
-    assert events.loc["step", "resets"] == 1
-    assert events.loc["peak_6", "first_correct_day"] == 1
-    assert pd.isna(events.loc["ramp_56", "first_correct_day"])
+    assert events.loc["scaled_strong", "correct_days"] == 1
+    assert events.loc["scaled_strong", "first_correct_day"] == 2
+    assert events.loc["scaled_strong", "resets"] == 1
+    assert events.loc["peak_strong", "first_correct_day"] == 1
+    assert pd.isna(events.loc["level", "first_correct_day"])
 
     assert models.loc["MDL0", "detected_kinds"] == 2
     assert models.loc["MDL0", "event_kinds"] == 3

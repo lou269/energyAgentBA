@@ -17,7 +17,7 @@ from experiments.common.report import (
     write_result_report,
 )
 from experiments.common.evaluation import ALL_DAYS
-from experiments.common.standard_config import DECIMALS, PROJECT_CONFIG
+from experiments.common.standard_config import PROJECT_CONFIG, STANDARD_CONFIG
 from experiments.k4_adaptation.k4_config import (
     MASKING_DECISIONS_FILE,
     MASKING_RESULTS_FILE,
@@ -106,9 +106,9 @@ def build_setup(run_config: dict, evaluation_days: int) -> dict[str, str]:
         "Cutover": format_cutovers(
             standard_config["cutover_dates"], k4_config["cutovers"]
         ),
-        "Ereignisse": (
-            f"Dauerlast +{format_number(standard_config['step_injection_w'], 0)} W, proportional jede Stunde × "
-            f"{format_number(standard_config['scale_factor'], DECIMALS)}"
+        "Ereignis": (
+            "Sprung, jede Stunde × "
+            f"{format_number(standard_config['scale_factor'], STANDARD_CONFIG.decimals)}"
         ),
         "Aktion": (
             f"fest an Tag {' und '.join(str(day) for day in k4_config['trigger_days'])} nach dem Cutover (Orakel), "
@@ -130,7 +130,7 @@ def build_key_figures(key: StrategyKeyFigures, metric: str) -> pd.DataFrame:
         (
             f"{STRATEGY_LABELS[row['strategy']]}, Aktion an Tag {key.earliest}: Differenz zu keiner Aktion bei {kind_label} [{unit}]",
             row["mean"],
-            f"{format_number(row['mean_pct'], DECIMALS)} % des Fehlers ohne Aktion, bei {row['improved']} Cutover besser",
+            f"{format_number(row['mean_pct'], STANDARD_CONFIG.decimals)} % des Fehlers ohne Aktion, bei {row['improved']} Cutover besser",
         )
         for row in key.earliest_rows.to_dict("records")
     ]
@@ -173,7 +173,7 @@ def report_strategies(run_directory: Path, k4_config: K4Config) -> Path:
     results = pd.read_csv(
         run_directory / RAW_SUBDIR / f"{RESULTS_FILE}.csv", dtype={"cutover_date": str}
     )
-    # ältere Läufe haben noch das Szenario control, das hier nicht mehr gebraucht wird
+    # ältere Läufe haben noch control und step, die hier nicht mehr gebraucht werden
     results = results.loc[results["kind"].isin(k4_config.kinds)]
 
     tables: dict[str, tuple[str, pd.DataFrame]] = {}
@@ -212,7 +212,7 @@ def report_strategies(run_directory: Path, k4_config: K4Config) -> Path:
             "Tagesfehler: Betrag der Differenz zwischen prognostiziertem und gemessenem Tagesmittel (Tagesenergie), wie in K1, nur Tage mit lauter bewerteten Stunden. Gegenläufige Stundenfehler gleichen sich dabei aus",
         ],
         images=["k4_error_curve.png"],
-        decimals=DECIMALS,
+        decimals=STANDARD_CONFIG.decimals,
     )
 
     return output_directory
@@ -229,7 +229,7 @@ def build_masking_key_figures(overall: pd.DataFrame, metric: str) -> pd.DataFram
             (
                 f"Ausblenden, Szenario {KIND_LABELS[row['kind']]}: {metric_label}-Differenz [{unit}]",
                 row["mean"],
-                f"bei {format_number(row['replay'], DECIMALS)} {unit} ohne Ausblenden, "
+                f"bei {format_number(row['replay'], STANDARD_CONFIG.decimals)} {unit} ohne Ausblenden, "
                 f"{row['masked_days']} von {row['days']} Tagen ausgeblendet, bei {row['improved']} Cutover besser",
             )
             for row in overall.to_dict("records")
@@ -293,11 +293,11 @@ def report_masking(run_directory: Path, k4_config: K4Config) -> Path:
         },
         tables=tables,
         notes=[
-            f"replay trifft SYS2 an {format_number(summarize_replay_match(paired), DECIMALS)} % der Tage",
+            f"replay trifft SYS2 an {format_number(summarize_replay_match(paired), STANDARD_CONFIG.decimals)} % der Tage",
             "Tagesfehler wie in Teil 1: Tage mit unvollständig bewerteten Stunden zählen dort nicht mit",
         ],
         images=[],
-        decimals=DECIMALS,
+        decimals=STANDARD_CONFIG.decimals,
     )
 
     return output_directory

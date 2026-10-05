@@ -9,7 +9,7 @@ from experiments.k4_adaptation.k4_evaluation import (
 
 
 def _results(
-    strategy: str, trigger_day: float, mae: list[float], kind: str = "step"
+    strategy: str, trigger_day: float, mae: list[float], kind: str = "scaled"
 ) -> pd.DataFrame:
     return pd.DataFrame(
         {
@@ -27,7 +27,7 @@ def test_actions_are_paired_with_none_on_the_same_scenario_and_day() -> None:
     results = pd.concat(
         [
             _results("none", float("nan"), [100.0, 100.0, 150.0, 140.0, 130.0]),
-            # control darf nicht in die Paarung von step rutschen
+            # control darf nicht in die Paarung von scaled rutschen
             _results("none", float("nan"), [90.0] * 5, kind="control"),
             _results("cut", 2.0, [100.0, 100.0, 120.0, 110.0, 105.0]),
         ],
@@ -50,7 +50,7 @@ def test_bias_after_cutover_averages_the_cutovers_without_action() -> None:
         for day, value in zip([0, 1], bias):
             rows.append(
                 {
-                    "kind": "step",
+                    "kind": "scaled",
                     "cutover_date": cutover,
                     "strategy": "none",
                     "days_since_cutover": day,
@@ -63,4 +63,4 @@ def test_bias_after_cutover_averages_the_cutovers_without_action() -> None:
 
     bias = summarize_bias_after_cutover(pd.DataFrame(rows), 0, 1)
 
-    assert bias.loc["step"].tolist() == [-90.0, -30.0]  # type: ignore
+    assert bias.loc["scaled"].tolist() == [-90.0, -30.0]  # type: ignore

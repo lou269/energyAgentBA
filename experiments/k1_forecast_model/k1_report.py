@@ -19,7 +19,11 @@ from experiments.common.report import (
     paired_difference_columns,
     write_result_report,
 )
-from experiments.common.standard_config import DECIMALS, LOCAL_TIMEZONE, PROJECT_CONFIG
+from experiments.common.standard_config import (
+    LOCAL_TIMEZONE,
+    PROJECT_CONFIG,
+    STANDARD_CONFIG,
+)
 from experiments.k1_forecast_model.k1_config import (
     REFERENCE_FILE,
     RUN_PREFIX,
@@ -156,12 +160,12 @@ def build_key_figures(modes: list[ModeSummary]) -> pd.DataFrame:
             (
                 f"{name}: MAE bestes Modell {MODEL_LABELS[mode.best_model]} [W]",
                 mode.best_mae_w,
-                f"{reference} {format_number(mode.reference_mae_w, DECIMALS)} W",
+                f"{reference} {format_number(mode.reference_mae_w, STANDARD_CONFIG.decimals)} W",
             ),
             (
                 f"{name}: Skill der Prophet-Varianten ggü. {reference} [%]",
                 mode.skill_max_pct,
-                f"Spanne {format_number(mode.skill_min_pct, DECIMALS)} bis {format_number(mode.skill_max_pct, DECIMALS)} %",
+                f"Spanne {format_number(mode.skill_min_pct, STANDARD_CONFIG.decimals)} bis {format_number(mode.skill_max_pct, STANDARD_CONFIG.decimals)} %",
             ),
             (
                 f"{name}: Varianten belastbar schlechter als das beste Modell",
@@ -228,7 +232,7 @@ def report_retraining(run_directory: Path) -> Path:
         tables=tables,
         notes=build_notes(modes),
         images=[f"{mode}/forecast_model_comparison.png" for mode in mode_directories],
-        decimals=DECIMALS,
+        decimals=STANDARD_CONFIG.decimals,
     )
 
     return output_directory
@@ -323,7 +327,7 @@ def report_seasonality(run_directory: Path) -> Path:
             NOISE_RULE_NOTE,
         ],
         images=["k1_mae_by_month.png"],
-        decimals=DECIMALS,
+        decimals=STANDARD_CONFIG.decimals,
     )
 
     return output_directory

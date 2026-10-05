@@ -30,7 +30,7 @@ class K3Config:
 
     model_variants: tuple[LLMModelVariant, ...] = (
         # LLMModelVariant(model_id="MDL0", model="qwen3:4b"),
-       #  LLMModelVariant(model_id="MDL1", model="qwen3:8b"),
+        #  LLMModelVariant(model_id="MDL1", model="qwen3:8b"),
         # LLMModelVariant(model_id="MDL2", model="qwen3.5:9b"),
         # LLMModelVariant(model_id="MDL3", model="gemma4:e4b"),
         # LLMModelVariant(model_id="MDL4", model="gemma4:e4b-mlx"),
@@ -39,10 +39,10 @@ class K3Config:
 
     include_rule_based_baseline: bool = True
 
-    # Ebene 2: ein Cutover der Standard-Szenarien, nur für die Modellwahl.
-    # Die erwartete Klasse je Art steht in GOLDSTANDARD_EXPECTED, ramp_56 aus E5 fehlt, sie öffnet hier kein Gate und das LLM wird nie gefragt
+    # Ebene 2: ein Cutover der Standard-Szenarien, nur für die Modellwahl
+    # -> strong damit das Gate sicher öffnet
     sequence_cutover: str = "CO3"
-    sequence_kinds: tuple[str, ...] = ("control", "step", "peak_6")
+    sequence_kinds: tuple[str, ...] = ("control", "scaled_strong", "peak_strong")
 
 
 def build_sequence_configs(
