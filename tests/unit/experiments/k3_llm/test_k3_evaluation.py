@@ -46,7 +46,7 @@ def test_sequence_counts_the_expected_class_only_on_days_the_event_opened_the_ga
         _run(
             "control",
             [False, False, False, False, True, False],
-            ["normal", "normal", "normal", "normal", "low", "normal"],
+            ["normal", "normal", "normal", "normal", "peak", "normal"],
         ),
         _run(
             "scaled_strong",

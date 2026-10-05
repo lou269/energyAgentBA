@@ -19,12 +19,12 @@ COLDSTART_DAYS = ForecastingConfig().cycle_coldstart_days
 STUCK_VALUE_MIN_HOURS = PreprocessingConfig().stuck_value_min_hours
 HOURLY_SAMPLE_PERIOD_HOURS = NumericalAnalysisConfig().sample_period_hours_hourly
 
-# Meldung = Tag, zu dem der Nutzer eine Erklärung bekäme (in SYS3 ein LLM-Aufruf)
+# Meldung = Tag, zu dem der Nutzer eine Erklärung bekäme (in SYS3 ein LLM-Aufruf) (low und absence brauchen keine Meldung)
+# measurement_error schon, Zähler und Anschluss kann nur der Haushalt prüfen
 NOTIFICATION_CLASSIFICATIONS: tuple[str, ...] = (
     "peak",
-    "low",
     "new_pattern",
-    "absence",
+    "measurement_error",
 )
 NOTIFICATION_PERIOD_DAYS = 30
 

@@ -67,7 +67,6 @@ class NumericalAnalysisConfig:
     weekly_window_days: int = 7
 
     # Mindestabdeckung für weekly_mean/long_term_window_mean (rolling): ein einzelner NaN-Tag (z.B. measurement_error)
-    # soll die Skala nicht gleich für die ganze Fensterlänge lahmlegen, siehe anomalieerkennung_neu.md
     rolling_window_min_coverage: float = 0.8
 
     long_term_reference_days: int = 28
@@ -152,7 +151,7 @@ MODEL_LABELS: dict[str, str] = {
     "C3_60": "C3_60 rolling 60 Tage",
 }
 
-selected_prophet_model = C2_EXPANDING
+selected_prophet_model = C3_ROLLING_30
 
 """ FORECASTING """
 
@@ -204,7 +203,7 @@ class ForecastingConfig:
 @dataclass(frozen=True)
 class LLMConfig:
     model: str = "ministral-3:8b"  # in K3 gewählt
-    prompt_version: str = "v24"
+    prompt_version: str = "v25"
     temperature: float = 0.0
     # qwen3.5:9b liefert das selbst als Modelfile-Default, gegen Wiederholungsschleifen bei greedy decoding
     presence_penalty: float = 1.5

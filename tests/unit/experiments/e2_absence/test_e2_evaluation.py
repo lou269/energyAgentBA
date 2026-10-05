@@ -103,7 +103,7 @@ def test_absence_only_counts_as_a_hit_with_the_calendar_event() -> None:
             ("SYS3_CTX0", "absence"),
             ["absence_classified_days", "new_pattern_days", "notification_days"],
         ]
-    ) == [2, 1, 3]
+    ) == [2, 1, 1]
 
     forecast = summary.forecast.set_index(["config", "phase"])
     assert forecast.loc[("SYS3_CTX1", "after_return"), "mean_delta"] == -10.0
