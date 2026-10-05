@@ -1,0 +1,20 @@
+Ebene,Modell,Fall oder Tag,Verstoß,fehlende Belege,Gerät genannt (Hinweis)
+Ebene 2,ministral-3:8b,2015-01-28 control,number: 10,,
+Ebene 2,ministral-3:8b,2015-01-28 peak_strong,number: 10,,
+Ebene 2,ministral-3:8b,2015-01-28 scaled_strong,number: 10,,
+Ebene 2,ministral-3:8b,2015-03-01 peak_strong,number: 70,,
+Ebene 2,ministral-3:8b,2015-03-12 scaled_strong,number: 20,,
+Ebene 2,ministral-3:8b,2015-03-19 scaled_strong,,,heizung
+Ebene 2,ministral-3:8b,2015-03-22 scaled_strong,,,heizung
+Ebene 2,ministral-3:8b,2015-04-03 scaled_strong,number: 20,,heizung
+Ebene 2,ministral-3:8b,2015-04-05 control,,,heizung
+Ebene 2,ministral-3:8b,2015-04-06 scaled_strong,,,heizung
+Ebene 2,ministral-3:8b,2015-04-09 peak_strong,,,heizung
+Ebene 2,ministral-3:8b,2015-04-19 scaled_strong,number: 50,,
+Ebene 2,ministral-3:8b,2015-04-22 peak_strong,number: 12,,
+Ebene 2,ministral-3:8b,2015-04-29 control,,,heizung
+Ebene 2,ministral-3:8b,2015-04-29 peak_strong,,,heizung
+Ebene 1,ministral-3:8b,absence_drift_down,number: 21. Dezember,,
+Ebene 1,ministral-3:8b,new_pattern,,,heizung
+Ebene 1,ministral-3:8b,new_pattern_at_min_scales_boundary,,,heizung
+Ebene 1,ministral-3:8b,new_pattern_drift_down,,,heizung

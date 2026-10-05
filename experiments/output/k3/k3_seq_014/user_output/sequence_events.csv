@@ -1,0 +1,5 @@
+config,kind,expected_classification,event_gate_open_days,correct_days,first_correct_day,resets
+BASELINE,peak_strong,peak,12,1,1,0
+BASELINE,scaled_strong,new_pattern,15,1,22,1
+MDL5,peak_strong,peak,12,1,1,0
+MDL5,scaled_strong,new_pattern,17,2,22,3
