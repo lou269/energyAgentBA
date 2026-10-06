@@ -1,0 +1,133 @@
+{
+  "code_version": {
+    "git_commit": "f0664bb9fca42c5c251ae5c2f9cb63569a7d88f5",
+    "git_dirty": true
+  },
+  "configs": {
+    "labels": [
+      "SYS3_CTX1"
+    ],
+    "sha256": "26555d1c13eeb5b34a031085af50e59854329fd161ddecce1feae25b4ba9e27a",
+    "values": {
+      "SYS3_CTX1": {
+        "event_adaptation": true,
+        "forecasting_config": {
+          "baseline_model_ids": [
+            "B1",
+            "B2",
+            "B3"
+          ],
+          "config_version": "0.5",
+          "country_holidays": "UK",
+          "cycle_coldstart_days": 60,
+          "daily_seasonality": true,
+          "experiment_id": "forecasting",
+          "forecast_origin_step_days": 1,
+          "frequency": "1h",
+          "growth": "linear",
+          "horizon_days": 1,
+          "interval_width": 0.8,
+          "log_transform": true,
+          "mape_min_eligible_watts": 10.0,
+          "negative_forecast_handling": "raw",
+          "primary_naive_reference": "B2",
+          "seed": 42,
+          "selected_prophet_variant": {
+            "history_mode": "rolling",
+            "model_id": "C3_30",
+            "retraining_interval_days": 1,
+            "rolling_window_days": 30,
+            "weekly_seasonality": false,
+            "yearly_seasonality": false
+          },
+          "uncertainty_samples": 1000,
+          "weekly_seasonality": false
+        },
+        "llm_config": {
+          "calendar_tool": false,
+          "keep_alive": "5m",
+          "max_attempts": 2,
+          "model": "ministral-3:8b",
+          "num_ctx": 8192,
+          "num_predict": 1024,
+          "presence_penalty": 1.5,
+          "prompt_version": "v27",
+          "request_timeout_seconds": 120.0,
+          "seed": 42,
+          "temperature": 0.0,
+          "think": false
+        },
+        "llm_mode": "real",
+        "numerical_analysis_config": {
+          "level_shift_scales": [
+            "weekly",
+            "long_term"
+          ],
+          "long_term_reference_days": 28,
+          "long_term_streak_threshold_pct": 14.2,
+          "long_term_window_days": 28,
+          "min_daily_reference_samples": 7,
+          "min_longterm_reference_samples": 14,
+          "min_reference_power_w": 10.0,
+          "min_residual_std_w": 1.0,
+          "min_sustained_scales": 2,
+          "min_weekday_reference_samples": 4,
+          "min_weekly_reference_samples": 1,
+          "reference_window_rolling_days": 60,
+          "rolling_window_min_coverage": 0.8,
+          "sample_period_hours_hourly": 1.0,
+          "single_day_scales": [
+            "daily",
+            "weekday"
+          ],
+          "streak_tolerance_window_days": 7,
+          "sustained_anomaly_streak_days": 6,
+          "unusual_threshold": 3.2,
+          "weekly_streak_threshold": 1.02,
+          "weekly_window_days": 7
+        },
+        "window_exclusion": true
+      }
+    }
+  },
+  "created_at_utc": "2026-10-05T21:14:30.259397+00:00",
+  "environment": {
+    "file": "environment-forecasting.yml",
+    "sha256": "00cd8649e33135385246495241a8a4708564d2426ab7e2337cb2fe2517f850dd"
+  },
+  "llm_failures": {
+    "count": 0,
+    "file": null
+  },
+  "outputs": {
+    "comparison_summary": {
+      "path": "experiments/output/e2/e2_003/raw/vacation-2015-10/ctx1/comparison_summary.csv",
+      "sha256": "0e1826888117723a801ecb866abb33cdc30de1882be18a32df0c29fb62db9893",
+      "size_bytes": 14954
+    },
+    "evaluation_summary": {
+      "path": "experiments/output/e2/e2_003/raw/vacation-2015-10/ctx1/evaluation_summary.csv",
+      "sha256": "5396de650a264da41e26d2669afb76d77442a033be0588fcbdae3f1c1e115ac2",
+      "size_bytes": 87
+    },
+    "forecasts": {
+      "path": "experiments/output/e2/e2_003/raw/vacation-2015-10/ctx1/forecasts.csv",
+      "sha256": "b3b3c0b221db63cc92392d9f841421c06fb0cf66db663f09e40f68c30e54aedf",
+      "size_bytes": 264220
+    },
+    "llm_outputs": {
+      "path": "experiments/output/e2/e2_003/raw/vacation-2015-10/ctx1/llm_outputs.json",
+      "sha256": "9db04a333f00ee56ca58b63a3b3e2525dffd05fcb5c03d3006e6c47cbfaf48bb",
+      "size_bytes": 26141
+    }
+  },
+  "row_count": 82,
+  "run_id": "e2_003_vacation-2015-10_ctx1",
+  "runtime_seconds": 581.5700461250017,
+  "scenario": {
+    "coldstart_days": 60,
+    "decision_time_count": 82,
+    "decision_time_end": "2015-11-24T00:00:00+00:00",
+    "decision_time_start": "2015-09-03T23:00:00+00:00"
+  }
+}
