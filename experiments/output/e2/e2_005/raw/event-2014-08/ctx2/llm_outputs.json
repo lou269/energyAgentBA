@@ -1,0 +1,397 @@
+{
+  "llm_outputs": [
+    {
+      "classification": "normal",
+      "config": "SYS3_CTX2",
+      "decision_time": "2014-07-17T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "normal"
+        }
+      ],
+      "explanation": "Gestern war der Stromverbrauch etwas höher als sonst, aber nicht ungewöhnlich für die letzten Wochen.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob ein geplanter Urlaub oder eine andere Abwesenheit den Verbrauch beeinflusst hat, lässt sich ohne Kalender nicht klären.",
+      "user_recommendation": "Es gibt keinen Grund zur Sorge. Der Verbrauch liegt im üblichen Bereich und es ist Sommer, weshalb der Strombedarf oft etwas niedriger sein kann."
+    },
+    {
+      "classification": "normal",
+      "config": "SYS3_CTX2",
+      "decision_time": "2014-07-18T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "normal"
+        }
+      ],
+      "explanation": "Gestern war der Stromverbrauch etwas höher als sonst, aber nicht ungewöhnlich für die letzten Wochen.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob der höhere Verbrauch auf die Jahreszeit zurückzuführen ist, kann nicht sicher bestätigt werden, da keine Kalendereinträge verfügbar sind.",
+      "user_recommendation": "Es gibt keinen Grund zur Sorge. Der Verbrauch liegt im üblichen Bereich und es ist Sommer, was oft etwas höheren Verbrauch durch Klimaanlagen oder längere Nutzung von Geräten bedeutet."
+    },
+    {
+      "classification": "normal",
+      "config": "SYS3_CTX2",
+      "decision_time": "2014-07-19T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "normal"
+        }
+      ],
+      "explanation": "Gestern war der Stromverbrauch etwas höher als sonst, aber nicht ungewöhnlich für die letzten Wochen.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob der höhere Verbrauch auf ungewöhnliche Aktivitäten oder Geräte zurückzuführen ist, lässt sich ohne weitere Informationen nicht klären.",
+      "user_recommendation": "Es gibt nichts Ungewöhnliches zu beachten. Der Verbrauch liegt im üblichen Bereich und es ist Sommer, was oft etwas niedrigere Werte bedeutet."
+    },
+    {
+      "classification": "normal",
+      "config": "SYS3_CTX2",
+      "decision_time": "2014-07-20T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "normal"
+        }
+      ],
+      "explanation": "Gestern war der Stromverbrauch etwas höher als sonst, aber nicht ungewöhnlich für die letzten Wochen.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob der höhere Verbrauch auf ungewöhnliche Aktivitäten zurückzuführen ist, kann nicht beurteilt werden, da keine Kalendereinträge verfügbar sind.",
+      "user_recommendation": "Es gibt keinen Grund zur Sorge. Der Verbrauch liegt im üblichen Bereich und es ist Sommer, was oft etwas höheren Verbrauch durch Klimaanlagen oder längere Nutzung von Geräten bedeutet."
+    },
+    {
+      "classification": "measurement_error",
+      "config": "SYS3_CTX2",
+      "decision_time": "2014-07-21T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "observation.value_implausible",
+          "value": true
+        }
+      ],
+      "explanation": "Der gemessene Wert für gestern ist nicht vertrauenswürdig und kann nicht ausgewertet werden.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob und wann eine korrekte Messung vorliegt, ist unklar.",
+      "user_recommendation": "Es gibt keine zuverlässigen Daten, die Sie überprüfen könnten. Die Messung muss wiederholt werden."
+    },
+    {
+      "classification": "normal",
+      "config": "SYS3_CTX2",
+      "decision_time": "2014-07-22T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "normal"
+        }
+      ],
+      "explanation": "Gestern war der Stromverbrauch insgesamt etwas höher als sonst, aber die Abweichung ist nicht ungewöhnlich für diese Zeit des Jahres und bleibt im Rahmen.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob der höhere Verbrauch auf längere Tageslichtnutzung oder andere Faktoren wie Hitze zurückzuführen ist, kann nicht genau bestimmt werden.",
+      "user_recommendation": "Es gibt keinen Grund zur Sorge. Der Verbrauch liegt im üblichen Sommerbereich, da die Tage länger sind und mehr Strom für Beleuchtung oder Geräte benötigt wird."
+    },
+    {
+      "classification": "normal",
+      "config": "SYS3_CTX2",
+      "decision_time": "2014-07-23T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "normal"
+        }
+      ],
+      "explanation": "Gestern war der Stromverbrauch etwas höher als sonst, aber die Abweichung ist nicht ungewöhnlich und hält nur seit wenigen Tagen an.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob der erhöhte Verbrauch auf eine geplante Abwesenheit oder andere Faktoren wie die Jahreszeit zurückzuführen ist, kann nicht geprüft werden.",
+      "user_recommendation": "Es gibt keinen Grund zur Sorge. Der Verbrauch liegt im üblichen Bereich, auch wenn er aktuell leicht erhöht ist."
+    },
+    {
+      "classification": "normal",
+      "config": "SYS3_CTX2",
+      "decision_time": "2014-07-24T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "normal"
+        }
+      ],
+      "explanation": "Gestern war der Stromverbrauch insgesamt etwas höher als sonst, aber nicht ungewöhnlich für die letzten Tage.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob der erhöhte Verbrauch auf ungewöhnliche Aktivitäten oder die Jahreszeit zurückzuführen ist, kann nicht genau bestimmt werden.",
+      "user_recommendation": "Es gibt keinen Grund zur Sorge. Der Verbrauch liegt im üblichen Bereich und es ist Sommer, weshalb höhere Werte möglich sind."
+    },
+    {
+      "classification": "normal",
+      "config": "SYS3_CTX2",
+      "decision_time": "2014-07-27T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "normal"
+        },
+        {
+          "path": "anomaly.scale_anomaly_streak_days.weekly",
+          "value": 6.0
+        }
+      ],
+      "explanation": "Gestern war der Stromverbrauch für einen Dienstag ungewöhnlich hoch, aber die Abweichung hat sich nur über eine Woche gehalten und ist nicht nachhaltig.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob es sich um eine einmalige Ausnahme handelt oder der Verbrauch sich dauerhaft erhöht hat, lässt sich erst nach weiteren Tagen beurteilen.",
+      "user_recommendation": "Da die Abweichung nur kurz war, ist keine weitere Handlung nötig. Sie können prüfen, ob gestern ungewöhnlich viele Geräte gleichzeitig genutzt wurden oder ob ein Gerät länger lief als sonst."
+    },
+    {
+      "classification": "normal",
+      "config": "SYS3_CTX2",
+      "decision_time": "2014-07-28T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "normal"
+        },
+        {
+          "path": "anomaly.scale_anomaly_streak_days.weekly",
+          "value": 7.0
+        }
+      ],
+      "explanation": "Gestern war der Stromverbrauch ungewöhnlich niedrig, aber die Abweichung ist nur auf einen kurzen Zeitraum beschränkt und hat sich bereits wieder normalisiert.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob ein geplanter Urlaub oder eine andere Abwesenheit den niedrigen Verbrauch verursacht hat, kann nicht geprüft werden.",
+      "user_recommendation": "Da der Verbrauch bereits wieder im üblichen Rahmen liegt, ist keine weitere Handlung nötig."
+    },
+    {
+      "classification": "normal",
+      "config": "SYS3_CTX2",
+      "decision_time": "2014-07-29T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "normal"
+        }
+      ],
+      "explanation": "Gestern war der Stromverbrauch etwas niedriger als sonst, aber das ist nicht ungewöhnlich und bleibt im Rahmen.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob Sie gestern weniger Strom verbraucht haben, als sonst üblich ist, lässt sich ohne Kalender nicht sicher bestätigen.",
+      "user_recommendation": "Es gibt nichts Ungewöhnliches zu beachten. Der Verbrauch liegt weiterhin im üblichen Bereich."
+    },
+    {
+      "classification": "new_pattern",
+      "config": "SYS3_CTX2",
+      "decision_time": "2014-08-08T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.sustained_drift",
+          "value": false
+        },
+        {
+          "path": "anomaly.scale_anomaly_streak_days.weekly",
+          "value": 6.0
+        }
+      ],
+      "explanation": "Der Stromverbrauch war in der letzten Woche um etwa 48 % niedriger als sonst, und das seit dem 3. August. Gestern lag er ebenfalls deutlich unter dem üblichen Niveau.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob es sich um einen technischen Defekt handelt, können Sie nur durch manuelles Prüfen der Geräte feststellen.",
+      "user_recommendation": "Überprüfen Sie, ob der Stromzähler oder ein Gerät wie ein Heizstab oder eine Warmwasserboiler defekt ist, da die Verbrauchssenkung ungewöhnlich stark und langanhaltend ist."
+    },
+    {
+      "classification": "peak",
+      "config": "SYS3_CTX2",
+      "decision_time": "2014-08-09T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "unusual"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        }
+      ],
+      "explanation": "Gestern war der Stromverbrauch über den Tag verteilt ungewöhnlich hoch, besonders in kurzen Spitzen. Das ist nicht typisch für diese Tageszeit im August.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob der Stromverbrauch tatsächlich höher war als sonst, hängt davon ab, ob es einen besonderen Grund für die Spitzen gab.",
+      "user_recommendation": "Überprüfen Sie, ob gestern ungewöhnlich viele Geräte gleichzeitig genutzt wurden oder ob neue Verbraucher im Haushalt hinzugekommen sind."
+    },
+    {
+      "classification": "peak",
+      "config": "SYS3_CTX2",
+      "decision_time": "2014-08-17T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "unusual"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        }
+      ],
+      "explanation": "Gestern war der Stromverbrauch über den ganzen Tag verteilt ungewöhnlich hoch, besonders kurzfristig am Nachmittag. Die letzten beiden Tage zusammen lagen bereits 31 % über dem üblichen Wochenwert.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob ein geplanter Urlaub oder eine andere Abwesenheit den Vergleichswert beeinflusst hat, ist nicht bekannt.",
+      "user_recommendation": "Überprüfen Sie, ob gestern ungewöhnlich viele Geräte gleichzeitig liefen oder ob neue Verbraucher hinzugekommen sind."
+    },
+    {
+      "classification": "peak",
+      "config": "SYS3_CTX2",
+      "decision_time": "2014-08-18T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "unusual"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        }
+      ],
+      "explanation": "Gestern war der Stromverbrauch über den ganzen Tag verteilt ungewöhnlich hoch, besonders im Vergleich zu den letzten Tagen.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob ein geplanter Urlaub oder eine andere Abwesenheit den Vergleichswert beeinflusst hätte, ist nicht bekannt.",
+      "user_recommendation": "Überprüfen Sie, ob gestern ungewöhnlich viele Geräte gleichzeitig genutzt wurden oder ob neue Verbraucher im Haushalt hinzugekommen sind."
+    },
+    {
+      "classification": "peak",
+      "config": "SYS3_CTX2",
+      "decision_time": "2014-08-19T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "unusual"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        }
+      ],
+      "explanation": "Gestern war der Stromverbrauch über den ganzen Tag verteilt ungewöhnlich hoch, besonders im Vergleich zu den letzten Tagen.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob ein geplanter Urlaub oder eine Abwesenheit den Verbrauch beeinflusst hat, kann nicht geprüft werden.",
+      "user_recommendation": "Überprüfen Sie, ob Geräte oder Beleuchtung ungewöhnlich lange oder häufiger genutzt wurden, besonders wenn gestern besondere Aktivitäten stattfanden."
+    },
+    {
+      "classification": "peak",
+      "config": "SYS3_CTX2",
+      "decision_time": "2014-08-20T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "unusual"
+        },
+        {
+          "path": "anomaly.direction",
+          "value": "high"
+        }
+      ],
+      "explanation": "Gestern war der Stromverbrauch über den ganzen Tag verteilt ungewöhnlich hoch, besonders im Vergleich zu den letzten Tagen.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob ein geplanter Urlaub oder eine andere Abwesenheit den Vergleich verändert hätte, ist nicht bekannt.",
+      "user_recommendation": "Überprüfen Sie, ob gestern ungewöhnlich viele Geräte gleichzeitig genutzt wurden oder ob neue Verbraucher im Haushalt hinzugekommen sind."
+    },
+    {
+      "classification": "normal",
+      "config": "SYS3_CTX2",
+      "decision_time": "2014-08-21T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "normal"
+        }
+      ],
+      "explanation": "Gestern war der Stromverbrauch im Vergleich zur letzten Woche ungewöhnlich hoch, aber die Abweichung ist nicht nachhaltig und liegt innerhalb des üblichen Bereichs für einen einzelnen Tag.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob es sich um eine vorübergehende Erhöhung handelt, lässt sich ohne Kalenderdaten nicht sicher bestätigen.",
+      "user_recommendation": "Es gibt keine Handlungsbedarf. Der erhöhte Verbrauch der letzten Tage könnte auf ungewöhnliche Aktivitäten wie Gäste oder längeres Nutzen von Geräten zurückzuführen sein, aber das ist nicht weiter zu überprüfen."
+    },
+    {
+      "classification": "new_pattern",
+      "config": "SYS3_CTX2",
+      "decision_time": "2014-08-22T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.sustained_drift",
+          "value": false
+        },
+        {
+          "path": "anomaly.scale_anomaly_streak_days.weekly",
+          "value": 7.0
+        }
+      ],
+      "explanation": "Gestern war der Stromverbrauch über eine Woche hinweg um etwa 68 % niedriger als sonst, seit dem 16. August. Das ist ein ungewöhnlich starker und länger anhaltender Rückgang.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob es sich um einen technischen Defekt handelt, kann nur durch eine Überprüfung vor Ort geklärt werden.",
+      "user_recommendation": "Überprüfen Sie, ob der Stromzähler oder ein Gerät wie ein Heizstab defekt ist, da die Verbrauchswerte ungewöhnlich niedrig sind und seit längerem so bleiben."
+    },
+    {
+      "classification": "normal",
+      "config": "SYS3_CTX2",
+      "decision_time": "2014-09-04T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "normal"
+        },
+        {
+          "path": "anomaly.scale_anomaly_streak_days.weekly",
+          "value": 6.0
+        }
+      ],
+      "explanation": "Gestern war der Stromverbrauch im Vergleich zur letzten Woche um etwa 24 % niedriger, aber dieser Wert ist nicht ungewöhnlich für die aktuelle Situation.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob dies auf geplante Abwesenheiten oder andere Gründe zurückzuführen ist, kann nicht überprüft werden.",
+      "user_recommendation": "Da der Verbrauch seit dem 30. August um etwa ein Viertel niedriger ist, aber keine ungewöhnlichen Ereignisse vorliegen, gibt es nichts zu beachten."
+    },
+    {
+      "classification": "normal",
+      "config": "SYS3_CTX2",
+      "decision_time": "2014-09-05T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "normal"
+        },
+        {
+          "path": "anomaly.scale_anomaly_streak_days.weekly",
+          "value": 7.0
+        }
+      ],
+      "explanation": "Der Stromverbrauch war gestern etwas niedriger als sonst in dieser Woche, aber nicht ungewöhnlich für einen einzelnen Tag.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob ein geplanter Urlaub oder eine Abwesenheit den Verbrauch beeinflusst haben könnte, lässt sich ohne Kalender nicht klären.",
+      "user_recommendation": "Es gibt keinen Grund zur Sorge, da der Verbrauch sich nur leicht und nicht nachhaltig verändert hat."
+    },
+    {
+      "classification": "normal",
+      "config": "SYS3_CTX2",
+      "decision_time": "2014-09-06T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "normal"
+        },
+        {
+          "path": "anomaly.scale_anomaly_streak_days.weekly",
+          "value": 7.0
+        }
+      ],
+      "explanation": "Gestern war der Stromverbrauch im Vergleich zur letzten Woche um etwa 16 % höher, aber dieser Anstieg hat sich bereits seit dem 30. August so gehalten und ist daher nicht ungewöhnlich.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob es einen konkreten Grund für den höheren Verbrauch gibt, können Sie selbst prüfen, indem Sie die letzten Tage mit dem üblichen Verbrauch vergleichen.",
+      "user_recommendation": "Es gibt keinen Grund zur Sorge, da sich der erhöhte Verbrauch bereits seit über einer Woche so zeigt und nicht plötzlich aufgetreten ist."
+    },
+    {
+      "classification": "normal",
+      "config": "SYS3_CTX2",
+      "decision_time": "2014-09-07T23:00:00+00:00",
+      "evidence_references": [
+        {
+          "path": "anomaly.level",
+          "value": "normal"
+        }
+      ],
+      "explanation": "Gestern war der Stromverbrauch etwas höher als sonst in dieser Woche, aber nicht ungewöhnlich für einen einzelnen Tag.",
+      "schema_version": "1.3",
+      "uncertainty": "Ob ein geplanter Urlaub oder eine andere Abwesenheit den Verbrauch beeinflusst haben könnte, lässt sich ohne Kalender nicht klären.",
+      "user_recommendation": "Es gibt nichts Ungewöhnliches zu beachten. Der Verbrauch hat sich nur leicht erhöht und ist kein Grund zur Sorge."
+    }
+  ]
+}

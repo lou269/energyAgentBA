@@ -1,0 +1,861 @@
+decision_time,analyzed_day,config,classification,explanation,adaption_action,adaption_reason,retrained,reference_reset,mae_w,mape_pct,error,event_id
+2014-07-03 23:00:00+00:00,2014-07-03,SYS1,normal,,none,,True,False,59.04714731209214,30.773202939290893,,event-2014-08
+2014-07-04 23:00:00+00:00,2014-07-04,SYS1,normal,,none,,True,False,55.61124102844952,30.69943093965574,,event-2014-08
+2014-07-05 23:00:00+00:00,2014-07-05,SYS1,normal,,none,,True,False,38.00947199905317,22.468080284841072,,event-2014-08
+2014-07-06 23:00:00+00:00,2014-07-06,SYS1,normal,,none,,True,False,224.76625985918645,42.59213871521069,,event-2014-08
+2014-07-07 23:00:00+00:00,2014-07-07,SYS1,normal,,none,,True,False,119.18918769667322,33.880713588349835,,event-2014-08
+2014-07-08 23:00:00+00:00,2014-07-08,SYS1,normal,,none,,True,False,82.96921512113275,21.20914911968046,,event-2014-08
+2014-07-09 23:00:00+00:00,2014-07-09,SYS1,normal,,none,,True,False,175.9507132038825,27.23169471993694,,event-2014-08
+2014-07-10 23:00:00+00:00,2014-07-10,SYS1,normal,,none,,True,False,158.8730096061382,70.07153771699171,,event-2014-08
+2014-07-11 23:00:00+00:00,2014-07-11,SYS1,normal,,none,,True,False,158.81845393639057,51.37356953718083,,event-2014-08
+2014-07-12 23:00:00+00:00,2014-07-12,SYS1,normal,,none,,True,False,124.90505749818207,60.25222764177865,,event-2014-08
+2014-07-13 23:00:00+00:00,2014-07-13,SYS1,normal,,none,,True,False,130.9508827801594,48.994770985420885,,event-2014-08
+2014-07-14 23:00:00+00:00,2014-07-14,SYS1,normal,,none,,True,False,86.39673047131708,44.16420193509056,,event-2014-08
+2014-07-15 23:00:00+00:00,2014-07-15,SYS1,normal,,none,,True,False,146.13566954272287,27.03162939672879,,event-2014-08
+2014-07-16 23:00:00+00:00,2014-07-16,SYS1,normal,,none,,True,False,124.69296925501139,43.13087410144558,,event-2014-08
+2014-07-17 23:00:00+00:00,2014-07-17,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,124.76566049187392,42.45322832993999,,event-2014-08
+2014-07-18 23:00:00+00:00,2014-07-18,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,81.44750147916143,30.837751352245274,,event-2014-08
+2014-07-19 23:00:00+00:00,2014-07-19,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,,True,False,116.95952698497014,34.423144749990236,,event-2014-08
+2014-07-20 23:00:00+00:00,2014-07-20,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,,True,False,,,,event-2014-08
+2014-07-21 23:00:00+00:00,2014-07-21,SYS1,measurement_error,observation.value_implausible is set (weekday).,none,,True,False,180.87828630629065,32.38124319585338,,event-2014-08
+2014-07-22 23:00:00+00:00,2014-07-22,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,78.22267923925028,30.21967957804779,,event-2014-08
+2014-07-23 23:00:00+00:00,2014-07-23,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,201.98532355101096,42.48146735882951,,event-2014-08
+2014-07-24 23:00:00+00:00,2014-07-24,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,86.39022937136883,44.64834193431589,,event-2014-08
+2014-07-25 23:00:00+00:00,2014-07-25,SYS1,normal,,none,,True,False,79.14256839697173,29.574951878288907,,event-2014-08
+2014-07-26 23:00:00+00:00,2014-07-26,SYS1,normal,,none,,True,False,149.78892461962295,33.64304828149844,,event-2014-08
+2014-07-27 23:00:00+00:00,2014-07-27,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,,True,False,151.42161580988926,99.47026166132837,,event-2014-08
+2014-07-28 23:00:00+00:00,2014-07-28,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,96.61378081911066,64.34603687835732,,event-2014-08
+2014-07-29 23:00:00+00:00,2014-07-29,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,148.54633343872072,33.39930104163114,,event-2014-08
+2014-07-30 23:00:00+00:00,2014-07-30,SYS1,normal,,none,,True,False,121.96111993014911,32.19404484937772,,event-2014-08
+2014-07-31 23:00:00+00:00,2014-07-31,SYS1,normal,,none,,True,False,176.74379880087545,34.17128139172686,,event-2014-08
+2014-08-01 23:00:00+00:00,2014-08-01,SYS1,normal,,none,,True,False,127.05785489960924,62.176674181629366,,event-2014-08
+2014-08-02 23:00:00+00:00,2014-08-02,SYS1,normal,,none,,True,False,109.12128283460913,81.29414094495108,,event-2014-08
+2014-08-03 23:00:00+00:00,2014-08-03,SYS1,normal,,none,,True,False,78.99881973116645,62.33688419551392,,event-2014-08
+2014-08-04 23:00:00+00:00,2014-08-04,SYS1,normal,,none,,True,False,41.32166559469539,32.53210500836226,,event-2014-08
+2014-08-05 23:00:00+00:00,2014-08-05,SYS1,normal,,none,,True,False,29.291137178098392,22.672003968147607,,event-2014-08
+2014-08-06 23:00:00+00:00,2014-08-06,SYS1,normal,,none,,True,False,38.68420344986716,23.069435869459564,,event-2014-08
+2014-08-07 23:00:00+00:00,2014-08-07,SYS1,normal,,none,,True,False,31.98448585020472,22.78042436562994,,event-2014-08
+2014-08-08 23:00:00+00:00,2014-08-08,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,68.2450218704203,34.77443041834832,,event-2014-08
+2014-08-09 23:00:00+00:00,2014-08-09,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,,True,False,53.06318077596327,28.326410722873558,,event-2014-08
+2014-08-10 23:00:00+00:00,2014-08-10,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,,True,False,21.947444356293232,12.862440421939771,,event-2014-08
+2014-08-11 23:00:00+00:00,2014-08-11,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,25.775662687870412,16.971368042878453,,event-2014-08
+2014-08-12 23:00:00+00:00,2014-08-12,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,32.22469608214067,14.751413965095796,,event-2014-08
+2014-08-13 23:00:00+00:00,2014-08-13,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,28.555655358519676,13.84579462777019,,event-2014-08
+2014-08-14 23:00:00+00:00,2014-08-14,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,45.818387045496486,19.676412892208088,,event-2014-08
+2014-08-15 23:00:00+00:00,2014-08-15,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,51.65907286995449,27.34124750582177,,event-2014-08
+2014-08-16 23:00:00+00:00,2014-08-16,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,,True,False,89.89640726128648,28.36132958995629,,event-2014-08
+2014-08-17 23:00:00+00:00,2014-08-17,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,,True,False,134.18196555261406,28.959188457823508,,event-2014-08
+2014-08-18 23:00:00+00:00,2014-08-18,SYS1,new_pattern,"sustained deviation across multiple scales at once (weekly, long_term), on a weekday.",none,,True,False,140.01309214988467,38.432744075486696,,event-2014-08
+2014-08-19 23:00:00+00:00,2014-08-19,SYS1,new_pattern,"sustained deviation across multiple scales at once (weekly, long_term), on a weekday.",none,,True,False,116.37355342919055,30.010436274901714,,event-2014-08
+2014-08-20 23:00:00+00:00,2014-08-20,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,124.51366077999872,57.73973177338354,,event-2014-08
+2014-08-21 23:00:00+00:00,2014-08-21,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,153.34301886447702,110.98333505514265,,event-2014-08
+2014-08-22 23:00:00+00:00,2014-08-22,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,91.6512173988287,65.98529252918681,,event-2014-08
+2014-08-23 23:00:00+00:00,2014-08-23,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,,True,False,40.97370215923834,33.44820804918354,,event-2014-08
+2014-08-24 23:00:00+00:00,2014-08-24,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,,True,False,352.4060722020146,61.42490226566376,,event-2014-08
+2014-08-25 23:00:00+00:00,2014-08-25,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,208.54862024077474,40.1070849128415,,event-2014-08
+2014-08-26 23:00:00+00:00,2014-08-26,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,70.12682575535356,18.835909772420358,,event-2014-08
+2014-08-27 23:00:00+00:00,2014-08-27,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,125.58895012819771,26.19124613619127,,event-2014-08
+2014-08-28 23:00:00+00:00,2014-08-28,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,161.2227610613839,40.18545135806343,,event-2014-08
+2014-08-29 23:00:00+00:00,2014-08-29,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,228.17946962724469,105.87688342346439,,event-2014-08
+2014-08-30 23:00:00+00:00,2014-08-30,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,,True,False,137.684906822602,46.4802083056561,,event-2014-08
+2014-08-31 23:00:00+00:00,2014-08-31,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,,True,False,146.97798817112826,55.498466640879776,,event-2014-08
+2014-09-01 23:00:00+00:00,2014-09-01,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,266.7282703762243,49.66104457526549,,event-2014-08
+2014-09-02 23:00:00+00:00,2014-09-02,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,151.68991159558018,74.56335121365998,,event-2014-08
+2014-09-03 23:00:00+00:00,2014-09-03,SYS1,normal,,none,,True,False,108.22394227363829,43.34860293320449,,event-2014-08
+2014-09-04 23:00:00+00:00,2014-09-04,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,119.94366010637331,43.598417945568016,,event-2014-08
+2014-09-05 23:00:00+00:00,2014-09-05,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,150.9598471980072,36.01621606507098,,event-2014-08
+2014-09-06 23:00:00+00:00,2014-09-06,SYS1,normal,,none,,True,False,133.40992324367627,30.928769468841864,,event-2014-08
+2014-09-07 23:00:00+00:00,2014-09-07,SYS1,normal,,none,,True,False,108.850396411805,29.75794637345026,,event-2014-08
+2014-09-08 23:00:00+00:00,2014-09-08,SYS1,normal,,none,,True,False,119.91096773326812,28.615638575465546,,event-2014-08
+2014-09-09 23:00:00+00:00,2014-09-09,SYS1,normal,,none,,True,False,90.57913379777324,34.04732034958705,,event-2014-08
+2014-09-10 23:00:00+00:00,2014-09-10,SYS1,normal,,none,,True,False,213.58148670335518,36.82973215053006,,event-2014-08
+2014-09-11 23:00:00+00:00,2014-09-11,SYS1,normal,,none,,True,False,133.83207379991467,34.662434269165615,,event-2014-08
+2014-09-12 23:00:00+00:00,2014-09-12,SYS1,normal,,none,,True,False,100.77063497460257,41.70578489576731,,event-2014-08
+2014-09-13 23:00:00+00:00,2014-09-13,SYS1,normal,,none,,True,False,148.45392784746113,34.12395030150854,,event-2014-08
+2014-09-14 23:00:00+00:00,2014-09-14,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,,True,False,128.37679319788072,46.9415661726476,,event-2014-08
+2014-09-15 23:00:00+00:00,2014-09-15,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,123.90755429550991,34.31526996460744,,event-2014-08
+2014-07-03 23:00:00+00:00,2014-07-03,SYS2,normal,,none,normal: no action,True,False,59.04714731209214,30.773202939290893,,event-2014-08
+2014-07-04 23:00:00+00:00,2014-07-04,SYS2,normal,,none,normal: no action,True,False,55.61124102844952,30.69943093965574,,event-2014-08
+2014-07-05 23:00:00+00:00,2014-07-05,SYS2,normal,,none,normal: no action,True,False,38.00947199905317,22.468080284841072,,event-2014-08
+2014-07-06 23:00:00+00:00,2014-07-06,SYS2,normal,,none,normal: no action,True,False,224.76625985918645,42.59213871521069,,event-2014-08
+2014-07-07 23:00:00+00:00,2014-07-07,SYS2,normal,,none,normal: no action,True,False,119.18918769667322,33.880713588349835,,event-2014-08
+2014-07-08 23:00:00+00:00,2014-07-08,SYS2,normal,,none,normal: no action,True,False,82.96921512113275,21.20914911968046,,event-2014-08
+2014-07-09 23:00:00+00:00,2014-07-09,SYS2,normal,,none,normal: no action,True,False,175.9507132038825,27.23169471993694,,event-2014-08
+2014-07-10 23:00:00+00:00,2014-07-10,SYS2,normal,,none,normal: no action,True,False,158.8730096061382,70.07153771699171,,event-2014-08
+2014-07-11 23:00:00+00:00,2014-07-11,SYS2,normal,,none,normal: no action,True,False,158.81845393639057,51.37356953718083,,event-2014-08
+2014-07-12 23:00:00+00:00,2014-07-12,SYS2,normal,,none,normal: no action,True,False,124.90505749818207,60.25222764177865,,event-2014-08
+2014-07-13 23:00:00+00:00,2014-07-13,SYS2,normal,,none,normal: no action,True,False,130.9508827801594,48.994770985420885,,event-2014-08
+2014-07-14 23:00:00+00:00,2014-07-14,SYS2,normal,,none,normal: no action,True,False,86.39673047131708,44.16420193509056,,event-2014-08
+2014-07-15 23:00:00+00:00,2014-07-15,SYS2,normal,,none,normal: no action,True,False,146.13566954272287,27.03162939672879,,event-2014-08
+2014-07-16 23:00:00+00:00,2014-07-16,SYS2,normal,,none,normal: no action,True,False,124.69296925501139,43.13087410144558,,event-2014-08
+2014-07-17 23:00:00+00:00,2014-07-17,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,124.76566049187392,42.45322832993999,,event-2014-08
+2014-07-18 23:00:00+00:00,2014-07-18,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,81.44750147916143,30.837751352245274,,event-2014-08
+2014-07-19 23:00:00+00:00,2014-07-19,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,normal: no action,True,False,116.95952698497014,34.423144749990236,,event-2014-08
+2014-07-20 23:00:00+00:00,2014-07-20,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,normal: no action,True,False,,,,event-2014-08
+2014-07-21 23:00:00+00:00,2014-07-21,SYS2,measurement_error,observation.value_implausible is set (weekday).,exclude_window,"measurement_error, excluding 2014-07-21",True,False,180.87828630629065,32.38124319585338,,event-2014-08
+2014-07-22 23:00:00+00:00,2014-07-22,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,78.22267923925028,30.21967957804779,,event-2014-08
+2014-07-23 23:00:00+00:00,2014-07-23,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,201.98532355101096,42.48146735882951,,event-2014-08
+2014-07-24 23:00:00+00:00,2014-07-24,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,86.39022937136883,44.64834193431589,,event-2014-08
+2014-07-25 23:00:00+00:00,2014-07-25,SYS2,normal,,none,normal: no action,True,False,79.14256839697173,29.574951878288907,,event-2014-08
+2014-07-26 23:00:00+00:00,2014-07-26,SYS2,normal,,none,normal: no action,True,False,149.78892461962295,33.64304828149844,,event-2014-08
+2014-07-27 23:00:00+00:00,2014-07-27,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,normal: no action,True,False,151.42161580988926,99.47026166132837,,event-2014-08
+2014-07-28 23:00:00+00:00,2014-07-28,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,96.61378081911066,64.34603687835732,,event-2014-08
+2014-07-29 23:00:00+00:00,2014-07-29,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,148.54633343872072,33.39930104163114,,event-2014-08
+2014-07-30 23:00:00+00:00,2014-07-30,SYS2,normal,,none,normal: no action,True,False,121.96111993014911,32.19404484937772,,event-2014-08
+2014-07-31 23:00:00+00:00,2014-07-31,SYS2,normal,,none,normal: no action,True,False,176.74379880087545,34.17128139172686,,event-2014-08
+2014-08-01 23:00:00+00:00,2014-08-01,SYS2,normal,,none,normal: no action,True,False,127.05785489960924,62.176674181629366,,event-2014-08
+2014-08-02 23:00:00+00:00,2014-08-02,SYS2,normal,,none,normal: no action,True,False,109.12128283460913,81.29414094495108,,event-2014-08
+2014-08-03 23:00:00+00:00,2014-08-03,SYS2,normal,,none,normal: no action,True,False,78.99881973116645,62.33688419551392,,event-2014-08
+2014-08-04 23:00:00+00:00,2014-08-04,SYS2,normal,,none,normal: no action,True,False,41.32166559469539,32.53210500836226,,event-2014-08
+2014-08-05 23:00:00+00:00,2014-08-05,SYS2,normal,,none,normal: no action,True,False,29.291137178098392,22.672003968147607,,event-2014-08
+2014-08-06 23:00:00+00:00,2014-08-06,SYS2,normal,,none,normal: no action,True,False,38.68420344986716,23.069435869459564,,event-2014-08
+2014-08-07 23:00:00+00:00,2014-08-07,SYS2,normal,,none,normal: no action,True,False,31.98448585020472,22.78042436562994,,event-2014-08
+2014-08-08 23:00:00+00:00,2014-08-08,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,68.2450218704203,34.77443041834832,,event-2014-08
+2014-08-09 23:00:00+00:00,2014-08-09,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,normal: no action,True,False,53.06318077596327,28.326410722873558,,event-2014-08
+2014-08-10 23:00:00+00:00,2014-08-10,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,normal: no action,True,False,21.947444356293232,12.862440421939771,,event-2014-08
+2014-08-11 23:00:00+00:00,2014-08-11,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,25.775662687870412,16.971368042878453,,event-2014-08
+2014-08-12 23:00:00+00:00,2014-08-12,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,32.22469608214067,14.751413965095796,,event-2014-08
+2014-08-13 23:00:00+00:00,2014-08-13,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,28.555655358519676,13.84579462777019,,event-2014-08
+2014-08-14 23:00:00+00:00,2014-08-14,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,45.818387045496486,19.676412892208088,,event-2014-08
+2014-08-15 23:00:00+00:00,2014-08-15,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,51.65907286995449,27.34124750582177,,event-2014-08
+2014-08-16 23:00:00+00:00,2014-08-16,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,normal: no action,True,False,89.89640726128648,28.36132958995629,,event-2014-08
+2014-08-17 23:00:00+00:00,2014-08-17,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,normal: no action,True,False,134.18196555261406,28.959188457823508,,event-2014-08
+2014-08-18 23:00:00+00:00,2014-08-18,SYS2,new_pattern,"sustained deviation across multiple scales at once (weekly, long_term), on a weekday.",advance_history_start,"new_pattern, cutting back 7 days to 2014-08-12T00:00:00+01:00",True,True,155.37040073857014,61.552466692918706,,event-2014-08
+2014-08-19 23:00:00+00:00,2014-08-19,SYS2,peak,"unusual (unusual), but no sustained multi-scale signature (weekday).",none,peak: no action,True,False,134.38309895134518,40.829720004015684,,event-2014-08
+2014-08-20 23:00:00+00:00,2014-08-20,SYS2,peak,"unusual (unusual), but no sustained multi-scale signature (weekday).",none,peak: no action,True,False,134.87768316852234,65.62710930064739,,event-2014-08
+2014-08-21 23:00:00+00:00,2014-08-21,SYS2,normal,,none,normal: no action,True,False,126.5902225612421,92.51419647765606,,event-2014-08
+2014-08-22 23:00:00+00:00,2014-08-22,SYS2,normal,,none,normal: no action,True,False,27.896436489211897,18.953876319744026,,event-2014-08
+2014-08-23 23:00:00+00:00,2014-08-23,SYS2,normal,,none,normal: no action,True,False,32.25174188656401,23.2422902850389,,event-2014-08
+2014-08-24 23:00:00+00:00,2014-08-24,SYS2,normal,,none,normal: no action,True,False,375.4854163220748,69.07570142779336,,event-2014-08
+2014-08-25 23:00:00+00:00,2014-08-25,SYS2,peak,"unusual (unusual), but no sustained multi-scale signature (weekday).",none,peak: no action,True,False,133.20582513426015,22.99442070308949,,event-2014-08
+2014-08-26 23:00:00+00:00,2014-08-26,SYS2,normal,,none,normal: no action,True,False,226.3334573710605,89.08292720036975,,event-2014-08
+2014-08-27 23:00:00+00:00,2014-08-27,SYS2,normal,,none,normal: no action,True,False,114.37651221061977,33.490356076786995,,event-2014-08
+2014-08-28 23:00:00+00:00,2014-08-28,SYS2,normal,,none,normal: no action,True,False,177.634750095386,48.612698635627034,,event-2014-08
+2014-08-29 23:00:00+00:00,2014-08-29,SYS2,normal,,none,normal: no action,True,False,240.20142152363633,112.64014982746333,,event-2014-08
+2014-08-30 23:00:00+00:00,2014-08-30,SYS2,normal,,none,normal: no action,True,False,123.77007071238425,32.85588128748376,,event-2014-08
+2014-08-31 23:00:00+00:00,2014-08-31,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,normal: no action,True,False,122.59963769389147,37.91813918833149,,event-2014-08
+2014-09-01 23:00:00+00:00,2014-09-01,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,264.14280004418134,43.93699372914725,,event-2014-08
+2014-09-02 23:00:00+00:00,2014-09-02,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,135.4215466489222,64.1498430485331,,event-2014-08
+2014-09-03 23:00:00+00:00,2014-09-03,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,100.1270462560254,39.17151622111383,,event-2014-08
+2014-09-04 23:00:00+00:00,2014-09-04,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,114.10575372166029,40.19338127423387,,event-2014-08
+2014-09-05 23:00:00+00:00,2014-09-05,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,146.22988674588848,33.71093653962098,,event-2014-08
+2014-09-06 23:00:00+00:00,2014-09-06,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,normal: no action,True,False,130.70982107787745,29.21676632562034,,event-2014-08
+2014-09-07 23:00:00+00:00,2014-09-07,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,normal: no action,True,False,106.89550944444592,28.6825460861936,,event-2014-08
+2014-09-08 23:00:00+00:00,2014-09-08,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,118.6286424877497,28.49344048633346,,event-2014-08
+2014-09-09 23:00:00+00:00,2014-09-09,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,91.02899642710354,34.65488539564283,,event-2014-08
+2014-09-10 23:00:00+00:00,2014-09-10,SYS2,normal,,none,normal: no action,True,False,213.58148670335518,36.82973215053006,,event-2014-08
+2014-09-11 23:00:00+00:00,2014-09-11,SYS2,normal,,none,normal: no action,True,False,133.83207379991467,34.662434269165615,,event-2014-08
+2014-09-12 23:00:00+00:00,2014-09-12,SYS2,normal,,none,normal: no action,True,False,100.77063497460257,41.70578489576731,,event-2014-08
+2014-09-13 23:00:00+00:00,2014-09-13,SYS2,normal,,none,normal: no action,True,False,148.45392784746113,34.12395030150854,,event-2014-08
+2014-09-14 23:00:00+00:00,2014-09-14,SYS2,normal,,none,normal: no action,True,False,128.37679319788072,46.9415661726476,,event-2014-08
+2014-09-15 23:00:00+00:00,2014-09-15,SYS2,normal,,none,normal: no action,True,False,123.90755429550991,34.31526996460744,,event-2014-08
+2014-07-03 23:00:00+00:00,2014-07-03,SYS3_CTX0,normal,,none,normal: no action,True,False,59.04714731209214,30.773202939290893,,event-2014-08
+2014-07-04 23:00:00+00:00,2014-07-04,SYS3_CTX0,normal,,none,normal: no action,True,False,55.61124102844952,30.69943093965574,,event-2014-08
+2014-07-05 23:00:00+00:00,2014-07-05,SYS3_CTX0,normal,,none,normal: no action,True,False,38.00947199905317,22.468080284841072,,event-2014-08
+2014-07-06 23:00:00+00:00,2014-07-06,SYS3_CTX0,normal,,none,normal: no action,True,False,224.76625985918645,42.59213871521069,,event-2014-08
+2014-07-07 23:00:00+00:00,2014-07-07,SYS3_CTX0,normal,,none,normal: no action,True,False,119.18918769667322,33.880713588349835,,event-2014-08
+2014-07-08 23:00:00+00:00,2014-07-08,SYS3_CTX0,normal,,none,normal: no action,True,False,82.96921512113275,21.20914911968046,,event-2014-08
+2014-07-09 23:00:00+00:00,2014-07-09,SYS3_CTX0,normal,,none,normal: no action,True,False,175.9507132038825,27.23169471993694,,event-2014-08
+2014-07-10 23:00:00+00:00,2014-07-10,SYS3_CTX0,normal,,none,normal: no action,True,False,158.8730096061382,70.07153771699171,,event-2014-08
+2014-07-11 23:00:00+00:00,2014-07-11,SYS3_CTX0,normal,,none,normal: no action,True,False,158.81845393639057,51.37356953718083,,event-2014-08
+2014-07-12 23:00:00+00:00,2014-07-12,SYS3_CTX0,normal,,none,normal: no action,True,False,124.90505749818207,60.25222764177865,,event-2014-08
+2014-07-13 23:00:00+00:00,2014-07-13,SYS3_CTX0,normal,,none,normal: no action,True,False,130.9508827801594,48.994770985420885,,event-2014-08
+2014-07-14 23:00:00+00:00,2014-07-14,SYS3_CTX0,normal,,none,normal: no action,True,False,86.39673047131708,44.16420193509056,,event-2014-08
+2014-07-15 23:00:00+00:00,2014-07-15,SYS3_CTX0,normal,,none,normal: no action,True,False,146.13566954272287,27.03162939672879,,event-2014-08
+2014-07-16 23:00:00+00:00,2014-07-16,SYS3_CTX0,normal,,none,normal: no action,True,False,124.69296925501139,43.13087410144558,,event-2014-08
+2014-07-17 23:00:00+00:00,2014-07-17,SYS3_CTX0,normal,"Gestern war der Stromverbrauch etwas höher als sonst, aber nicht ungewöhnlich für die letzten Wochen.",none,normal: no action,True,False,124.76566049187392,42.45322832993999,,event-2014-08
+2014-07-18 23:00:00+00:00,2014-07-18,SYS3_CTX0,normal,"Gestern war der Stromverbrauch etwas höher als sonst, aber nicht ungewöhnlich für die letzten Wochen.",none,normal: no action,True,False,81.44750147916143,30.837751352245274,,event-2014-08
+2014-07-19 23:00:00+00:00,2014-07-19,SYS3_CTX0,normal,"Gestern war der Stromverbrauch etwas höher als sonst, aber nicht ungewöhnlich für die letzten Wochen.",none,normal: no action,True,False,116.95952698497014,34.423144749990236,,event-2014-08
+2014-07-20 23:00:00+00:00,2014-07-20,SYS3_CTX0,normal,"Gestern war der Stromverbrauch etwas höher als sonst, aber nicht ungewöhnlich für die letzten Wochen.",none,normal: no action,True,False,,,,event-2014-08
+2014-07-21 23:00:00+00:00,2014-07-21,SYS3_CTX0,measurement_error,Der gemessene Wert für gestern ist nicht vertrauenswürdig und kann nicht ausgewertet werden.,exclude_window,"measurement_error, excluding 2014-07-21",True,False,180.87828630629065,32.38124319585338,,event-2014-08
+2014-07-22 23:00:00+00:00,2014-07-22,SYS3_CTX0,normal,"Gestern war der Stromverbrauch insgesamt etwas höher als sonst, aber die Abweichung ist nicht ungewöhnlich für diese Zeit des Jahres und bleibt im Rahmen.",none,normal: no action,True,False,78.22267923925028,30.21967957804779,,event-2014-08
+2014-07-23 23:00:00+00:00,2014-07-23,SYS3_CTX0,normal,"Gestern war der Stromverbrauch etwas höher als sonst, aber nicht ungewöhnlich für die letzten Wochen.",none,normal: no action,True,False,201.98532355101096,42.48146735882951,,event-2014-08
+2014-07-24 23:00:00+00:00,2014-07-24,SYS3_CTX0,normal,"Gestern war der Stromverbrauch insgesamt etwas höher als sonst, aber die Abweichung ist nicht ungewöhnlich für diese Zeit des Jahres und bleibt im Rahmen.",none,normal: no action,True,False,86.39022937136883,44.64834193431589,,event-2014-08
+2014-07-25 23:00:00+00:00,2014-07-25,SYS3_CTX0,normal,,none,normal: no action,True,False,79.14256839697173,29.574951878288907,,event-2014-08
+2014-07-26 23:00:00+00:00,2014-07-26,SYS3_CTX0,normal,,none,normal: no action,True,False,149.78892461962295,33.64304828149844,,event-2014-08
+2014-07-27 23:00:00+00:00,2014-07-27,SYS3_CTX0,normal,"Gestern war der Stromverbrauch für einen Dienstag ungewöhnlich hoch, aber die Abweichung ist nur kurzfristig und nicht nachhaltig.",none,normal: no action,True,False,151.42161580988926,99.47026166132837,,event-2014-08
+2014-07-28 23:00:00+00:00,2014-07-28,SYS3_CTX0,normal,"Gestern war der Stromverbrauch ungewöhnlich niedrig, aber die Abweichung ist nur auf einen kurzen Zeitraum beschränkt und hat sich bereits wieder normalisiert.",none,normal: no action,True,False,96.61378081911066,64.34603687835732,,event-2014-08
+2014-07-29 23:00:00+00:00,2014-07-29,SYS3_CTX0,normal,"Gestern war der Stromverbrauch ungewöhnlich niedrig, aber nur für einen Tag und ohne erkennbaren Grund. Die letzten Tage lagen dagegen leicht über dem üblichen Verbrauch.",none,normal: no action,True,False,148.54633343872072,33.39930104163114,,event-2014-08
+2014-07-30 23:00:00+00:00,2014-07-30,SYS3_CTX0,normal,,none,normal: no action,True,False,121.96111993014911,32.19404484937772,,event-2014-08
+2014-07-31 23:00:00+00:00,2014-07-31,SYS3_CTX0,normal,,none,normal: no action,True,False,176.74379880087545,34.17128139172686,,event-2014-08
+2014-08-01 23:00:00+00:00,2014-08-01,SYS3_CTX0,normal,,none,normal: no action,True,False,127.05785489960924,62.176674181629366,,event-2014-08
+2014-08-02 23:00:00+00:00,2014-08-02,SYS3_CTX0,normal,,none,normal: no action,True,False,109.12128283460913,81.29414094495108,,event-2014-08
+2014-08-03 23:00:00+00:00,2014-08-03,SYS3_CTX0,normal,,none,normal: no action,True,False,78.99881973116645,62.33688419551392,,event-2014-08
+2014-08-04 23:00:00+00:00,2014-08-04,SYS3_CTX0,normal,,none,normal: no action,True,False,41.32166559469539,32.53210500836226,,event-2014-08
+2014-08-05 23:00:00+00:00,2014-08-05,SYS3_CTX0,normal,,none,normal: no action,True,False,29.291137178098392,22.672003968147607,,event-2014-08
+2014-08-06 23:00:00+00:00,2014-08-06,SYS3_CTX0,normal,,none,normal: no action,True,False,38.68420344986716,23.069435869459564,,event-2014-08
+2014-08-07 23:00:00+00:00,2014-08-07,SYS3_CTX0,normal,,none,normal: no action,True,False,31.98448585020472,22.78042436562994,,event-2014-08
+2014-08-08 23:00:00+00:00,2014-08-08,SYS3_CTX0,new_pattern,"Der Stromverbrauch war in der letzten Woche um etwa 48 % niedriger als sonst, und das seit dem 3. August. Gestern lag er ebenfalls deutlich unter dem üblichen Niveau.",advance_history_start,"new_pattern, cutting back 7 days to 2014-08-02T00:00:00+01:00",True,True,48.90894411052407,23.677052783590437,,event-2014-08
+2014-08-09 23:00:00+00:00,2014-08-09,SYS3_CTX0,peak,"Gestern war der Stromverbrauch über den Tag verteilt ungewöhnlich hoch, besonders in kurzen Spitzen. Das ist nicht typisch für diese Tageszeit im August.",none,peak: no action,True,False,28.181871111842202,18.689341577822862,,event-2014-08
+2014-08-10 23:00:00+00:00,2014-08-10,SYS3_CTX0,normal,,none,normal: no action,True,False,45.69804732245857,30.43477382236815,,event-2014-08
+2014-08-11 23:00:00+00:00,2014-08-11,SYS3_CTX0,normal,,none,normal: no action,True,False,31.43615825734973,21.702215189781597,,event-2014-08
+2014-08-12 23:00:00+00:00,2014-08-12,SYS3_CTX0,normal,,none,normal: no action,True,False,42.0767814897292,19.759423212721984,,event-2014-08
+2014-08-13 23:00:00+00:00,2014-08-13,SYS3_CTX0,normal,,none,normal: no action,True,False,33.88107299862413,17.912468978033402,,event-2014-08
+2014-08-14 23:00:00+00:00,2014-08-14,SYS3_CTX0,normal,,none,normal: no action,True,False,43.76421247723503,17.895190538260515,,event-2014-08
+2014-08-15 23:00:00+00:00,2014-08-15,SYS3_CTX0,normal,,none,normal: no action,True,False,60.99631526121821,34.03298969809862,,event-2014-08
+2014-08-16 23:00:00+00:00,2014-08-16,SYS3_CTX0,normal,,none,normal: no action,True,False,95.92512675208457,31.440358029949383,,event-2014-08
+2014-08-17 23:00:00+00:00,2014-08-17,SYS3_CTX0,peak,"Gestern war der Stromverbrauch über den ganzen Tag verteilt ungewöhnlich hoch, besonders gegen Ende des Tages. Das entspricht einer Erhöhung von etwa 30 % im Vergleich zur üblichen Woche.",none,peak: no action,True,False,141.98247920376932,33.7230446913912,,event-2014-08
+2014-08-18 23:00:00+00:00,2014-08-18,SYS3_CTX0,peak,"Gestern war der Stromverbrauch über den ganzen Tag verteilt ungewöhnlich hoch, besonders im Vergleich zu den letzten Tagen.",none,peak: no action,True,False,145.09719270234825,47.94820666114663,,event-2014-08
+2014-08-19 23:00:00+00:00,2014-08-19,SYS3_CTX0,peak,"Gestern war der Stromverbrauch über den ganzen Tag verteilt ungewöhnlich hoch, besonders im Vergleich zu den letzten Tagen.",none,peak: no action,True,False,130.27706717036276,39.9991215094506,,event-2014-08
+2014-08-20 23:00:00+00:00,2014-08-20,SYS3_CTX0,peak,"Gestern war der Stromverbrauch über den ganzen Tag verteilt ungewöhnlich hoch, besonders im Vergleich zu den letzten Tagen.",none,peak: no action,True,False,137.26638040548355,67.69253679710937,,event-2014-08
+2014-08-21 23:00:00+00:00,2014-08-21,SYS3_CTX0,normal,"Gestern war der Stromverbrauch im Vergleich zur letzten Woche ungewöhnlich hoch, aber die Abweichung ist nicht nachhaltig und liegt innerhalb des üblichen Bereichs für einen einzelnen Tag.",none,normal: no action,True,False,158.32698246025123,115.67204583257416,,event-2014-08
+2014-08-22 23:00:00+00:00,2014-08-22,SYS3_CTX0,normal,"Gestern war der Stromverbrauch ungewöhnlich niedrig, aber die Abweichung ist nur eine Woche alt und nicht nachhaltig.",none,normal: no action,True,False,39.22361185198855,29.585085788361827,,event-2014-08
+2014-08-23 23:00:00+00:00,2014-08-23,SYS3_CTX0,normal,"Gestern war der Stromverbrauch ungewöhnlich niedrig, aber es handelt sich um eine einmalige Abweichung ohne weitere Hinweise auf ein neues Muster.",none,normal: no action,True,False,21.110786538413766,15.944541358146536,,event-2014-08
+2014-08-24 23:00:00+00:00,2014-08-24,SYS3_CTX0,normal,"Gestern war der Stromverbrauch ungewöhnlich niedrig, aber die Abweichung ist nur eine Woche alt und nicht nachhaltig.",none,normal: no action,True,False,370.9772609760874,66.48539394931005,,event-2014-08
+2014-08-25 23:00:00+00:00,2014-08-25,SYS3_CTX0,peak,"Gestern war der Stromverbrauch über den ganzen Tag verteilt ungewöhnlich hoch, besonders im Vergleich zu den letzten Tagen.",none,peak: no action,True,False,215.59750219491812,41.895757598237196,,event-2014-08
+2014-08-26 23:00:00+00:00,2014-08-26,SYS3_CTX0,peak,"Gestern war der Stromverbrauch über den ganzen Tag verteilt ungewöhnlich hoch, besonders im Vergleich zu den letzten Tagen.",none,peak: no action,True,False,81.88881411394702,26.357686356065713,,event-2014-08
+2014-08-27 23:00:00+00:00,2014-08-27,SYS3_CTX0,normal,"Gestern war der Stromverbrauch im Vergleich zur letzten Woche ungewöhnlich hoch, aber die Abweichung ist nicht nachhaltig und liegt innerhalb des üblichen Bereichs für einen einzelnen Tag.",none,normal: no action,True,False,110.3884812721755,27.347359782210294,,event-2014-08
+2014-08-28 23:00:00+00:00,2014-08-28,SYS3_CTX0,normal,"Gestern war der Stromverbrauch über die Woche hinweg ungewöhnlich hoch, aber es handelt sich nicht um einen neuen Musterwechsel.",none,normal: no action,True,False,170.64226724677587,45.97015860263851,,event-2014-08
+2014-08-29 23:00:00+00:00,2014-08-29,SYS3_CTX0,peak,"Gestern war der Stromverbrauch überdurchschnittlich hoch und der Tagesverlauf ungewöhnlich spitz (ein kurzer, hoher Peak). Seit dem 16. August liegt die wöchentliche Durchschnittsmenge um etwa 66 % höher als sonst.",none,peak: no action,True,False,239.7490482339161,111.99661215794904,,event-2014-08
+2014-08-30 23:00:00+00:00,2014-08-30,SYS3_CTX0,normal,"Gestern war der Stromverbrauch im Vergleich zur üblichen Woche um etwa 69 % höher, was auf eine ungewöhnliche Situation hindeutet. Allerdings handelt es sich dabei nicht um ein neues Muster, da die Abweichung nur einen Tag anhielt und keine langfristige Veränderung vorliegt.",none,normal: no action,True,False,139.63456113741412,47.65602297099758,,event-2014-08
+2014-08-31 23:00:00+00:00,2014-08-31,SYS3_CTX0,normal,"Gestern war der Stromverbrauch im Vergleich zur letzten Woche ungewöhnlich hoch, aber die Abweichung ist nicht nachhaltig und liegt innerhalb des üblichen Bereichs für einen einzelnen Tag.",none,normal: no action,True,False,146.97798817112826,55.498466640879776,,event-2014-08
+2014-09-01 23:00:00+00:00,2014-09-01,SYS3_CTX0,normal,"Gestern war der Stromverbrauch im Vergleich zur letzten Woche ungewöhnlich hoch, aber die Abweichung ist nicht nachhaltig und liegt innerhalb des üblichen Bereichs für einen einzelnen Tag.",none,normal: no action,True,False,266.7282703762243,49.66104457526549,,event-2014-08
+2014-09-02 23:00:00+00:00,2014-09-02,SYS3_CTX0,peak,"Gestern war der Stromverbrauch über den ganzen Tag verteilt ungewöhnlich hoch, besonders im Vergleich zu den letzten Tagen.",none,peak: no action,True,False,151.68991159558018,74.56335121365998,,event-2014-08
+2014-09-03 23:00:00+00:00,2014-09-03,SYS3_CTX0,normal,"Gestern war der Stromverbrauch im Vergleich zur letzten Woche ungewöhnlich hoch, aber die Abweichung ist nicht nachhaltig und liegt innerhalb des üblichen Bereichs für einen einzelnen Tag.",none,normal: no action,True,False,108.22394227363829,43.34860293320449,,event-2014-08
+2014-09-04 23:00:00+00:00,2014-09-04,SYS3_CTX0,normal,"Gestern war der Stromverbrauch im Vergleich zur letzten Woche ungewöhnlich hoch, aber die Abweichung ist nicht nachhaltig und liegt innerhalb des üblichen Bereichs für einen einzelnen Tag.",none,normal: no action,True,False,119.94366010637331,43.598417945568016,,event-2014-08
+2014-09-05 23:00:00+00:00,2014-09-05,SYS3_CTX0,new_pattern,"Der Stromverbrauch war in der letzten Woche um etwa 42 % höher als sonst, und das seit dem 16. August. Gestern lag er zwar wieder im üblichen Bereich, aber die Abweichung hat sich über mehrere Tage gehalten.",advance_history_start,"new_pattern, cutting back 7 days to 2014-08-30T00:00:00+01:00",True,True,149.82363195209234,32.083355368212516,,event-2014-08
+2014-09-06 23:00:00+00:00,2014-09-06,SYS3_CTX0,normal,,none,normal: no action,True,False,123.40797789955108,27.262659983916045,,event-2014-08
+2014-09-07 23:00:00+00:00,2014-09-07,SYS3_CTX0,normal,,none,normal: no action,True,False,104.15685773382977,27.843859111890435,,event-2014-08
+2014-09-08 23:00:00+00:00,2014-09-08,SYS3_CTX0,normal,,none,normal: no action,True,False,102.0446009801298,24.479130128751137,,event-2014-08
+2014-09-09 23:00:00+00:00,2014-09-09,SYS3_CTX0,normal,,none,normal: no action,True,False,89.51307527120939,36.000715666417435,,event-2014-08
+2014-09-10 23:00:00+00:00,2014-09-10,SYS3_CTX0,normal,,none,normal: no action,True,False,208.15667357710103,36.28687743630205,,event-2014-08
+2014-09-11 23:00:00+00:00,2014-09-11,SYS3_CTX0,peak,"Gestern war der Stromverbrauch über den Tag verteilt ungewöhnlich hoch, besonders in kurzen Spitzen. Das ist nicht typisch für einen normalen Wochentag.",none,peak: no action,True,False,140.2334531898588,37.83571417946375,,event-2014-08
+2014-09-12 23:00:00+00:00,2014-09-12,SYS3_CTX0,normal,,none,normal: no action,True,False,103.87441458220201,43.14091407175738,,event-2014-08
+2014-09-13 23:00:00+00:00,2014-09-13,SYS3_CTX0,normal,,none,normal: no action,True,False,147.96586969773642,36.42907610544275,,event-2014-08
+2014-09-14 23:00:00+00:00,2014-09-14,SYS3_CTX0,normal,,none,normal: no action,True,False,138.76845924118012,51.93360555899841,,event-2014-08
+2014-09-15 23:00:00+00:00,2014-09-15,SYS3_CTX0,normal,,none,normal: no action,True,False,115.96350467427652,33.41898241129866,,event-2014-08
+2014-07-03 23:00:00+00:00,2014-07-03,SYS3_CTX1,normal,,none,normal: no action,True,False,59.04714731209214,30.773202939290893,,event-2014-08
+2014-07-04 23:00:00+00:00,2014-07-04,SYS3_CTX1,normal,,none,normal: no action,True,False,55.61124102844952,30.69943093965574,,event-2014-08
+2014-07-05 23:00:00+00:00,2014-07-05,SYS3_CTX1,normal,,none,normal: no action,True,False,38.00947199905317,22.468080284841072,,event-2014-08
+2014-07-06 23:00:00+00:00,2014-07-06,SYS3_CTX1,normal,,none,normal: no action,True,False,224.76625985918645,42.59213871521069,,event-2014-08
+2014-07-07 23:00:00+00:00,2014-07-07,SYS3_CTX1,normal,,none,normal: no action,True,False,119.18918769667322,33.880713588349835,,event-2014-08
+2014-07-08 23:00:00+00:00,2014-07-08,SYS3_CTX1,normal,,none,normal: no action,True,False,82.96921512113275,21.20914911968046,,event-2014-08
+2014-07-09 23:00:00+00:00,2014-07-09,SYS3_CTX1,normal,,none,normal: no action,True,False,175.9507132038825,27.23169471993694,,event-2014-08
+2014-07-10 23:00:00+00:00,2014-07-10,SYS3_CTX1,normal,,none,normal: no action,True,False,158.8730096061382,70.07153771699171,,event-2014-08
+2014-07-11 23:00:00+00:00,2014-07-11,SYS3_CTX1,normal,,none,normal: no action,True,False,158.81845393639057,51.37356953718083,,event-2014-08
+2014-07-12 23:00:00+00:00,2014-07-12,SYS3_CTX1,normal,,none,normal: no action,True,False,124.90505749818207,60.25222764177865,,event-2014-08
+2014-07-13 23:00:00+00:00,2014-07-13,SYS3_CTX1,normal,,none,normal: no action,True,False,130.9508827801594,48.994770985420885,,event-2014-08
+2014-07-14 23:00:00+00:00,2014-07-14,SYS3_CTX1,normal,,none,normal: no action,True,False,86.39673047131708,44.16420193509056,,event-2014-08
+2014-07-15 23:00:00+00:00,2014-07-15,SYS3_CTX1,normal,,none,normal: no action,True,False,146.13566954272287,27.03162939672879,,event-2014-08
+2014-07-16 23:00:00+00:00,2014-07-16,SYS3_CTX1,normal,,none,normal: no action,True,False,124.69296925501139,43.13087410144558,,event-2014-08
+2014-07-17 23:00:00+00:00,2014-07-17,SYS3_CTX1,normal,"Gestern lag der Verbrauch im Vergleich zum üblichen Sommerverlauf etwa 20 % höher, aber das ist nicht ungewöhnlich für diese Jahreszeit.",none,normal: no action,True,False,124.76566049187392,42.45322832993999,,event-2014-08
+2014-07-18 23:00:00+00:00,2014-07-18,SYS3_CTX1,normal,"Gestern war der Stromverbrauch etwas höher als sonst, aber nicht ungewöhnlich für die letzten Wochen.",none,normal: no action,True,False,81.44750147916143,30.837751352245274,,event-2014-08
+2014-07-19 23:00:00+00:00,2014-07-19,SYS3_CTX1,normal,"Gestern war der Stromverbrauch etwas höher als sonst, aber nicht ungewöhnlich für die letzten Wochen.",none,normal: no action,True,False,116.95952698497014,34.423144749990236,,event-2014-08
+2014-07-20 23:00:00+00:00,2014-07-20,SYS3_CTX1,normal,"Gestern war der Stromverbrauch etwas höher als sonst, aber nicht ungewöhnlich für die letzten Wochen.",none,normal: no action,True,False,,,,event-2014-08
+2014-07-21 23:00:00+00:00,2014-07-21,SYS3_CTX1,measurement_error,Der gemessene Wert von gestern ist nicht vertrauenswürdig und kann nicht ausgewertet werden.,exclude_window,"measurement_error, excluding 2014-07-21",True,False,180.87828630629065,32.38124319585338,,event-2014-08
+2014-07-22 23:00:00+00:00,2014-07-22,SYS3_CTX1,normal,"Gestern war der Stromverbrauch insgesamt etwas höher als sonst, aber die Abweichung ist nicht ungewöhnlich für diese Zeit des Jahres und hält nur kurz an.",none,normal: no action,True,False,78.22267923925028,30.21967957804779,,event-2014-08
+2014-07-23 23:00:00+00:00,2014-07-23,SYS3_CTX1,normal,"Gestern war der Stromverbrauch etwas höher als sonst, aber die Abweichung ist nicht ungewöhnlich und hält nur seit wenigen Tagen an.",none,normal: no action,True,False,201.98532355101096,42.48146735882951,,event-2014-08
+2014-07-24 23:00:00+00:00,2014-07-24,SYS3_CTX1,normal,"Gestern war der Stromverbrauch insgesamt etwas höher als sonst, aber die Abweichung ist nicht ungewöhnlich für diese Zeit des Jahres und bleibt im Rahmen.",none,normal: no action,True,False,86.39022937136883,44.64834193431589,,event-2014-08
+2014-07-25 23:00:00+00:00,2014-07-25,SYS3_CTX1,normal,,none,normal: no action,True,False,79.14256839697173,29.574951878288907,,event-2014-08
+2014-07-26 23:00:00+00:00,2014-07-26,SYS3_CTX1,normal,,none,normal: no action,True,False,149.78892461962295,33.64304828149844,,event-2014-08
+2014-07-27 23:00:00+00:00,2014-07-27,SYS3_CTX1,normal,"Gestern war der Verbrauch für einen Wochentag ungewöhnlich hoch, aber die Abweichung hat sich nur über eine Woche gehalten und ist nicht nachhaltig.",none,normal: no action,True,False,151.42161580988926,99.47026166132837,,event-2014-08
+2014-07-28 23:00:00+00:00,2014-07-28,SYS3_CTX1,normal,"Gestern war der Verbrauch ungewöhnlich niedrig, aber die Abweichung hat sich nur auf den letzten Tag beschränkt und ist nicht nachhaltig.",none,normal: no action,True,False,96.61378081911066,64.34603687835732,,event-2014-08
+2014-07-29 23:00:00+00:00,2014-07-29,SYS3_CTX1,normal,"Gestern war der Stromverbrauch ungewöhnlich niedrig, aber die Abweichung ist nur kurzfristig und nicht nachhaltig.",none,normal: no action,True,False,148.54633343872072,33.39930104163114,,event-2014-08
+2014-07-30 23:00:00+00:00,2014-07-30,SYS3_CTX1,normal,,none,normal: no action,True,False,121.96111993014911,32.19404484937772,,event-2014-08
+2014-07-31 23:00:00+00:00,2014-07-31,SYS3_CTX1,normal,,none,normal: no action,True,False,176.74379880087545,34.17128139172686,,event-2014-08
+2014-08-01 23:00:00+00:00,2014-08-01,SYS3_CTX1,normal,,none,normal: no action,True,False,127.05785489960924,62.176674181629366,,event-2014-08
+2014-08-02 23:00:00+00:00,2014-08-02,SYS3_CTX1,normal,,none,normal: no action,True,False,109.12128283460913,81.29414094495108,,event-2014-08
+2014-08-03 23:00:00+00:00,2014-08-03,SYS3_CTX1,normal,,none,normal: no action,True,False,78.99881973116645,62.33688419551392,,event-2014-08
+2014-08-04 23:00:00+00:00,2014-08-04,SYS3_CTX1,normal,,none,normal: no action,True,False,41.32166559469539,32.53210500836226,,event-2014-08
+2014-08-05 23:00:00+00:00,2014-08-05,SYS3_CTX1,normal,,none,normal: no action,True,False,29.291137178098392,22.672003968147607,,event-2014-08
+2014-08-06 23:00:00+00:00,2014-08-06,SYS3_CTX1,normal,,none,normal: no action,True,False,38.68420344986716,23.069435869459564,,event-2014-08
+2014-08-07 23:00:00+00:00,2014-08-07,SYS3_CTX1,normal,,none,normal: no action,True,False,31.98448585020472,22.78042436562994,,event-2014-08
+2014-08-08 23:00:00+00:00,2014-08-08,SYS3_CTX1,absence,"Gestern war der Stromverbrauch um etwa 50 % niedriger als sonst an einem Freitag, was auf den Urlaub bei der Oma zurückzuführen ist.",exclude_window,"absence, excluding event-2014-08 from 2014-08-03T00:00:00+01:00 to 2014-08-17T00:00:00+01:00",True,False,68.2450218704203,34.77443041834832,,event-2014-08
+2014-08-09 23:00:00+00:00,2014-08-09,SYS3_CTX1,normal,,none,normal: no action,True,False,53.06318077596327,28.326410722873558,,event-2014-08
+2014-08-10 23:00:00+00:00,2014-08-10,SYS3_CTX1,normal,,none,normal: no action,True,False,21.947444356293232,12.862440421939771,,event-2014-08
+2014-08-11 23:00:00+00:00,2014-08-11,SYS3_CTX1,normal,,none,normal: no action,True,False,25.775662687870412,16.971368042878453,,event-2014-08
+2014-08-12 23:00:00+00:00,2014-08-12,SYS3_CTX1,normal,,none,normal: no action,True,False,32.22469608214067,14.751413965095796,,event-2014-08
+2014-08-13 23:00:00+00:00,2014-08-13,SYS3_CTX1,normal,,none,normal: no action,True,False,28.555655358519676,13.84579462777019,,event-2014-08
+2014-08-14 23:00:00+00:00,2014-08-14,SYS3_CTX1,normal,,none,normal: no action,True,False,45.818387045496486,19.676412892208088,,event-2014-08
+2014-08-15 23:00:00+00:00,2014-08-15,SYS3_CTX1,normal,,none,normal: no action,True,False,51.65907286995449,27.34124750582177,,event-2014-08
+2014-08-16 23:00:00+00:00,2014-08-16,SYS3_CTX1,normal,,none,normal: no action,True,False,186.96981579568913,98.54031979221304,,event-2014-08
+2014-08-17 23:00:00+00:00,2014-08-17,SYS3_CTX1,normal,,none,normal: no action,True,False,127.52287147996367,37.089233935239065,,event-2014-08
+2014-08-18 23:00:00+00:00,2014-08-18,SYS3_CTX1,normal,,none,normal: no action,True,False,142.61218095139432,46.16876740607006,,event-2014-08
+2014-08-19 23:00:00+00:00,2014-08-19,SYS3_CTX1,normal,,none,normal: no action,True,False,117.71329168457203,31.68638462250513,,event-2014-08
+2014-08-20 23:00:00+00:00,2014-08-20,SYS3_CTX1,normal,,none,normal: no action,True,False,118.24544932736801,53.81690170959062,,event-2014-08
+2014-08-21 23:00:00+00:00,2014-08-21,SYS3_CTX1,normal,,none,normal: no action,True,False,130.71617670910445,95.14294866149801,,event-2014-08
+2014-08-22 23:00:00+00:00,2014-08-22,SYS3_CTX1,normal,,none,normal: no action,True,False,49.45171896667256,36.47211219164737,,event-2014-08
+2014-08-23 23:00:00+00:00,2014-08-23,SYS3_CTX1,normal,,none,normal: no action,True,False,27.62068838186916,22.417128462710956,,event-2014-08
+2014-08-24 23:00:00+00:00,2014-08-24,SYS3_CTX1,normal,,none,normal: no action,True,False,356.3035435625541,62.53431733184139,,event-2014-08
+2014-08-25 23:00:00+00:00,2014-08-25,SYS3_CTX1,normal,,none,normal: no action,True,False,224.36425626516072,44.69228232836673,,event-2014-08
+2014-08-26 23:00:00+00:00,2014-08-26,SYS3_CTX1,normal,,none,normal: no action,True,False,69.72267322587321,18.1877502100676,,event-2014-08
+2014-08-27 23:00:00+00:00,2014-08-27,SYS3_CTX1,normal,,none,normal: no action,True,False,119.72135145228758,26.102007845886316,,event-2014-08
+2014-08-28 23:00:00+00:00,2014-08-28,SYS3_CTX1,normal,,none,normal: no action,True,False,164.28508466263887,41.74894656076029,,event-2014-08
+2014-08-29 23:00:00+00:00,2014-08-29,SYS3_CTX1,normal,,none,normal: no action,True,False,234.3330946537982,108.98089908041217,,event-2014-08
+2014-08-30 23:00:00+00:00,2014-08-30,SYS3_CTX1,normal,,none,normal: no action,True,False,138.72485041915382,47.112489666848816,,event-2014-08
+2014-08-31 23:00:00+00:00,2014-08-31,SYS3_CTX1,normal,,none,normal: no action,True,False,147.15460711095741,55.685950855901304,,event-2014-08
+2014-09-01 23:00:00+00:00,2014-09-01,SYS3_CTX1,normal,,none,normal: no action,True,False,267.3274250765881,48.50344315911839,,event-2014-08
+2014-09-02 23:00:00+00:00,2014-09-02,SYS3_CTX1,normal,,none,normal: no action,True,False,142.5359079025126,67.67120135044614,,event-2014-08
+2014-09-03 23:00:00+00:00,2014-09-03,SYS3_CTX1,normal,,none,normal: no action,True,False,106.2472530575328,41.42758304989333,,event-2014-08
+2014-09-04 23:00:00+00:00,2014-09-04,SYS3_CTX1,normal,"Gestern war der Stromverbrauch etwas niedriger als sonst an einem Freitag, aber das ist nicht ungewöhnlich und bleibt im Rahmen.",none,normal: no action,True,False,119.09369028669384,42.570076062378064,,event-2014-08
+2014-09-05 23:00:00+00:00,2014-09-05,SYS3_CTX1,normal,"Gestern war der Stromverbrauch etwas niedriger als sonst an einem Freitag, aber nicht ungewöhnlich für einen einzelnen Tag.",none,normal: no action,True,False,150.53620533567036,35.59777510455138,,event-2014-08
+2014-09-06 23:00:00+00:00,2014-09-06,SYS3_CTX1,normal,,none,normal: no action,True,False,133.70477025070045,30.511894177661897,,event-2014-08
+2014-09-07 23:00:00+00:00,2014-09-07,SYS3_CTX1,normal,,none,normal: no action,True,False,109.76536218767319,29.038774930548918,,event-2014-08
+2014-09-08 23:00:00+00:00,2014-09-08,SYS3_CTX1,normal,,none,normal: no action,True,False,119.53261602069638,28.547512449978168,,event-2014-08
+2014-09-09 23:00:00+00:00,2014-09-09,SYS3_CTX1,normal,,none,normal: no action,True,False,90.66146632384057,34.271386424852146,,event-2014-08
+2014-09-10 23:00:00+00:00,2014-09-10,SYS3_CTX1,normal,,none,normal: no action,True,False,214.1566456139434,36.5579697870474,,event-2014-08
+2014-09-11 23:00:00+00:00,2014-09-11,SYS3_CTX1,normal,,none,normal: no action,True,False,131.65494700236573,34.45328050623841,,event-2014-08
+2014-09-12 23:00:00+00:00,2014-09-12,SYS3_CTX1,normal,,none,normal: no action,True,False,101.10373604278675,41.83541902511636,,event-2014-08
+2014-09-13 23:00:00+00:00,2014-09-13,SYS3_CTX1,normal,,none,normal: no action,True,False,148.6334278526963,34.87278294614638,,event-2014-08
+2014-09-14 23:00:00+00:00,2014-09-14,SYS3_CTX1,normal,,none,normal: no action,True,False,129.06407368588154,47.399438297638376,,event-2014-08
+2014-09-15 23:00:00+00:00,2014-09-15,SYS3_CTX1,normal,,none,normal: no action,True,False,123.90755429550991,34.31526996460744,,event-2014-08
+2014-07-03 23:00:00+00:00,2014-07-03,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,59.04714731209214,30.773202939290893,,event-2014-08
+2014-07-04 23:00:00+00:00,2014-07-04,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,55.61124102844952,30.69943093965574,,event-2014-08
+2014-07-05 23:00:00+00:00,2014-07-05,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,38.00947199905317,22.468080284841072,,event-2014-08
+2014-07-06 23:00:00+00:00,2014-07-06,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,224.76625985918645,42.59213871521069,,event-2014-08
+2014-07-07 23:00:00+00:00,2014-07-07,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,119.18918769667322,33.880713588349835,,event-2014-08
+2014-07-08 23:00:00+00:00,2014-07-08,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,82.96921512113275,21.20914911968046,,event-2014-08
+2014-07-09 23:00:00+00:00,2014-07-09,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,175.9507132038825,27.23169471993694,,event-2014-08
+2014-07-10 23:00:00+00:00,2014-07-10,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,158.8730096061382,70.07153771699171,,event-2014-08
+2014-07-11 23:00:00+00:00,2014-07-11,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,158.81845393639057,51.37356953718083,,event-2014-08
+2014-07-12 23:00:00+00:00,2014-07-12,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,124.90505749818207,60.25222764177865,,event-2014-08
+2014-07-13 23:00:00+00:00,2014-07-13,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,130.9508827801594,48.994770985420885,,event-2014-08
+2014-07-14 23:00:00+00:00,2014-07-14,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,86.39673047131708,44.16420193509056,,event-2014-08
+2014-07-15 23:00:00+00:00,2014-07-15,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,146.13566954272287,27.03162939672879,,event-2014-08
+2014-07-16 23:00:00+00:00,2014-07-16,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,124.69296925501139,43.13087410144558,,event-2014-08
+2014-07-17 23:00:00+00:00,2014-07-17,SYS3_CTX1_VISIT,normal,"Gestern lag der Verbrauch im Vergleich zum üblichen Sommerverlauf etwa 20 % höher, aber das ist nicht ungewöhnlich für diese Jahreszeit.",none,normal: no action,True,False,124.76566049187392,42.45322832993999,,event-2014-08
+2014-07-18 23:00:00+00:00,2014-07-18,SYS3_CTX1_VISIT,normal,"Gestern war der Stromverbrauch etwas höher als sonst, aber nicht ungewöhnlich für die letzten Wochen.",none,normal: no action,True,False,81.44750147916143,30.837751352245274,,event-2014-08
+2014-07-19 23:00:00+00:00,2014-07-19,SYS3_CTX1_VISIT,normal,"Gestern war der Stromverbrauch etwas höher als sonst, aber nicht ungewöhnlich für die letzten Wochen.",none,normal: no action,True,False,116.95952698497014,34.423144749990236,,event-2014-08
+2014-07-20 23:00:00+00:00,2014-07-20,SYS3_CTX1_VISIT,normal,"Gestern war der Stromverbrauch etwas höher als sonst, aber nicht ungewöhnlich für die letzten Wochen.",none,normal: no action,True,False,,,,event-2014-08
+2014-07-21 23:00:00+00:00,2014-07-21,SYS3_CTX1_VISIT,measurement_error,Der gemessene Wert von gestern ist nicht vertrauenswürdig und kann nicht ausgewertet werden.,exclude_window,"measurement_error, excluding 2014-07-21",True,False,180.87828630629065,32.38124319585338,,event-2014-08
+2014-07-22 23:00:00+00:00,2014-07-22,SYS3_CTX1_VISIT,normal,"Gestern war der Stromverbrauch insgesamt etwas höher als sonst, aber die Abweichung ist nicht ungewöhnlich für diese Zeit des Jahres und hält nur kurz an.",none,normal: no action,True,False,78.22267923925028,30.21967957804779,,event-2014-08
+2014-07-23 23:00:00+00:00,2014-07-23,SYS3_CTX1_VISIT,normal,"Gestern war der Stromverbrauch etwas höher als sonst, aber die Abweichung ist nicht ungewöhnlich und hält nur seit wenigen Tagen an.",none,normal: no action,True,False,201.98532355101096,42.48146735882951,,event-2014-08
+2014-07-24 23:00:00+00:00,2014-07-24,SYS3_CTX1_VISIT,normal,"Gestern war der Stromverbrauch insgesamt etwas höher als sonst, aber die Abweichung ist nicht ungewöhnlich für diese Zeit des Jahres und bleibt im Rahmen.",none,normal: no action,True,False,86.39022937136883,44.64834193431589,,event-2014-08
+2014-07-25 23:00:00+00:00,2014-07-25,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,79.14256839697173,29.574951878288907,,event-2014-08
+2014-07-26 23:00:00+00:00,2014-07-26,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,149.78892461962295,33.64304828149844,,event-2014-08
+2014-07-27 23:00:00+00:00,2014-07-27,SYS3_CTX1_VISIT,normal,"Gestern war der Verbrauch für einen Wochentag ungewöhnlich hoch, aber die Abweichung hat sich nur über eine Woche gehalten und ist nicht nachhaltig.",none,normal: no action,True,False,151.42161580988926,99.47026166132837,,event-2014-08
+2014-07-28 23:00:00+00:00,2014-07-28,SYS3_CTX1_VISIT,normal,"Gestern war der Verbrauch ungewöhnlich niedrig, aber die Abweichung hat sich nur auf den letzten Tag beschränkt und ist nicht nachhaltig.",none,normal: no action,True,False,96.61378081911066,64.34603687835732,,event-2014-08
+2014-07-29 23:00:00+00:00,2014-07-29,SYS3_CTX1_VISIT,normal,"Gestern war der Stromverbrauch ungewöhnlich niedrig, aber die Abweichung ist nur kurzfristig und nicht nachhaltig.",none,normal: no action,True,False,148.54633343872072,33.39930104163114,,event-2014-08
+2014-07-30 23:00:00+00:00,2014-07-30,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,121.96111993014911,32.19404484937772,,event-2014-08
+2014-07-31 23:00:00+00:00,2014-07-31,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,176.74379880087545,34.17128139172686,,event-2014-08
+2014-08-01 23:00:00+00:00,2014-08-01,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,127.05785489960924,62.176674181629366,,event-2014-08
+2014-08-02 23:00:00+00:00,2014-08-02,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,109.12128283460913,81.29414094495108,,event-2014-08
+2014-08-03 23:00:00+00:00,2014-08-03,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,78.99881973116645,62.33688419551392,,event-2014-08
+2014-08-04 23:00:00+00:00,2014-08-04,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,41.32166559469539,32.53210500836226,,event-2014-08
+2014-08-05 23:00:00+00:00,2014-08-05,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,29.291137178098392,22.672003968147607,,event-2014-08
+2014-08-06 23:00:00+00:00,2014-08-06,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,38.68420344986716,23.069435869459564,,event-2014-08
+2014-08-07 23:00:00+00:00,2014-08-07,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,31.98448585020472,22.78042436562994,,event-2014-08
+2014-08-08 23:00:00+00:00,2014-08-08,SYS3_CTX1_VISIT,new_pattern,"Der Stromverbrauch war in der letzten Woche um etwa 48 % niedriger als sonst, was seit dem 3. August anhält. Das könnte mit dem Besuch Ihrer Oma zusammenhängen, die möglicherweise weniger Energie verbraucht hat.",advance_history_start,"new_pattern, cutting back 7 days to 2014-08-02T00:00:00+01:00",True,True,48.90894411052407,23.677052783590437,,event-2014-08
+2014-08-09 23:00:00+00:00,2014-08-09,SYS3_CTX1_VISIT,peak,"Gestern war der Stromverbrauch über den Tag verteilt ungewöhnlich hoch, besonders kurzfristig. Das könnte an mehr Geräten oder längeren Laufzeiten liegen.",none,peak: no action,True,False,28.181871111842202,18.689341577822862,,event-2014-08
+2014-08-10 23:00:00+00:00,2014-08-10,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,45.69804732245857,30.43477382236815,,event-2014-08
+2014-08-11 23:00:00+00:00,2014-08-11,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,31.43615825734973,21.702215189781597,,event-2014-08
+2014-08-12 23:00:00+00:00,2014-08-12,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,42.0767814897292,19.759423212721984,,event-2014-08
+2014-08-13 23:00:00+00:00,2014-08-13,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,33.88107299862413,17.912468978033402,,event-2014-08
+2014-08-14 23:00:00+00:00,2014-08-14,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,43.76421247723503,17.895190538260515,,event-2014-08
+2014-08-15 23:00:00+00:00,2014-08-15,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,60.99631526121821,34.03298969809862,,event-2014-08
+2014-08-16 23:00:00+00:00,2014-08-16,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,95.92512675208457,31.440358029949383,,event-2014-08
+2014-08-17 23:00:00+00:00,2014-08-17,SYS3_CTX1_VISIT,peak,"Gestern war der Stromverbrauch über den ganzen Tag verteilt ungewöhnlich hoch, besonders kurzfristig am Nachmittag. Das entspricht einer Erhöhung von etwa 30 % im Vergleich zur üblichen Wochenmitte.",none,peak: no action,True,False,141.98247920376932,33.7230446913912,,event-2014-08
+2014-08-18 23:00:00+00:00,2014-08-18,SYS3_CTX1_VISIT,peak,"Gestern war der Stromverbrauch über den ganzen Tag verteilt ungewöhnlich hoch, besonders im Vergleich zu den letzten Tagen.",none,peak: no action,True,False,145.09719270234825,47.94820666114663,,event-2014-08
+2014-08-19 23:00:00+00:00,2014-08-19,SYS3_CTX1_VISIT,peak,"Gestern war der Stromverbrauch über den ganzen Tag verteilt ungewöhnlich hoch, besonders im Vergleich zu den letzten Tagen.",none,peak: no action,True,False,130.27706717036276,39.9991215094506,,event-2014-08
+2014-08-20 23:00:00+00:00,2014-08-20,SYS3_CTX1_VISIT,peak,"Gestern war der Stromverbrauch über den ganzen Tag verteilt ungewöhnlich hoch, besonders im Vergleich zu den letzten Tagen.",none,peak: no action,True,False,137.26638040548355,67.69253679710937,,event-2014-08
+2014-08-21 23:00:00+00:00,2014-08-21,SYS3_CTX1_VISIT,normal,"Gestern war der Stromverbrauch im Vergleich zur Woche ungewöhnlich hoch, aber die Abweichung ist nur kurzfristig und nicht nachhaltig.",none,normal: no action,True,False,158.32698246025123,115.67204583257416,,event-2014-08
+2014-08-22 23:00:00+00:00,2014-08-22,SYS3_CTX1_VISIT,normal,"Gestern war der Stromverbrauch ungewöhnlich niedrig, aber die Abweichung hat sich bereits seit einer Woche gehalten und ist nicht auf einen geplanten Urlaub zurückzuführen.",none,normal: no action,True,False,39.22361185198855,29.585085788361827,,event-2014-08
+2014-08-23 23:00:00+00:00,2014-08-23,SYS3_CTX1_VISIT,normal,"Gestern war der Stromverbrauch ungewöhnlich niedrig, aber die Abweichung hat sich nur auf die letzten sieben Tage beschränkt und ist nicht nachhaltig.",none,normal: no action,True,False,21.110786538413766,15.944541358146536,,event-2014-08
+2014-08-24 23:00:00+00:00,2014-08-24,SYS3_CTX1_VISIT,normal,"Gestern war der Stromverbrauch ungewöhnlich niedrig, aber die Abweichung hat sich nur auf die letzten sieben Tage beschränkt und ist nicht nachhaltig.",none,normal: no action,True,False,370.9772609760874,66.48539394931005,,event-2014-08
+2014-08-25 23:00:00+00:00,2014-08-25,SYS3_CTX1_VISIT,peak,"Gestern war der Stromverbrauch über den ganzen Tag verteilt ungewöhnlich hoch, besonders im Vergleich zu den letzten Tagen.",none,peak: no action,True,False,215.59750219491812,41.895757598237196,,event-2014-08
+2014-08-26 23:00:00+00:00,2014-08-26,SYS3_CTX1_VISIT,new_pattern,Gestern war der Stromverbrauch über den ganzen Tag ungewöhnlich hoch und hat sich seit dem 16. August um etwa 57 % erhöht.,advance_history_start,"new_pattern, cutting back 7 days to 2014-08-20T00:00:00+01:00",True,True,360.7623918338443,140.4034754571122,,event-2014-08
+2014-08-27 23:00:00+00:00,2014-08-27,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,114.90938980711194,25.64712475684077,,event-2014-08
+2014-08-28 23:00:00+00:00,2014-08-28,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,139.34451399277992,30.497534991232772,,event-2014-08
+2014-08-29 23:00:00+00:00,2014-08-29,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,176.8499840976959,80.692353027098,,event-2014-08
+2014-08-30 23:00:00+00:00,2014-08-30,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,129.97884651438798,33.494746427836226,,event-2014-08
+2014-08-31 23:00:00+00:00,2014-08-31,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,122.4821145403793,35.63509614263773,,event-2014-08
+2014-09-01 23:00:00+00:00,2014-09-01,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,264.91775473072636,42.93483867215418,,event-2014-08
+2014-09-02 23:00:00+00:00,2014-09-02,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,133.12720124081423,61.06950472680116,,event-2014-08
+2014-09-03 23:00:00+00:00,2014-09-03,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,98.99627074581052,37.119882870339936,,event-2014-08
+2014-09-04 23:00:00+00:00,2014-09-04,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,115.97621119875116,39.85224068614596,,event-2014-08
+2014-09-05 23:00:00+00:00,2014-09-05,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,145.1126943738171,32.935366787961925,,event-2014-08
+2014-09-06 23:00:00+00:00,2014-09-06,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,128.502373015728,27.72641280239318,,event-2014-08
+2014-09-07 23:00:00+00:00,2014-09-07,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,105.31253099789176,27.21484313795979,,event-2014-08
+2014-09-08 23:00:00+00:00,2014-09-08,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,117.89354061172851,26.707118617936697,,event-2014-08
+2014-09-09 23:00:00+00:00,2014-09-09,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,91.48008723142839,34.925727042738195,,event-2014-08
+2014-09-10 23:00:00+00:00,2014-09-10,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,212.30923863507167,36.21626329300909,,event-2014-08
+2014-09-11 23:00:00+00:00,2014-09-11,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,133.1138144048079,35.007925728178684,,event-2014-08
+2014-09-12 23:00:00+00:00,2014-09-12,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,101.44522907540572,42.275223880490344,,event-2014-08
+2014-09-13 23:00:00+00:00,2014-09-13,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,148.74417035239736,35.06388182257821,,event-2014-08
+2014-09-14 23:00:00+00:00,2014-09-14,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,127.53099443739906,46.86920399598564,,event-2014-08
+2014-09-15 23:00:00+00:00,2014-09-15,SYS3_CTX1_VISIT,normal,,none,normal: no action,True,False,122.93358632601469,34.49918098979821,,event-2014-08
+2014-07-03 23:00:00+00:00,2014-07-03,SYS3_CTX2,normal,,none,normal: no action,True,False,59.04714731209214,30.773202939290893,,event-2014-08
+2014-07-04 23:00:00+00:00,2014-07-04,SYS3_CTX2,normal,,none,normal: no action,True,False,55.61124102844952,30.69943093965574,,event-2014-08
+2014-07-05 23:00:00+00:00,2014-07-05,SYS3_CTX2,normal,,none,normal: no action,True,False,38.00947199905317,22.468080284841072,,event-2014-08
+2014-07-06 23:00:00+00:00,2014-07-06,SYS3_CTX2,normal,,none,normal: no action,True,False,224.76625985918645,42.59213871521069,,event-2014-08
+2014-07-07 23:00:00+00:00,2014-07-07,SYS3_CTX2,normal,,none,normal: no action,True,False,119.18918769667322,33.880713588349835,,event-2014-08
+2014-07-08 23:00:00+00:00,2014-07-08,SYS3_CTX2,normal,,none,normal: no action,True,False,82.96921512113275,21.20914911968046,,event-2014-08
+2014-07-09 23:00:00+00:00,2014-07-09,SYS3_CTX2,normal,,none,normal: no action,True,False,175.9507132038825,27.23169471993694,,event-2014-08
+2014-07-10 23:00:00+00:00,2014-07-10,SYS3_CTX2,normal,,none,normal: no action,True,False,158.8730096061382,70.07153771699171,,event-2014-08
+2014-07-11 23:00:00+00:00,2014-07-11,SYS3_CTX2,normal,,none,normal: no action,True,False,158.81845393639057,51.37356953718083,,event-2014-08
+2014-07-12 23:00:00+00:00,2014-07-12,SYS3_CTX2,normal,,none,normal: no action,True,False,124.90505749818207,60.25222764177865,,event-2014-08
+2014-07-13 23:00:00+00:00,2014-07-13,SYS3_CTX2,normal,,none,normal: no action,True,False,130.9508827801594,48.994770985420885,,event-2014-08
+2014-07-14 23:00:00+00:00,2014-07-14,SYS3_CTX2,normal,,none,normal: no action,True,False,86.39673047131708,44.16420193509056,,event-2014-08
+2014-07-15 23:00:00+00:00,2014-07-15,SYS3_CTX2,normal,,none,normal: no action,True,False,146.13566954272287,27.03162939672879,,event-2014-08
+2014-07-16 23:00:00+00:00,2014-07-16,SYS3_CTX2,normal,,none,normal: no action,True,False,124.69296925501139,43.13087410144558,,event-2014-08
+2014-07-17 23:00:00+00:00,2014-07-17,SYS3_CTX2,normal,"Gestern war der Stromverbrauch etwas höher als sonst, aber nicht ungewöhnlich für die letzten Wochen.",none,normal: no action,True,False,124.76566049187392,42.45322832993999,,event-2014-08
+2014-07-18 23:00:00+00:00,2014-07-18,SYS3_CTX2,normal,"Gestern war der Stromverbrauch etwas höher als sonst, aber nicht ungewöhnlich für die letzten Wochen.",none,normal: no action,True,False,81.44750147916143,30.837751352245274,,event-2014-08
+2014-07-19 23:00:00+00:00,2014-07-19,SYS3_CTX2,normal,"Gestern war der Stromverbrauch etwas höher als sonst, aber nicht ungewöhnlich für die letzten Wochen.",none,normal: no action,True,False,116.95952698497014,34.423144749990236,,event-2014-08
+2014-07-20 23:00:00+00:00,2014-07-20,SYS3_CTX2,normal,"Gestern war der Stromverbrauch etwas höher als sonst, aber nicht ungewöhnlich für die letzten Wochen.",none,normal: no action,True,False,,,,event-2014-08
+2014-07-21 23:00:00+00:00,2014-07-21,SYS3_CTX2,measurement_error,Der gemessene Wert für gestern ist nicht vertrauenswürdig und kann nicht ausgewertet werden.,exclude_window,"measurement_error, excluding 2014-07-21",True,False,180.87828630629065,32.38124319585338,,event-2014-08
+2014-07-22 23:00:00+00:00,2014-07-22,SYS3_CTX2,normal,"Gestern war der Stromverbrauch insgesamt etwas höher als sonst, aber die Abweichung ist nicht ungewöhnlich für diese Zeit des Jahres und bleibt im Rahmen.",none,normal: no action,True,False,78.22267923925028,30.21967957804779,,event-2014-08
+2014-07-23 23:00:00+00:00,2014-07-23,SYS3_CTX2,normal,"Gestern war der Stromverbrauch etwas höher als sonst, aber die Abweichung ist nicht ungewöhnlich und hält nur seit wenigen Tagen an.",none,normal: no action,True,False,201.98532355101096,42.48146735882951,,event-2014-08
+2014-07-24 23:00:00+00:00,2014-07-24,SYS3_CTX2,normal,"Gestern war der Stromverbrauch insgesamt etwas höher als sonst, aber nicht ungewöhnlich für die letzten Tage.",none,normal: no action,True,False,86.39022937136883,44.64834193431589,,event-2014-08
+2014-07-25 23:00:00+00:00,2014-07-25,SYS3_CTX2,normal,,none,normal: no action,True,False,79.14256839697173,29.574951878288907,,event-2014-08
+2014-07-26 23:00:00+00:00,2014-07-26,SYS3_CTX2,normal,,none,normal: no action,True,False,149.78892461962295,33.64304828149844,,event-2014-08
+2014-07-27 23:00:00+00:00,2014-07-27,SYS3_CTX2,normal,"Gestern war der Stromverbrauch für einen Dienstag ungewöhnlich hoch, aber die Abweichung hat sich nur über eine Woche gehalten und ist nicht nachhaltig.",none,normal: no action,True,False,151.42161580988926,99.47026166132837,,event-2014-08
+2014-07-28 23:00:00+00:00,2014-07-28,SYS3_CTX2,normal,"Gestern war der Stromverbrauch ungewöhnlich niedrig, aber die Abweichung ist nur auf einen kurzen Zeitraum beschränkt und hat sich bereits wieder normalisiert.",none,normal: no action,True,False,96.61378081911066,64.34603687835732,,event-2014-08
+2014-07-29 23:00:00+00:00,2014-07-29,SYS3_CTX2,normal,"Gestern war der Stromverbrauch etwas niedriger als sonst, aber das ist nicht ungewöhnlich und bleibt im Rahmen.",none,normal: no action,True,False,148.54633343872072,33.39930104163114,,event-2014-08
+2014-07-30 23:00:00+00:00,2014-07-30,SYS3_CTX2,normal,,none,normal: no action,True,False,121.96111993014911,32.19404484937772,,event-2014-08
+2014-07-31 23:00:00+00:00,2014-07-31,SYS3_CTX2,normal,,none,normal: no action,True,False,176.74379880087545,34.17128139172686,,event-2014-08
+2014-08-01 23:00:00+00:00,2014-08-01,SYS3_CTX2,normal,,none,normal: no action,True,False,127.05785489960924,62.176674181629366,,event-2014-08
+2014-08-02 23:00:00+00:00,2014-08-02,SYS3_CTX2,normal,,none,normal: no action,True,False,109.12128283460913,81.29414094495108,,event-2014-08
+2014-08-03 23:00:00+00:00,2014-08-03,SYS3_CTX2,normal,,none,normal: no action,True,False,78.99881973116645,62.33688419551392,,event-2014-08
+2014-08-04 23:00:00+00:00,2014-08-04,SYS3_CTX2,normal,,none,normal: no action,True,False,41.32166559469539,32.53210500836226,,event-2014-08
+2014-08-05 23:00:00+00:00,2014-08-05,SYS3_CTX2,normal,,none,normal: no action,True,False,29.291137178098392,22.672003968147607,,event-2014-08
+2014-08-06 23:00:00+00:00,2014-08-06,SYS3_CTX2,normal,,none,normal: no action,True,False,38.68420344986716,23.069435869459564,,event-2014-08
+2014-08-07 23:00:00+00:00,2014-08-07,SYS3_CTX2,normal,,none,normal: no action,True,False,31.98448585020472,22.78042436562994,,event-2014-08
+2014-08-08 23:00:00+00:00,2014-08-08,SYS3_CTX2,new_pattern,"Der Stromverbrauch war in der letzten Woche um etwa 48 % niedriger als sonst, und das seit dem 3. August. Gestern lag er ebenfalls deutlich unter dem üblichen Niveau.",advance_history_start,"new_pattern, cutting back 7 days to 2014-08-02T00:00:00+01:00",True,True,48.90894411052407,23.677052783590437,,event-2014-08
+2014-08-09 23:00:00+00:00,2014-08-09,SYS3_CTX2,peak,"Gestern war der Stromverbrauch über den Tag verteilt ungewöhnlich hoch, besonders in kurzen Spitzen. Das ist nicht typisch für diese Tageszeit im August.",none,peak: no action,True,False,28.181871111842202,18.689341577822862,,event-2014-08
+2014-08-10 23:00:00+00:00,2014-08-10,SYS3_CTX2,normal,,none,normal: no action,True,False,45.69804732245857,30.43477382236815,,event-2014-08
+2014-08-11 23:00:00+00:00,2014-08-11,SYS3_CTX2,normal,,none,normal: no action,True,False,31.43615825734973,21.702215189781597,,event-2014-08
+2014-08-12 23:00:00+00:00,2014-08-12,SYS3_CTX2,normal,,none,normal: no action,True,False,42.0767814897292,19.759423212721984,,event-2014-08
+2014-08-13 23:00:00+00:00,2014-08-13,SYS3_CTX2,normal,,none,normal: no action,True,False,33.88107299862413,17.912468978033402,,event-2014-08
+2014-08-14 23:00:00+00:00,2014-08-14,SYS3_CTX2,normal,,none,normal: no action,True,False,43.76421247723503,17.895190538260515,,event-2014-08
+2014-08-15 23:00:00+00:00,2014-08-15,SYS3_CTX2,normal,,none,normal: no action,True,False,60.99631526121821,34.03298969809862,,event-2014-08
+2014-08-16 23:00:00+00:00,2014-08-16,SYS3_CTX2,normal,,none,normal: no action,True,False,95.92512675208457,31.440358029949383,,event-2014-08
+2014-08-17 23:00:00+00:00,2014-08-17,SYS3_CTX2,peak,"Gestern war der Stromverbrauch über den ganzen Tag verteilt ungewöhnlich hoch, besonders kurzfristig am Nachmittag. Die letzten beiden Tage zusammen lagen bereits 31 % über dem üblichen Wochenwert.",none,peak: no action,True,False,141.98247920376932,33.7230446913912,,event-2014-08
+2014-08-18 23:00:00+00:00,2014-08-18,SYS3_CTX2,peak,"Gestern war der Stromverbrauch über den ganzen Tag verteilt ungewöhnlich hoch, besonders im Vergleich zu den letzten Tagen.",none,peak: no action,True,False,145.09719270234825,47.94820666114663,,event-2014-08
+2014-08-19 23:00:00+00:00,2014-08-19,SYS3_CTX2,peak,"Gestern war der Stromverbrauch über den ganzen Tag verteilt ungewöhnlich hoch, besonders im Vergleich zu den letzten Tagen.",none,peak: no action,True,False,130.27706717036276,39.9991215094506,,event-2014-08
+2014-08-20 23:00:00+00:00,2014-08-20,SYS3_CTX2,peak,"Gestern war der Stromverbrauch über den ganzen Tag verteilt ungewöhnlich hoch, besonders im Vergleich zu den letzten Tagen.",none,peak: no action,True,False,137.26638040548355,67.69253679710937,,event-2014-08
+2014-08-21 23:00:00+00:00,2014-08-21,SYS3_CTX2,normal,"Gestern war der Stromverbrauch im Vergleich zur letzten Woche ungewöhnlich hoch, aber die Abweichung ist nicht nachhaltig und liegt innerhalb des üblichen Bereichs für einen einzelnen Tag.",none,normal: no action,True,False,158.32698246025123,115.67204583257416,,event-2014-08
+2014-08-22 23:00:00+00:00,2014-08-22,SYS3_CTX2,new_pattern,"Gestern war der Stromverbrauch über eine Woche hinweg um etwa 68 % niedriger als sonst, seit dem 16. August. Das ist ein ungewöhnlich starker und länger anhaltender Rückgang.",advance_history_start,"new_pattern, cutting back 7 days to 2014-08-16T00:00:00+01:00",True,True,37.03167186204512,24.623840627120604,,event-2014-08
+2014-08-23 23:00:00+00:00,2014-08-23,SYS3_CTX2,normal,,none,normal: no action,True,False,34.28789442929095,24.92000584274955,,event-2014-08
+2014-08-24 23:00:00+00:00,2014-08-24,SYS3_CTX2,normal,,none,normal: no action,True,False,377.3155979937528,70.16429907825938,,event-2014-08
+2014-08-25 23:00:00+00:00,2014-08-25,SYS3_CTX2,normal,,none,normal: no action,True,False,181.97781255837273,46.11784804857912,,event-2014-08
+2014-08-26 23:00:00+00:00,2014-08-26,SYS3_CTX2,normal,,none,normal: no action,True,False,300.6253449687901,116.86087844932594,,event-2014-08
+2014-08-27 23:00:00+00:00,2014-08-27,SYS3_CTX2,normal,,none,normal: no action,True,False,119.92130535856018,35.980720610921644,,event-2014-08
+2014-08-28 23:00:00+00:00,2014-08-28,SYS3_CTX2,normal,,none,normal: no action,True,False,160.80985488551457,41.443315652019415,,event-2014-08
+2014-08-29 23:00:00+00:00,2014-08-29,SYS3_CTX2,normal,,none,normal: no action,True,False,221.0733344907925,103.43842871199966,,event-2014-08
+2014-08-30 23:00:00+00:00,2014-08-30,SYS3_CTX2,normal,,none,normal: no action,True,False,128.55956379904575,35.02989382522821,,event-2014-08
+2014-08-31 23:00:00+00:00,2014-08-31,SYS3_CTX2,normal,,none,normal: no action,True,False,122.58916495148685,37.40433895828492,,event-2014-08
+2014-09-01 23:00:00+00:00,2014-09-01,SYS3_CTX2,normal,,none,normal: no action,True,False,263.32131239101756,43.94490135234596,,event-2014-08
+2014-09-02 23:00:00+00:00,2014-09-02,SYS3_CTX2,normal,,none,normal: no action,True,False,132.9945293930031,62.19144614460852,,event-2014-08
+2014-09-03 23:00:00+00:00,2014-09-03,SYS3_CTX2,normal,,none,normal: no action,True,False,99.1615690724849,38.414497377876366,,event-2014-08
+2014-09-04 23:00:00+00:00,2014-09-04,SYS3_CTX2,normal,"Gestern war der Stromverbrauch im Vergleich zur letzten Woche um etwa 24 % niedriger, aber dieser Wert ist nicht ungewöhnlich für die aktuelle Situation.",none,normal: no action,True,False,114.25692027574333,40.35145862465899,,event-2014-08
+2014-09-05 23:00:00+00:00,2014-09-05,SYS3_CTX2,normal,"Der Stromverbrauch war gestern etwas niedriger als sonst in dieser Woche, aber nicht ungewöhnlich für einen einzelnen Tag.",none,normal: no action,True,False,143.36984262202438,32.719815673066805,,event-2014-08
+2014-09-06 23:00:00+00:00,2014-09-06,SYS3_CTX2,normal,"Gestern war der Stromverbrauch im Vergleich zur letzten Woche um etwa 16 % höher, aber dieser Anstieg hat sich bereits seit dem 30. August so gehalten und ist daher nicht ungewöhnlich.",none,normal: no action,True,False,128.19196092508034,28.755388624131612,,event-2014-08
+2014-09-07 23:00:00+00:00,2014-09-07,SYS3_CTX2,normal,"Gestern war der Stromverbrauch etwas höher als sonst in dieser Woche, aber nicht ungewöhnlich für einen einzelnen Tag.",none,normal: no action,True,False,103.9200367326764,27.645749101520277,,event-2014-08
+2014-09-08 23:00:00+00:00,2014-09-08,SYS3_CTX2,normal,,none,normal: no action,True,False,117.58075146188033,27.642834184724883,,event-2014-08
+2014-09-09 23:00:00+00:00,2014-09-09,SYS3_CTX2,normal,,none,normal: no action,True,False,89.98551940104512,33.786687910001675,,event-2014-08
+2014-09-10 23:00:00+00:00,2014-09-10,SYS3_CTX2,normal,,none,normal: no action,True,False,212.17232946785114,35.713413992470365,,event-2014-08
+2014-09-11 23:00:00+00:00,2014-09-11,SYS3_CTX2,normal,,none,normal: no action,True,False,135.55103777315523,35.19067612514241,,event-2014-08
+2014-09-12 23:00:00+00:00,2014-09-12,SYS3_CTX2,normal,,none,normal: no action,True,False,101.08142984607734,41.72180161029229,,event-2014-08
+2014-09-13 23:00:00+00:00,2014-09-13,SYS3_CTX2,normal,,none,normal: no action,True,False,148.20360666219685,34.28079726157731,,event-2014-08
+2014-09-14 23:00:00+00:00,2014-09-14,SYS3_CTX2,normal,,none,normal: no action,True,False,128.37679319788072,46.9415661726476,,event-2014-08
+2014-09-15 23:00:00+00:00,2014-09-15,SYS3_CTX2,normal,,none,normal: no action,True,False,123.90755429550991,34.31526996460744,,event-2014-08
+2015-09-03 23:00:00+00:00,2015-09-03,SYS1,normal,,none,,True,False,78.67692787001052,35.97666229226111,,event-2015-10
+2015-09-04 23:00:00+00:00,2015-09-04,SYS1,normal,,none,,True,False,128.1904981226559,43.58668802075628,,event-2015-10
+2015-09-05 23:00:00+00:00,2015-09-05,SYS1,normal,,none,,True,False,96.1853248117372,32.85625516505779,,event-2015-10
+2015-09-06 23:00:00+00:00,2015-09-06,SYS1,normal,,none,,True,False,146.39355749582407,32.81465738979995,,event-2015-10
+2015-09-07 23:00:00+00:00,2015-09-07,SYS1,normal,,none,,True,False,129.01804408301052,32.49833387459194,,event-2015-10
+2015-09-08 23:00:00+00:00,2015-09-08,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,180.27022902597858,37.53131355644608,,event-2015-10
+2015-09-09 23:00:00+00:00,2015-09-09,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,122.48427709216897,33.01452769460136,,event-2015-10
+2015-09-10 23:00:00+00:00,2015-09-10,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,99.45615663534147,32.4109644274502,,event-2015-10
+2015-09-11 23:00:00+00:00,2015-09-11,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,227.60378373685452,43.336827686294995,,event-2015-10
+2015-09-12 23:00:00+00:00,2015-09-12,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,,True,False,95.58744692540597,60.41327882258014,,event-2015-10
+2015-09-13 23:00:00+00:00,2015-09-13,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,,True,False,138.175954377149,37.7198415152509,,event-2015-10
+2015-09-14 23:00:00+00:00,2015-09-14,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,143.80395417401238,32.910347536909555,,event-2015-10
+2015-09-15 23:00:00+00:00,2015-09-15,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,82.26485129278812,30.364568440864957,,event-2015-10
+2015-09-16 23:00:00+00:00,2015-09-16,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,170.27209099310681,42.48396222840949,,event-2015-10
+2015-09-17 23:00:00+00:00,2015-09-17,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,101.80802689120146,31.90004172715138,,event-2015-10
+2015-09-18 23:00:00+00:00,2015-09-18,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,112.01311483383999,33.55267130355124,,event-2015-10
+2015-09-19 23:00:00+00:00,2015-09-19,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,,True,False,168.7154831114026,35.45389236138476,,event-2015-10
+2015-09-20 23:00:00+00:00,2015-09-20,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,,True,False,80.50165903938608,31.052216354225425,,event-2015-10
+2015-09-21 23:00:00+00:00,2015-09-21,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,131.34368124184877,27.65661320181741,,event-2015-10
+2015-09-22 23:00:00+00:00,2015-09-22,SYS1,normal,,none,,True,False,136.48767739672317,33.3330688561376,,event-2015-10
+2015-09-23 23:00:00+00:00,2015-09-23,SYS1,normal,,none,,True,False,103.05786133909567,41.49336025844959,,event-2015-10
+2015-09-24 23:00:00+00:00,2015-09-24,SYS1,normal,,none,,True,False,190.82554611792753,34.32513031503099,,event-2015-10
+2015-09-25 23:00:00+00:00,2015-09-25,SYS1,normal,,none,,True,False,92.70579146781576,37.27896849664273,,event-2015-10
+2015-09-26 23:00:00+00:00,2015-09-26,SYS1,normal,,none,,True,False,224.95768538393895,42.38646213281336,,event-2015-10
+2015-09-27 23:00:00+00:00,2015-09-27,SYS1,normal,,none,,True,False,124.77129682677348,33.440379452579805,,event-2015-10
+2015-09-28 23:00:00+00:00,2015-09-28,SYS1,normal,,none,,True,False,102.75631745722158,33.111983093422644,,event-2015-10
+2015-09-29 23:00:00+00:00,2015-09-29,SYS1,normal,,none,,True,False,95.55027233555988,24.803903888030977,,event-2015-10
+2015-09-30 23:00:00+00:00,2015-09-30,SYS1,normal,,none,,True,False,166.2936051380693,30.270874873827264,,event-2015-10
+2015-10-01 23:00:00+00:00,2015-10-01,SYS1,normal,,none,,True,False,87.87245483921016,22.714889226999542,,event-2015-10
+2015-10-02 23:00:00+00:00,2015-10-02,SYS1,normal,,none,,True,False,171.3403958449061,41.39911954710683,,event-2015-10
+2015-10-03 23:00:00+00:00,2015-10-03,SYS1,normal,,none,,True,False,128.40702439041505,70.69500170855927,,event-2015-10
+2015-10-04 23:00:00+00:00,2015-10-04,SYS1,normal,,none,,True,False,92.33223557797918,50.59014913768354,,event-2015-10
+2015-10-05 23:00:00+00:00,2015-10-05,SYS1,normal,,none,,True,False,52.89031896467751,25.34254971385952,,event-2015-10
+2015-10-06 23:00:00+00:00,2015-10-06,SYS1,normal,,none,,True,False,58.890449936940946,22.082005520915114,,event-2015-10
+2015-10-07 23:00:00+00:00,2015-10-07,SYS1,normal,,none,,True,False,76.00343364736456,42.54274273122356,,event-2015-10
+2015-10-08 23:00:00+00:00,2015-10-08,SYS1,normal,,none,,True,False,73.09162942232707,38.92311355993483,,event-2015-10
+2015-10-09 23:00:00+00:00,2015-10-09,SYS1,normal,,none,,True,False,62.64565373182484,47.92194596314747,,event-2015-10
+2015-10-10 23:00:00+00:00,2015-10-10,SYS1,normal,,none,,True,False,43.511308576856834,34.891971233185366,,event-2015-10
+2015-10-11 23:00:00+00:00,2015-10-11,SYS1,normal,,none,,True,False,62.47225273144613,30.48690434304355,,event-2015-10
+2015-10-12 23:00:00+00:00,2015-10-12,SYS1,normal,,none,,True,False,55.22417870949244,25.77572734158516,,event-2015-10
+2015-10-13 23:00:00+00:00,2015-10-13,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,73.88197787786238,30.112001377203267,,event-2015-10
+2015-10-14 23:00:00+00:00,2015-10-14,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,149.74418575667383,42.6453327653075,,event-2015-10
+2015-10-15 23:00:00+00:00,2015-10-15,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,63.44212082503691,35.56761550542187,,event-2015-10
+2015-10-16 23:00:00+00:00,2015-10-16,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,58.32120963637262,36.74038811134135,,event-2015-10
+2015-10-17 23:00:00+00:00,2015-10-17,SYS1,new_pattern,"sustained deviation across multiple scales at once (weekly, long_term), on a weekend.",none,,True,False,45.93947514033757,21.5495022738229,,event-2015-10
+2015-10-18 23:00:00+00:00,2015-10-18,SYS1,new_pattern,"sustained deviation across multiple scales at once (weekly, long_term), on a weekend.",none,,True,False,54.72840784861712,26.782917974173202,,event-2015-10
+2015-10-19 23:00:00+00:00,2015-10-19,SYS1,new_pattern,"sustained deviation across multiple scales at once (weekly, long_term), on a weekday.",none,,True,False,52.89193529064887,22.56188926342408,,event-2015-10
+2015-10-20 23:00:00+00:00,2015-10-20,SYS1,new_pattern,"sustained deviation across multiple scales at once (weekly, long_term), on a weekday.",none,,True,False,69.70674214730424,21.84322054555987,,event-2015-10
+2015-10-21 23:00:00+00:00,2015-10-21,SYS1,new_pattern,"sustained deviation across multiple scales at once (weekly, long_term), on a weekday.",none,,True,False,52.799649164786565,27.55468344725799,,event-2015-10
+2015-10-22 23:00:00+00:00,2015-10-22,SYS1,new_pattern,"sustained deviation across multiple scales at once (weekly, long_term), on a weekday.",none,,True,False,57.337058279515134,27.520670895609804,,event-2015-10
+2015-10-23 23:00:00+00:00,2015-10-23,SYS1,new_pattern,"sustained deviation across multiple scales at once (weekly, long_term), on a weekday.",none,,True,False,103.09677701542002,35.20068158897695,,event-2015-10
+2015-10-24 23:00:00+00:00,2015-10-24,SYS1,new_pattern,"sustained deviation across multiple scales at once (weekly, long_term), on a weekend.",none,,True,False,210.56122902609243,33.26334756653366,,event-2015-10
+2015-10-26 00:00:00+00:00,2015-10-25,SYS1,new_pattern,"sustained deviation across multiple scales at once (weekly, long_term), on a weekend.",none,,True,False,218.7308734380448,43.928965455640444,,event-2015-10
+2015-10-27 00:00:00+00:00,2015-10-26,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,171.9463396219867,97.94076610621478,,event-2015-10
+2015-10-28 00:00:00+00:00,2015-10-27,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,116.14906295378148,86.07339825400831,,event-2015-10
+2015-10-29 00:00:00+00:00,2015-10-28,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,82.87306489563376,56.68245194944485,,event-2015-10
+2015-10-30 00:00:00+00:00,2015-10-29,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,157.17588268523642,38.84684455490108,,event-2015-10
+2015-10-31 00:00:00+00:00,2015-10-30,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,152.38847112180636,36.53653584850831,,event-2015-10
+2015-11-01 00:00:00+00:00,2015-10-31,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,,True,False,196.74318620404514,35.193750359530966,,event-2015-10
+2015-11-02 00:00:00+00:00,2015-11-01,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,,True,False,225.59439932438258,35.1907077693794,,event-2015-10
+2015-11-03 00:00:00+00:00,2015-11-02,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,175.77621421684253,49.24361429652516,,event-2015-10
+2015-11-04 00:00:00+00:00,2015-11-03,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,187.66477577156797,52.28700948058519,,event-2015-10
+2015-11-05 00:00:00+00:00,2015-11-04,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,151.9923795013074,36.55433982849316,,event-2015-10
+2015-11-06 00:00:00+00:00,2015-11-05,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,177.16938080621242,63.01501250308238,,event-2015-10
+2015-11-07 00:00:00+00:00,2015-11-06,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,235.4108782332997,62.545825266060916,,event-2015-10
+2015-11-08 00:00:00+00:00,2015-11-07,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,,True,False,150.69320763067992,81.96908443536785,,event-2015-10
+2015-11-09 00:00:00+00:00,2015-11-08,SYS1,normal,,none,,True,False,250.87055413249573,50.91317453296259,,event-2015-10
+2015-11-10 00:00:00+00:00,2015-11-09,SYS1,peak,"unusual (unusual), but no sustained multi-scale signature (weekday).",none,,True,False,85.50493664637635,37.0865740613952,,event-2015-10
+2015-11-11 00:00:00+00:00,2015-11-10,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,214.89090117866672,40.1332505511448,,event-2015-10
+2015-11-12 00:00:00+00:00,2015-11-11,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,221.06605512140916,38.65889446703562,,event-2015-10
+2015-11-13 00:00:00+00:00,2015-11-12,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,138.5504353326249,33.245834925299405,,event-2015-10
+2015-11-14 00:00:00+00:00,2015-11-13,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,155.5609558315356,56.24511085234881,,event-2015-10
+2015-11-15 00:00:00+00:00,2015-11-14,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,,True,False,144.70435628598653,55.75111578899171,,event-2015-10
+2015-11-16 00:00:00+00:00,2015-11-15,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,,True,False,170.3996308509317,50.23776404411123,,event-2015-10
+2015-11-17 00:00:00+00:00,2015-11-16,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,288.78188263946475,40.54321699566295,,event-2015-10
+2015-11-18 00:00:00+00:00,2015-11-17,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,204.19045654909146,45.61069185080002,,event-2015-10
+2015-11-19 00:00:00+00:00,2015-11-18,SYS1,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,,True,False,145.94670617259283,32.21218590304326,,event-2015-10
+2015-11-20 00:00:00+00:00,2015-11-19,SYS1,new_pattern,"sustained deviation across multiple scales at once (weekly, long_term), on a weekday.",none,,True,False,177.36866193788308,37.42463913628169,,event-2015-10
+2015-11-21 00:00:00+00:00,2015-11-20,SYS1,new_pattern,"sustained deviation across multiple scales at once (weekly, long_term), on a weekday.",none,,True,False,247.3765712815417,153.8434933668802,,event-2015-10
+2015-11-22 00:00:00+00:00,2015-11-21,SYS1,new_pattern,"sustained deviation across multiple scales at once (weekly, long_term), on a weekend.",none,,True,False,180.54382063359444,123.33568095943504,,event-2015-10
+2015-11-23 00:00:00+00:00,2015-11-22,SYS1,new_pattern,"sustained deviation across multiple scales at once (weekly, long_term), on a weekend.",none,,True,False,175.79562671764907,33.536173340364364,,event-2015-10
+2015-11-24 00:00:00+00:00,2015-11-23,SYS1,new_pattern,"sustained deviation across multiple scales at once (weekly, long_term), on a weekday.",none,,True,False,183.13614065524362,38.16594166432061,,event-2015-10
+2015-09-03 23:00:00+00:00,2015-09-03,SYS2,normal,,none,normal: no action,True,False,78.67692787001052,35.97666229226111,,event-2015-10
+2015-09-04 23:00:00+00:00,2015-09-04,SYS2,normal,,none,normal: no action,True,False,128.1904981226559,43.58668802075628,,event-2015-10
+2015-09-05 23:00:00+00:00,2015-09-05,SYS2,normal,,none,normal: no action,True,False,96.1853248117372,32.85625516505779,,event-2015-10
+2015-09-06 23:00:00+00:00,2015-09-06,SYS2,normal,,none,normal: no action,True,False,146.39355749582407,32.81465738979995,,event-2015-10
+2015-09-07 23:00:00+00:00,2015-09-07,SYS2,normal,,none,normal: no action,True,False,129.01804408301052,32.49833387459194,,event-2015-10
+2015-09-08 23:00:00+00:00,2015-09-08,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,180.27022902597858,37.53131355644608,,event-2015-10
+2015-09-09 23:00:00+00:00,2015-09-09,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,122.48427709216897,33.01452769460136,,event-2015-10
+2015-09-10 23:00:00+00:00,2015-09-10,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,99.45615663534147,32.4109644274502,,event-2015-10
+2015-09-11 23:00:00+00:00,2015-09-11,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,227.60378373685452,43.336827686294995,,event-2015-10
+2015-09-12 23:00:00+00:00,2015-09-12,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,normal: no action,True,False,95.58744692540597,60.41327882258014,,event-2015-10
+2015-09-13 23:00:00+00:00,2015-09-13,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,normal: no action,True,False,138.175954377149,37.7198415152509,,event-2015-10
+2015-09-14 23:00:00+00:00,2015-09-14,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,143.80395417401238,32.910347536909555,,event-2015-10
+2015-09-15 23:00:00+00:00,2015-09-15,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,82.26485129278812,30.364568440864957,,event-2015-10
+2015-09-16 23:00:00+00:00,2015-09-16,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,170.27209099310681,42.48396222840949,,event-2015-10
+2015-09-17 23:00:00+00:00,2015-09-17,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,101.80802689120146,31.90004172715138,,event-2015-10
+2015-09-18 23:00:00+00:00,2015-09-18,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,112.01311483383999,33.55267130355124,,event-2015-10
+2015-09-19 23:00:00+00:00,2015-09-19,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,normal: no action,True,False,168.7154831114026,35.45389236138476,,event-2015-10
+2015-09-20 23:00:00+00:00,2015-09-20,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,normal: no action,True,False,80.50165903938608,31.052216354225425,,event-2015-10
+2015-09-21 23:00:00+00:00,2015-09-21,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,131.34368124184877,27.65661320181741,,event-2015-10
+2015-09-22 23:00:00+00:00,2015-09-22,SYS2,normal,,none,normal: no action,True,False,136.48767739672317,33.3330688561376,,event-2015-10
+2015-09-23 23:00:00+00:00,2015-09-23,SYS2,normal,,none,normal: no action,True,False,103.05786133909567,41.49336025844959,,event-2015-10
+2015-09-24 23:00:00+00:00,2015-09-24,SYS2,normal,,none,normal: no action,True,False,190.82554611792753,34.32513031503099,,event-2015-10
+2015-09-25 23:00:00+00:00,2015-09-25,SYS2,normal,,none,normal: no action,True,False,92.70579146781576,37.27896849664273,,event-2015-10
+2015-09-26 23:00:00+00:00,2015-09-26,SYS2,normal,,none,normal: no action,True,False,224.95768538393895,42.38646213281336,,event-2015-10
+2015-09-27 23:00:00+00:00,2015-09-27,SYS2,normal,,none,normal: no action,True,False,124.77129682677348,33.440379452579805,,event-2015-10
+2015-09-28 23:00:00+00:00,2015-09-28,SYS2,normal,,none,normal: no action,True,False,102.75631745722158,33.111983093422644,,event-2015-10
+2015-09-29 23:00:00+00:00,2015-09-29,SYS2,normal,,none,normal: no action,True,False,95.55027233555988,24.803903888030977,,event-2015-10
+2015-09-30 23:00:00+00:00,2015-09-30,SYS2,normal,,none,normal: no action,True,False,166.2936051380693,30.270874873827264,,event-2015-10
+2015-10-01 23:00:00+00:00,2015-10-01,SYS2,normal,,none,normal: no action,True,False,87.87245483921016,22.714889226999542,,event-2015-10
+2015-10-02 23:00:00+00:00,2015-10-02,SYS2,normal,,none,normal: no action,True,False,171.3403958449061,41.39911954710683,,event-2015-10
+2015-10-03 23:00:00+00:00,2015-10-03,SYS2,normal,,none,normal: no action,True,False,128.40702439041505,70.69500170855927,,event-2015-10
+2015-10-04 23:00:00+00:00,2015-10-04,SYS2,normal,,none,normal: no action,True,False,92.33223557797918,50.59014913768354,,event-2015-10
+2015-10-05 23:00:00+00:00,2015-10-05,SYS2,normal,,none,normal: no action,True,False,52.89031896467751,25.34254971385952,,event-2015-10
+2015-10-06 23:00:00+00:00,2015-10-06,SYS2,normal,,none,normal: no action,True,False,58.890449936940946,22.082005520915114,,event-2015-10
+2015-10-07 23:00:00+00:00,2015-10-07,SYS2,normal,,none,normal: no action,True,False,76.00343364736456,42.54274273122356,,event-2015-10
+2015-10-08 23:00:00+00:00,2015-10-08,SYS2,normal,,none,normal: no action,True,False,73.09162942232707,38.92311355993483,,event-2015-10
+2015-10-09 23:00:00+00:00,2015-10-09,SYS2,normal,,none,normal: no action,True,False,62.64565373182484,47.92194596314747,,event-2015-10
+2015-10-10 23:00:00+00:00,2015-10-10,SYS2,normal,,none,normal: no action,True,False,43.511308576856834,34.891971233185366,,event-2015-10
+2015-10-11 23:00:00+00:00,2015-10-11,SYS2,normal,,none,normal: no action,True,False,62.47225273144613,30.48690434304355,,event-2015-10
+2015-10-12 23:00:00+00:00,2015-10-12,SYS2,normal,,none,normal: no action,True,False,55.22417870949244,25.77572734158516,,event-2015-10
+2015-10-13 23:00:00+00:00,2015-10-13,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,73.88197787786238,30.112001377203267,,event-2015-10
+2015-10-14 23:00:00+00:00,2015-10-14,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,149.74418575667383,42.6453327653075,,event-2015-10
+2015-10-15 23:00:00+00:00,2015-10-15,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,63.44212082503691,35.56761550542187,,event-2015-10
+2015-10-16 23:00:00+00:00,2015-10-16,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,58.32120963637262,36.74038811134135,,event-2015-10
+2015-10-17 23:00:00+00:00,2015-10-17,SYS2,new_pattern,"sustained deviation across multiple scales at once (weekly, long_term), on a weekend.",advance_history_start,"new_pattern, cutting back 7 days to 2015-10-11T00:00:00+01:00",True,True,53.959438849862345,21.15742752961493,,event-2015-10
+2015-10-18 23:00:00+00:00,2015-10-18,SYS2,normal,,none,normal: no action,True,False,47.06850264218047,20.563782822742564,,event-2015-10
+2015-10-19 23:00:00+00:00,2015-10-19,SYS2,normal,,none,normal: no action,True,False,67.0880181759175,25.525838321286248,,event-2015-10
+2015-10-20 23:00:00+00:00,2015-10-20,SYS2,normal,,none,normal: no action,True,False,76.64212111030305,26.681567237458516,,event-2015-10
+2015-10-21 23:00:00+00:00,2015-10-21,SYS2,peak,"unusual (unusual), but no sustained multi-scale signature (weekday).",none,peak: no action,True,False,57.33273451132609,31.537059150762353,,event-2015-10
+2015-10-22 23:00:00+00:00,2015-10-22,SYS2,normal,,none,normal: no action,True,False,55.68712469446018,27.250905559533678,,event-2015-10
+2015-10-23 23:00:00+00:00,2015-10-23,SYS2,normal,,none,normal: no action,True,False,95.66217598361523,31.398193795486833,,event-2015-10
+2015-10-24 23:00:00+00:00,2015-10-24,SYS2,peak,"unusual (unusual), but no sustained multi-scale signature (weekend).",none,peak: no action,True,False,217.03553803291211,34.68841953121244,,event-2015-10
+2015-10-26 00:00:00+00:00,2015-10-25,SYS2,peak,"unusual (unusual), but no sustained multi-scale signature (weekend).",none,peak: no action,True,False,217.11261395544147,50.99912744312044,,event-2015-10
+2015-10-27 00:00:00+00:00,2015-10-26,SYS2,peak,"unusual (unusual), but no sustained multi-scale signature (weekday).",none,peak: no action,True,False,229.93716426038384,141.2157741578907,,event-2015-10
+2015-10-28 00:00:00+00:00,2015-10-27,SYS2,low,"unusual (unusual) low reading, but no sustained multi-scale signature (weekday).",none,low: no action,True,False,109.96341300602,81.61252504467778,,event-2015-10
+2015-10-29 00:00:00+00:00,2015-10-28,SYS2,low,"unusual (unusual) low reading, but no sustained multi-scale signature (weekday).",none,low: no action,True,False,56.448677386576605,32.728174184321865,,event-2015-10
+2015-10-30 00:00:00+00:00,2015-10-29,SYS2,normal,,none,normal: no action,True,False,167.61379629845047,38.56536866289631,,event-2015-10
+2015-10-31 00:00:00+00:00,2015-10-30,SYS2,peak,"unusual (unusual), but no sustained multi-scale signature (weekday).",none,peak: no action,True,False,160.05002015898995,39.36541845772002,,event-2015-10
+2015-11-01 00:00:00+00:00,2015-10-31,SYS2,peak,"unusual (unusual), but no sustained multi-scale signature (weekend).",none,peak: no action,True,False,197.416363764317,35.78500321598803,,event-2015-10
+2015-11-02 00:00:00+00:00,2015-11-01,SYS2,peak,"unusual (unusual), but no sustained multi-scale signature (weekend).",none,peak: no action,True,False,194.62398461413503,31.60862338184458,,event-2015-10
+2015-11-03 00:00:00+00:00,2015-11-02,SYS2,peak,"unusual (unusual), but no sustained multi-scale signature (weekday).",none,peak: no action,True,False,198.91517924389618,66.47261524831127,,event-2015-10
+2015-11-04 00:00:00+00:00,2015-11-03,SYS2,peak,"unusual (unusual), but no sustained multi-scale signature (weekday).",none,peak: no action,True,False,192.16422660399587,56.22626315941942,,event-2015-10
+2015-11-05 00:00:00+00:00,2015-11-04,SYS2,peak,"unusual (unusual), but no sustained multi-scale signature (weekday).",none,peak: no action,True,False,159.2285074024392,38.93814444443739,,event-2015-10
+2015-11-06 00:00:00+00:00,2015-11-05,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,180.52643258314797,64.14489850618129,,event-2015-10
+2015-11-07 00:00:00+00:00,2015-11-06,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,232.1539849227232,61.99714771481006,,event-2015-10
+2015-11-08 00:00:00+00:00,2015-11-07,SYS2,peak,"unusual (unusual), but no sustained multi-scale signature (weekend).",none,peak: no action,True,False,153.39571324882527,82.86544666984716,,event-2015-10
+2015-11-09 00:00:00+00:00,2015-11-08,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,normal: no action,True,False,249.96603821487096,49.187769324928006,,event-2015-10
+2015-11-10 00:00:00+00:00,2015-11-09,SYS2,peak,"unusual (unusual), but no sustained multi-scale signature (weekday).",none,peak: no action,True,False,85.50493664637635,37.0865740613952,,event-2015-10
+2015-11-11 00:00:00+00:00,2015-11-10,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,214.89090117866672,40.1332505511448,,event-2015-10
+2015-11-12 00:00:00+00:00,2015-11-11,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,221.06605512140916,38.65889446703562,,event-2015-10
+2015-11-13 00:00:00+00:00,2015-11-12,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,138.5504353326249,33.245834925299405,,event-2015-10
+2015-11-14 00:00:00+00:00,2015-11-13,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,155.5609558315356,56.24511085234881,,event-2015-10
+2015-11-15 00:00:00+00:00,2015-11-14,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,normal: no action,True,False,144.70435628598653,55.75111578899171,,event-2015-10
+2015-11-16 00:00:00+00:00,2015-11-15,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,normal: no action,True,False,170.3996308509317,50.23776404411123,,event-2015-10
+2015-11-17 00:00:00+00:00,2015-11-16,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,288.78188263946475,40.54321699566295,,event-2015-10
+2015-11-18 00:00:00+00:00,2015-11-17,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,204.19045654909146,45.61069185080002,,event-2015-10
+2015-11-19 00:00:00+00:00,2015-11-18,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,145.94670617259283,32.21218590304326,,event-2015-10
+2015-11-20 00:00:00+00:00,2015-11-19,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,177.36866193788308,37.42463913628169,,event-2015-10
+2015-11-21 00:00:00+00:00,2015-11-20,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekday).,none,normal: no action,True,False,247.3765712815417,153.8434933668802,,event-2015-10
+2015-11-22 00:00:00+00:00,2015-11-21,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,normal: no action,True,False,180.54382063359444,123.33568095943504,,event-2015-10
+2015-11-23 00:00:00+00:00,2015-11-22,SYS2,normal,the day itself is not unusual and fewer than 2 scales are sustained (weekend).,none,normal: no action,True,False,175.79562671764907,33.536173340364364,,event-2015-10
+2015-11-24 00:00:00+00:00,2015-11-23,SYS2,normal,,none,normal: no action,True,False,183.13614065524362,38.16594166432061,,event-2015-10
+2015-09-03 23:00:00+00:00,2015-09-03,SYS3_CTX0,normal,,none,normal: no action,True,False,78.67692787001052,35.97666229226111,,event-2015-10
+2015-09-04 23:00:00+00:00,2015-09-04,SYS3_CTX0,normal,,none,normal: no action,True,False,128.1904981226559,43.58668802075628,,event-2015-10
+2015-09-05 23:00:00+00:00,2015-09-05,SYS3_CTX0,normal,,none,normal: no action,True,False,96.1853248117372,32.85625516505779,,event-2015-10
+2015-09-06 23:00:00+00:00,2015-09-06,SYS3_CTX0,normal,,none,normal: no action,True,False,146.39355749582407,32.81465738979995,,event-2015-10
+2015-09-07 23:00:00+00:00,2015-09-07,SYS3_CTX0,normal,,none,normal: no action,True,False,129.01804408301052,32.49833387459194,,event-2015-10
+2015-09-08 23:00:00+00:00,2015-09-08,SYS3_CTX0,normal,"Gestern war der Stromverbrauch im Vergleich zum üblichen Herbstniveau um etwa 42 % höher, aber das ist nicht ungewöhnlich für diese Zeit des Jahres.",none,normal: no action,True,False,180.27022902597858,37.53131355644608,,event-2015-10
+2015-09-09 23:00:00+00:00,2015-09-09,SYS3_CTX0,normal,"Gestern war der Stromverbrauch insgesamt etwas höher als sonst, aber nicht ungewöhnlich für die letzten Wochen.",none,normal: no action,True,False,122.48427709216897,33.01452769460136,,event-2015-10
+2015-09-10 23:00:00+00:00,2015-09-10,SYS3_CTX0,normal,"Gestern war der Stromverbrauch etwas höher als sonst, aber nicht ungewöhnlich für die letzten Wochen.",none,normal: no action,True,False,99.45615663534147,32.4109644274502,,event-2015-10
+2015-09-11 23:00:00+00:00,2015-09-11,SYS3_CTX0,normal,"Gestern war der Stromverbrauch etwas niedriger als sonst, aber das ist nicht ungewöhnlich und kein Grund zur Sorge.",none,normal: no action,True,False,227.60378373685452,43.336827686294995,,event-2015-10
+2015-09-12 23:00:00+00:00,2015-09-12,SYS3_CTX0,normal,"Gestern war der Stromverbrauch im Vergleich zum üblichen Verbrauch an Wochentagen um etwa 40 % höher, aber dieser Wert ist nicht ungewöhnlich für die letzten Wochen.",none,normal: no action,True,False,95.58744692540597,60.41327882258014,,event-2015-10
+2015-09-13 23:00:00+00:00,2015-09-13,SYS3_CTX0,normal,"Gestern war der Stromverbrauch im Vergleich zum üblichen Herbstniveau um etwa 24 % niedriger, aber das ist nicht ungewöhnlich für diese Zeit des Jahres.",none,normal: no action,True,False,138.175954377149,37.7198415152509,,event-2015-10
+2015-09-14 23:00:00+00:00,2015-09-14,SYS3_CTX0,normal,"Gestern war der Stromverbrauch etwas höher als sonst, aber nicht ungewöhnlich für die letzten Wochen.",none,normal: no action,True,False,143.80395417401238,32.910347536909555,,event-2015-10
+2015-09-15 23:00:00+00:00,2015-09-15,SYS3_CTX0,normal,"Gestern war der Stromverbrauch im Vergleich zum üblichen Verbrauch an Wochentagen um etwa 39 % höher, aber dieser Wert liegt innerhalb des normalen Bereichs für die letzten vier Wochen.",none,normal: no action,True,False,82.26485129278812,30.364568440864957,,event-2015-10
+2015-09-16 23:00:00+00:00,2015-09-16,SYS3_CTX0,normal,"Gestern war der Stromverbrauch etwas höher als sonst, aber nicht ungewöhnlich für die letzten Wochen.",none,normal: no action,True,False,170.27209099310681,42.48396222840949,,event-2015-10
+2015-09-17 23:00:00+00:00,2015-09-17,SYS3_CTX0,normal,"Gestern war der Stromverbrauch etwas höher als sonst, aber nicht ungewöhnlich für die letzten Wochen.",none,normal: no action,True,False,101.80802689120146,31.90004172715138,,event-2015-10
+2015-09-18 23:00:00+00:00,2015-09-18,SYS3_CTX0,normal,"Gestern war der Stromverbrauch etwas höher als sonst, aber nicht ungewöhnlich für die letzten Wochen.",none,normal: no action,True,False,112.01311483383999,33.55267130355124,,event-2015-10
+2015-09-19 23:00:00+00:00,2015-09-19,SYS3_CTX0,normal,"Gestern war der Stromverbrauch etwas höher als sonst, aber nicht ungewöhnlich für die letzten Wochen.",none,normal: no action,True,False,168.7154831114026,35.45389236138476,,event-2015-10
+2015-09-20 23:00:00+00:00,2015-09-20,SYS3_CTX0,normal,"Gestern war der Stromverbrauch etwas höher als sonst, aber nicht ungewöhnlich für die letzten Wochen.",none,normal: no action,True,False,80.50165903938608,31.052216354225425,,event-2015-10
+2015-09-21 23:00:00+00:00,2015-09-21,SYS3_CTX0,normal,"Gestern war der Stromverbrauch etwas niedriger als sonst, aber nicht ungewöhnlich für einen einzelnen Tag.",none,normal: no action,True,False,131.34368124184877,27.65661320181741,,event-2015-10
+2015-09-22 23:00:00+00:00,2015-09-22,SYS3_CTX0,normal,,none,normal: no action,True,False,136.48767739672317,33.3330688561376,,event-2015-10
+2015-09-23 23:00:00+00:00,2015-09-23,SYS3_CTX0,normal,,none,normal: no action,True,False,103.05786133909567,41.49336025844959,,event-2015-10
+2015-09-24 23:00:00+00:00,2015-09-24,SYS3_CTX0,normal,,none,normal: no action,True,False,190.82554611792753,34.32513031503099,,event-2015-10
+2015-09-25 23:00:00+00:00,2015-09-25,SYS3_CTX0,normal,,none,normal: no action,True,False,92.70579146781576,37.27896849664273,,event-2015-10
+2015-09-26 23:00:00+00:00,2015-09-26,SYS3_CTX0,normal,,none,normal: no action,True,False,224.95768538393895,42.38646213281336,,event-2015-10
+2015-09-27 23:00:00+00:00,2015-09-27,SYS3_CTX0,normal,,none,normal: no action,True,False,124.77129682677348,33.440379452579805,,event-2015-10
+2015-09-28 23:00:00+00:00,2015-09-28,SYS3_CTX0,normal,,none,normal: no action,True,False,102.75631745722158,33.111983093422644,,event-2015-10
+2015-09-29 23:00:00+00:00,2015-09-29,SYS3_CTX0,normal,,none,normal: no action,True,False,95.55027233555988,24.803903888030977,,event-2015-10
+2015-09-30 23:00:00+00:00,2015-09-30,SYS3_CTX0,normal,,none,normal: no action,True,False,166.2936051380693,30.270874873827264,,event-2015-10
+2015-10-01 23:00:00+00:00,2015-10-01,SYS3_CTX0,normal,,none,normal: no action,True,False,87.87245483921016,22.714889226999542,,event-2015-10
+2015-10-02 23:00:00+00:00,2015-10-02,SYS3_CTX0,normal,,none,normal: no action,True,False,171.3403958449061,41.39911954710683,,event-2015-10
+2015-10-03 23:00:00+00:00,2015-10-03,SYS3_CTX0,normal,,none,normal: no action,True,False,128.40702439041505,70.69500170855927,,event-2015-10
+2015-10-04 23:00:00+00:00,2015-10-04,SYS3_CTX0,normal,,none,normal: no action,True,False,92.33223557797918,50.59014913768354,,event-2015-10
+2015-10-05 23:00:00+00:00,2015-10-05,SYS3_CTX0,normal,,none,normal: no action,True,False,52.89031896467751,25.34254971385952,,event-2015-10
+2015-10-06 23:00:00+00:00,2015-10-06,SYS3_CTX0,normal,,none,normal: no action,True,False,58.890449936940946,22.082005520915114,,event-2015-10
+2015-10-07 23:00:00+00:00,2015-10-07,SYS3_CTX0,normal,,none,normal: no action,True,False,76.00343364736456,42.54274273122356,,event-2015-10
+2015-10-08 23:00:00+00:00,2015-10-08,SYS3_CTX0,normal,,none,normal: no action,True,False,73.09162942232707,38.92311355993483,,event-2015-10
+2015-10-09 23:00:00+00:00,2015-10-09,SYS3_CTX0,normal,,none,normal: no action,True,False,62.64565373182484,47.92194596314747,,event-2015-10
+2015-10-10 23:00:00+00:00,2015-10-10,SYS3_CTX0,normal,,none,normal: no action,True,False,43.511308576856834,34.891971233185366,,event-2015-10
+2015-10-11 23:00:00+00:00,2015-10-11,SYS3_CTX0,normal,,none,normal: no action,True,False,62.47225273144613,30.48690434304355,,event-2015-10
+2015-10-12 23:00:00+00:00,2015-10-12,SYS3_CTX0,normal,,none,normal: no action,True,False,55.22417870949244,25.77572734158516,,event-2015-10
+2015-10-13 23:00:00+00:00,2015-10-13,SYS3_CTX0,normal,"Gestern war der Stromverbrauch ungewöhnlich niedrig, aber die Abweichung ist nur auf einen kurzen Zeitraum beschränkt und hat sich bereits wieder normalisiert.",none,normal: no action,True,False,73.88197787786238,30.112001377203267,,event-2015-10
+2015-10-14 23:00:00+00:00,2015-10-14,SYS3_CTX0,new_pattern,Gestern war der Stromverbrauch um etwa 48 % niedriger als sonst an einem Dienstag und hat sich seit dem 8. Oktober so gehalten. Das ist ungewöhnlich für diese Zeit des Jahres.,advance_history_start,"new_pattern, cutting back 7 days to 2015-10-08T00:00:00+01:00",True,True,95.26369131438337,25.866951064214668,,event-2015-10
+2015-10-15 23:00:00+00:00,2015-10-15,SYS3_CTX0,peak,"Gestern war der Stromverbrauch über den Tag verteilt ungewöhnlich hoch, besonders in kurzen Spitzen. Das ist nicht typisch für einen normalen Wochentag.",none,peak: no action,True,False,120.26028402430659,79.12704338974578,,event-2015-10
+2015-10-16 23:00:00+00:00,2015-10-16,SYS3_CTX0,normal,,none,normal: no action,True,False,54.53944006195179,36.85255806244396,,event-2015-10
+2015-10-17 23:00:00+00:00,2015-10-17,SYS3_CTX0,normal,,none,normal: no action,True,False,48.6710990380478,19.396875682505787,,event-2015-10
+2015-10-18 23:00:00+00:00,2015-10-18,SYS3_CTX0,normal,,none,normal: no action,True,False,45.636597723888805,20.13519619829426,,event-2015-10
+2015-10-19 23:00:00+00:00,2015-10-19,SYS3_CTX0,normal,,none,normal: no action,True,False,66.70160274673135,25.32268200962572,,event-2015-10
+2015-10-20 23:00:00+00:00,2015-10-20,SYS3_CTX0,normal,,none,normal: no action,True,False,80.00745722932398,26.789538547095482,,event-2015-10
+2015-10-21 23:00:00+00:00,2015-10-21,SYS3_CTX0,peak,"Gestern war der Stromverbrauch über den ganzen Tag verteilt ungewöhnlich hoch, besonders kurzfristig.",none,peak: no action,True,False,50.45139035521424,27.544112036468388,,event-2015-10
+2015-10-22 23:00:00+00:00,2015-10-22,SYS3_CTX0,normal,,none,normal: no action,True,False,54.81138678922111,26.43856004576552,,event-2015-10
+2015-10-23 23:00:00+00:00,2015-10-23,SYS3_CTX0,normal,,none,normal: no action,True,False,96.01307187907976,31.12205723525326,,event-2015-10
+2015-10-24 23:00:00+00:00,2015-10-24,SYS3_CTX0,peak,"Gestern war der Stromverbrauch über den Tag verteilt ungewöhnlich hoch, besonders kurzfristig. Der Wert lag etwa 18 % über dem üblichen Wochenwert.",none,peak: no action,True,False,219.55259925184922,35.36358844231606,,event-2015-10
+2015-10-26 00:00:00+00:00,2015-10-25,SYS3_CTX0,peak,"Gestern war der Stromverbrauch über den ganzen Tag verteilt ungewöhnlich hoch, besonders kurzfristig am Nachmittag. Der Verbrauch lag im Schnitt um etwa 32 % höher als sonst an einem Dienstag.",none,peak: no action,True,False,217.03521186861596,48.6861090929934,,event-2015-10
+2015-10-27 00:00:00+00:00,2015-10-26,SYS3_CTX0,peak,"Gestern war der Stromverbrauch über den ganzen Tag verteilt ungewöhnlich hoch, besonders im Vergleich zu den letzten Tagen.",none,peak: no action,True,False,210.11142000841127,126.89462510246672,,event-2015-10
+2015-10-28 00:00:00+00:00,2015-10-27,SYS3_CTX0,new_pattern,"Gestern war der Stromverbrauch über den Tag verteilt ungewöhnlich niedrig, und die letzten sieben Tage zusammen waren um etwa 40 % geringer als sonst. Das ist seit dem 22. Oktober so.",advance_history_start,"new_pattern, cutting back 7 days to 2015-10-21T00:00:00+01:00",True,True,55.41553910222276,41.25964628280529,,event-2015-10
+2015-10-29 00:00:00+00:00,2015-10-28,SYS3_CTX0,normal,,none,normal: no action,True,False,54.29031391682539,28.087869663257397,,event-2015-10
+2015-10-30 00:00:00+00:00,2015-10-29,SYS3_CTX0,normal,,none,normal: no action,True,False,182.99345343519357,45.90292406018449,,event-2015-10
+2015-10-31 00:00:00+00:00,2015-10-30,SYS3_CTX0,normal,,none,normal: no action,True,False,160.95699535979358,40.71668223698223,,event-2015-10
+2015-11-01 00:00:00+00:00,2015-10-31,SYS3_CTX0,normal,,none,normal: no action,True,False,162.74870321288367,39.4727845685664,,event-2015-10
+2015-11-02 00:00:00+00:00,2015-11-01,SYS3_CTX0,normal,,none,normal: no action,True,False,193.79322324158446,37.37802230471512,,event-2015-10
+2015-11-03 00:00:00+00:00,2015-11-02,SYS3_CTX0,normal,,none,normal: no action,True,False,236.71696461713486,83.0402613323251,,event-2015-10
+2015-11-04 00:00:00+00:00,2015-11-03,SYS3_CTX0,normal,,none,normal: no action,True,False,198.2032290872131,59.82042681380686,,event-2015-10
+2015-11-05 00:00:00+00:00,2015-11-04,SYS3_CTX0,normal,,none,normal: no action,True,False,172.26752997275125,43.019441317948356,,event-2015-10
+2015-11-06 00:00:00+00:00,2015-11-05,SYS3_CTX0,normal,,none,normal: no action,True,False,197.72706947001404,70.071159318698,,event-2015-10
+2015-11-07 00:00:00+00:00,2015-11-06,SYS3_CTX0,normal,,none,normal: no action,True,False,218.44430106741865,57.8991531759251,,event-2015-10
+2015-11-08 00:00:00+00:00,2015-11-07,SYS3_CTX0,normal,,none,normal: no action,True,False,139.46541366278473,73.8430591470661,,event-2015-10
+2015-11-09 00:00:00+00:00,2015-11-08,SYS3_CTX0,normal,,none,normal: no action,True,False,250.21589339098827,41.35605075680881,,event-2015-10
+2015-11-10 00:00:00+00:00,2015-11-09,SYS3_CTX0,normal,"Gestern war der Stromverbrauch im Vergleich zur üblichen Woche um etwa 48 % höher, aber dieser Anstieg hat sich bereits seit dem 4. November gehalten und ist daher kein neues Muster.",none,normal: no action,True,False,81.03876018962276,32.90114105633229,,event-2015-10
+2015-11-11 00:00:00+00:00,2015-11-10,SYS3_CTX0,new_pattern,"Der Stromverbrauch war in der letzten Woche um etwa 40 % niedriger als sonst, seit dem 4. November. Das ist ungewöhnlich und könnte auf eine dauerhafte Veränderung hinweisen.",advance_history_start,"new_pattern, cutting back 7 days to 2015-11-04T00:00:00+00:00",True,True,212.12749285852456,31.777220982386435,,event-2015-10
+2015-11-12 00:00:00+00:00,2015-11-11,SYS3_CTX0,normal,,none,normal: no action,True,False,247.71313675875487,47.52514365314829,,event-2015-10
+2015-11-13 00:00:00+00:00,2015-11-12,SYS3_CTX0,normal,,none,normal: no action,True,False,161.55460002897124,41.47235876451081,,event-2015-10
+2015-11-14 00:00:00+00:00,2015-11-13,SYS3_CTX0,normal,,none,normal: no action,True,False,169.74373022889495,58.76309335859394,,event-2015-10
+2015-11-15 00:00:00+00:00,2015-11-14,SYS3_CTX0,normal,,none,normal: no action,True,False,146.4906788304776,53.214170411316076,,event-2015-10
+2015-11-16 00:00:00+00:00,2015-11-15,SYS3_CTX0,normal,,none,normal: no action,True,False,166.9942559782314,45.57355033036941,,event-2015-10
+2015-11-17 00:00:00+00:00,2015-11-16,SYS3_CTX0,normal,,none,normal: no action,True,False,291.96632737110855,38.39139009467569,,event-2015-10
+2015-11-18 00:00:00+00:00,2015-11-17,SYS3_CTX0,normal,,none,normal: no action,True,False,219.20963835899315,49.28434709175729,,event-2015-10
+2015-11-19 00:00:00+00:00,2015-11-18,SYS3_CTX0,normal,,none,normal: no action,True,False,146.27947483052102,34.69127737582712,,event-2015-10
+2015-11-20 00:00:00+00:00,2015-11-19,SYS3_CTX0,normal,,none,normal: no action,True,False,170.55797823793398,38.01571586983659,,event-2015-10
+2015-11-21 00:00:00+00:00,2015-11-20,SYS3_CTX0,normal,,none,normal: no action,True,False,284.0646141226078,176.1896890881056,,event-2015-10
+2015-11-22 00:00:00+00:00,2015-11-21,SYS3_CTX0,normal,,none,normal: no action,True,False,113.35819002792853,77.70088129091235,,event-2015-10
+2015-11-23 00:00:00+00:00,2015-11-22,SYS3_CTX0,normal,,none,normal: no action,True,False,215.70391618742065,44.064630505527646,,event-2015-10
+2015-11-24 00:00:00+00:00,2015-11-23,SYS3_CTX0,normal,,none,normal: no action,True,False,190.22322909568274,39.468075244578074,,event-2015-10
+2015-09-03 23:00:00+00:00,2015-09-03,SYS3_CTX1,normal,,none,normal: no action,True,False,78.67692787001052,35.97666229226111,,event-2015-10
+2015-09-04 23:00:00+00:00,2015-09-04,SYS3_CTX1,normal,,none,normal: no action,True,False,128.1904981226559,43.58668802075628,,event-2015-10
+2015-09-05 23:00:00+00:00,2015-09-05,SYS3_CTX1,normal,,none,normal: no action,True,False,96.1853248117372,32.85625516505779,,event-2015-10
+2015-09-06 23:00:00+00:00,2015-09-06,SYS3_CTX1,normal,,none,normal: no action,True,False,146.39355749582407,32.81465738979995,,event-2015-10
+2015-09-07 23:00:00+00:00,2015-09-07,SYS3_CTX1,normal,,none,normal: no action,True,False,129.01804408301052,32.49833387459194,,event-2015-10
+2015-09-08 23:00:00+00:00,2015-09-08,SYS3_CTX1,normal,"Gestern war der Stromverbrauch insgesamt etwas höher als sonst, aber die Abweichung ist nicht ungewöhnlich für diese Zeit des Jahres und bleibt im Rahmen.",none,normal: no action,True,False,180.27022902597858,37.53131355644608,,event-2015-10
+2015-09-09 23:00:00+00:00,2015-09-09,SYS3_CTX1,normal,"Gestern war der Stromverbrauch im Vergleich zum üblichen Wochenendniveau um etwa 29 % höher, aber dieser Wert liegt noch innerhalb des normalen Bereichs für die letzten vier Wochen.",none,normal: no action,True,False,122.48427709216897,33.01452769460136,,event-2015-10
+2015-09-10 23:00:00+00:00,2015-09-10,SYS3_CTX1,normal,"Gestern war der Stromverbrauch etwas höher als sonst, aber nicht ungewöhnlich für die letzten Wochen.",none,normal: no action,True,False,99.45615663534147,32.4109644274502,,event-2015-10
+2015-09-11 23:00:00+00:00,2015-09-11,SYS3_CTX1,normal,"Gestern war der Stromverbrauch etwas niedriger als sonst, aber das ist nicht ungewöhnlich und kein Grund zur Sorge.",none,normal: no action,True,False,227.60378373685452,43.336827686294995,,event-2015-10
+2015-09-12 23:00:00+00:00,2015-09-12,SYS3_CTX1,normal,"Gestern war der Stromverbrauch um etwa 40 % höher als sonst an einem Dienstag, aber dieser Wert ist nicht ungewöhnlich für die letzten Wochen.",none,normal: no action,True,False,95.58744692540597,60.41327882258014,,event-2015-10
+2015-09-13 23:00:00+00:00,2015-09-13,SYS3_CTX1,normal,"Gestern war der Stromverbrauch um etwa 24 % niedriger als an einem typischen Dienstag dieser Woche, aber das ist nicht ungewöhnlich für die letzten Wochen.",none,normal: no action,True,False,138.175954377149,37.7198415152509,,event-2015-10
+2015-09-14 23:00:00+00:00,2015-09-14,SYS3_CTX1,normal,"Gestern war der Stromverbrauch etwas höher als sonst, aber nicht ungewöhnlich für die letzten Wochen.",none,normal: no action,True,False,143.80395417401238,32.910347536909555,,event-2015-10
+2015-09-15 23:00:00+00:00,2015-09-15,SYS3_CTX1,normal,"Gestern war der Stromverbrauch etwas höher als sonst, aber nicht ungewöhnlich für die letzten Wochen.",none,normal: no action,True,False,82.26485129278812,30.364568440864957,,event-2015-10
+2015-09-16 23:00:00+00:00,2015-09-16,SYS3_CTX1,normal,"Gestern war der Stromverbrauch etwas höher als sonst, aber nicht ungewöhnlich für die letzten Wochen.",none,normal: no action,True,False,170.27209099310681,42.48396222840949,,event-2015-10
+2015-09-17 23:00:00+00:00,2015-09-17,SYS3_CTX1,normal,"Gestern war der Stromverbrauch etwas höher als sonst, aber nicht ungewöhnlich für die letzten Wochen.",none,normal: no action,True,False,101.80802689120146,31.90004172715138,,event-2015-10
+2015-09-18 23:00:00+00:00,2015-09-18,SYS3_CTX1,normal,"Gestern war der Stromverbrauch etwas höher als sonst, aber nicht ungewöhnlich für die letzten Wochen.",none,normal: no action,True,False,112.01311483383999,33.55267130355124,,event-2015-10
+2015-09-19 23:00:00+00:00,2015-09-19,SYS3_CTX1,normal,"Gestern war der Stromverbrauch etwas höher als sonst, aber nicht ungewöhnlich für die letzten Wochen.",none,normal: no action,True,False,168.7154831114026,35.45389236138476,,event-2015-10
+2015-09-20 23:00:00+00:00,2015-09-20,SYS3_CTX1,normal,"Gestern war der Stromverbrauch um etwa 32 % höher als an einem typischen Dienstag dieser Woche, aber die Abweichung ist nicht nachhaltig und liegt im Rahmen einer vorübergehenden Erhöhung.",none,normal: no action,True,False,80.50165903938608,31.052216354225425,,event-2015-10
+2015-09-21 23:00:00+00:00,2015-09-21,SYS3_CTX1,normal,"Gestern war der Stromverbrauch etwas niedriger als sonst, aber das ist nicht ungewöhnlich und bleibt im Rahmen.",none,normal: no action,True,False,131.34368124184877,27.65661320181741,,event-2015-10
+2015-09-22 23:00:00+00:00,2015-09-22,SYS3_CTX1,normal,,none,normal: no action,True,False,136.48767739672317,33.3330688561376,,event-2015-10
+2015-09-23 23:00:00+00:00,2015-09-23,SYS3_CTX1,normal,,none,normal: no action,True,False,103.05786133909567,41.49336025844959,,event-2015-10
+2015-09-24 23:00:00+00:00,2015-09-24,SYS3_CTX1,normal,,none,normal: no action,True,False,190.82554611792753,34.32513031503099,,event-2015-10
+2015-09-25 23:00:00+00:00,2015-09-25,SYS3_CTX1,normal,,none,normal: no action,True,False,92.70579146781576,37.27896849664273,,event-2015-10
+2015-09-26 23:00:00+00:00,2015-09-26,SYS3_CTX1,normal,,none,normal: no action,True,False,224.95768538393895,42.38646213281336,,event-2015-10
+2015-09-27 23:00:00+00:00,2015-09-27,SYS3_CTX1,normal,,none,normal: no action,True,False,124.77129682677348,33.440379452579805,,event-2015-10
+2015-09-28 23:00:00+00:00,2015-09-28,SYS3_CTX1,normal,,none,normal: no action,True,False,102.75631745722158,33.111983093422644,,event-2015-10
+2015-09-29 23:00:00+00:00,2015-09-29,SYS3_CTX1,normal,,none,normal: no action,True,False,95.55027233555988,24.803903888030977,,event-2015-10
+2015-09-30 23:00:00+00:00,2015-09-30,SYS3_CTX1,normal,,none,normal: no action,True,False,166.2936051380693,30.270874873827264,,event-2015-10
+2015-10-01 23:00:00+00:00,2015-10-01,SYS3_CTX1,normal,,none,normal: no action,True,False,87.87245483921016,22.714889226999542,,event-2015-10
+2015-10-02 23:00:00+00:00,2015-10-02,SYS3_CTX1,normal,,none,normal: no action,True,False,171.3403958449061,41.39911954710683,,event-2015-10
+2015-10-03 23:00:00+00:00,2015-10-03,SYS3_CTX1,normal,,none,normal: no action,True,False,128.40702439041505,70.69500170855927,,event-2015-10
+2015-10-04 23:00:00+00:00,2015-10-04,SYS3_CTX1,normal,,none,normal: no action,True,False,92.33223557797918,50.59014913768354,,event-2015-10
+2015-10-05 23:00:00+00:00,2015-10-05,SYS3_CTX1,normal,,none,normal: no action,True,False,52.89031896467751,25.34254971385952,,event-2015-10
+2015-10-06 23:00:00+00:00,2015-10-06,SYS3_CTX1,normal,,none,normal: no action,True,False,58.890449936940946,22.082005520915114,,event-2015-10
+2015-10-07 23:00:00+00:00,2015-10-07,SYS3_CTX1,normal,,none,normal: no action,True,False,76.00343364736456,42.54274273122356,,event-2015-10
+2015-10-08 23:00:00+00:00,2015-10-08,SYS3_CTX1,normal,,none,normal: no action,True,False,73.09162942232707,38.92311355993483,,event-2015-10
+2015-10-09 23:00:00+00:00,2015-10-09,SYS3_CTX1,normal,,none,normal: no action,True,False,62.64565373182484,47.92194596314747,,event-2015-10
+2015-10-10 23:00:00+00:00,2015-10-10,SYS3_CTX1,normal,,none,normal: no action,True,False,43.511308576856834,34.891971233185366,,event-2015-10
+2015-10-11 23:00:00+00:00,2015-10-11,SYS3_CTX1,normal,,none,normal: no action,True,False,62.47225273144613,30.48690434304355,,event-2015-10
+2015-10-12 23:00:00+00:00,2015-10-12,SYS3_CTX1,normal,,none,normal: no action,True,False,55.22417870949244,25.77572734158516,,event-2015-10
+2015-10-13 23:00:00+00:00,2015-10-13,SYS3_CTX1,absence,"Gestern war der Verbrauch um etwa 46 % niedriger als sonst an einem Dienstag, was auf die Reise nach Tokio zurückzuführen ist.",exclude_window,"absence, excluding event-2015-10 from 2015-10-04T00:00:00+01:00 to 2015-10-25T00:00:00+01:00",True,False,73.88197787786238,30.112001377203267,,event-2015-10
+2015-10-14 23:00:00+00:00,2015-10-14,SYS3_CTX1,normal,,none,normal: no action,True,False,149.74418575667383,42.6453327653075,,event-2015-10
+2015-10-15 23:00:00+00:00,2015-10-15,SYS3_CTX1,normal,,none,normal: no action,True,False,63.44212082503691,35.56761550542187,,event-2015-10
+2015-10-16 23:00:00+00:00,2015-10-16,SYS3_CTX1,normal,,none,normal: no action,True,False,58.32120963637262,36.74038811134135,,event-2015-10
+2015-10-17 23:00:00+00:00,2015-10-17,SYS3_CTX1,normal,,none,normal: no action,True,False,45.93947514033757,21.5495022738229,,event-2015-10
+2015-10-18 23:00:00+00:00,2015-10-18,SYS3_CTX1,normal,,none,normal: no action,True,False,54.72840784861712,26.782917974173202,,event-2015-10
+2015-10-19 23:00:00+00:00,2015-10-19,SYS3_CTX1,normal,,none,normal: no action,True,False,52.89193529064887,22.56188926342408,,event-2015-10
+2015-10-20 23:00:00+00:00,2015-10-20,SYS3_CTX1,normal,,none,normal: no action,True,False,69.70674214730424,21.84322054555987,,event-2015-10
+2015-10-21 23:00:00+00:00,2015-10-21,SYS3_CTX1,normal,,none,normal: no action,True,False,52.799649164786565,27.55468344725799,,event-2015-10
+2015-10-22 23:00:00+00:00,2015-10-22,SYS3_CTX1,normal,,none,normal: no action,True,False,57.337058279515134,27.520670895609804,,event-2015-10
+2015-10-23 23:00:00+00:00,2015-10-23,SYS3_CTX1,normal,,none,normal: no action,True,False,103.09677701542002,35.20068158897695,,event-2015-10
+2015-10-24 23:00:00+00:00,2015-10-24,SYS3_CTX1,normal,,none,normal: no action,True,False,199.47102478385176,50.27945397644905,,event-2015-10
+2015-10-26 00:00:00+00:00,2015-10-25,SYS3_CTX1,normal,,none,normal: no action,True,False,229.90376391019367,64.58549059454445,,event-2015-10
+2015-10-27 00:00:00+00:00,2015-10-26,SYS3_CTX1,normal,,none,normal: no action,True,False,207.67204439478235,123.83238489139663,,event-2015-10
+2015-10-28 00:00:00+00:00,2015-10-27,SYS3_CTX1,normal,,none,normal: no action,True,False,112.86210427301671,83.68120502615405,,event-2015-10
+2015-10-29 00:00:00+00:00,2015-10-28,SYS3_CTX1,low,Gestern war der Stromverbrauch um etwa 61 % niedriger als an einem normalen Dienstag im Oktober.,none,low: no action,True,False,63.14574690426388,39.2682391784647,,event-2015-10
+2015-10-30 00:00:00+00:00,2015-10-29,SYS3_CTX1,low,Gestern war der Stromverbrauch um etwa 58 % niedriger als an einem normalen Wochentag.,none,low: no action,True,False,165.24072953356267,38.341572995193445,,event-2015-10
+2015-10-31 00:00:00+00:00,2015-10-30,SYS3_CTX1,normal,,none,normal: no action,True,False,166.74859695255418,41.650637692503715,,event-2015-10
+2015-11-01 00:00:00+00:00,2015-10-31,SYS3_CTX1,normal,,none,normal: no action,True,False,207.33792086256207,37.5986847747134,,event-2015-10
+2015-11-02 00:00:00+00:00,2015-11-01,SYS3_CTX1,normal,,none,normal: no action,True,False,234.691202400326,37.09033436196904,,event-2015-10
+2015-11-03 00:00:00+00:00,2015-11-02,SYS3_CTX1,normal,,none,normal: no action,True,False,175.05168615671053,45.80159737960694,,event-2015-10
+2015-11-04 00:00:00+00:00,2015-11-03,SYS3_CTX1,normal,,none,normal: no action,True,False,190.45365732661526,54.3116403020861,,event-2015-10
+2015-11-05 00:00:00+00:00,2015-11-04,SYS3_CTX1,normal,,none,normal: no action,True,False,155.57768723901165,37.806457385419144,,event-2015-10
+2015-11-06 00:00:00+00:00,2015-11-05,SYS3_CTX1,normal,,none,normal: no action,True,False,180.49159269530773,64.41152285363506,,event-2015-10
+2015-11-07 00:00:00+00:00,2015-11-06,SYS3_CTX1,normal,,none,normal: no action,True,False,235.25286371515915,62.36962660331381,,event-2015-10
+2015-11-08 00:00:00+00:00,2015-11-07,SYS3_CTX1,normal,,none,normal: no action,True,False,149.33816292259172,81.28971748400565,,event-2015-10
+2015-11-09 00:00:00+00:00,2015-11-08,SYS3_CTX1,normal,,none,normal: no action,True,False,249.70872852588982,48.3603337304167,,event-2015-10
+2015-11-10 00:00:00+00:00,2015-11-09,SYS3_CTX1,peak,"Gestern war der Stromverbrauch über den ganzen Tag verteilt ungewöhnlich hoch, besonders gegen Ende des Tages. Das entspricht einer Erhöhung um etwa 40 % gegenüber einem normalen Dienstag.",none,peak: no action,True,False,83.55846580149476,35.941508866083154,,event-2015-10
+2015-11-11 00:00:00+00:00,2015-11-10,SYS3_CTX1,normal,"Gestern war der Stromverbrauch etwas niedriger als sonst an einem Dienstag, aber die Abweichung ist nicht ungewöhnlich und hält nur seit wenigen Tagen an.",none,normal: no action,True,False,217.32211552031535,39.53332293681438,,event-2015-10
+2015-11-12 00:00:00+00:00,2015-11-11,SYS3_CTX1,new_pattern,"Der Stromverbrauch der letzten Woche war im Schnitt um etwa 19 % höher als sonst, und das seit dem 5. November. Gestern lag er zwar wieder normal hoch, aber die Abweichung hat sich gehalten.",advance_history_start,"new_pattern, cutting back 7 days to 2015-11-05T00:00:00+00:00",True,True,250.75056222696867,49.144945729472326,,event-2015-10
+2015-11-13 00:00:00+00:00,2015-11-12,SYS3_CTX1,normal,,none,normal: no action,True,False,166.40650886452826,43.694425729235675,,event-2015-10
+2015-11-14 00:00:00+00:00,2015-11-13,SYS3_CTX1,normal,,none,normal: no action,True,False,175.54498057627234,62.72170569136401,,event-2015-10
+2015-11-15 00:00:00+00:00,2015-11-14,SYS3_CTX1,normal,,none,normal: no action,True,False,144.88161089151149,53.29898662334828,,event-2015-10
+2015-11-16 00:00:00+00:00,2015-11-15,SYS3_CTX1,normal,,none,normal: no action,True,False,170.263902627007,45.70446948259997,,event-2015-10
+2015-11-17 00:00:00+00:00,2015-11-16,SYS3_CTX1,normal,,none,normal: no action,True,False,293.8016185317107,39.061426327546485,,event-2015-10
+2015-11-18 00:00:00+00:00,2015-11-17,SYS3_CTX1,normal,,none,normal: no action,True,False,219.51075639934024,50.04446182328882,,event-2015-10
+2015-11-19 00:00:00+00:00,2015-11-18,SYS3_CTX1,normal,,none,normal: no action,True,False,146.85086040783247,35.02513674809622,,event-2015-10
+2015-11-20 00:00:00+00:00,2015-11-19,SYS3_CTX1,normal,,none,normal: no action,True,False,171.0248816105991,39.03053870848631,,event-2015-10
+2015-11-21 00:00:00+00:00,2015-11-20,SYS3_CTX1,normal,,none,normal: no action,True,False,287.88951324464955,178.86738092635574,,event-2015-10
+2015-11-22 00:00:00+00:00,2015-11-21,SYS3_CTX1,normal,,none,normal: no action,True,False,106.53547186310259,73.26609879361969,,event-2015-10
+2015-11-23 00:00:00+00:00,2015-11-22,SYS3_CTX1,normal,,none,normal: no action,True,False,226.9376593044358,47.72333292763908,,event-2015-10
+2015-11-24 00:00:00+00:00,2015-11-23,SYS3_CTX1,normal,,none,normal: no action,True,False,192.84132339978882,39.557139617007024,,event-2015-10
+2015-09-03 23:00:00+00:00,2015-09-03,SYS3_CTX2,normal,,none,normal: no action,True,False,78.67692787001052,35.97666229226111,,event-2015-10
+2015-09-04 23:00:00+00:00,2015-09-04,SYS3_CTX2,normal,,none,normal: no action,True,False,128.1904981226559,43.58668802075628,,event-2015-10
+2015-09-05 23:00:00+00:00,2015-09-05,SYS3_CTX2,normal,,none,normal: no action,True,False,96.1853248117372,32.85625516505779,,event-2015-10
+2015-09-06 23:00:00+00:00,2015-09-06,SYS3_CTX2,normal,,none,normal: no action,True,False,146.39355749582407,32.81465738979995,,event-2015-10
+2015-09-07 23:00:00+00:00,2015-09-07,SYS3_CTX2,normal,,none,normal: no action,True,False,129.01804408301052,32.49833387459194,,event-2015-10
+2015-09-08 23:00:00+00:00,2015-09-08,SYS3_CTX2,normal,"Gestern war der Stromverbrauch im Vergleich zum üblichen Herbstniveau um etwa 42 % höher, aber dieser Wert bezieht sich auf die letzten vier Wochen insgesamt und nicht auf den einzelnen Tag.",none,normal: no action,True,False,180.27022902597858,37.53131355644608,,event-2015-10
+2015-09-09 23:00:00+00:00,2015-09-09,SYS3_CTX2,normal,"Gestern war der Stromverbrauch um etwa 29 % höher als an einem typischen Dienstag dieser Woche, aber die Abweichung ist nicht nachhaltig und liegt im Rahmen einer vorübergehenden Erhöhung.",none,normal: no action,True,False,122.48427709216897,33.01452769460136,,event-2015-10
+2015-09-10 23:00:00+00:00,2015-09-10,SYS3_CTX2,normal,"Gestern war der Stromverbrauch etwas höher als sonst, aber nicht ungewöhnlich für die letzten Wochen.",none,normal: no action,True,False,99.45615663534147,32.4109644274502,,event-2015-10
+2015-09-11 23:00:00+00:00,2015-09-11,SYS3_CTX2,normal,"Gestern war der Stromverbrauch etwas niedriger als sonst, aber das ist nicht ungewöhnlich und kein Grund zur Sorge.",none,normal: no action,True,False,227.60378373685452,43.336827686294995,,event-2015-10
+2015-09-12 23:00:00+00:00,2015-09-12,SYS3_CTX2,normal,"Gestern war der Stromverbrauch um etwa 40 % höher als sonst im September, aber das ist nicht ungewöhnlich für diese Zeit des Jahres.",none,normal: no action,True,False,95.58744692540597,60.41327882258014,,event-2015-10
+2015-09-13 23:00:00+00:00,2015-09-13,SYS3_CTX2,normal,"Gestern war der Stromverbrauch um etwa 24 % niedriger als an einem typischen Dienstag dieser Woche, aber das ist nicht ungewöhnlich für die letzten Wochen.",none,normal: no action,True,False,138.175954377149,37.7198415152509,,event-2015-10
+2015-09-14 23:00:00+00:00,2015-09-14,SYS3_CTX2,normal,"Gestern war der Stromverbrauch etwas höher als sonst, aber nicht ungewöhnlich für die letzten Wochen.",none,normal: no action,True,False,143.80395417401238,32.910347536909555,,event-2015-10
+2015-09-15 23:00:00+00:00,2015-09-15,SYS3_CTX2,normal,"Gestern war der Stromverbrauch etwas höher als sonst, aber nicht ungewöhnlich für die letzten Wochen.",none,normal: no action,True,False,82.26485129278812,30.364568440864957,,event-2015-10
+2015-09-16 23:00:00+00:00,2015-09-16,SYS3_CTX2,normal,"Gestern war der Stromverbrauch etwas höher als sonst im September, aber nicht ungewöhnlich für die letzten Wochen.",none,normal: no action,True,False,170.27209099310681,42.48396222840949,,event-2015-10
+2015-09-17 23:00:00+00:00,2015-09-17,SYS3_CTX2,normal,"Gestern war der Stromverbrauch um etwa 33 % höher als im Durchschnitt der letzten vier Wochen, aber dieser Wert ist nicht ungewöhnlich für die aktuelle Analyse.",none,normal: no action,True,False,101.80802689120146,31.90004172715138,,event-2015-10
+2015-09-18 23:00:00+00:00,2015-09-18,SYS3_CTX2,normal,"Gestern war der Stromverbrauch etwas höher als sonst, aber nicht ungewöhnlich für die letzten Wochen.",none,normal: no action,True,False,112.01311483383999,33.55267130355124,,event-2015-10
+2015-09-19 23:00:00+00:00,2015-09-19,SYS3_CTX2,normal,"Gestern war der Stromverbrauch etwas höher als sonst, aber nicht ungewöhnlich für die letzten Wochen.",none,normal: no action,True,False,168.7154831114026,35.45389236138476,,event-2015-10
+2015-09-20 23:00:00+00:00,2015-09-20,SYS3_CTX2,normal,"Gestern war der Stromverbrauch um etwa 32 % höher als an einem typischen Dienstag dieser Woche, aber die Abweichung ist nicht nachhaltig und liegt im Rahmen einer vorübergehenden Erhöhung.",none,normal: no action,True,False,80.50165903938608,31.052216354225425,,event-2015-10
+2015-09-21 23:00:00+00:00,2015-09-21,SYS3_CTX2,normal,"Gestern war der Stromverbrauch etwas niedriger als sonst, aber nicht ungewöhnlich für einen einzelnen Tag.",none,normal: no action,True,False,131.34368124184877,27.65661320181741,,event-2015-10
+2015-09-22 23:00:00+00:00,2015-09-22,SYS3_CTX2,normal,,none,normal: no action,True,False,136.48767739672317,33.3330688561376,,event-2015-10
+2015-09-23 23:00:00+00:00,2015-09-23,SYS3_CTX2,normal,,none,normal: no action,True,False,103.05786133909567,41.49336025844959,,event-2015-10
+2015-09-24 23:00:00+00:00,2015-09-24,SYS3_CTX2,normal,,none,normal: no action,True,False,190.82554611792753,34.32513031503099,,event-2015-10
+2015-09-25 23:00:00+00:00,2015-09-25,SYS3_CTX2,normal,,none,normal: no action,True,False,92.70579146781576,37.27896849664273,,event-2015-10
+2015-09-26 23:00:00+00:00,2015-09-26,SYS3_CTX2,normal,,none,normal: no action,True,False,224.95768538393895,42.38646213281336,,event-2015-10
+2015-09-27 23:00:00+00:00,2015-09-27,SYS3_CTX2,normal,,none,normal: no action,True,False,124.77129682677348,33.440379452579805,,event-2015-10
+2015-09-28 23:00:00+00:00,2015-09-28,SYS3_CTX2,normal,,none,normal: no action,True,False,102.75631745722158,33.111983093422644,,event-2015-10
+2015-09-29 23:00:00+00:00,2015-09-29,SYS3_CTX2,normal,,none,normal: no action,True,False,95.55027233555988,24.803903888030977,,event-2015-10
+2015-09-30 23:00:00+00:00,2015-09-30,SYS3_CTX2,normal,,none,normal: no action,True,False,166.2936051380693,30.270874873827264,,event-2015-10
+2015-10-01 23:00:00+00:00,2015-10-01,SYS3_CTX2,normal,,none,normal: no action,True,False,87.87245483921016,22.714889226999542,,event-2015-10
+2015-10-02 23:00:00+00:00,2015-10-02,SYS3_CTX2,normal,,none,normal: no action,True,False,171.3403958449061,41.39911954710683,,event-2015-10
+2015-10-03 23:00:00+00:00,2015-10-03,SYS3_CTX2,normal,,none,normal: no action,True,False,128.40702439041505,70.69500170855927,,event-2015-10
+2015-10-04 23:00:00+00:00,2015-10-04,SYS3_CTX2,normal,,none,normal: no action,True,False,92.33223557797918,50.59014913768354,,event-2015-10
+2015-10-05 23:00:00+00:00,2015-10-05,SYS3_CTX2,normal,,none,normal: no action,True,False,52.89031896467751,25.34254971385952,,event-2015-10
+2015-10-06 23:00:00+00:00,2015-10-06,SYS3_CTX2,normal,,none,normal: no action,True,False,58.890449936940946,22.082005520915114,,event-2015-10
+2015-10-07 23:00:00+00:00,2015-10-07,SYS3_CTX2,normal,,none,normal: no action,True,False,76.00343364736456,42.54274273122356,,event-2015-10
+2015-10-08 23:00:00+00:00,2015-10-08,SYS3_CTX2,normal,,none,normal: no action,True,False,73.09162942232707,38.92311355993483,,event-2015-10
+2015-10-09 23:00:00+00:00,2015-10-09,SYS3_CTX2,normal,,none,normal: no action,True,False,62.64565373182484,47.92194596314747,,event-2015-10
+2015-10-10 23:00:00+00:00,2015-10-10,SYS3_CTX2,normal,,none,normal: no action,True,False,43.511308576856834,34.891971233185366,,event-2015-10
+2015-10-11 23:00:00+00:00,2015-10-11,SYS3_CTX2,normal,,none,normal: no action,True,False,62.47225273144613,30.48690434304355,,event-2015-10
+2015-10-12 23:00:00+00:00,2015-10-12,SYS3_CTX2,normal,,none,normal: no action,True,False,55.22417870949244,25.77572734158516,,event-2015-10
+2015-10-13 23:00:00+00:00,2015-10-13,SYS3_CTX2,new_pattern,"Der Stromverbrauch war in der letzten Woche um etwa 46 % niedriger als sonst, seit dem 8. Oktober. Das ist ungewöhnlich und könnte auf eine dauerhafte Veränderung hinweisen.",advance_history_start,"new_pattern, cutting back 7 days to 2015-10-07T00:00:00+01:00",True,True,44.317810611851804,18.876886729645012,,event-2015-10
+2015-10-14 23:00:00+00:00,2015-10-14,SYS3_CTX2,normal,,none,normal: no action,True,False,94.72692817380566,25.53792088522073,,event-2015-10
+2015-10-15 23:00:00+00:00,2015-10-15,SYS3_CTX2,peak,"Gestern war der Stromverbrauch über den Tag verteilt ungewöhnlich hoch, besonders in kurzen Spitzen. Das ist nicht typisch für einen normalen Wochentag.",none,peak: no action,True,False,119.19887818585921,78.05451102292403,,event-2015-10
+2015-10-16 23:00:00+00:00,2015-10-16,SYS3_CTX2,normal,,none,normal: no action,True,False,51.962759421080875,34.763042907339695,,event-2015-10
+2015-10-17 23:00:00+00:00,2015-10-17,SYS3_CTX2,normal,,none,normal: no action,True,False,47.80256179959597,18.80985771051927,,event-2015-10
+2015-10-18 23:00:00+00:00,2015-10-18,SYS3_CTX2,normal,,none,normal: no action,True,False,44.810915707783444,19.75882288056338,,event-2015-10
+2015-10-19 23:00:00+00:00,2015-10-19,SYS3_CTX2,normal,,none,normal: no action,True,False,65.42773914075539,24.974664809808324,,event-2015-10
+2015-10-20 23:00:00+00:00,2015-10-20,SYS3_CTX2,normal,,none,normal: no action,True,False,78.5201755637804,25.47978076289001,,event-2015-10
+2015-10-21 23:00:00+00:00,2015-10-21,SYS3_CTX2,peak,"Gestern war der Stromverbrauch über den ganzen Tag verteilt ungewöhnlich hoch, besonders kurzfristig am Nachmittag. Die Abweichung von rund 24 % gegenüber dem üblichen Wochenwert ist seit gestern Morgen nachweisbar.",none,peak: no action,True,False,48.82688524746462,26.469013939404046,,event-2015-10
+2015-10-22 23:00:00+00:00,2015-10-22,SYS3_CTX2,normal,,none,normal: no action,True,False,54.974063615086095,26.273082465024757,,event-2015-10
+2015-10-23 23:00:00+00:00,2015-10-23,SYS3_CTX2,normal,,none,normal: no action,True,False,95.69954749680092,30.656997969982232,,event-2015-10
+2015-10-24 23:00:00+00:00,2015-10-24,SYS3_CTX2,peak,"Gestern war der Stromverbrauch über den ganzen Tag verteilt ungewöhnlich hoch, besonders kurzfristig am Nachmittag.",none,peak: no action,True,False,218.89672592169634,35.08257165594546,,event-2015-10
+2015-10-26 00:00:00+00:00,2015-10-25,SYS3_CTX2,peak,"Gestern war der Stromverbrauch über den ganzen Tag verteilt ungewöhnlich hoch, besonders kurzfristig am Nachmittag. Die letzten sieben Tage zusammen lagen um etwa 33 % höher als sonst.",none,peak: no action,True,False,216.9203821519205,47.76868973123007,,event-2015-10
+2015-10-27 00:00:00+00:00,2015-10-26,SYS3_CTX2,peak,"Gestern war der Stromverbrauch über den ganzen Tag verteilt ungewöhnlich hoch, besonders im Vergleich zu den letzten Tagen.",none,peak: no action,True,False,208.5847909928241,125.54294317754267,,event-2015-10
+2015-10-28 00:00:00+00:00,2015-10-27,SYS3_CTX2,low,"Gestern war der Stromverbrauch ungewöhnlich niedrig, und die Abweichung hält seit über einer Woche an.",none,low: no action,True,False,114.48633189316996,84.9684978258625,,event-2015-10
+2015-10-29 00:00:00+00:00,2015-10-28,SYS3_CTX2,new_pattern,"Gestern war der Stromverbrauch über den Tag verteilt ungewöhnlich niedrig, und die letzten sieben Tage zusammen waren etwa 31 % niedriger als sonst.",advance_history_start,"new_pattern, cutting back 7 days to 2015-10-22T00:00:00+01:00",True,True,55.40441536144355,28.28155209101078,,event-2015-10
+2015-10-30 00:00:00+00:00,2015-10-29,SYS3_CTX2,normal,,none,normal: no action,True,False,182.66270627513094,45.23960452819091,,event-2015-10
+2015-10-31 00:00:00+00:00,2015-10-30,SYS3_CTX2,normal,,none,normal: no action,True,False,150.04485330302967,36.81171314975678,,event-2015-10
+2015-11-01 00:00:00+00:00,2015-10-31,SYS3_CTX2,normal,,none,normal: no action,True,False,162.47865515233903,43.32725246958346,,event-2015-10
+2015-11-02 00:00:00+00:00,2015-11-01,SYS3_CTX2,normal,,none,normal: no action,True,False,201.51104112240697,41.602765110712305,,event-2015-10
+2015-11-03 00:00:00+00:00,2015-11-02,SYS3_CTX2,normal,,none,normal: no action,True,False,240.78212205014498,85.01044922695093,,event-2015-10
+2015-11-04 00:00:00+00:00,2015-11-03,SYS3_CTX2,normal,,none,normal: no action,True,False,194.78739061971203,59.222099621921544,,event-2015-10
+2015-11-05 00:00:00+00:00,2015-11-04,SYS3_CTX2,normal,,none,normal: no action,True,False,167.19512688324576,41.49710428127304,,event-2015-10
+2015-11-06 00:00:00+00:00,2015-11-05,SYS3_CTX2,normal,,none,normal: no action,True,False,202.6951944486913,71.81102339297802,,event-2015-10
+2015-11-07 00:00:00+00:00,2015-11-06,SYS3_CTX2,normal,,none,normal: no action,True,False,215.02842978735737,55.248809487874475,,event-2015-10
+2015-11-08 00:00:00+00:00,2015-11-07,SYS3_CTX2,normal,,none,normal: no action,True,False,138.78166071903493,73.25249985181465,,event-2015-10
+2015-11-09 00:00:00+00:00,2015-11-08,SYS3_CTX2,normal,,none,normal: no action,True,False,250.59186940912704,42.81482834549039,,event-2015-10
+2015-11-10 00:00:00+00:00,2015-11-09,SYS3_CTX2,normal,,none,normal: no action,True,False,80.77641624582488,32.27093977815796,,event-2015-10
+2015-11-11 00:00:00+00:00,2015-11-10,SYS3_CTX2,new_pattern,"Der Stromverbrauch war in der letzten Woche um etwa 42 % niedriger als sonst, seit dem 5. November. Das ist ungewöhnlich und könnte auf eine dauerhafte Veränderung hinweisen.",advance_history_start,"new_pattern, cutting back 7 days to 2015-11-04T00:00:00+00:00",True,True,212.12749285852456,31.777220982386435,,event-2015-10
+2015-11-12 00:00:00+00:00,2015-11-11,SYS3_CTX2,normal,,none,normal: no action,True,False,247.71313675875487,47.52514365314829,,event-2015-10
+2015-11-13 00:00:00+00:00,2015-11-12,SYS3_CTX2,normal,,none,normal: no action,True,False,161.55460002897124,41.47235876451081,,event-2015-10
+2015-11-14 00:00:00+00:00,2015-11-13,SYS3_CTX2,normal,,none,normal: no action,True,False,169.74373022889495,58.76309335859394,,event-2015-10
+2015-11-15 00:00:00+00:00,2015-11-14,SYS3_CTX2,normal,,none,normal: no action,True,False,146.4906788304776,53.214170411316076,,event-2015-10
+2015-11-16 00:00:00+00:00,2015-11-15,SYS3_CTX2,normal,,none,normal: no action,True,False,166.9942559782314,45.57355033036941,,event-2015-10
+2015-11-17 00:00:00+00:00,2015-11-16,SYS3_CTX2,normal,,none,normal: no action,True,False,291.96632737110855,38.39139009467569,,event-2015-10
+2015-11-18 00:00:00+00:00,2015-11-17,SYS3_CTX2,normal,,none,normal: no action,True,False,219.20963835899315,49.28434709175729,,event-2015-10
+2015-11-19 00:00:00+00:00,2015-11-18,SYS3_CTX2,normal,,none,normal: no action,True,False,146.27947483052102,34.69127737582712,,event-2015-10
+2015-11-20 00:00:00+00:00,2015-11-19,SYS3_CTX2,normal,,none,normal: no action,True,False,170.55797823793398,38.01571586983659,,event-2015-10
+2015-11-21 00:00:00+00:00,2015-11-20,SYS3_CTX2,normal,,none,normal: no action,True,False,284.0646141226078,176.1896890881056,,event-2015-10
+2015-11-22 00:00:00+00:00,2015-11-21,SYS3_CTX2,normal,,none,normal: no action,True,False,113.35819002792853,77.70088129091235,,event-2015-10
+2015-11-23 00:00:00+00:00,2015-11-22,SYS3_CTX2,normal,,none,normal: no action,True,False,215.70391618742065,44.064630505527646,,event-2015-10
+2015-11-24 00:00:00+00:00,2015-11-23,SYS3_CTX2,normal,,none,normal: no action,True,False,190.22322909568274,39.468075244578074,,event-2015-10
