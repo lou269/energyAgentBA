@@ -5,7 +5,7 @@ import pytest
 
 from src.forecasting.evaluation import (
     evaluate_forecasts,
-    score_daily_mean_bias,
+    score_daily_means,
     select_primary_naive_reference,
 )
 from src.forecasting.walk_forward import build_walk_forward_forecasts
@@ -126,23 +126,21 @@ def test_select_primary_naive_reference_raises_without_evaluable_targets() -> No
         select_primary_naive_reference(overall_metrics, ("B1", "B2"))
 
 
-def test_daily_mean_bias_lets_opposite_hourly_errors_cancel() -> None:
-    target = _hourly("2024-01-01", [100.0, 100.0, 100.0, 100.0])
-    forecast = pd.DataFrame(
-        {"target_timestamp": target.index, "y_pred": [150.0, 50.0, 130.0, 100.0]}
-    )
-
+def test_daily_means_let_opposite_hourly_errors_cancel() -> None:
     # Stundenfehler +50, -50, +30, 0: Tagesmittel 7,5 W zu hoch, mit umgekehrtem Vorzeichen zu niedrig
-    assert score_daily_mean_bias(forecast, target, None) == 7.5
-    low = forecast.assign(y_pred=[50.0, 150.0, 70.0, 100.0])
-    assert score_daily_mean_bias(low, target, None) == -7.5
-
-
-def test_daily_mean_bias_is_nan_for_incomplete_days() -> None:
-    target = _hourly("2024-01-01", [100.0, 100.0, 100.0])
-    imputed = pd.Series([False, True, False], index=target.index)
-    forecast = pd.DataFrame(
-        {"target_timestamp": target.index, "y_pred": [110.0, 500.0, 90.0]}
+    forecasts = pd.DataFrame(
+        {
+            "model": ["high"] * 4 + ["low"] * 4,
+            "day": "2024-01-01",
+            "y_pred": [150.0, 50.0, 130.0, 100.0, 50.0, 150.0, 70.0, 100.0],
+        }
     )
+    actual = pd.Series([100.0], index=["2024-01-01"])
 
-    assert pd.isna(score_daily_mean_bias(forecast, target, imputed))
+    days = score_daily_means(
+        forecasts, actual, group_column="model", day_column="day"
+    ).set_index("model")
+
+    assert days.loc["high", "day_bias_w"] == 7.5
+    assert days.loc["low", "day_bias_w"] == -7.5
+    assert days.loc["low", "day_error_w"] == 7.5

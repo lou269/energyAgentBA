@@ -9,10 +9,15 @@ from typing import cast
 import numpy as np
 import pandas as pd
 
-from src.common.timestamps import analyzed_day, local_calendar_range, shift_local_days
+from src.common.timestamps import (
+    analyzed_day,
+    local_calendar_range,
+    local_daily_mean,
+    shift_local_days,
+)
 from src.context.calendar_context import build_calendar_context
 from src.context.calendar_schema import CalendarContext
-from src.forecasting.evaluation import score_cycle_forecast
+from src.forecasting.evaluation import score_cycle_forecast, score_daily_means
 from src.llm.client import LLMClient, OllamaClient
 from src.llm.inference import LLMAttemptRecord
 from src.pipeline.cycle_run_manifest import build_cycle_run_manifest
@@ -110,6 +115,10 @@ def run_comparison(
 
     rows: list[dict[str, object]] = []
     forecast_frames: list[pd.DataFrame] = []
+    # Ist-Tagesmittel auf der lokalen Mitternacht, dort startet auch jede Prognose
+    actual_daily_mean_w = local_daily_mean(
+        scenario.target_series, local_timezone
+    ).tz_convert("UTC")
 
     for config_label, config in configs.items():
         config_directory = run_directory / config_label
@@ -245,6 +254,12 @@ def run_comparison(
                         scenario.target_imputed,
                         config.forecasting_config.mape_min_eligible_watts,
                     )
+                    day_scores = score_daily_means(
+                        result.forecast.assign(decision_time=decision_time),
+                        actual_daily_mean_w,
+                        group_column="model_id",
+                        day_column="decision_time",
+                    ).iloc[0]
 
                     forecast_slice = result.forecast[FORECAST_COLUMNS].copy()
                     forecast_slice.insert(0, "config", config_label)
@@ -311,6 +326,9 @@ def run_comparison(
                         "reference_reset": result.reference_reset,
                         "mae_w": mae_w,
                         "mape_pct": mape_pct,
+                        "day_forecast_w": day_scores["predicted_w"],
+                        "day_bias_w": day_scores["day_bias_w"],
+                        "day_error_w": day_scores["day_error_w"],
                         "error": str(result.llm_error)
                         if result.llm_error is not None
                         else "",

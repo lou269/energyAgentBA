@@ -31,6 +31,7 @@ def _forecast(coldstart_days: int, model_id: str, mae: list[float]) -> pd.DataFr
             "coldstart_days": coldstart_days,
             "model_id": model_id,
             "forecast_origin": _decision_times(len(mae)),
+            "day_error_w": mae,
             "mae_w": mae,
             "mape_pct": [value / 10 for value in mae],
         }
@@ -63,6 +64,7 @@ def _system(
             "dominant_scale": "daily",
             "explanation": "",
             "error": "",
+            "day_error_w": [120.0] * days,
             "mae_w": [120.0] * days,
             "mape_pct": [12.0] * days,
         }
@@ -80,7 +82,7 @@ def test_settling_needs_agreement_on_every_later_point() -> None:
     injections = pd.DataFrame(
         {
             "start_date": ["a", "a", "a", "a", "a", "a", "b", "b", "b"],
-            "scenario": ["peak_6"] * 3 + ["level_250"] * 3 + ["peak_6"] * 3,
+            "scenario": ["peak"] * 3 + ["level"] * 3 + ["peak"] * 3,
             "injection_day": [3, 10, 18] * 3,
             "missed": [True, False, False, False, False, True] + [False] * 3,
         }
@@ -94,10 +96,10 @@ def test_settling_needs_agreement_on_every_later_point() -> None:
         points=(3, 10, 18),
     )
 
-    assert settling[("a", "peak_6")] == 10
+    assert settling[("a", "peak")] == 10
     # nur der letzte Injektionstag weicht ab, danach gibt es keinen Beleg mehr
-    assert np.isnan(settling[("a", "level_250")])
-    assert settling[("b", "peak_6")] == 3
+    assert np.isnan(settling[("a", "level")])
+    assert settling[("b", "peak")] == 3
 
 
 def test_summary_counts_resets_and_skill() -> None:
@@ -124,12 +126,8 @@ def test_summary_counts_resets_and_skill() -> None:
             ),
             _system(60, [False, False, False, False]),
             # Spitze an Tag 1, eingeordnet an Tag 2: CS60 erkennt sie, CS7 nicht
-            _system(
-                7, [False, False, False, False], scenario="peak_6", injection_day=1
-            ),
-            _system(
-                60, [False, False, True, False], scenario="peak_6", injection_day=1
-            ),
+            _system(7, [False, False, False, False], scenario="peak", injection_day=1),
+            _system(60, [False, False, True, False], scenario="peak", injection_day=1),
         ],
         ignore_index=True,
     )

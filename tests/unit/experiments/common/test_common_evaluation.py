@@ -4,9 +4,7 @@ import pandas as pd
 import pytest
 
 from experiments.common.evaluation import (
-    compare_mae_to_reference,
-    compare_mae_to_reference_after_reset,
-    count_days_by_period,
+    compare_errors_after_reset,
     count_notifications,
     days_since_event,
     pair_with_control,
@@ -23,7 +21,7 @@ EVENT_TIME = local_midnight_utc("2014-03-31", TIMEZONE)
 
 def _comparison(
     config: str,
-    mae: list[float],
+    day_error: list[float],
     classifications: list[str | None],
     adaptions: list[str],
 ) -> pd.DataFrame:
@@ -40,7 +38,10 @@ def _comparison(
             "classification": classifications,
             "adaption_action": adaptions,
             "error": None,
-            "mae_w": mae,
+            "day_error_w": day_error,
+            # Stundenfehler doppelt so groß, damit die MAE-Differenz unterscheidbar bleibt
+            "mae_w": [2 * value for value in day_error],
+            "mape_pct": 10.0,
         }
     )
 
@@ -56,56 +57,6 @@ def test_days_since_event_count_calendar_days_across_dst() -> None:
         1,
         2,
     ]
-
-
-def test_count_days_by_period_counts_the_event_from_the_first_analyzed_day() -> None:
-    comparison = _comparison(
-        "SYS2",
-        [100.0] * 5,
-        ["normal", "new_pattern", "normal", "new_pattern", "new_pattern"],
-        ["none", "reset", "none", "none", "reset"],
-    )
-
-    counts = count_days_by_period(comparison, EVENT_TIME).set_index("period")
-    counts = counts[["days", "new_pattern", "normal", "adaption_days"]].to_dict("index")
-
-    assert counts["before_event"] == {
-        "days": 3,
-        "new_pattern": 1,
-        "normal": 2,
-        "adaption_days": 1,
-    }
-    assert counts["after_event"] == {
-        "days": 2,
-        "new_pattern": 2,
-        "normal": 0,
-        "adaption_days": 1,
-    }
-
-
-def test_compare_mae_to_reference_pairs_days_from_event_on() -> None:
-    no_adaption = ["none"] * 5
-    comparison = pd.concat(
-        [
-            _comparison(
-                "SYS1", [50.0, 50.0, 100.0, 100.0, 100.0], [None] * 5, no_adaption
-            ),
-            _comparison(
-                "SYS3", [10.0, 10.0, 90.0, 110.0, 70.0], ["normal"] * 5, no_adaption
-            ),
-        ]
-    )
-
-    result = (
-        compare_mae_to_reference(comparison, EVENT_TIME, "SYS1")
-        .set_index("config")
-        .to_dict("index")["SYS3"]
-    )
-
-    assert result["paired_count"] == 3
-    assert result["mean_delta"] == -10.0
-    assert result["better_share"] == 2 / 3
-    assert not result["exceeds_noise"]
 
 
 def test_after_reset_starts_with_the_first_reset_from_the_event_on() -> None:
@@ -131,7 +82,7 @@ def test_after_reset_starts_with_the_first_reset_from_the_event_on() -> None:
     )
 
     result = (
-        compare_mae_to_reference_after_reset(comparison, EVENT_TIME, "SYS1")
+        compare_errors_after_reset(comparison, EVENT_TIME, "SYS1")
         .set_index("config")
         .to_dict("index")["SYS2"]
     )
@@ -140,7 +91,8 @@ def test_after_reset_starts_with_the_first_reset_from_the_event_on() -> None:
     assert result["paired_count"] == 1
     assert result["mean_delta"] == 10.0
     assert result["better_share"] == 0.0
-    assert result["reference_mean_mae_w"] == 100.0
+    assert result["mean_day_error_w"] == 110.0
+    assert result["mae_delta_w"] == 20.0
 
 
 def test_notifications_count_unknown_separately_and_scale_to_the_period() -> None:

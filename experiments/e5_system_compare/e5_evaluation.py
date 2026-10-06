@@ -12,8 +12,8 @@ from experiments.common.evaluation import (
     count_notifications,
     detection_scales,
     merge_cycle_days,
+    summarize_forecast_errors,
     summarize_latency,
-    summarize_paired_differences,
 )
 from experiments.common.standard_config import (
     GOLDSTANDARD_EXPECTED,
@@ -46,6 +46,7 @@ RESULT_COLUMNS = (
         "classifier_called",
         "adaption_action",
         "error",
+        "day_error_w",
         "mae_w",
         "mape_pct",
         "anomaly_level",
@@ -113,7 +114,7 @@ def _find_separation_days(results: pd.DataFrame) -> pd.DataFrame:
 
         separation_day = actions_differ.idxmax() if actions_differ.any() else pd.NA
         before = (
-            spread if pd.isna(separation_day) else spread[spread.index < separation_day]
+            spread if pd.isna(separation_day) else spread[spread.index < separation_day]  # type: ignore
         )
         rows.append(
             {
@@ -310,48 +311,22 @@ def _summarize_control(results: pd.DataFrame) -> pd.DataFrame:
     ).merge(resets, on=keys)
 
 
-def _pair_with_reference(
-    window: pd.DataFrame, column: str, reference_system: str
-) -> pd.DataFrame:
-    return summarize_paired_differences(
-        window.pivot(index="days_since_cutover", columns="config", values=column),
-        reference_system,
-    ).rename(columns={"variant": "config"})
-
-
 def _compare_forecasts(
     results: pd.DataFrame, durable_start_day: int, reference_system: str
 ) -> pd.DataFrame:
-    """MAE und MAPE ab Beginn der dauerhaften Änderung und im Kontrolllauf ab Cutover, gepaart gegen reference_system"""
+    """Prognosefehler gegen reference_system ab Beginn der dauerhaften Änderung und im Kontrolllauf ab Cutover"""
     in_window = results["days_since_cutover"].ge(0) & (
         results["series"].eq("control")
         | results["days_since_cutover"].ge(durable_start_day)
     )
     windowed = results.loc[in_window]
+    from_day = windowed.groupby(SERIES_KEYS, as_index=False).agg(
+        from_day=("days_since_cutover", "min")
+    )
 
-    rows = []
-    for (cutover_date, series), window in windowed.groupby(SERIES_KEYS):
-        mape = _pair_with_reference(window, "mape_pct", reference_system)[
-            ["config", "mean_delta"]
-        ].rename(columns={"mean_delta": "mape_delta_pct"})
-        means = window.groupby("config", as_index=False).agg(
-            mean_mae_w=("mae_w", "mean"), mean_mape_pct=("mape_pct", "mean")
-        )
-        rows.append(
-            means.merge(
-                _pair_with_reference(window, "mae_w", reference_system),
-                on="config",
-                how="left",
-            )
-            .merge(mape, on="config", how="left")
-            .assign(
-                cutover_date=str(cutover_date),
-                series=str(series),
-                from_day=window["days_since_cutover"].min(),
-            )
-        )
-
-    return pd.concat(rows, ignore_index=True)
+    return summarize_forecast_errors(windowed, SERIES_KEYS, reference_system).merge(
+        from_day, on=SERIES_KEYS
+    )
 
 
 def _count_notifications_after_detection(
@@ -423,7 +398,7 @@ def _evaluate_decision_rules(
 
     decisions = pd.DataFrame(
         {
-            "rule_mae_delta_w": rule_forecast["mean_delta"],
+            "rule_day_error_delta_w": rule_forecast["mean_delta"],
             "rule_single_day_resets": rule_events.loc[
                 rule_events["expected"].isin(SINGLE_DAY_CLASSIFICATIONS)
             ]
@@ -441,7 +416,7 @@ def _evaluate_decision_rules(
         }
     )
     decisions["rule_better"] = (
-        decisions["rule_mae_delta_w"].lt(0)
+        decisions["rule_day_error_delta_w"].lt(0)
         & decisions["rule_single_day_resets"].eq(0)
         & decisions["rule_control_resets"].eq(0)
     )

@@ -1,36 +1,26 @@
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
+from dataclasses import replace
+from pathlib import Path
 
 import pandas as pd
 
-from experiments.common.scenarios import (
-    build_decision_times,
-    crop_history_for_coldstart,
-    load_split_bounds,
-    load_target,
-    scenario_without_calendar,
-    subtract_channels_in_window,
-)
-from experiments.common.standard_config import (
-    COLDSTART_DAYS,
-    LOCAL_TIMEZONE,
-    PROJECT_CONFIG,
-)
-from experiments.e1_new_device.e1_config import DEVICES_HOURLY_FILE, E1Config
+from experiments.common.scenarios import subtract_channels_in_window
+from experiments.common.standard_config import LOCAL_TIMEZONE, PROJECT_CONFIG
+from experiments.common.standard_scenarios import build_standard_scenarios
+from experiments.e1_new_device.e1_config import DEVICES_HOURLY_FILE
 from src.common.timestamps import local_midnight_utc
 from src.pipeline.comparison_harness import ScenarioData
 
 
-def load_device_hourly(e1_config: E1Config) -> pd.DataFrame:
+def load_devices_hourly(device_selection_subdir: Path) -> pd.DataFrame:
     # Ausgabe von e1_device_check (nilmtk-env)
-    devices_hourly = pd.read_csv(
+    return pd.read_csv(
         PROJECT_CONFIG.e1_output_dir
-        / e1_config.device_selection_subdir
+        / device_selection_subdir
         / f"{DEVICES_HOURLY_FILE}.csv",
         parse_dates=["timestamp"],
         index_col="timestamp",
     )
-
-    return devices_hourly[list(e1_config.device_meter_keys)]
 
 
 def hide_device_before_cutover(
@@ -49,35 +39,20 @@ def hide_device_before_cutover(
     )
 
 
-def build_e1_scenario(
-    e1_config: E1Config, apply_device_injection: bool = True
-) -> ScenarioData:
-    # Entscheidungstage um den Cutover, Historie ab Kaltstart, das Gerät vor dem Cutover herausgerechnet
-    mains_series, target_imputed, value_implausible = load_target(e1_config.split)
-    cutover_time = local_midnight_utc(e1_config.cutover_date, LOCAL_TIMEZONE)
+def build_e1_scenarios(
+    cutover_date: str,
+    devices: Mapping[str, tuple[str, ...]],
+    devices_hourly: pd.DataFrame,
+) -> dict[str, ScenarioData]:
+    control = build_standard_scenarios(cutover_date, ("control",))["control"]
+    cutover_time = local_midnight_utc(cutover_date, LOCAL_TIMEZONE)
 
-    decision_times = build_decision_times(
-        cutover_time,
-        cutover_time,
-        margin_before_days=e1_config.margin_before_days,
-        margin_after_days=e1_config.margin_after_days,
-    )
-    history = crop_history_for_coldstart(
-        mains_series,
-        decision_times,
-        COLDSTART_DAYS,
-        load_split_bounds(e1_config.split),
-    )
-
-    # Kontrolllauf: dieselben Tage, das Gerät ist durchgehend drin
-    if apply_device_injection:
-        history = hide_device_before_cutover(
-            history,
-            load_device_hourly(e1_config),
-            e1_config.device_meter_keys,
-            cutover_time,
+    return {"control": control} | {
+        kind: replace(
+            control,
+            target_series=hide_device_before_cutover(
+                control.target_series, devices_hourly, meter_keys, cutover_time
+            ),
         )
-
-    return scenario_without_calendar(
-        history, decision_times, COLDSTART_DAYS, target_imputed, value_implausible
-    )
+        for kind, meter_keys in devices.items()
+    }

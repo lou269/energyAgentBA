@@ -1,303 +1,167 @@
 # conda activate forecasting-env
-# python -m experiments.e1_new_device.e1_report [run_directory] [control_run_directory]
+# python -m experiments.e1_new_device.e1_report [run_directory]
 
 from pathlib import Path
 
 import pandas as pd
 
 from docs.plots.plot_e1_new_device import build_e1_plot
-from experiments.common.harness import COMPARISON_SUMMARY_FILE
+from experiments.common.evaluation import EVENT_KEYS
 from experiments.common.report import (
-    NOISE_RULE_NOTE,
+    KIND_LABELS,
     format_commit,
-    format_number,
-    key_figures_table,
-    paired_difference_columns,
+    format_cutovers,
     write_result_report,
 )
-from experiments.common.standard_config import (
-    LOCAL_TIMEZONE,
-    PROJECT_CONFIG,
-    STANDARD_CONFIG,
-)
+from experiments.common.standard_config import PROJECT_CONFIG, STANDARD_CONFIG
 from experiments.e1_new_device.e1_config import (
-    CONTROL_RUN_PREFIX,
+    DEVICE_WINDOWS_FILE,
+    RESULTS_FILE,
     RUN_PREFIX,
 )
-from experiments.e1_new_device.e1_evaluation import E1Summary, summarize_e1
-from src.common.timestamps import local_midnight_utc
+from experiments.e1_new_device.e1_evaluation import summarize_e1
 from src.config.config_forecasting import SYS_LABELS
 from src.pipeline.io import (
     RAW_SUBDIR,
-    optional_run_directory_from_argv,
     read_raw_json,
     run_directory_from_argv,
     user_output_directory,
 )
 
-PERIOD_LABELS: dict[str, str] = {
-    "before_event": "vor Cutover",
-    "after_event": "ab Cutover",
-    "after_event_control": "ab Cutover, Kontrolle",
+RESPONSE_HEADERS = {
+    "config": "System",
+    "cutover_date": "Cutover",
+    "kind": "Ereignis",
+    "expected": "erwartet",
+    "first_event_new_pattern_day": "erstes new_pattern (Tag)",
+    "gate_open_days": "Tage Gate offen",
+    "resets_before_cutover": "Resets vor Cutover",
+    "reset_forecast_day": "erster Reset (Tag)",
+}
+
+DEVICE_HEADERS = {
+    "cutover_date": "Cutover",
+    "kind": "Gerät",
+    "device_mean_w": "Leistung ab Cutover [W]",
+    "device_share_pct": "Anteil an Mains ab Cutover [%]",
+    "coverage_before_pct": "Abdeckung Kanal vor Cutover [%]",
+    "coverage_after_pct": "Abdeckung Kanal ab Cutover [%]",
+}
+
+EVENT_HEADERS = {
+    "cutover_date": "Cutover",
+    "kind": "Ereignis",
+    "config": "System",
+    "days_since_cutover": "Tag",
+    "analyzed_day": "eingeordnet",
+    "classification": "Klasse",
+    "adaption_action": "Adaption",
+    "explanation": "Begründung",
+    "error": "Fehler",
 }
 
 
-def _read_comparison(run_directory: Path) -> pd.DataFrame:
-    return pd.read_csv(
-        run_directory / RAW_SUBDIR / COMPARISON_SUMMARY_FILE,
-        parse_dates=["decision_time"],
-    )
-
-
-def build_forecast_table(forecast: pd.DataFrame) -> pd.DataFrame:
-    table = pd.DataFrame(
-        {
-            "MAE vor Cutover [W]": forecast["mae_before_w"],
-            "MAE ab Cutover [W]": forecast["mae_after_w"],
-        }
-    )
-    if "control_mae_after_w" in forecast:
-        table["MAE ab Cutover, Kontrolle [W]"] = forecast["control_mae_after_w"]
-    table = table.join(paired_difference_columns(forecast, "Tage"))
-
-    return table.rename(index=SYS_LABELS).rename_axis("System").reset_index()
-
-
-def build_reset_table(after_reset: pd.DataFrame, reference_config: str) -> pd.DataFrame:
-    after_reset = after_reset.set_index("config")
-
-    table = pd.DataFrame(
-        {
-            "Reset ab Prognosetag": after_reset["reset_forecast_day"].astype("Int64"),
-            "MAE ab Reset [W]": after_reset["mean_mae_w"],
-            f"{reference_config} im selben Zeitraum [W]": after_reset[
-                "reference_mean_mae_w"
-            ],
-        }
-    ).join(paired_difference_columns(after_reset, "Tage"))
-
-    return table.rename(index=SYS_LABELS).rename_axis("System").reset_index()
-
-
-def build_detection_table(
-    detection: pd.DataFrame, target_classification: str
-) -> pd.DataFrame:
-    headers = {
-        "config": "System",
-        "first_detection_day": f"erster {target_classification} [Tag]",
-        "target_days_after": f"{target_classification} ab Cutover [Tage]",
-        "false_alarm_days_before": f"{target_classification} vor Cutover, Fehlalarm [Tage]",
-        "control_target_days_after": f"{target_classification} ab Cutover, Kontrolle [Tage]",
-        "adaptions_before": "Adaptionen vor Cutover",
-        "adaptions_after": "Adaptionen ab Cutover",
-        "first_reset_day": "erster Reset [Tag]",
+def write_report(run_directory: Path) -> Path:
+    run_config = read_raw_json(run_directory, "run_config")
+    e1_config = run_config["e1_config"]
+    llm_config = run_config["llm_config"]
+    cutover_dates = run_config["standard_config"]["cutover_dates"]
+    reference = e1_config["reference_system"]
+    systems = [e1_config["rule_system"], e1_config["llm_system"]]
+    devices = e1_config["devices"]
+    kind_labels = {"control": KIND_LABELS["control"]} | {
+        kind: f"{kind} ({', '.join(meter_keys)})"
+        for kind, meter_keys in devices.items()
     }
-
-    return detection.assign(config=detection["config"].map(SYS_LABELS)).rename(
-        columns=headers
-    )
-
-
-def build_classification_table(classifications: pd.DataFrame) -> pd.DataFrame:
-    labels = pd.DataFrame(
-        {
-            "System": classifications["config"].map(SYS_LABELS),
-            "Zeitraum": classifications["period"].map(PERIOD_LABELS).astype(str),
-        }
-    )
-    counted = classifications.drop(columns=["config", "period"]).rename(
-        columns={"days": "Tage", "failed_days": "ohne Ergebnis"}
-    )
-
-    return pd.concat([labels, counted], axis=1)
-
-
-def build_event_log(events: pd.DataFrame) -> pd.DataFrame:
-    return pd.DataFrame(
-        {
-            "Tag": events["day_since_event"],
-            "Datum": events["analyzed_day"],
-            "System": events["config"].map(SYS_LABELS),
-            "Klassifikation": events["classification"],
-            "Adaption": events["adaption_action"],
-            "Begründung": events["explanation"].fillna(events["error"]),
-        }
-    )
-
-
-def build_setup(
-    e1_config: dict,
-    summary: E1Summary,
-    manifest: dict,
-    control_run_directory: Path | None,
-) -> dict[str, str]:
-    config_values = manifest["configs"]["values"]
-
-    setup = {
-        "Gerät(e)": ", ".join(e1_config["device_meter_keys"]),
-        "Cutover": f"{e1_config['cutover_date']}, Tag 0 (alle Tage und Daten in Ortszeit)",
-        "Analysierte Tage": (
-            f"{summary.first_analyzed_day} bis {summary.last_analyzed_day}, "
-            f"{summary.days_before} vor und {summary.days_after} ab Cutover"
-        ),
-        "Prognosemodell": config_values[e1_config["reference_config"]][
-            "forecasting_config"
-        ]["selected_prophet_variant"]["model_id"],
-    }
-
-    for label, values in config_values.items():
-        if values["llm_config"]:
-            setup[f"LLM {label}"] = (
-                f"{values['llm_config']['model']}, Prompt {values['llm_config']['prompt_version']}"
-            )
-
-    setup["Kontrolllauf"] = (
-        control_run_directory.name if control_run_directory is not None else "keiner"
-    )
-    setup["Commit"] = format_commit(manifest["code_version"])
-
-    return setup
-
-
-def build_notes(summary: E1Summary, *, has_control: bool) -> list[str]:
-    notes = [
-        NOISE_RULE_NOTE,
-        "Tag = Entscheidungstag seit Cutover: an Tag n meldet das System, eingeordnet ist dabei Tag n-1 (Spalte Datum). Ab Cutover zählt deshalb erst ab Tag 1",
-    ]
-
-    if summary.no_reset:
-        notes.append(
-            "Ab Cutover wurde in keinem System ein Reset ausgelöst, die Tabelle Prognose ab Reset bleibt deshalb leer"
-        )
-
-    for row in summary.failed.to_dict("records"):
-        notes.append(
-            f"{SYS_LABELS[row['config']]}: {row['failed_days']} von {row['days']} Tagen ohne gültiges Ergebnis"
-        )
-
-    if not has_control:
-        notes.append("Kein Kontrolllauf gefunden, Vergleich ohne Gerät fehlt")
-
-    return notes
-
-
-def build_key_figures(
-    detection: pd.DataFrame,
-    reset_comparison: pd.DataFrame,
-    *,
-    target_classification: str,
-    reference_config: str,
-) -> pd.DataFrame:
     rows = [
-        (
-            f"{SYS_LABELS[row['config']]}: erster {target_classification} [Tag seit Cutover]",
-            row["first_detection_day"],
-            f"{row['false_alarm_days_before']} Fehlalarme vor Cutover",
-        )
-        for row in detection.to_dict("records")
-    ]
-    rows += [
-        (
-            f"{SYS_LABELS[row['config']]}: Reset ausgelöst",
-            (
-                "nein"
-                if pd.isna(row["first_reset_day"])
-                else f"ja, ab Tag {row['first_reset_day']}"
-            ),
-            f"{row['adaptions_after']} Adaptionstage ab Cutover",
-        )
-        for row in detection.to_dict("records")
-    ]
-    rows += [
-        (
-            f"{SYS_LABELS[row['config']]}: MAE-Differenz zu {reference_config} ab Reset [W]",
-            row["mean_delta"],
-            f"±{format_number(2 * row['delta_standard_error'], STANDARD_CONFIG.decimals)} W, {row['paired_count']} Tage, "
-            f"belastbar: {'ja' if row['exceeds_noise'] else 'nein'}",
-        )
-        for row in reset_comparison.to_dict("records")
+        (system, cutover_dates[cutover_id], kind)
+        for system in systems
+        for cutover_id in e1_config["cutover_ids"]
+        for kind in kind_labels
     ]
 
-    return key_figures_table(rows)
-
-
-def main() -> None:
-    run_directory = run_directory_from_argv(PROJECT_CONFIG.e1_output_dir, RUN_PREFIX)
-    # anders als der Hauptlauf optional, ohne Kontrolllauf fällt nur der Treatment/Control-Vergleich weg
-    control_run_directory = optional_run_directory_from_argv(
-        PROJECT_CONFIG.e1_output_dir, CONTROL_RUN_PREFIX, 2
+    results = pd.read_csv(
+        run_directory / RAW_SUBDIR / f"{RESULTS_FILE}.csv",
+        dtype={"cutover_date": str},
     )
-
-    manifest = read_raw_json(run_directory, "run_manifest")
-    # als dict, ältere Läufe haben Felder, die E1Config nicht mehr kennt
-    e1_config = read_raw_json(run_directory, "run_config")["e1_config"]
-    reference_config = e1_config["reference_config"]
-    target_classification = e1_config["target_classification"]
-    cutover_time = local_midnight_utc(e1_config["cutover_date"], LOCAL_TIMEZONE)
-
-    comparison = _read_comparison(run_directory)
-    control_comparison = (
-        _read_comparison(control_run_directory)
-        if control_run_directory is not None
-        else None
+    device_windows = pd.read_csv(
+        run_directory / RAW_SUBDIR / f"{DEVICE_WINDOWS_FILE}.csv",
+        dtype={"cutover_date": str},
     )
     summary = summarize_e1(
-        comparison,
-        control_comparison,
-        cutover_time=cutover_time,
-        reference_config=reference_config,
-        target_classification=target_classification,
+        results,
+        reference_config=reference,
+        device_kinds=list(devices),
+        target_classification=e1_config["target_classification"],
     )
+    response = summary.response.set_index(EVENT_KEYS).loc[rows].reset_index()
 
     tables = {
-        "key_figures": (
-            "Kennzahlen",
-            build_key_figures(
-                summary.detection,
-                summary.after_reset,
-                target_classification=target_classification,
-                reference_config=reference_config,
+        "result_response": (
+            "Erkennung, Gate und Reset je System, Cutover und Ereignis",
+            response.assign(
+                config=response["config"].map(SYS_LABELS),
+                kind=response["kind"].map(kind_labels),
+            ).rename(
+                columns=RESPONSE_HEADERS
+                | {
+                    "mean_delta": f"Tagesfehler ab Reset minus {reference} [W]",
+                    "mae_delta_w": f"MAE ab Reset minus {reference} [W]",
+                }
             ),
         ),
-        "result_detection": (
-            "Erkennung",
-            build_detection_table(summary.detection, target_classification),
+        "result_devices": (
+            "Gerät je Cutover",
+            device_windows.assign(kind=device_windows["kind"].map(kind_labels)).rename(
+                columns=DEVICE_HEADERS
+            ),
         ),
-        "result_forecast_after_reset": (
-            f"Prognose ab Reset, gepaart gegen {reference_config}",
-            build_reset_table(summary.after_reset, reference_config),
-        ),
-        "event_log": ("Ereignisprotokoll", build_event_log(summary.events)),
-    }
-    appendix = {
-        "result_forecast": (
-            f"Prognose vor und ab Cutover, gepaart gegen {reference_config}",
-            build_forecast_table(summary.forecast),
-        ),
-        "result_classifications": (
-            "Klassifikationen je Zeitraum [Tage]",
-            build_classification_table(summary.classifications),
+        "event_log": (
+            "Tage mit new_pattern, Adaption oder Fehler",
+            summary.events.assign(
+                config=summary.events["config"].map(SYS_LABELS),
+                kind=summary.events["kind"].map(kind_labels),
+            ).rename(columns=EVENT_HEADERS),
         ),
     }
 
     output_directory = user_output_directory(run_directory)
     build_e1_plot(
-        comparison,
-        control_comparison,
+        results,
         output_directory,
-        cutover_time=cutover_time,
-        reference_config=reference_config,
+        reference_config=reference,
+        kind_labels=kind_labels,
     )
-
     write_result_report(
         output_directory,
         title=f"E1 Neues Gerät, Lauf {run_directory.name}",
-        setup=build_setup(e1_config, summary, manifest, control_run_directory),
+        setup={
+            "Cutover": format_cutovers(cutover_dates, e1_config["cutover_ids"]),
+            "Geräte": ", ".join(kind_labels[kind] for kind in devices),
+            "Systeme": f"{', '.join(SYS_LABELS[system] for system in systems)}, je im vollen Kreislauf, {SYS_LABELS[reference]} nur als Bezug für die Prognosefehler",
+            "LLM": f"{llm_config['model']}, Prompt {llm_config['prompt_version']}",
+            "Commit": format_commit(run_config["code_version"]),
+        },
         tables=tables,
-        notes=build_notes(summary, has_control=control_run_directory is not None),
+        notes=[
+            "Tag = Entscheidungstag seit Cutover, an Tag 1 wird der Cutover-Tag eingeordnet",
+            "Gerät: vor dem Cutover aus Mains herausgerechnet, ab dem Cutover echte Mains-Reihe. keine Änderung = dieselbe Reihe mit Gerät durchgehend",
+            "erstes new_pattern und Gate: gepaart wird je System gegen dessen eigenen Kontrolllauf, leer = nicht erkannt",
+            "offenes Gate = Tag, an dem SYS3 das LLM fragt, States und Antworten liegen in raw/",
+            f"Tagesfehler (Hauptmaß): Betrag von Prognose-Tagesmittel minus gemessenem Tagesmittel, MAE: mittlerer Stundenfehler, beide gemittelt über die Tage ab dem ersten Reset. {reference} ordnet wie die Regel ein, setzt aber nie zurück, bis zum ersten Reset laufen beide also gleich, sofern vor dem Cutover kein Reset war. Negativ = der Reset senkt den Fehler, leer = kein Reset",
+            "Abdeckung Kanal vor Cutover: fehlt der Gerätekanal, bleibt das Gerät dort in Mains, der Sprung am Cutover ist dann kleiner",
+            "keine Änderung: jeder Reset dort ist ein falscher",
+        ],
         images=["e1_timeline.png"],
         decimals=STANDARD_CONFIG.decimals,
-        appendix=appendix,
+    )
+
+    return output_directory
+
+
+def main() -> None:
+    output_directory = write_report(
+        run_directory_from_argv(PROJECT_CONFIG.e1_output_dir, RUN_PREFIX)
     )
 
     print(f"Result written to {output_directory / 'ergebnis.md'}")

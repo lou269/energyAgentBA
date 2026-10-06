@@ -22,11 +22,20 @@ def _config_days(
     return pd.DataFrame(
         {
             "analyzed_day": DAYS,
+            # Mitternacht nach dem analysierten Tag, prognostiziert wird der Folgetag
+            "decision_time": [
+                local_midnight_utc(day, TIMEZONE, days_offset=1) for day in DAYS
+            ],
             "config": config,
             "classification": classifications,
             "adaption_action": "none",
             "adaption_reason": reasons,
             "error": None,
+            "day_bias_w": float("nan"),
+            "day_error_w": float("nan"),
+            "day_forecast_w": float("nan"),
+            "mae_w": float("nan"),
+            "mape_pct": float("nan"),
         }
     )
 
@@ -72,14 +81,14 @@ def test_absence_only_counts_as_a_hit_with_the_calendar_event() -> None:
     anomaly["weekly_sustained"] = anomaly["sustained_drift"]
     anomaly["long_term_sustained"] = anomaly["sustained_drift"]
     anomaly["today_mean"] = [300.0, 150.0, 150.0, 150.0, 300.0] * 3
-    # die Prognose nach dem Tag vor dem Urlaub gilt Urlaubstag 0, je zwei Stunden
-    forecasts = pd.DataFrame(
-        {
-            "config": ["SYS1"] * 4 + ["SYS3_CTX1"] * 4,
-            "forecast_day": (["2013-09-14"] * 2 + ["2013-09-28"] * 2) * 2,
-            "y_pred": [400.0, 200.0, 250.0, 250.0, 300.0, 200.0, 300.0, 300.0],
-        }
-    )
+    # die Prognose nach dem Tag vor dem Urlaub gilt Urlaubstag 0, die letzte dem zweiten Tag nach der Rückkehr
+    first_and_last = comparison.index[comparison["analyzed_day"].isin(DAYS[::4])]
+    sys1 = first_and_last[comparison.loc[first_and_last, "config"].eq("SYS1")]
+    sys3 = first_and_last[comparison.loc[first_and_last, "config"].eq("SYS3_CTX1")]
+    comparison.loc[sys1, "day_bias_w"] = [150.0, -50.0]
+    comparison.loc[sys3, "day_bias_w"] = [100.0, 0.0]
+    comparison["day_error_w"] = comparison["day_bias_w"].abs()
+    comparison["mae_w"] = comparison["day_error_w"]
 
     summary = summarize_e2(
         comparison,
@@ -92,7 +101,6 @@ def test_absence_only_counts_as_a_hit_with_the_calendar_event() -> None:
                 "calendar_available": [True, False, True, False],
             }
         ),
-        forecasts,
         pd.DataFrame({"reduction_w": [100.0]}),
         window_start=WINDOW_START,
         window_end=WINDOW_END,
@@ -138,7 +146,6 @@ def test_absence_only_counts_as_a_hit_with_the_calendar_event() -> None:
         comparison,
         anomaly,
         pd.DataFrame(columns=["config", "analyzed_day", "calendar_available"]),
-        forecasts,
         pd.DataFrame({"reduction_w": [100.0]}),
         window_start=WINDOW_START,
         window_end=WINDOW_END,

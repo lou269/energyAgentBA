@@ -27,15 +27,13 @@ from experiments.common.standard_config import (
 from experiments.k1_forecast_model.k1_config import (
     REFERENCE_FILE,
     RUN_PREFIX,
-    SEASONALITY_METRICS_FILE,
+    SEASONALITY_FORECASTS_FILE,
     SEASONALITY_RUN_PREFIX,
     SPLIT_DIRECTORY_SUFFIX,
 )
 from experiments.k1_forecast_model.k1_evaluation import (
     ModeSummary,
-    compare_to_best_variant,
-    summarize_modes,
-    summarize_overall,
+    summarize_retraining,
     summarize_seasonal_forecast,
 )
 from src.pipeline.io import (
@@ -63,7 +61,6 @@ RESULT_FILES = (
     "forecasts",
     "overall_metrics",
     "origin_metrics",
-    "mae_skill",
     "interval_metrics",
     "target_exclusions",
     REFERENCE_FILE,
@@ -75,12 +72,12 @@ def build_overall_table(
 ) -> pd.DataFrame:
     table = pd.DataFrame(
         {
-            "MAE [W]": overall["mae_w"],
-            "RMSE [W]": overall["rmse_w"],
-            "MAPE [%]": overall["mape_pct"],
             "Tagesfehler MAE [W]": overall["daily_mae_w"],
             "Tagesfehler MAPE [%]": overall["daily_mape_pct"],
-            f"Skill ggü. {reference_model} [%]": overall["skill_pct"],
+            f"Skill Tagesfehler ggü. {reference_model} [%]": overall["skill_pct"],
+            "Stunden-MAE [W]": overall["mae_w"],
+            "Stunden-RMSE [W]": overall["rmse_w"],
+            "Stunden-MAPE [%]": overall["mape_pct"],
             f"Intervall-Abdeckung [%], Soll {nominal_interval_level * 100:.0f}": overall[
                 "coverage_pct"
             ],
@@ -98,7 +95,7 @@ def build_paired_table(paired: pd.DataFrame) -> pd.DataFrame:
             "Modell": paired["variant"].map(MODEL_LABELS),
             "Referenz": paired["reference"].map(MODEL_LABELS),
         }
-    ).join(paired_difference_columns(paired, "Origins"))
+    ).join(paired_difference_columns(paired, "Tage"))
 
 
 def build_setup(
@@ -133,7 +130,8 @@ def build_setup(
 def build_notes(modes: list[ModeSummary]) -> list[str]:
     notes = [
         NOISE_RULE_NOTE,
-        "Tagesfehler: Fehler des Tagesmittels (Mittel der 24 Prognosewerte gegen das Ist-Tagesmittel), nicht der Mittelwert der Stundenfehler",
+        "Tagesfehler: Fehler des Tagesmittels (Mittel der 24 Prognosewerte gegen das Ist-Tagesmittel), nicht der Mittelwert der Stundenfehler. "
+        "Beste Variante, Skill und gepaarter Abstand beruhen auf ihm, die Stundenfehler stehen nur zum Vergleich",
     ]
 
     for mode in modes:
@@ -142,7 +140,7 @@ def build_notes(modes: list[ModeSummary]) -> list[str]:
             for reason, count in mode.exclusion_reasons
         )
         notes.append(
-            f"{mode.mode}: Tagesfehler aus {mode.daily_count} von {mode.forecast_day_count} Tagen (nur Tage mit lauter bewerteten Stunden)"
+            f"{mode.mode}: Tagesfehler aus {mode.daily_count} von {mode.forecast_day_count} Tagen (nur Tage mit Ist-Tagesmittel)"
         )
         notes.append(
             f"{mode.mode}: {mode.excluded_target_count} von {mode.possible_target_count} Zielstunden nicht bewertet ({reasons})"
@@ -158,12 +156,12 @@ def build_key_figures(modes: list[ModeSummary]) -> pd.DataFrame:
         name, reference = mode.mode, mode.reference_model
         rows += [
             (
-                f"{name}: MAE bestes Modell {MODEL_LABELS[mode.best_model]} [W]",
-                mode.best_mae_w,
-                f"{reference} {format_number(mode.reference_mae_w, STANDARD_CONFIG.decimals)} W",
+                f"{name}: Tagesfehler bestes Modell {MODEL_LABELS[mode.best_model]} [W]",
+                mode.best_daily_mae_w,
+                f"{reference} {format_number(mode.reference_daily_mae_w, STANDARD_CONFIG.decimals)} W",
             ),
             (
-                f"{name}: Skill der Prophet-Varianten ggü. {reference} [%]",
+                f"{name}: Skill der Prophet-Varianten im Tagesfehler ggü. {reference} [%]",
                 mode.skill_max_pct,
                 f"Spanne {format_number(mode.skill_min_pct, STANDARD_CONFIG.decimals)} bis {format_number(mode.skill_max_pct, STANDARD_CONFIG.decimals)} %",
             ),
@@ -192,16 +190,18 @@ def report_retraining(run_directory: Path) -> Path:
         for mode, directory in mode_directories.items()
     }
 
-    paired = compare_to_best_variant(results_by_mode, variant_ids)
-    actual_daily = read_preprocessed_daily_target(PROJECT_CONFIG, config["split"])
-    modes = summarize_modes(results_by_mode, paired, variant_ids, actual_daily)
+    summary = summarize_retraining(
+        results_by_mode,
+        variant_ids,
+        read_preprocessed_daily_target(PROJECT_CONFIG, config["split"]),
+    )
+    modes = summary.modes
 
     output_directory = user_output_directory(run_directory)
     tables = {"key_figures": ("Kennzahlen", build_key_figures(modes))}
 
     for mode in modes:
-        results = results_by_mode[mode.mode]
-        overall = summarize_overall(results, actual_daily)
+        overall = summary.overall[mode.mode]
 
         tables[f"result_overall_{mode.mode}"] = (
             f"Gesamtfehler {mode.mode}",
@@ -211,7 +211,7 @@ def report_retraining(run_directory: Path) -> Path:
         )
         build_forecast_model_plot(
             overall,
-            results["origin_metrics"],
+            summary.days[mode.mode],
             output_directory / mode.mode,
             split=config["split"],
             comparison_mode=mode.mode,
@@ -221,8 +221,8 @@ def report_retraining(run_directory: Path) -> Path:
         )
 
     tables["result_paired"] = (
-        "Abstand zum besten Prophet-Modell, gepaart je Origin",
-        build_paired_table(paired),
+        "Abstand zum besten Prophet-Modell im Tagesfehler, gepaart je Prognosetag",
+        build_paired_table(summary.paired),
     )
 
     write_result_report(
@@ -246,12 +246,9 @@ def report_seasonality(run_directory: Path) -> Path:
     split_start, _split_end = read_split_bounds(PROJECT_CONFIG, config["split"])
     seasonality_start = split_start.tz_convert(LOCAL_TIMEZONE).date()
 
-    origin_metrics = pd.read_csv(
-        run_directory / RAW_SUBDIR / f"{SEASONALITY_METRICS_FILE}.csv",
-        dtype={"forecast_day": str},
-    )
     summary = summarize_seasonal_forecast(
-        origin_metrics,
+        pd.read_csv(run_directory / RAW_SUBDIR / f"{SEASONALITY_FORECASTS_FILE}.csv"),
+        read_preprocessed_daily_target(PROJECT_CONFIG, config["split"]),
         tuple(
             (variant, reference)
             for variant, reference in config["seasonality_comparisons"]
@@ -272,7 +269,7 @@ def report_seasonality(run_directory: Path) -> Path:
             key_figures_table(
                 [
                     (
-                        f"{comparison}: MAE-Differenz über das Jahr [W]",
+                        f"{comparison}: Differenz im Tagesfehler über das Jahr [W]",
                         delta,
                         "negativ = Variante besser, belastbar "
                         + ("ja" if exceeds_noise else "nein"),
@@ -286,7 +283,7 @@ def report_seasonality(run_directory: Path) -> Path:
             ),
         ),
         "result_by_month": (
-            "MAE je Monat [W]",
+            "Tagesfehler je Monat [W]",
             by_month.rename(columns={"month": "Monat"} | MODEL_LABELS),
         ),
         "result_paired": (

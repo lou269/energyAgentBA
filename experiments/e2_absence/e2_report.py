@@ -8,12 +8,12 @@ import pandas as pd
 
 from docs.plots.plot_e2_absence import build_e2_plot
 from experiments.common.harness import (
-    FORECASTS_FILE,
     read_anomaly_rows,
     read_calendar_availability,
     read_llm_outputs,
 )
 from experiments.common.report import (
+    forecast_error_table,
     format_commit,
     key_figures_table,
     write_explanation_rating_template,
@@ -119,19 +119,16 @@ def build_calendar_call_table(
     )
 
 
-def build_forecast_table(forecast: pd.DataFrame, reference_config: str) -> pd.DataFrame:
-    return pd.DataFrame(
+def build_forecast_table(forecast: pd.DataFrame) -> pd.DataFrame:
+    table = pd.DataFrame(
         {
             "System": forecast["config"],
             "Phase": forecast["phase"].map(PHASE_LABELS),
-            "Tages-MAE [W]": forecast["mean_day_error_w"],
-            "Bias [W]": forecast["mean_day_bias_w"],
-            f"Differenz Tages-MAE zu {reference_config} [W]": forecast["mean_delta"],
-            "Standardfehler [W]": forecast["delta_standard_error"],
-            "Anteil Tage besser": forecast["better_share"],
-            "gepaarte Tage": forecast["paired_count"],
         }
-    )
+    ).join(forecast_error_table(forecast, "Tage"))
+    table.insert(3, "Bias [W]", forecast["mean_day_bias_w"])
+
+    return table
 
 
 def build_reduction_table(reduction: pd.DataFrame) -> pd.DataFrame:
@@ -271,10 +268,6 @@ def summarize_event(
             [read_calendar_availability(event_directory / ctx) for ctx in ctxs],
             ignore_index=True,
         ),
-        pd.concat(
-            [pd.read_csv(event_directory / ctx / FORECASTS_FILE) for ctx in ctxs],
-            ignore_index=True,
-        ),
         reduction.loc[reduction["event_id"].eq(event_id)],
         window_start=window[0],
         window_end=window[1],
@@ -317,7 +310,7 @@ def build_event_tables(
         ),
         f"result_forecast_{event_id}": (
             f"{event_id}: Prognose je Phase",
-            build_forecast_table(summary.forecast, e2_config["reference_config"]),
+            build_forecast_table(summary.forecast),
         ),
     }
 
@@ -380,9 +373,9 @@ def write_full_report(run_directory: Path) -> None:
             "Treffer: von den Urlaubstagen mit offenem Gate, an den übrigen wird nicht eingeordnet. Wenige Tage, deshalb als Anzahl",
             f"Einordnung je Phase: {target_classification} ist keine Meldung, im Urlaub ist jede Meldung ein Fehlalarm. Ausfalltage = LLM ohne gültige Antwort",
             "Gate offen: Einzeltag, Drift (weekly und long_term halten an) oder nur eine anhaltende Skala",
-            "Prognose je Phase: Phase und Fehler nach dem Prognosetag. Tages-MAE = Betrag von Prognose-Tagesmittel minus Ist-Tagesmittel, "
-            "gemittelt über die Tage. Bias = dasselbe mit Vorzeichen, negativ = Prognose zu niedrig",
-            f"Differenz Tages-MAE zu {e2_config['reference_config']}: gepaart am selben Prognosetag, negativ = besser",
+            "Prognose je Phase: Phase und Fehler nach dem Prognosetag. Tagesfehler (Hauptmaß) = Betrag von Prognose-Tagesmittel minus Ist-Tagesmittel, "
+            "gemittelt über die Tage. Bias = dasselbe mit Vorzeichen, negativ = Prognose zu niedrig. MAE = mittlerer Stundenfehler",
+            f"Differenzen zu {e2_config['reference_config']}: gepaart am selben Prognosetag, negativ = besser",
             "ctx0 ohne, ctx1 mit Kalender im State, ctx2 Kalender per Tool. SYS1 und SYS2 lesen keinen Kalender und laufen nur in ctx0",
             f"Kalendereinträge als Freitext aus calendar_events.json, im Gegenfall {e2_config['counter_ctx']} steht zu denselben Zeiten nur "
             f"ein Eintrag, der keine Abwesenheit meint. Dort ist jedes {target_classification} falsch und zählt als {target_classification} ohne Beleg",

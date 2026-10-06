@@ -42,7 +42,7 @@ def build_e4_forecast_plot(
             line = model_curve.loc[model_curve["coldstart_days"].eq(coldstart_days)]
             axis.plot(
                 line["day_since_start"],
-                line["mae_gap_w_smoothed"],
+                line["gap_w_smoothed"],
                 color=COLDSTART_COLORS[coldstart_days],
                 linestyle=linestyle,
                 linewidth=2 if model_id == adaptive_model_id else 1.2,
@@ -67,11 +67,11 @@ def build_e4_forecast_plot(
 
     axis.axhline(0, linewidth=0.8)
     axis.set_title(
-        f"MAE-Abstand zum längsten Kaltstart (Mittel über Starttermine, {smoothing_days} Tage geglättet)",
+        f"Abstand im Tagesfehler zum längsten Kaltstart (Mittel über Starttermine, {smoothing_days} Tage geglättet)",
         loc="left",
     )
     axis.set_xlabel("Tage seit Start")
-    axis.set_ylabel("MAE-Abstand (W)")
+    axis.set_ylabel("Abstand Tagesfehler (W)")
     axis.grid(axis="y", alpha=0.25)
     axis.legend(fontsize=8, ncols=2)
 

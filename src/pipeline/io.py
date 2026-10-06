@@ -183,16 +183,6 @@ def run_directory_from_argv(directory: Path, prefix: str, position: int = 1) -> 
     return resolve_run_directory(directory, prefix, explicit)
 
 
-def optional_run_directory_from_argv(
-    directory: Path, prefix: str, position: int
-) -> Path | None:
-    # wie run_directory_from_argv, gibt es noch keinen Lauf, dann None statt Abbruch
-    if len(sys.argv) <= position and find_run_directory(directory, prefix) is None:
-        return None
-
-    return run_directory_from_argv(directory, prefix, position)
-
-
 def find_run_directory(
     directory: Path, prefix: str, number: int | None = None
 ) -> tuple[int, Path] | None:

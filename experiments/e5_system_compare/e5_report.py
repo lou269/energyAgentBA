@@ -14,8 +14,8 @@ from experiments.common.report import (
     answer_bullets,
     format_commit,
     format_number,
+    forecast_error_table,
     key_figures_table,
-    paired_difference_columns,
     write_explanation_rating_template,
     write_result_report,
 )
@@ -89,8 +89,8 @@ def build_event_table(events: pd.DataFrame, labels: dict[int, str]) -> pd.DataFr
     )
 
 
-def build_forecast_table(forecast: pd.DataFrame, reference: str) -> pd.DataFrame:
-    table = pd.DataFrame(
+def build_forecast_table(forecast: pd.DataFrame) -> pd.DataFrame:
+    return pd.DataFrame(
         {
             "Cutover": forecast["cutover_date"],
             "Zeitraum": [
@@ -98,14 +98,8 @@ def build_forecast_table(forecast: pd.DataFrame, reference: str) -> pd.DataFrame
                 for series, day in zip(forecast["series"], forecast["from_day"])
             ],
             "System": forecast["config"].map(SYS_LABELS),
-            "MAE [W]": forecast["mean_mae_w"],
-            "MAPE [%]": forecast["mean_mape_pct"],
         }
-    )
-    table = table.join(paired_difference_columns(forecast, "Tage"))
-    table[f"MAPE-Differenz zu {reference} [%-Punkte]"] = forecast["mape_delta_pct"]
-
-    return table
+    ).join(forecast_error_table(forecast, "Tage"))
 
 
 def build_notification_table(notifications: pd.DataFrame) -> pd.DataFrame:
@@ -217,8 +211,8 @@ def build_key_figures(
             (
                 f"{row['cutover_date']}: {rule} besser als {reference}",
                 YES_NO[row["rule_better"]],
-                f"MAE gegen {reference} ab Dauerlast "
-                f"{format_number(row['rule_mae_delta_w'], STANDARD_CONFIG.decimals)} W, "
+                f"Tagesfehler gegen {reference} ab Dauerlast "
+                f"{format_number(row['rule_day_error_delta_w'], STANDARD_CONFIG.decimals)} W, "
                 f"{row['rule_single_day_resets']} Resets bei Einzeltag-Ereignissen, "
                 f"{row['rule_control_resets']} im Kontrolllauf",
             ),
@@ -241,7 +235,6 @@ def build_key_figures(
 def build_setup(
     e5_config: dict, llm_config: dict, labels: dict[int, str], code_version: dict
 ) -> dict[str, str]:
-
     return {
         "Cutover": ", ".join(e5_config["cutover_dates"])
         + " (Tag 0, alle Tage und Daten in Ortszeit)",
@@ -326,7 +319,7 @@ def write_report(run_directory: Path) -> Path:
         ),
         "result_forecast": (
             f"Prognose ab Dauerlast und im Kontrolllauf, gepaart gegen {reference}",
-            build_forecast_table(summary.forecast, reference),
+            build_forecast_table(summary.forecast),
         ),
         "result_notifications": (
             "Meldungen nach der Erkennung der Dauerlast, sehend und blind",

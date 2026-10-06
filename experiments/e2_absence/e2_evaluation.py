@@ -9,13 +9,12 @@ from experiments.common.evaluation import (
     add_gate_flags,
     count_notifications,
     local_dates,
-    summarize_paired_differences,
+    summarize_forecast_errors,
 )
 from experiments.common.standard_config import (
     NOTIFICATION_CLASSIFICATIONS,
     NOTIFICATION_PERIOD_DAYS,
 )
-from src.forecasting.evaluation import score_daily_means
 
 
 def summarize_reduction_by_day(
@@ -181,7 +180,6 @@ def summarize_e2(
     comparison: pd.DataFrame,
     anomaly: pd.DataFrame,
     calendar_availability: pd.DataFrame,
-    forecasts: pd.DataFrame,
     reduction: pd.DataFrame,
     *,
     window_start: pd.Timestamp,
@@ -241,41 +239,25 @@ def summarize_e2(
         .sum()
     )
 
-    # Ist aus today_mean (für jede Config derselbe Tag). Fehler und Phase gehören zum Prognosetag, die Prognose entsteht nach der Einordnung des Vortags
-    actual_w = days.groupby("analyzed_day")["today_mean"].first()
-    forecast_days = score_daily_means(
-        forecasts, actual_w, group_column="config", day_column="forecast_day"
+    # Fehler und Phase gehören zum Prognosetag, die Prognose entsteht nach der Einordnung des Vortags
+    forecast_day = local_dates(days["decision_time"]).strftime("%Y-%m-%d")
+    forecast_days = days.assign(
+        forecast_day=forecast_day,
+        phase=absence_phase(forecast_day, window_start, window_end),  # type: ignore
     )
-    forecast_days["phase"] = absence_phase(
-        forecast_days["forecast_day"], window_start, window_end
+    bias = forecast_days.groupby(["config", "phase"], as_index=False).agg(
+        mean_day_bias_w=("day_bias_w", "mean")
     )
-
-    # gepaart am selben Tag, so zählen nur Tage, die beide Systeme haben
-    paired = pd.concat(
-        [
-            summarize_paired_differences(
-                phase_days.pivot(
-                    index="forecast_day", columns="config", values="day_error_w"
-                ),
-                reference_config,
-            ).assign(phase=phase)
-            for phase, phase_days in forecast_days.groupby("phase")
-        ],
-        ignore_index=True,
-    ).rename(columns={"variant": "config"})
     forecast = (
-        forecast_days.groupby(["config", "phase"], as_index=False)
-        .agg(
-            mean_day_error_w=("day_error_w", "mean"),
-            mean_day_bias_w=("day_bias_w", "mean"),
-        )
-        .merge(paired, on=["config", "phase"], how="left")
+        summarize_forecast_errors(forecast_days, ["phase"], reference_config)
+        .merge(bias, on=["config", "phase"])
         .sort_values(["config", "phase"], key=by_phase)
         .reset_index(drop=True)
     )
 
     # je Kalendertag Ist und Prognose für diesen Tag, dazu die Einordnung dieses Tages, die am Folgetag getroffen wird
-    forecast_w = forecast_days.set_index(["config", "forecast_day"])["predicted_w"]
+    actual_w = days.groupby("analyzed_day")["today_mean"].first()
+    forecast_w = forecast_days.set_index(["config", "forecast_day"])["day_forecast_w"]
     timeline = (
         days[
             [

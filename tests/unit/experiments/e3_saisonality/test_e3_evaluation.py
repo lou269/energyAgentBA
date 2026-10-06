@@ -11,7 +11,7 @@ def _run(
     kind: str,
     gate_open: list[bool],
     classifications: list[str],
-    mae_w: float = 100.0,
+    day_error_w: float = 100.0,
 ) -> pd.DataFrame:
     # Tag -1 bis 4, der 15.04. ist Tag 0
     decision_times = local_calendar_range(
@@ -34,7 +34,9 @@ def _run(
                 "advance_history_start" if value == "new_pattern" else "none"
                 for value in classifications
             ],
-            "mae_w": mae_w,
+            "day_error_w": day_error_w,
+            "mae_w": day_error_w,
+            "mape_pct": 10.0,
         }
     )
 
@@ -51,7 +53,7 @@ def test_drift_response_counts_only_what_the_control_run_did_not_see() -> None:
             "ramp_28",
             [False, False, True, True, True, False],
             ["normal", "normal", "normal", "new_pattern", "normal", "normal"],
-            mae_w=90.0,
+            day_error_w=90.0,
         ),
         # Gate nur dort offen, wo es auch ohne Rampe offen ist, und nie new_pattern
         _run("SYS2", "ramp_56", [False, False, True, False, False, False], normal),

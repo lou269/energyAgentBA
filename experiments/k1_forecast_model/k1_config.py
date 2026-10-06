@@ -13,7 +13,7 @@ RUN_PREFIX = "k1"
 SEASONALITY_RUN_PREFIX = "k1_season"
 # vom Runner geschrieben, vom Report gelesen, die übrigen Ergebnisdateien kommen aus run_forecast_comparison
 REFERENCE_FILE = "primary_naive_reference"
-SEASONALITY_METRICS_FILE = "origin_metrics"
+SEASONALITY_FORECASTS_FILE = "forecasts"
 
 # unterscheidet sich von C2 nur in der Jahressaisonalität
 Y1_EXPANDING_YEARLY = replace(C2_EXPANDING, model_id="Y1", yearly_seasonality=True)

@@ -228,19 +228,6 @@ def score_cycle_forecast(
     return mae_w, mape_pct
 
 
-def score_daily_mean_bias(
-    forecast: pd.DataFrame,
-    target_series: pd.Series,
-    target_imputed: pd.Series | None,
-) -> float:
-    # Prognose minus Messung beim Tagesmittel (= Tagesenergie), nicht Mittel der Stundenfehler. Wie K1 nur bei lauter bewerteten Stunden, negativ = Prognose zu niedrig
-    actual, eligible = _actual_and_eligible(forecast, target_series, target_imputed)
-    if not eligible.all():
-        return float("nan")
-
-    return float(forecast["y_pred"].to_numpy().mean() - actual.mean())
-
-
 def score_daily_means(
     forecasts: pd.DataFrame,
     actual_daily_mean_w: pd.Series,

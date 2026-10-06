@@ -186,6 +186,19 @@ def paired_difference_columns(paired: pd.DataFrame, unit: str) -> pd.DataFrame:
     )
 
 
+def forecast_error_table(errors: pd.DataFrame, unit: str) -> pd.DataFrame:
+    table = pd.DataFrame(
+        {
+            "Tagesfehler [W]": errors["mean_day_error_w"],
+            "MAE [W]": errors["mean_mae_w"],
+            "MAPE [%]": errors["mean_mape_pct"],
+        }
+    ).join(paired_difference_columns(errors, unit))
+    table.insert(4, "Differenz MAE [W]", errors["mae_delta_w"])
+
+    return table.rename(columns={"Differenz [W]": "Differenz Tagesfehler [W]"})
+
+
 def write_explanation_rating_template(
     llm_outputs: pd.DataFrame, output_directory: Path
 ) -> None:

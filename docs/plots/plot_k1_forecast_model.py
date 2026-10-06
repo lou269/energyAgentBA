@@ -30,7 +30,7 @@ def add_bar_labels(axis, fmt: str = "{:.0f}") -> None:
 
 def build_forecast_model_plot(
     overall: pd.DataFrame,
-    origin_metrics: pd.DataFrame,
+    days: pd.DataFrame,
     output_directory: Path,
     *,
     split: str,
@@ -56,15 +56,13 @@ def build_forecast_model_plot(
     skill_axis = figure.add_subplot(grid[1, 1])
     cost_axis = figure.add_subplot(grid[2, :])
 
-    # A: MAE je Forecast-Origin über die Zeit
+    # A: Tagesfehler je Prognosetag über die Zeit
     for model_id in variant_model_ids:
-        model_origins = origin_metrics.loc[
-            origin_metrics["model_id"].eq(model_id)
-        ].sort_values("forecast_day")
+        model_days = days.loc[days["model_id"].eq(model_id)].sort_values("forecast_day")
 
         timeline_axis.plot(
-            pd.to_datetime(model_origins["forecast_day"]),
-            model_origins["mae_w"],
+            model_days["forecast_day"],
+            model_days["day_error_w"],
             marker="o",
             markersize=4,
             linewidth=2,
@@ -73,10 +71,11 @@ def build_forecast_model_plot(
         )
 
     timeline_axis.set_title(
-        f"A: MAE je Forecast-Origin über die Zeit ({split.capitalize()})", loc="left"
+        f"A: Tagesfehler je Prognosetag über die Zeit ({split.capitalize()})",
+        loc="left",
     )
     timeline_axis.set_xlabel("Prognosetag (Ortszeit)")
-    timeline_axis.set_ylabel("MAE (W)")
+    timeline_axis.set_ylabel("Tagesfehler (W)")
     timeline_axis.xaxis.set_major_formatter(mdates.DateFormatter("%d.%m."))
     timeline_axis.tick_params(axis="x", rotation=25)
     timeline_axis.grid(axis="y", alpha=0.25)
@@ -89,19 +88,19 @@ def build_forecast_model_plot(
 
     overall_axis.bar(
         x_positions - bar_width / 2,
-        overall["mae_w"],
+        overall["daily_mae_w"],
         width=bar_width,
         color=model_colors,
-        label="MAE",
+        label="Tagesfehler",
     )
     overall_axis.bar(
         x_positions + bar_width / 2,
-        overall["rmse_w"],
+        overall["mae_w"],
         width=bar_width,
         color=model_colors,
         alpha=0.55,
         hatch="//",
-        label="RMSE",
+        label="Stunden-MAE",
     )
 
     overall_axis.set_xticks(x_positions)
@@ -114,7 +113,7 @@ def build_forecast_model_plot(
     add_bar_labels(overall_axis)
     overall_axis.legend(fontsize=8)
 
-    # C: MAE-Skill der Prophet-Varianten gegenüber der Referenz-Baseline
+    # C: Skill im Tagesfehler gegenüber der Referenz-Baseline
     skill_pct = overall.loc[list(variant_model_ids), "skill_pct"]
 
     skill_axis.bar(
@@ -125,7 +124,7 @@ def build_forecast_model_plot(
 
     skill_axis.axhline(0, color="#333333", linewidth=1)
     skill_axis.set_title(
-        f"C: MAE-Skill ggü. Baseline {reference_baseline} ({split.capitalize()})",
+        f"C: Skill Tagesfehler ggü. {reference_baseline} ({split.capitalize()})",
         loc="left",
     )
     skill_axis.set_ylabel(f"Verbesserung ggü. {reference_baseline} (%)")

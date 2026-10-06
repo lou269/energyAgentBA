@@ -37,8 +37,8 @@ def build_seasonality_plot(
         label=model_labels[reference_model_id],
     )
 
-    axis.set_title("MAE der Tagesprognose je Monat", loc="left")
-    axis.set_ylabel("MAE (W)")
+    axis.set_title("Tagesfehler je Monat", loc="left")
+    axis.set_ylabel("Tagesfehler (W)")
     axis.tick_params(axis="x", labelrotation=45)
     axis.grid(axis="y", alpha=0.25)
     axis.legend(fontsize=8)

@@ -31,7 +31,7 @@ from experiments.e4_cold_start.e4_config import (
     SYSTEM_RESULTS_FILE,
     E4Config,
 )
-from experiments.e4_cold_start.e4_evaluation import read_system_days
+from experiments.e4_cold_start.e4_evaluation import add_day_errors, read_system_days
 from experiments.e4_cold_start.e4_scenarios import build_system_scenarios
 from src.config.config_forecasting import SYS_VARIANTS, ForecastingConfig
 from src.pipeline.io import create_experiment_run, df_to_csv
@@ -43,7 +43,9 @@ def run_forecasts(
     e4_config: E4Config, forecast_config: ForecastingConfig, run_name: str
 ) -> pd.DataFrame:
     np.random.seed(forecast_config.seed)
-    target_series, target_imputed, _target_value_implausible = load_target(e4_config.split)
+    target_series, target_imputed, _target_value_implausible = load_target(
+        STANDARD_CONFIG.split
+    )
 
     adaptive = forecast_config.selected_prophet_variant
     static = e4_config.static_variant
@@ -52,7 +54,8 @@ def run_forecasts(
     assert reference is not None
     origin_frames: list[pd.DataFrame] = []
 
-    for start_date in e4_config.start_dates:
+    for cutover_id in e4_config.cutovers:
+        start_date = STANDARD_CONFIG.cutover_dates[cutover_id]
         start, end = local_day_window(start_date, e4_config.evaluation_days)
 
         for coldstart_days in e4_config.forecast_coldstart_days:
@@ -64,9 +67,9 @@ def run_forecasts(
                 start=start,
                 end=end,
                 history_days=coldstart_days,
-                split_bounds=load_split_bounds(e4_config.split),
+                split_bounds=load_split_bounds(STANDARD_CONFIG.split),
             )
-            _forecasts, evaluation_results = run_forecast_models(
+            forecasts, evaluation_results = run_forecast_models(
                 (reference, adaptive, static),
                 history,
                 targets,
@@ -74,14 +77,14 @@ def run_forecasts(
                 forecast_config,
                 run_id=f"{run_name}_{start_date}_CS{coldstart_days}",
                 experiment_id=e4_config.experiment_id,
-                split=e4_config.split,
+                split=STANDARD_CONFIG.split,
                 comparison_model_ids=(adaptive.model_id, static.model_id),
                 reference_model_ids=(reference,),
             )
             origin_frames.append(
-                evaluation_results["origin_metrics"].assign(
-                    start_date=start_date, coldstart_days=coldstart_days
-                )
+                add_day_errors(
+                    evaluation_results["origin_metrics"], forecasts, target_series
+                ).assign(start_date=start_date, coldstart_days=coldstart_days)
             )
 
     return pd.concat(origin_frames, ignore_index=True)
@@ -93,13 +96,13 @@ def run_system(e4_config: E4Config, run_name: str) -> pd.DataFrame:
     llm_prompt = read_llm_prompt(system_config.llm_config.prompt_version)
     scenario_results: list[pd.DataFrame] = []
 
-    for start_date in e4_config.start_dates:
+    for cutover_id in e4_config.cutovers:
+        start_date = STANDARD_CONFIG.cutover_dates[cutover_id]
         for coldstart_days in e4_config.system_coldstart_days:
             scenarios = build_system_scenarios(
                 start_date,
                 coldstart_days,
                 e4_config.evaluation_days,
-                split=e4_config.split,
                 injection_kinds=e4_config.injection_kinds,
                 injection_days=e4_config.injection_days,
             )

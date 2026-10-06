@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from experiments.common.evaluation import EVENT_KEYS
 from experiments.common.report import (
     KIND_LABELS,
     format_commit,
@@ -13,10 +14,7 @@ from experiments.common.report import (
 )
 from experiments.common.standard_config import PROJECT_CONFIG, STANDARD_CONFIG
 from experiments.e3_saisonality.e3_config import RESULTS_FILE, RUN_PREFIX
-from experiments.e3_saisonality.e3_evaluation import (
-    EVENT_KEYS,
-    summarize_drift_response,
-)
+from experiments.e3_saisonality.e3_evaluation import summarize_drift_response
 from src.config.config_forecasting import SYS_LABELS
 from src.pipeline.io import (
     RAW_SUBDIR,
@@ -32,6 +30,7 @@ RESPONSE_HEADERS = {
     "expected": "erwartet",
     "first_event_new_pattern_day": "erstes new_pattern (Tag)",
     "gate_open_days": "Tage Gate offen",
+    "resets_before_cutover": "Resets vor Cutover",
     "reset_forecast_day": "erster Reset (Tag)",
 }
 
@@ -70,7 +69,10 @@ def write_report(run_directory: Path) -> Path:
                 kind=response["kind"].map(KIND_LABELS),
             ).rename(
                 columns=RESPONSE_HEADERS
-                | {"mean_delta": f"MAE ab Reset minus {reference} [W]"}
+                | {
+                    "mean_delta": f"Tagesfehler ab Reset minus {reference} [W]",
+                    "mae_delta_w": f"MAE ab Reset minus {reference} [W]",
+                }
             ),
         ),
     }
@@ -85,7 +87,7 @@ def write_report(run_directory: Path) -> Path:
                 + ", ".join(KIND_LABELS[kind] for kind in kinds)
                 for cutover_id, kinds in kinds_by_cutover.items()
             ),
-            "Systeme": f"{', '.join(SYS_LABELS[system] for system in systems)}, je im vollen Kreislauf, {SYS_LABELS[reference]} nur als Bezug für den MAE",
+            "Systeme": f"{', '.join(SYS_LABELS[system] for system in systems)}, je im vollen Kreislauf, {SYS_LABELS[reference]} nur als Bezug für die Prognosefehler",
             "LLM": f"{llm_config['model']}, Prompt {llm_config['prompt_version']}",
             "Commit": format_commit(run_config["code_version"]),
         },
@@ -95,7 +97,7 @@ def write_report(run_directory: Path) -> Path:
             "erwartet: Rampe über 28 Tage ist ein neues Muster, Rampe über 56 Tage nicht, dort ist still aufnehmen richtig und ein Reset ein Fehler",
             "erstes new_pattern und Gate: gepaart wird je System gegen dessen eigenen Kontrolllauf, leer = still aufgenommen",
             "offenes Gate = Tag, an dem SYS3 das LLM fragt, States und Antworten liegen in raw/",
-            f"MAE: {reference} ordnet wie die Regel ein, setzt aber nie zurück. Vor den gewählten Cutovern setzt die Regel nicht zurück, bis zum ersten Reset laufen beide also gleich. Negativ = der Reset senkt den Fehler, leer = kein Reset",
+            f"Tagesfehler (Hauptmaß): Betrag von Prognose-Tagesmittel minus gemessenem Tagesmittel, MAE: mittlerer Stundenfehler, beide gemittelt über die Tage ab dem ersten Reset. {reference} ordnet wie die Regel ein, setzt aber nie zurück, bis zum ersten Reset laufen beide also gleich, sofern vor dem Cutover kein Reset war. Negativ = der Reset senkt den Fehler, leer = kein Reset",
             "keine Änderung: jeder Reset dort ist ein falscher",
         ],
         images=[],

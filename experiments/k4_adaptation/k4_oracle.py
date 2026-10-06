@@ -13,13 +13,11 @@ from src.adaption.adaption_policy import (
 )
 from src.common.timestamps import (
     analyzed_day_index,
+    local_daily_mean,
     local_day_index,
     local_midnight_utc,
 )
-from src.forecasting.evaluation import (
-    score_cycle_forecast,
-    score_daily_mean_bias,
-)
+from src.forecasting.evaluation import score_cycle_forecast, score_daily_means
 from src.pipeline.comparison_harness import (
     ScenarioData,
     coldstart_history,
@@ -55,7 +53,7 @@ def run_oracle(
         model_fitted_at=None,
     )
     mae_values: list[float] = []
-    daily_bias_values: list[float] = []
+    forecasts: list[pd.DataFrame] = []
 
     for decision_time in scenario.decision_times:
         # vor dem Fit, wirkt also schon auf die Prognose dieses Tages wie der Neu-Fit nach einer Adaption in run_cycle
@@ -85,21 +83,21 @@ def run_oracle(
             cycle_config.forecasting_config.mape_min_eligible_watts,
         )
         mae_values.append(mae_w)
-        daily_bias_values.append(
-            score_daily_mean_bias(
-                result.forecast,
-                scenario.target_series,
-                scenario.target_imputed,
-            )
-        )
+        forecasts.append(result.forecast.assign(decision_time=decision_time))
+
+    days = score_daily_means(
+        pd.concat(forecasts, ignore_index=True),
+        local_daily_mean(scenario.target_series, LOCAL_TIMEZONE).tz_convert("UTC"),
+        group_column="model_id",
+        day_column="decision_time",
+    )
 
     return pd.DataFrame(
-        {
-            "decision_time": scenario.decision_times,
-            "mae_w": mae_values,
-            "day_bias_w": daily_bias_values,
-            "day_error_w": np.abs(daily_bias_values),
-        }
+        {"decision_time": scenario.decision_times, "mae_w": mae_values}
+    ).merge(
+        days[["decision_time", "day_bias_w", "day_error_w"]],
+        on="decision_time",
+        how="left",
     )
 
 

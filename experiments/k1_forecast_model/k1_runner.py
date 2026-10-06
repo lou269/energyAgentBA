@@ -23,7 +23,7 @@ from experiments.common.standard_config import LOCAL_TIMEZONE, PROJECT_CONFIG
 from experiments.k1_forecast_model.k1_config import (
     REFERENCE_FILE,
     RUN_PREFIX,
-    SEASONALITY_METRICS_FILE,
+    SEASONALITY_FORECASTS_FILE,
     SEASONALITY_RUN_PREFIX,
     SPLIT_DIRECTORY_SUFFIX,
     K1Config,
@@ -132,7 +132,7 @@ def run_seasonality(k1_config: K1Config) -> Path:
     )
     logger.info("K1 seasonality %s, %d days", start, k1_config.seasonality_days)
 
-    _forecasts, evaluation_results = run_forecast_models(
+    forecasts, _evaluation_results = run_forecast_models(
         k1_config.baseline_model_ids + k1_config.seasonality_variants,
         history,
         targets,
@@ -146,9 +146,7 @@ def run_seasonality(k1_config: K1Config) -> Path:
         ),
         reference_model_ids=k1_config.baseline_model_ids,
     )
-    df_to_csv(
-        evaluation_results["origin_metrics"], raw_directory, SEASONALITY_METRICS_FILE
-    )
+    df_to_csv(forecasts, raw_directory, SEASONALITY_FORECASTS_FILE)
 
     logger.info("K1 seasonality completed, see %s.", run_directory)
     return run_directory

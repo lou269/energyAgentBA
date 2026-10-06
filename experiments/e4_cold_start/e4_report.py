@@ -8,6 +8,7 @@ from experiments.common.report import (
     KIND_LABELS,
     NOISE_RULE_NOTE,
     format_commit,
+    format_cutovers,
     format_number,
     key_figures_table,
     paired_difference_columns,
@@ -47,7 +48,7 @@ CRITERION_LABELS = {
 
 CHECK_LABELS = {
     "resets_in_settling": "Resets, solange nicht alle Skalen einen Score haben",
-    "forecast_skill_first_window_pct": "Skill der Prognose gegenüber der Baseline in Woche 1 [%]",
+    "forecast_skill_first_window_pct": "Skill der Prognose im Tagesfehler gegenüber der Baseline in Woche 1 [%]",
     "first_gate_scale_day": "erster Tag mit Gate-Skala, spätester Termin",
     "forecast_settling_day": "Einschwingtag Prognose",
     "notification_settling_day": "Einschwingtag Meldungen, spätester Termin",
@@ -58,7 +59,10 @@ CHECK_LABELS = {
 
 # Kennzahl und Bezug, {total} ist die Bezugsgröße aus summarize_price
 PRICE_LABELS = {
-    "mae_gap_w": ("Zusatz-MAE der Prognose [W]", "bei {total} W mit langem Kaltstart"),
+    "day_error_gap_w": (
+        "zusätzlicher Tagesfehler der Prognose [W]",
+        "bei {total} W mit langem Kaltstart",
+    ),
     "only_shortest": (
         "Meldetage nur mit kurzem Kaltstart",
         "von {total} sauberen Tagen",
@@ -127,11 +131,15 @@ def build_criteria_table(criteria: pd.DataFrame) -> pd.DataFrame:
 
 def build_setup(run_config: dict) -> dict[str, str]:
     e4_config = run_config["e4_config"]
+    standard_config = run_config["standard_config"]
     system_config = run_config["system_config"]
     llm_config = system_config["llm_config"]
 
     return {
-        "Starttermine": f"{', '.join(e4_config['start_dates'])} ({e4_config['split']})",
+        "Starttermine": (
+            f"Standard-Cutover {format_cutovers(standard_config['cutover_dates'], e4_config['cutovers'])} "
+            f"({standard_config['split']})"
+        ),
         "Kaltstart": (
             f"E4a {', '.join(map(str, e4_config['forecast_coldstart_days']))} Tage, "
             f"E4b {', '.join(map(str, e4_config['system_coldstart_days']))} Tage, "
@@ -241,7 +249,7 @@ def build_appendix(
             ),
         ),
         "result_forecast_gap": (
-            f"MAE-Abstand zu {longest} Tagen je Modell, gepaart über Termin und Tag, positiv = schlechter",
+            f"Abstand im Tagesfehler zu {longest} Tagen je Modell, gepaart über Termin und Tag, positiv = schlechter",
             pd.concat(
                 [
                     _labeled(
@@ -266,21 +274,22 @@ def build_appendix(
             ),
         ),
         "result_static": (
-            "Adaptiv gegen statisch: MAE statisch minus adaptiv je Termin [W], positiv = adaptiv besser",
+            "Adaptiv gegen statisch: Tagesfehler statisch minus adaptiv je Termin [W], positiv = adaptiv besser",
             _labeled(
                 forecast.static_minus_adaptive,
                 {"mean": "Mittel", "same_direction": "gleiche Richtung"},
             ),
         ),
         "result_forecast_windows": (
-            "Prognose je Fenster: MAE, MAPE und Skill gegenüber der Baseline, Mittel über Termine",
+            "Prognose je Fenster: Tagesfehler, MAE, MAPE und Skill im Tagesfehler gegenüber der Baseline, Mittel über Termine",
             _labeled(
                 forecast.windows,
                 {
+                    "day_error_w": "Tagesfehler [W]",
                     "mae_w": "MAE [W]",
                     "mape_pct": "MAPE [%]",
-                    "mae_w_reference": "MAE Baseline [W]",
-                    "mae_skill_pct": "Skill [%]",
+                    "day_error_w_reference": "Tagesfehler Baseline [W]",
+                    "skill_pct": "Skill [%]",
                 },
             ),
         ),

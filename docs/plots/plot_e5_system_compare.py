@@ -31,14 +31,14 @@ def build_e5_plot(
             reset = days["adaption_action"].eq("advance_history_start")
             axis.plot(
                 days["days_since_cutover"],
-                days["mae_w"],
+                days["day_error_w"],
                 color=color,
                 linewidth=1.5,
                 label=SYS_LABELS[config],
             )
             axis.scatter(
                 days.loc[reset, "days_since_cutover"],
-                days.loc[reset, "mae_w"],
+                days.loc[reset, "day_error_w"],
                 color=color,
                 marker="x",
                 s=60,
@@ -49,7 +49,7 @@ def build_e5_plot(
         for day in event_days:
             axis.axvline(day - 0.5, linewidth=1)
         axis.set_title(f"Cutover {cutover_date}", loc="left")
-        axis.set_ylabel("MAE (W)")
+        axis.set_ylabel("Tagesfehler (W)")
         axis.grid(axis="y", alpha=0.25)
 
     axes[0, 0].legend(fontsize=8)

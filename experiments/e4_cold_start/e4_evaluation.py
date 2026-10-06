@@ -14,10 +14,13 @@ from experiments.common.evaluation import (
     summarize_paired_differences,
 )
 from experiments.common.standard_config import (
+    LOCAL_TIMEZONE,
     NOTIFICATION_CLASSIFICATIONS,
     NOTIFICATION_PERIOD_DAYS,
 )
 from experiments.e4_cold_start.e4_config import CLEAN_SCENARIO
+from src.common.timestamps import local_daily_mean
+from src.forecasting.evaluation import score_daily_means
 from src.structured_state.structured_state_schema import SCALE_NAMES
 
 # neben den vier Skalen: die erste Gate-Skala und alle vier zusammen (Einschwingzeit)
@@ -38,6 +41,7 @@ SYSTEM_COLUMNS = (
         "dominant_scale",
         "explanation",
         "error",
+        "day_error_w",
         "mae_w",
         "mape_pct",
     ]
@@ -109,19 +113,42 @@ def find_settling_day(
 # E4a Prognose
 
 
+def add_day_errors(
+    origin_metrics: pd.DataFrame, forecasts: pd.DataFrame, target_series: pd.Series
+) -> pd.DataFrame:
+    """Tagesfehler je Modell und Prognosetag neben MAE und MAPE aus dem Walk-Forward, wie day_error_w im Harness"""
+    # Horizont ein Tag, jede Prognose startet auf der lokalen Mitternacht ihres Tages
+    days = score_daily_means(
+        forecasts,
+        local_daily_mean(target_series, LOCAL_TIMEZONE).tz_convert("UTC"),
+        group_column="model_id",
+        day_column="forecast_origin",
+    )
+
+    return origin_metrics.merge(
+        days[["model_id", "forecast_origin", "day_error_w"]],
+        on=["model_id", "forecast_origin"],
+        how="left",
+    )
+
+
 def summarize_windows(
     windowed: pd.DataFrame, *, reference_model_id: str
 ) -> pd.DataFrame:
-    """MAE und MAPE je Kaltstart-Länge, Fenster und Modell über alle Termine, dazu der Skill gegenüber reference_model_id in %"""
+    """Tagesfehler, MAE und MAPE je Kaltstart-Länge, Fenster und Modell über alle Termine, dazu der Skill im Tagesfehler gegenüber reference_model_id in %"""
     keys = ["coldstart_days", "window"]
     metrics = windowed.groupby(keys + ["model_id"], observed=True, as_index=False).agg(
-        mae_w=("mae_w", "mean"), mape_pct=("mape_pct", "mean")
+        day_error_w=("day_error_w", "mean"),
+        mae_w=("mae_w", "mean"),
+        mape_pct=("mape_pct", "mean"),
     )
     reference = metrics.loc[
-        metrics["model_id"].eq(reference_model_id), keys + ["mae_w"]
+        metrics["model_id"].eq(reference_model_id), keys + ["day_error_w"]
     ]
     metrics = metrics.merge(reference, on=keys, suffixes=("", "_reference"))
-    metrics["mae_skill_pct"] = (1 - metrics["mae_w"] / metrics["mae_w_reference"]) * 100
+    metrics["skill_pct"] = (
+        1 - metrics["day_error_w"] / metrics["day_error_w_reference"]
+    ) * 100
 
     return metrics
 
@@ -134,13 +161,13 @@ def compare_to_longest_coldstart(prophet: pd.DataFrame) -> pd.DataFrame:
             prophet["window"].eq(key["window"])
             & prophet["model_id"].eq(key["model_id"])
         ]
-        mae = days.pivot(
+        day_errors = days.pivot(
             index=["start_date", "day_since_start"],
             columns="coldstart_days",
-            values="mae_w",
+            values="day_error_w",
         )
         summaries.append(
-            summarize_paired_differences(mae, longest).assign(
+            summarize_paired_differences(day_errors, longest).assign(
                 window=key["window"], model_id=key["model_id"]
             )
         )
@@ -157,20 +184,22 @@ def compare_static_by_start(
 ) -> pd.DataFrame:
     keys = ["window", "coldstart_days", "start_date"]
     means = prophet.groupby(keys + ["model_id"], observed=True, as_index=False)[
-        "mae_w"
+        "day_error_w"
     ].mean()
-    adaptive = means.loc[means["model_id"].eq(adaptive_model_id), keys + ["mae_w"]]
+    adaptive = means.loc[
+        means["model_id"].eq(adaptive_model_id), keys + ["day_error_w"]
+    ]
     differences = means.loc[means["model_id"].ne(adaptive_model_id)].merge(
         adaptive, on=keys, suffixes=("", "_adaptive")
     )
-    differences["mae_difference_w"] = (
-        differences["mae_w"] - differences["mae_w_adaptive"]
+    differences["day_error_difference_w"] = (
+        differences["day_error_w"] - differences["day_error_w_adaptive"]
     )
 
     return spread_over_repeats(
         differences,
         ["window", "coldstart_days", "model_id"],
-        "mae_difference_w",
+        "day_error_difference_w",
         repeat="start_date",
         count_same_direction=True,
     )
@@ -179,14 +208,18 @@ def compare_static_by_start(
 def build_gap_curve(days: pd.DataFrame, *, smoothing_days: int) -> pd.DataFrame:
     keys = ["model_id", "day_since_start"]
     longest = days["coldstart_days"].max()
-    means = days.groupby(keys + ["coldstart_days"], as_index=False)["mae_w"].mean()
-    longest_means = means.loc[means["coldstart_days"].eq(longest), keys + ["mae_w"]]
+    means = days.groupby(keys + ["coldstart_days"], as_index=False)[
+        "day_error_w"
+    ].mean()
+    longest_means = means.loc[
+        means["coldstart_days"].eq(longest), keys + ["day_error_w"]
+    ]
     curve = means.loc[means["coldstart_days"].lt(longest)].merge(
         longest_means, on=keys, suffixes=("", "_longest")
     )
-    curve["mae_gap_w"] = curve["mae_w"] - curve["mae_w_longest"]
-    curve["mae_gap_w_smoothed"] = curve.groupby(["model_id", "coldstart_days"])[
-        "mae_gap_w"
+    curve["gap_w"] = curve["day_error_w"] - curve["day_error_w_longest"]
+    curve["gap_w_smoothed"] = curve.groupby(["model_id", "coldstart_days"])[
+        "gap_w"
     ].transform(lambda gap: gap.rolling(smoothing_days, min_periods=1).mean())
 
     return curve
@@ -194,7 +227,7 @@ def build_gap_curve(days: pd.DataFrame, *, smoothing_days: int) -> pd.DataFrame:
 
 @dataclass(frozen=True)
 class ForecastSummary:
-    # MAE, MAPE und Skill gegenüber der Baseline je Kaltstart-Länge, Fenster und Modell
+    # Tagesfehler, MAE, MAPE und Skill gegenüber der Baseline je Kaltstart-Länge, Fenster und Modell
     windows: pd.DataFrame
     # Abstand zum längsten Kaltstart je Fenster und Modell, gepaart über Termin und Tag
     gap: pd.DataFrame
@@ -498,9 +531,9 @@ def summarize_price(
     first_window = forecast.windows["window"].cat.categories[0]
 
     adaptive = forecast.windows.loc[forecast.windows["model_id"].eq(adaptive_model_id)]
-    longest_mae = adaptive.loc[adaptive["coldstart_days"].eq(longest)].set_index(
+    longest_error = adaptive.loc[adaptive["coldstart_days"].eq(longest)].set_index(
         "window"
-    )["mae_w"]
+    )["day_error_w"]
     gap = forecast.gap.loc[
         forecast.gap["model_id"].eq(adaptive_model_id)
         & forecast.gap["coldstart_days"].eq(shortest)
@@ -514,11 +547,11 @@ def summarize_price(
     rows = (
         [
             (
-                "mae_gap_w",
+                "day_error_gap_w",
                 row["window"],
                 None,
                 row["mean_delta"],
-                longest_mae[row["window"]],
+                longest_error[row["window"]],
             )
             for row in gap.to_dict("records")
         ]
@@ -567,7 +600,7 @@ def evaluate_criteria(
         forecast.windows["model_id"].eq(adaptive_model_id)
         & forecast.windows["coldstart_days"].eq(shortest)
         & forecast.windows["window"].eq(first_window),
-        "mae_skill_pct",
+        "skill_pct",
     ].iloc[0]
     gate_day = system.scale_days.loc[
         system.scale_days["coldstart_days"].eq(shortest)

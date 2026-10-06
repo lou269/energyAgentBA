@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 from experiments.common.standard_config import LOCAL_TIMEZONE
-from src.common.timestamps import local_day_index
+from src.common.timestamps import local_day_index, local_midnight_utc
 from src.evaluation.text_check import (
     collect_state_values,
     find_violations,
@@ -27,6 +27,9 @@ SCALE_SUSTAINED_COLUMNS = [f"{scale}_sustained" for scale in SCALE_NAMES]
 # Tag seit Ereignis = Tag der Entscheidung, decision_time ist dessen Mitternacht. An diesem Tag meldet das System
 # und prognostiziert ihn, eingeordnet wird dabei der Vortag. Einordnung und Adaption zählen deshalb erst ab Tag 1 zum Ereignis
 FIRST_ANALYZED_DAY = 1
+
+# eine Ergebniszeile je System, Cutover und Art in Studien auf Standard-Cutovern mit Kontrolllauf (E1, E3)
+EVENT_KEYS = ["config", "cutover_date", "kind"]
 
 
 def local_dates(times: pd.Series | pd.Index | list) -> pd.DatetimeIndex:
@@ -79,6 +82,9 @@ def merge_cycle_days(summary: pd.DataFrame, anomaly: pd.DataFrame) -> pd.DataFra
             "explanation",
             "mae_w",
             "mape_pct",
+            "day_forecast_w",
+            "day_bias_w",
+            "day_error_w",
         ]
     ]
     days = summary.merge(
@@ -165,85 +171,6 @@ def summarize_event_response(paired: pd.DataFrame, keys: list[str]) -> pd.DataFr
     )
 
 
-def count_days_by_period(
-    comparison: pd.DataFrame, event_time: pd.Timestamp
-) -> pd.DataFrame:
-    """Tage je Klassifikation, dazu Adaptionen und Tage ohne gültiges Ergebnis, je config vor und ab dem Tag von event_time"""
-    after_event = days_since_event(comparison, event_time) >= FIRST_ANALYZED_DAY
-    labeled = comparison.assign(
-        period=np.where(after_event, "after_event", "before_event"),
-        adaption_days=comparison["adaption_action"].ne("none"),
-        failed_days=comparison["error"].notna(),
-    )
-
-    totals = labeled.groupby(["config", "period"]).agg(
-        days=("config", "size"),
-        adaption_days=("adaption_days", "sum"),
-        failed_days=("failed_days", "sum"),
-    )
-    classification_days = pd.crosstab(
-        [labeled["config"], labeled["period"]], labeled["classification"]
-    )
-
-    return (
-        totals.join(classification_days)
-        .fillna(0)
-        .astype(int)
-        .rename_axis(columns=None)
-        .reset_index()
-    )
-
-
-def list_decision_events(
-    comparison: pd.DataFrame,
-    event_time: pd.Timestamp,
-    target_classification: str,
-) -> pd.DataFrame:
-    """Nur die Tage, an denen etwas passiert: target_classification, eine Adaption oder kein gültiges Ergebnis"""
-    happened = (
-        comparison["classification"].eq(target_classification)
-        | comparison["adaption_action"].ne("none")
-        | comparison["error"].notna()
-    )
-    events = comparison.assign(
-        day_since_event=days_since_event(comparison, event_time)
-    ).loc[happened]
-
-    columns = [
-        "day_since_event",
-        "analyzed_day",
-        "config",
-        "classification",
-        "adaption_action",
-        "adaption_reason",
-        "explanation",
-        "error",
-    ]
-    return (
-        events[columns]
-        .sort_values(["day_since_event", "config"])
-        .reset_index(drop=True)
-    )
-
-
-def summarize_mae_before_after(
-    comparison: pd.DataFrame, event_time: pd.Timestamp
-) -> pd.DataFrame:
-    """Mittlerer/Median mae_w vor vs. nach event_time"""
-    comparison = comparison.dropna(subset=["mae_w"]).copy()
-    comparison["period"] = "before_event"
-    # die Prognose startet bei decision_time, hier gehört decision_time == event_time also schon zu danach
-    comparison.loc[comparison["decision_time"] >= event_time, "period"] = "after_event"
-
-    return (
-        comparison.groupby(["config", "period"])["mae_w"]
-        .agg(mean_mae_w="mean", median_mae_w="median", day_count="count")
-        .reset_index()
-        .sort_values(["config", "period"])
-        .reset_index(drop=True)
-    )
-
-
 def count_notifications(
     results: pd.DataFrame,
     keys: list[str],
@@ -323,24 +250,46 @@ def summarize_paired_differences(
     return summary.rename_axis("variant").reset_index()
 
 
-def compare_mae_to_reference(
-    comparison: pd.DataFrame, event_time: pd.Timestamp, reference_config: str
+def summarize_forecast_errors(
+    days: pd.DataFrame, keys: list[str], reference_config: str
 ) -> pd.DataFrame:
-    """Gepaart ab event_time: mae_w jeder config minus mae_w von reference_config am selben decision_time"""
-    after_event = comparison.loc[comparison["decision_time"] >= event_time]
-    mae = after_event.pivot(index="decision_time", columns="config", values="mae_w")
+    """Je config und keys Mittel von Tagesfehler (Hauptmaß), MAE und MAPE aus dem Harness, dazu Tagesfehler und MAE gepaart gegen reference_config am selben decision_time"""
+    rows = []
 
-    return summarize_paired_differences(mae, reference_config).rename(
-        columns={"variant": "config"}
-    )
+    for group_values, group in days.groupby(keys):
+        means = group.groupby("config").agg(
+            mean_day_error_w=("day_error_w", "mean"),
+            mean_mae_w=("mae_w", "mean"),
+            mean_mape_pct=("mape_pct", "mean"),
+        )
+        day_error = summarize_paired_differences(
+            group.pivot(index="decision_time", columns="config", values="day_error_w"),
+            reference_config,
+        ).set_index("variant")
+        mae = summarize_paired_differences(
+            group.pivot(index="decision_time", columns="config", values="mae_w"),
+            reference_config,
+        ).set_index("variant")["mean_delta"]
+
+        summary = (
+            means.join(day_error)
+            .assign(mae_delta_w=mae)
+            .rename_axis("config")
+            .reset_index()
+        )
+        for key, value in zip(keys, group_values):
+            summary[key] = value  # type: ignore
+        rows.append(summary)
+
+    return pd.concat(rows, ignore_index=True)
 
 
-def compare_mae_to_reference_after_reset(
+def compare_errors_after_reset(
     comparison: pd.DataFrame,
     event_time: pd.Timestamp,
     reference_config: str,
 ) -> pd.DataFrame:
-    """Wie compare_mae_to_reference, aber je config erst ab ihrem ersten Reset (advance_history_start) nach event_time. Ausgeschlossene Tage (exclude_window) zählen nicht"""
+    """Fehler je config ab ihrem ersten Reset (advance_history_start) nach event_time, gepaart gegen reference_config an denselben Tagen. Ausgeschlossene Tage (exclude_window) zählen nicht"""
     after_event = comparison.loc[
         days_since_event(comparison, event_time) >= FIRST_ANALYZED_DAY
     ]
@@ -352,36 +301,88 @@ def compare_mae_to_reference_after_reset(
     first_resets = first_resets.assign(
         reset_forecast_day=days_since_event(first_resets, event_time)
     )
-
-    mae = comparison.pivot(index="decision_time", columns="config", values="mae_w")
     summaries = []
 
     for row in first_resets.itertuples(index=False):
-        phase = mae.loc[mae.index >= row.decision_time, [reference_config, row.config]]
-        summaries.append(
-            summarize_paired_differences(phase, reference_config).assign(
-                reset_forecast_day=row.reset_forecast_day,
-                mean_mae_w=phase[row.config].mean(),
-                reference_mean_mae_w=phase[reference_config].mean(),
-            )
+        window = comparison.loc[
+            comparison["decision_time"].ge(row.decision_time)
+            & comparison["config"].isin([reference_config, row.config])
+        ].assign(reset_forecast_day=row.reset_forecast_day)
+        errors = summarize_forecast_errors(
+            window, ["reset_forecast_day"], reference_config
         )
+        summaries.append(errors.loc[errors["config"].eq(row.config)])
 
     if not summaries:
         return pd.DataFrame(
-            columns=[
-                "config",
-                "paired_count",
-                "mean_delta",
-                "delta_standard_error",
-                "better_share",
-                "exceeds_noise",
-                "reset_forecast_day",
-                "mean_mae_w",
-                "reference_mean_mae_w",
-            ]
+            columns=["config", "reset_forecast_day", "mean_delta", "mae_delta_w"]
         )
 
-    return pd.concat(summaries, ignore_index=True).rename(columns={"variant": "config"})
+    return pd.concat(summaries, ignore_index=True)
+
+
+def summarize_cutover_response(
+    results: pd.DataFrame, reference_config: str, expected: Mapping[str, str]
+) -> pd.DataFrame:
+    """Eine Zeile je System, Cutover und Art (E1, E3): erwartete Klasse aus expected, erstes new_pattern und Tage mit offenem Gate, die der Kontrolllauf desselben Systems nicht hat, Resets vor dem Cutover, erster Reset ab Cutover und Tagesfehler und MAE ab dort minus reference_config"""
+    systems = add_days_since_cutover(
+        results.loc[results["config"].ne(reference_config)]
+    )
+    paired = pair_with_control(
+        systems, ["config", "cutover_date", "days_since_cutover"]
+    )
+
+    after_cutover = paired.loc[paired["days_since_cutover"].ge(FIRST_ANALYZED_DAY)]
+    gate_open = after_cutover.groupby(EVENT_KEYS, as_index=False).agg(
+        gate_open_days=("event_gate_open", "sum")
+    )
+
+    before_cutover = systems.loc[systems["days_since_cutover"].lt(FIRST_ANALYZED_DAY)]
+    resets_before = (
+        before_cutover.assign(
+            reset=before_cutover["adaption_action"].eq("advance_history_start")
+        )
+        .groupby(EVENT_KEYS, as_index=False)
+        .agg(resets_before_cutover=("reset", "sum"))
+    )
+
+    after_reset = pd.concat(
+        [
+            compare_errors_after_reset(
+                scenario,
+                local_midnight_utc(str(cutover_date), LOCAL_TIMEZONE),
+                reference_config,
+            ).assign(kind=kind, cutover_date=str(cutover_date))  # type: ignore
+            for (kind, cutover_date), scenario in results.groupby(
+                ["kind", "cutover_date"]
+            )
+        ],
+        ignore_index=True,
+    )
+
+    response = (
+        systems[EVENT_KEYS]
+        .drop_duplicates()
+        .merge(summarize_event_response(paired, EVENT_KEYS), how="left")
+        .merge(gate_open, how="left")
+        .merge(resets_before, how="left")
+        .merge(
+            after_reset[
+                EVENT_KEYS + ["reset_forecast_day", "mean_delta", "mae_delta_w"]
+            ],
+            how="left",
+        )
+    )
+    response.insert(3, "expected", response["kind"].map(expected))
+    counts = [
+        "first_event_new_pattern_day",
+        "gate_open_days",
+        "resets_before_cutover",
+        "reset_forecast_day",
+    ]
+    response[counts] = response[counts].astype("Int64")
+
+    return response
 
 
 def spread_over_repeats(
