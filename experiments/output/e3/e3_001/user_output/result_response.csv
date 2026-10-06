@@ -1,0 +1,23 @@
+System,Cutover,Ereignis,erwartet,erstes new_pattern (Tag),Tage Gate offen,erster Reset (Tag),MAE ab Reset minus SYS1 [W]
+SYS2 Regel,2015-03-01,keine Änderung,normal,,,,
+SYS2 Regel,2015-03-01,Rampe über 28 Tage −20 %,new_pattern,36.0,19.0,36.0,2.2
+SYS2 Regel,2015-03-01,Rampe über 56 Tage −20 %,normal,39.0,5.0,39.0,6.5
+SYS2 Regel,2015-06-10,keine Änderung,normal,,,54.0,10.3
+SYS2 Regel,2015-06-10,Rampe über 28 Tage +20 %,new_pattern,34.0,9.0,34.0,0.4
+SYS2 Regel,2015-06-10,Rampe über 56 Tage +20 %,normal,,8.0,,
+SYS2 Regel,2015-06-10,Rampe über 28 Tage −20 %,new_pattern,48.0,6.0,48.0,0.8
+SYS2 Regel,2015-06-10,Rampe über 56 Tage −20 %,normal,50.0,6.0,50.0,7.3
+SYS2 Regel,2015-10-22,keine Änderung,normal,,,,
+SYS2 Regel,2015-10-22,Rampe über 28 Tage +20 %,new_pattern,45.0,6.0,45.0,10.9
+SYS2 Regel,2015-10-22,Rampe über 56 Tage +20 %,normal,46.0,7.0,46.0,10.3
+SYS3 LLM,2015-03-01,keine Änderung,normal,,,40.0,-1.3
+SYS3 LLM,2015-03-01,Rampe über 28 Tage −20 %,new_pattern,33.0,19.0,33.0,-2.2
+SYS3 LLM,2015-03-01,Rampe über 56 Tage −20 %,normal,35.0,13.0,35.0,3.0
+SYS3 LLM,2015-06-10,keine Änderung,normal,,,52.0,26.8
+SYS3 LLM,2015-06-10,Rampe über 28 Tage +20 %,new_pattern,32.0,8.0,32.0,1.7
+SYS3 LLM,2015-06-10,Rampe über 56 Tage +20 %,normal,51.0,8.0,51.0,17.8
+SYS3 LLM,2015-06-10,Rampe über 28 Tage −20 %,new_pattern,47.0,6.0,47.0,1.1
+SYS3 LLM,2015-06-10,Rampe über 56 Tage −20 %,normal,48.0,3.0,48.0,1.2
+SYS3 LLM,2015-10-22,keine Änderung,normal,,,,
+SYS3 LLM,2015-10-22,Rampe über 28 Tage +20 %,new_pattern,29.0,2.0,29.0,4.5
+SYS3 LLM,2015-10-22,Rampe über 56 Tage +20 %,normal,46.0,7.0,46.0,10.3
