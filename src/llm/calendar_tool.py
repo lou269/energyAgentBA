@@ -11,8 +11,10 @@ CALENDAR_TOOL: dict[str, object] = {
     "function": {
         "name": CALENDAR_TOOL_NAME,
         "description": (
-            "Returns the household's calendar events (for example absences) around the decision time. "
-            "Only events that were already known at the decision time are returned."
+            "Returns the household's calendar events around the analyzed day. "
+            "Only events that were already known at the decision time are returned. "
+            "Use this tool only when calendar events during the observed change "
+            "could help distinguish between plausible explanations."
         ),
         "parameters": {"type": "object", "properties": {}},
     },

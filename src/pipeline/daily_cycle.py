@@ -76,6 +76,7 @@ def run_cycle(
     llm_prompt: str | None = None,
     calendar_context: CalendarContext | None = None,
     calendar_lookup: CalendarLookup | None = None,
+    calendar_tool_prompt: str | None = None,
     new_value_implausible: pd.Series | None = None,
 ) -> tuple[CycleResult, CycleState]:
     if config.event_adaptation and config.llm_mode == "off":
@@ -174,6 +175,7 @@ def run_cycle(
                 llm_client,
                 llm_prompt,
                 calendar_lookup,
+                calendar_tool_prompt,
             )
         except LLMInferenceError as error:
             llm_error = error
@@ -270,6 +272,7 @@ def _classify(
     llm_client: LLMClient | None,
     llm_prompt: str | None,
     calendar_lookup: CalendarLookup | None,
+    calendar_tool_prompt: str | None,
 ) -> tuple[
     Classification,
     LLMOutput | None,
@@ -308,6 +311,7 @@ def _classify(
         think=config.llm_config.think,
         keep_alive=config.llm_config.keep_alive,
         calendar_lookup=calendar_lookup,
+        calendar_tool_prompt=calendar_tool_prompt,
     )
 
     return (
@@ -337,8 +341,7 @@ def _build_forecast(
     raw_forecast = build_prophet_forecast(
         prophet_model,
         target_index,
-        clip_negative_forecasts=config.forecasting_config.negative_forecast_handling
-        == "clip_zero",
+        clip_negative_forecasts=config.forecasting_config.clip_negative_forecasts,
         history_end=model_history.index[-1],
         local_timezone=local_timezone,
         log_transform=config.forecasting_config.log_transform,

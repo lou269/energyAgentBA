@@ -124,8 +124,9 @@ def build_forecast_table(forecast: pd.DataFrame, reference_config: str) -> pd.Da
         {
             "System": forecast["config"],
             "Phase": forecast["phase"].map(PHASE_LABELS),
-            "MAE [W]": forecast["mean_mae_w"],
-            f"Differenz zu {reference_config} [W]": forecast["mean_delta"],
+            "Tages-MAE [W]": forecast["mean_day_error_w"],
+            "Bias [W]": forecast["mean_day_bias_w"],
+            f"Differenz Tages-MAE zu {reference_config} [W]": forecast["mean_delta"],
             "Standardfehler [W]": forecast["delta_standard_error"],
             "Anteil Tage besser": forecast["better_share"],
             "gepaarte Tage": forecast["paired_count"],
@@ -223,7 +224,6 @@ def build_phase_table(phases: pd.DataFrame, target_classification: str) -> pd.Da
             "Resets": phases["reset_days"],
             "Meldungen": phases["notification_days"],
             "Ausfalltage": phases["failed_days"],
-            "MAE [W]": phases["mean_mae_w"],
         }
     )
 
@@ -248,7 +248,6 @@ def build_precheck_days_table(summary: GatePrecheckSummary) -> pd.DataFrame:
             "Drift": days["sustained_drift"],
             "Einordnung": days["classification"],
             "Adaption": days["adaption_action"],
-            "MAE [W]": days["mae_w"],
         }
     )
 
@@ -381,7 +380,9 @@ def write_full_report(run_directory: Path) -> None:
             "Treffer: von den Urlaubstagen mit offenem Gate, an den übrigen wird nicht eingeordnet. Wenige Tage, deshalb als Anzahl",
             f"Einordnung je Phase: {target_classification} ist keine Meldung, im Urlaub ist jede Meldung ein Fehlalarm. Ausfalltage = LLM ohne gültige Antwort",
             "Gate offen: Einzeltag, Drift (weekly und long_term halten an) oder nur eine anhaltende Skala",
-            f"Differenz zu {e2_config['reference_config']}: gepaart am selben Tag, negativ = besser",
+            "Prognose je Phase: Phase und Fehler nach dem Prognosetag. Tages-MAE = Betrag von Prognose-Tagesmittel minus Ist-Tagesmittel, "
+            "gemittelt über die Tage. Bias = dasselbe mit Vorzeichen, negativ = Prognose zu niedrig",
+            f"Differenz Tages-MAE zu {e2_config['reference_config']}: gepaart am selben Prognosetag, negativ = besser",
             "ctx0 ohne, ctx1 mit Kalender im State, ctx2 Kalender per Tool. SYS1 und SYS2 lesen keinen Kalender und laufen nur in ctx0",
             f"Kalendereinträge als Freitext aus calendar_events.json, im Gegenfall {e2_config['counter_ctx']} steht zu denselben Zeiten nur "
             f"ein Eintrag, der keine Abwesenheit meint. Dort ist jedes {target_classification} falsch und zählt als {target_classification} ohne Beleg",

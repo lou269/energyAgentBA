@@ -15,6 +15,7 @@ from experiments.common.standard_config import (
     NOTIFICATION_CLASSIFICATIONS,
     NOTIFICATION_PERIOD_DAYS,
 )
+from src.forecasting.evaluation import score_daily_means
 
 
 def summarize_reduction_by_day(
@@ -70,6 +71,16 @@ def by_phase(column: pd.Series) -> pd.Series:
     return column.map(PHASES.index) if column.name == "phase" else column
 
 
+def absence_phase(
+    dates: pd.Series, window_start: pd.Timestamp, window_end: pd.Timestamp
+) -> np.ndarray:
+    """Phase je lokalem Kalendertag (Text), für eingeordnete Tage wie für Prognosetage"""
+    start_day, end_day = local_dates([window_start, window_end])
+    days = pd.to_datetime(dates)
+
+    return np.select([days < start_day, days < end_day], PHASES[:2], PHASES[2])
+
+
 def label_absence_days(
     comparison: pd.DataFrame,
     anomaly: pd.DataFrame,
@@ -80,7 +91,7 @@ def label_absence_days(
     absence_event_id: str,
     counter_configs: Collection[str],
 ) -> pd.DataFrame:
-    start_day, end_day = local_dates([window_start, window_end])
+    start_day = local_dates([window_start])[0]
     days = add_gate_flags(
         comparison.merge(
             anomaly[["config", "analyzed_day"] + PRECHECK_ANOMALY_COLUMNS],
@@ -100,9 +111,7 @@ def label_absence_days(
     drift_gate = days["sustained_drift"].eq(True)
 
     return days.assign(
-        phase=np.select(
-            [analyzed < start_day, analyzed < end_day], PHASES[:2], PHASES[2]
-        ),
+        phase=absence_phase(days["analyzed_day"], window_start, window_end),
         absence_day=(analyzed - start_day).dt.days,
         drift_gate=drift_gate,
         # das Gate öffnet auch über eine einzelne anhaltende Skala, ohne auffälligen Tag und ohne Drift
@@ -136,7 +145,6 @@ def summarize_phases(days: pd.DataFrame) -> pd.DataFrame:
         absence_classified_days=("absence_classified", "sum"),
         reset_days=("reset", "sum"),
         failed_days=("failed", "sum"),
-        mean_mae_w=("mae_w", "mean"),
     )
     notifications = count_notifications(
         flagged,
@@ -233,30 +241,41 @@ def summarize_e2(
         .sum()
     )
 
+    # Ist aus today_mean (für jede Config derselbe Tag). Fehler und Phase gehören zum Prognosetag, die Prognose entsteht nach der Einordnung des Vortags
+    actual_w = days.groupby("analyzed_day")["today_mean"].first()
+    forecast_days = score_daily_means(
+        forecasts, actual_w, group_column="config", day_column="forecast_day"
+    )
+    forecast_days["phase"] = absence_phase(
+        forecast_days["forecast_day"], window_start, window_end
+    )
+
     # gepaart am selben Tag, so zählen nur Tage, die beide Systeme haben
     paired = pd.concat(
         [
             summarize_paired_differences(
                 phase_days.pivot(
-                    index="analyzed_day", columns="config", values="mae_w"
+                    index="forecast_day", columns="config", values="day_error_w"
                 ),
                 reference_config,
             ).assign(phase=phase)
-            for phase, phase_days in days.groupby("phase")
+            for phase, phase_days in forecast_days.groupby("phase")
         ],
         ignore_index=True,
     ).rename(columns={"variant": "config"})
     forecast = (
-        days.groupby(["config", "phase"], as_index=False)
-        .agg(mean_mae_w=("mae_w", "mean"))
+        forecast_days.groupby(["config", "phase"], as_index=False)
+        .agg(
+            mean_day_error_w=("day_error_w", "mean"),
+            mean_day_bias_w=("day_bias_w", "mean"),
+        )
         .merge(paired, on=["config", "phase"], how="left")
         .sort_values(["config", "phase"], key=by_phase)
         .reset_index(drop=True)
     )
 
-    # je Kalendertag: Ist aus today_mean (für jede Config derselbe Tag), Prognose als Tagesmittel für diesen Tag, dazu die Einordnung dieses Tages, die am Folgetag getroffen wird
-    actual_w = days.groupby("analyzed_day")["today_mean"].first()
-    forecast_w = forecasts.groupby(["config", "forecast_day"])["y_pred"].mean()
+    # je Kalendertag Ist und Prognose für diesen Tag, dazu die Einordnung dieses Tages, die am Folgetag getroffen wird
+    forecast_w = forecast_days.set_index(["config", "forecast_day"])["predicted_w"]
     timeline = (
         days[
             [
@@ -339,7 +358,7 @@ def summarize_gate_precheck(
         days_from_absence=from_absence[
             ["config", "absence_day", "analyzed_day", "phase"]
             + PRECHECK_ANOMALY_COLUMNS
-            + ["classification", "adaption_action", "mae_w"]
+            + ["classification", "adaption_action"]
         ]
         .sort_values(["config", "absence_day"])
         .reset_index(drop=True),

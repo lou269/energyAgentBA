@@ -40,6 +40,7 @@ logger = logging.getLogger(__name__)
 def run(e2_config: E2Config, run_prefix: str) -> Path:
     calendar_events = load_calendar_events(e2_config.calendar_events_file)
     llm_prompt = read_llm_prompt(LLMConfig.prompt_version)
+    calendar_tool_prompt = read_llm_prompt(LLMConfig.calendar_tool_prompt_version)
 
     run_directory, raw_directory = create_experiment_run(
         PROJECT_CONFIG.e2_output_dir,
@@ -83,6 +84,7 @@ def run(e2_config: E2Config, run_prefix: str) -> Path:
                     raw_directory / event_id / ctx,
                     run_id=f"{run_directory.name}_{event_id}_{ctx}",
                     llm_prompt=llm_prompt,
+                    calendar_tool_prompt=calendar_tool_prompt,
                 ).assign(event_id=event_id)
             )
 

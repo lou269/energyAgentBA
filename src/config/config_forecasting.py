@@ -5,7 +5,6 @@ from typing import Literal
 
 ProductionGapMethod = Literal["ffill", "none"]
 HistoryMode = Literal["fixed_train", "expanding", "rolling"]
-NegativeForecastHandling = Literal["raw", "clip_zero"]
 LLMMode = Literal["off", "rule", "real"]
 
 
@@ -183,15 +182,16 @@ class ForecastingConfig:
     daily_seasonality: bool = True
     country_holidays: str | None = "UK"
     weekly_seasonality: bool = False
-    # Prophet fitted auf log(y) statt y, Rücktransformation via exp() nach dem Predict
-    log_transform: bool = True
+    # aus: im Log-Raum liefert exp() eher den Median, das Tagesmittel lag in K1 um gut 10 % zu tief, Tagesfehler ohne Log gleich gut
+    log_transform: bool = False
     interval_width: float = 0.80
     uncertainty_samples: int = 1000
     seed: int = 42
 
     # aus dem K1-Validierungslauf übertragen, gilt für Test-Split und E4
     primary_naive_reference: str | None = "B2"
-    negative_forecast_handling: NegativeForecastHandling = "raw"
+    # ohne Log kann Prophet unter 0 W prognostizieren
+    clip_negative_forecasts: bool = True
 
     # unter diesem Wert bläht MAPE durch Division nahe 0 unkontrolliert auf
     mape_min_eligible_watts: float = 10.0
@@ -203,7 +203,7 @@ class ForecastingConfig:
 @dataclass(frozen=True)
 class LLMConfig:
     model: str = "ministral-3:8b"  # in K3 gewählt
-    prompt_version: str = "v29"
+    prompt_version: str = "v30"
     temperature: float = 0.0
     # qwen3.5:9b liefert das selbst als Modelfile-Default, gegen Wiederholungsschleifen bei greedy decoding
     presence_penalty: float = 1.5
@@ -216,6 +216,8 @@ class LLMConfig:
     keep_alive: int | str = "5m"
     # CTX2: das LLM holt den Kalender per Function Calling selbst, im selben Fenster wie CTX1
     calendar_tool: bool = False
+    # nur für die Abruf-Entscheidung, eingeordnet wird danach mit prompt_version
+    calendar_tool_prompt_version: str = "tool_v30"
 
 
 @dataclass(frozen=True)

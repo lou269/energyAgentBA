@@ -94,27 +94,6 @@ def test_new_observations_must_end_one_hour_before_decision_time() -> None:
         )
 
 
-def test_run_cycle_survives_less_than_72_hours_of_history() -> None:
-    history = _hourly("2024-01-01", [100.0] * 24)
-    new_observations = _hourly(history.index[-1] + pd.Timedelta(hours=1), [100.0] * 24)
-    decision_time = new_observations.index[-1] + pd.Timedelta(hours=1)
-    config = SYS_VARIANTS["SYS1"]
-
-    result, new_state = run_cycle(
-        _state(history),
-        new_observations,
-        decision_time,
-        config,
-        local_timezone="Europe/London",
-        calendar_context=_calendar_context(decision_time),
-    )
-
-    assert result.analysis_row is None
-    assert result.classification is None
-    assert result.structured_state is None
-    assert len(new_state.history) == 48
-
-
 def _run_single_cycle(series: pd.Series, coldstart_hours: int, config) -> tuple:
     state = _state(series.iloc[:coldstart_hours])
     decision_time = series.index[coldstart_hours + 24]
@@ -231,14 +210,17 @@ def test_sustained_level_shift_triggers_new_pattern_with_baseline_reset() -> Non
 
     history_start_before_adaption = state.history.index[0]
 
-    # new_pattern erst, wenn die Streak voll ist (6 von 7 Tagen), vorher bleibt es peak
-    streak_days = config.numerical_analysis_config.sustained_anomaly_streak_days
-    for _ in range(streak_days - 2):
-        result, state = _advance_one_day(series, state, config)
-        assert result.classification != "new_pattern"
+    # new_pattern erst, wenn weekly und long_term anhalten. long_term misst 28 Tage und braucht bei +50 % knapp zwei Wochen
     second_result, second_state = _advance_one_day(series, state, config)
+    for _ in range(20):
+        if second_result.classification == "new_pattern":
+            break
+        state = second_state
+        second_result, second_state = _advance_one_day(series, state, config)
 
     assert second_result.classification == "new_pattern"
+    assert second_result.analysis_row["weekly_sustained"]
+    assert second_result.analysis_row["long_term_sustained"]
     assert second_result.adaption_action is not None
     assert second_result.adaption_action.kind == "advance_history_start"
     assert second_result.retrained

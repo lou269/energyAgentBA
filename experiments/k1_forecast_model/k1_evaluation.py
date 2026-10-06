@@ -6,7 +6,10 @@ from experiments.common.evaluation import (
     add_overall_rows,
     summarize_paired_differences,
 )
-from src.forecasting.evaluation import select_primary_naive_reference
+from src.forecasting.evaluation import (
+    score_daily_means,
+    select_primary_naive_reference,
+)
 
 # steht in der Monatstabelle als letzte Zeile, sortiert hinter "2015-04"
 WHOLE_YEAR = "Jahr"
@@ -39,23 +42,27 @@ def summarize_daily_error(
     forecasts = forecasts.assign(
         forecast_origin=pd.to_datetime(forecasts["forecast_origin"], utc=True)
     )
-    days = forecasts.groupby(["model_id", "forecast_origin"]).agg(
-        predicted_w=("y_pred", "mean"),
-        complete=("target_eligible", "all"),
-    )
-    days = days.loc[days["complete"]]
+    complete = forecasts.groupby(["model_id", "forecast_origin"])[
+        "target_eligible"
+    ].transform("all")
 
     # treated_daily liegt auf der lokalen Mitternacht, also genau auf dem forecast_origin
-    actual_w = actual_daily_mean_w.reindex(
-        days.index.get_level_values("forecast_origin")
-    ).to_numpy()
-    error_w = (days["predicted_w"] - actual_w).abs()
+    days = score_daily_means(
+        forecasts.loc[complete],
+        actual_daily_mean_w,
+        group_column="model_id",
+        day_column="forecast_origin",
+    )
+    by_model = days.groupby("model_id")
 
     return pd.DataFrame(
         {
-            "daily_mae_w": error_w.groupby("model_id").mean(),
-            "daily_mape_pct": (error_w / actual_w).groupby("model_id").mean() * 100,
-            "daily_count": error_w.groupby("model_id").size(),
+            "daily_mae_w": by_model["day_error_w"].mean(),
+            "daily_mape_pct": (days["day_error_w"] / days["actual_w"])
+            .groupby(days["model_id"])
+            .mean()
+            * 100,
+            "daily_count": by_model.size(),
         }
     )
 

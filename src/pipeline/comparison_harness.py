@@ -97,6 +97,7 @@ def run_comparison(
     local_timezone: str,
     run_id: str | None = None,
     llm_prompt: str | None = None,
+    calendar_tool_prompt: str | None = None,
     llm_client: LLMClient | None = None,
     max_consecutive_llm_failures: int,
     max_total_llm_failures: int,
@@ -206,6 +207,7 @@ def run_comparison(
                         llm_prompt=llm_prompt,
                         calendar_context=calendar_context,
                         calendar_lookup=calendar_lookup,
+                        calendar_tool_prompt=calendar_tool_prompt,
                         new_value_implausible=new_value_implausible,
                     )
 

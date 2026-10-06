@@ -17,7 +17,7 @@ DAYS = ["2013-09-13", "2013-09-14", "2013-09-15", "2013-09-22", "2013-09-28"]
 
 
 def _config_days(
-    config: str, classifications: list[str], reasons: list[str], mae: list[float]
+    config: str, classifications: list[str], reasons: list[str]
 ) -> pd.DataFrame:
     return pd.DataFrame(
         {
@@ -27,7 +27,6 @@ def _config_days(
             "adaption_action": "none",
             "adaption_reason": reasons,
             "error": None,
-            "mae_w": mae,
         }
     )
 
@@ -39,14 +38,12 @@ def test_absence_only_counts_as_a_hit_with_the_calendar_event() -> None:
                 "SYS1",
                 ["normal", "low", "low", "new_pattern", "low"],
                 [""] * 5,
-                [50.0, 60.0, 70.0, 80.0, 90.0],
             ),
             # ohne Kalender geraten, absence_action findet keinen Eintrag
             _config_days(
                 "SYS3_CTX0",
                 ["normal", "absence", "absence", "new_pattern", "normal"],
                 ["", NO_EVENT, NO_EVENT, "", ""],
-                [50.0, 60.0, 70.0, 80.0, 90.0],
             ),
             _config_days(
                 "SYS3_CTX1",
@@ -58,7 +55,6 @@ def test_absence_only_counts_as_a_hit_with_the_calendar_event() -> None:
                     f"{EXCLUDED}, already excluded: no action",
                     NO_EVENT,
                 ],
-                [50.0, 70.0, 80.0, 70.0, 80.0],
             ),
         ],
         ignore_index=True,
@@ -75,6 +71,15 @@ def test_absence_only_counts_as_a_hit_with_the_calendar_event() -> None:
     # die Drift kommt aus beiden Niveau-Skalen, über sie öffnet das Gate
     anomaly["weekly_sustained"] = anomaly["sustained_drift"]
     anomaly["long_term_sustained"] = anomaly["sustained_drift"]
+    anomaly["today_mean"] = [300.0, 150.0, 150.0, 150.0, 300.0] * 3
+    # die Prognose nach dem Tag vor dem Urlaub gilt Urlaubstag 0, je zwei Stunden
+    forecasts = pd.DataFrame(
+        {
+            "config": ["SYS1"] * 4 + ["SYS3_CTX1"] * 4,
+            "forecast_day": (["2013-09-14"] * 2 + ["2013-09-28"] * 2) * 2,
+            "y_pred": [400.0, 200.0, 250.0, 250.0, 300.0, 200.0, 300.0, 300.0],
+        }
+    )
 
     summary = summarize_e2(
         comparison,
@@ -87,7 +92,7 @@ def test_absence_only_counts_as_a_hit_with_the_calendar_event() -> None:
                 "calendar_available": [True, False, True, False],
             }
         ),
-        pd.DataFrame(columns=["config", "forecast_day", "y_pred"]),
+        forecasts,
         pd.DataFrame({"reduction_w": [100.0]}),
         window_start=WINDOW_START,
         window_end=WINDOW_END,
@@ -122,14 +127,18 @@ def test_absence_only_counts_as_a_hit_with_the_calendar_event() -> None:
     ) == [1, 1, 1, 1]
 
     forecast = summary.forecast.set_index(["config", "phase"])
-    assert forecast.loc[("SYS3_CTX1", "after_return"), "mean_delta"] == -10.0
+    assert "before" not in forecast.index.get_level_values("phase")
+    assert forecast.loc[("SYS1", "absence"), "mean_day_bias_w"] == 150.0
+    assert forecast.loc[("SYS1", "after_return"), "mean_day_bias_w"] == -50.0
+    assert forecast.loc[("SYS1", "after_return"), "mean_day_error_w"] == 50.0
+    assert forecast.loc[("SYS3_CTX1", "after_return"), "mean_delta"] == -50.0
 
     # als Gegenfall ist kein absence ein Treffer, alle zählen als ohne Beleg
     counter = summarize_e2(
         comparison,
         anomaly,
         pd.DataFrame(columns=["config", "analyzed_day", "calendar_available"]),
-        pd.DataFrame(columns=["config", "forecast_day", "y_pred"]),
+        forecasts,
         pd.DataFrame({"reduction_w": [100.0]}),
         window_start=WINDOW_START,
         window_end=WINDOW_END,

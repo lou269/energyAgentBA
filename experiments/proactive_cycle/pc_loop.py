@@ -59,7 +59,7 @@ def run_outlook_days(
                 local_timezone=local_timezone,
             )
 
-            usual_mean_w, retransformation_factor = weekday_reference(
+            usual_mean_w = weekday_reference(
                 state.history,
                 decision_time,
                 rolling_days=analysis_config.reference_window_rolling_days,
@@ -71,7 +71,6 @@ def run_outlook_days(
                 result.forecast,
                 decision_time,
                 usual_mean_w=usual_mean_w,
-                retransformation_factor=retransformation_factor,
                 decimals=decimals,
                 local_timezone=local_timezone,
             )

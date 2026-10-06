@@ -241,6 +241,31 @@ def score_daily_mean_bias(
     return float(forecast["y_pred"].to_numpy().mean() - actual.mean())
 
 
+def score_daily_means(
+    forecasts: pd.DataFrame,
+    actual_daily_mean_w: pd.Series,
+    *,
+    group_column: str,
+    day_column: str,
+) -> pd.DataFrame:
+    # Tagesmittel der Prognose gegen das Ist-Tagesmittel je Tag, day_error_w gemittelt ist der Tages-MAE
+    # -> actual_daily_mean_w hat day_column als Index
+    predicted_w = forecasts.groupby([group_column, day_column])["y_pred"].mean()
+    actual_w = actual_daily_mean_w.reindex(
+        predicted_w.index.get_level_values(day_column)
+    ).to_numpy()
+    bias_w = predicted_w - actual_w
+
+    return pd.DataFrame(
+        {
+            "predicted_w": predicted_w,
+            "actual_w": actual_w,
+            "day_bias_w": bias_w,
+            "day_error_w": bias_w.abs(),
+        }
+    ).reset_index()
+
+
 def _actual_and_eligible(
     forecast: pd.DataFrame,
     target_series: pd.Series,

@@ -1,6 +1,5 @@
 from typing import TypedDict, cast
 
-import numpy as np
 import pandas as pd
 
 from src.common.timestamps import local_isoformat, shift_local_days
@@ -28,38 +27,6 @@ class OutlookOutput(TypedDict):
     uncertainty: str
 
 
-def day_mean_retransformation_factor(
-    history: pd.Series,
-    forecast_day: pd.Timestamp,
-    *,
-    reference_window_rolling_days: int,
-    min_weekday_reference_samples: int,
-    local_timezone: str,
-) -> float | None:
-    # Prophet rechnet im Log-Raum, ein Stundenwert der Prognose ist typischer (geometrische) Wert
-    # Die Tagessumme braucht das Mittel, der Faktor ist das Verhältnis beider je Stunde, summiert über den Tag
-    local_history = history.tz_convert(local_timezone)
-    window_start = shift_local_days(
-        forecast_day, -reference_window_rolling_days, local_timezone
-    )
-    index = pd.DatetimeIndex(local_history.index)
-    same_weekday = local_history[
-        (index >= window_start)
-        & (index.dayofweek == forecast_day.tz_convert(local_timezone).dayofweek)
-        & (local_history > 0)
-    ]
-    same_index = pd.DatetimeIndex(same_weekday.index)
-    if same_index.normalize().nunique() < min_weekday_reference_samples:
-        return None
-
-    hours = same_index.hour
-    arithmetic = same_weekday.groupby(hours).mean().sum()
-    log_values = pd.Series(np.log(same_weekday.to_numpy()), index=same_weekday.index)
-    geometric = np.exp(log_values.groupby(hours).mean()).sum()
-
-    return float(arithmetic / geometric)
-
-
 def weekday_reference(
     history: pd.Series,
     decision_time: pd.Timestamp,
@@ -68,26 +35,16 @@ def weekday_reference(
     min_samples: int,
     robust: bool,
     local_timezone: str,
-) -> tuple[float | None, float | None]:
-    # üblicher Tagesmittelwert in W und Rücktransformationsfaktor für den Wochentag, None bei zu wenigen Tagen
-    day = decision_time.tz_convert(local_timezone)
-    usual_mean_w = expected_weekday_mean(
+) -> float | None:
+    # üblicher Tagesmittelwert in W für den Wochentag, None bei zu wenigen Tagen
+    return expected_weekday_mean(
         history,
-        day,
+        decision_time.tz_convert(local_timezone),
         reference_window_rolling_days=rolling_days,
         min_weekday_reference_samples=min_samples,
         robust=robust,
         local_timezone=local_timezone,
     )
-    factor = day_mean_retransformation_factor(
-        history,
-        day,
-        reference_window_rolling_days=rolling_days,
-        min_weekday_reference_samples=min_samples,
-        local_timezone=local_timezone,
-    )
-
-    return usual_mean_w, factor
 
 
 def build_outlook_state(
@@ -95,7 +52,6 @@ def build_outlook_state(
     decision_time: pd.Timestamp,
     *,
     usual_mean_w: float | None,
-    retransformation_factor: float | None,
     decimals: int,
     local_timezone: str,
 ) -> OutlookState:
@@ -103,9 +59,8 @@ def build_outlook_state(
     day_end = shift_local_days(decision_time, 1, local_timezone)
     day = forecast.loc[forecast["target_timestamp"] < day_end]
 
-    # Stundenwerte in W, die Summe über 23, 24 oder 25 Stunden gibt Wh. Ohne genug Vergleichstage gibt es
-    # weder Faktor noch üblichen Wert, die Prognose bleibt dann unkorrigiert
-    forecast_kwh = float(day["y_pred"].sum()) / 1000 * (retransformation_factor or 1.0)
+    # Stundenwerte in W, die Summe über 23, 24 oder 25 Stunden gibt Wh
+    forecast_kwh = float(day["y_pred"].sum()) / 1000
     usual_kwh = None if usual_mean_w is None else usual_mean_w * len(day) / 1000
     deviation_pct = (
         None

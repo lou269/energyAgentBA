@@ -41,6 +41,7 @@ def run_scenario(
     *,
     run_id: str,
     llm_prompt: str | None = None,
+    calendar_tool_prompt: str | None = None,
 ) -> pd.DataFrame:
     # sonst eine Logzeile je Zyklus und System, bei K2 wären das gut 5.000
     logging.getLogger("src.pipeline.comparison_harness").setLevel(logging.WARNING)
@@ -53,6 +54,7 @@ def run_scenario(
         local_timezone=LOCAL_TIMEZONE,
         run_id=run_id,
         llm_prompt=llm_prompt,
+        calendar_tool_prompt=calendar_tool_prompt,
         max_consecutive_llm_failures=COMPARISON_CONFIG.max_consecutive_llm_failures,
         max_total_llm_failures=COMPARISON_CONFIG.max_total_llm_failures,
         calendar_lookback_days=COMPARISON_CONFIG.calendar_lookback_days,
@@ -214,8 +216,7 @@ def run_forecast_models(
         forecast_origin_step_days=forecast_config.forecast_origin_step_days,
         frequency=forecast_config.frequency,
         local_timezone=LOCAL_TIMEZONE,
-        clip_negative_forecasts=forecast_config.negative_forecast_handling
-        == "clip_zero",
+        clip_negative_forecasts=forecast_config.clip_negative_forecasts,
         config_version=forecast_config.config_version,
         growth=forecast_config.growth,
         daily_seasonality=forecast_config.daily_seasonality,

@@ -60,6 +60,7 @@ def infer_llm_output(
     think: bool,
     keep_alive: int | str,
     calendar_lookup: CalendarLookup | None = None,
+    calendar_tool_prompt: str | None = None,
 ) -> LLMInferenceResult:
     _validate_inference_parameters(
         prompt=prompt,
@@ -72,11 +73,12 @@ def infer_llm_output(
 
     calendar_tool_response: ToolCallResponse | None = None
     if calendar_lookup is not None:
+        assert calendar_tool_prompt is not None
         state, calendar_tool_response = _fetch_calendar(
             state,
             calendar_lookup,
             client=client,
-            prompt=prompt,
+            prompt=calendar_tool_prompt,
             model=model.strip(),
             temperature=float(temperature),
             presence_penalty=float(presence_penalty),
@@ -225,7 +227,7 @@ def state_messages(prompt: str, state: Mapping[str, object]) -> list[dict[str, s
     ]
 
 
-# erster Aufruf mit demselben Prompt wie die Einordnung, damit das LLM den State versteht, wenn es entscheidet Kalender abzurufen
+# erster Aufruf mit eigenem Prompt nur für die Abruf-Entscheidung. Mit dem Einordnungs-Prompt rief das Modell nie ab, es antwortete gleich mit der Einordnung
 def _fetch_calendar(
     state: StructuredState,
     calendar_lookup: CalendarLookup,
