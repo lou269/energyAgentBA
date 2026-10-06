@@ -52,6 +52,7 @@ CONFIG_LABELS = {
     "SYS2": "SYS2 Regel",
     "SYS3_CTX0": "SYS3 ohne Kalender",
     "SYS3_CTX1": "SYS3 mit Kalender",
+    "SYS3_CTX1_VISIT": "SYS3 mit Kalender, Gegenfall Besuch",
     "SYS3_CTX2": "SYS3 Kalender per Tool",
 }
 
@@ -147,12 +148,19 @@ def build_setup(
     e2_config: dict,
     summaries: dict[str, E2Summary],
     windows: dict[str, tuple[pd.Timestamp, pd.Timestamp]],
+    titles: dict[str, str],
     code_version: dict,
 ) -> dict[str, str]:
+    counter_ids = e2_config["counter_event_ids"]
     setup = {
         f"Urlaub {event_id}": (
             f"{window_start.tz_convert(LOCAL_TIMEZONE):%Y-%m-%d} bis vor {window_end.tz_convert(LOCAL_TIMEZONE):%Y-%m-%d}, "
-            f"Beginn = Tag 0, analysierte Tage {summaries[event_id].first_analyzed_day} bis {summaries[event_id].last_analyzed_day}"
+            f"Beginn = Tag 0, analysierte Tage {summaries[event_id].first_analyzed_day} bis {summaries[event_id].last_analyzed_day}, "
+            + (
+                f"Eintrag „{titles[event_id]}“, Gegenfall „{titles[counter_ids[event_id]]}“"
+                if event_id in counter_ids
+                else f"Eintrag „{titles[event_id]}“, ohne Gegenfall"
+            )
         )
         for event_id, (window_start, window_end) in windows.items()
     }
@@ -254,11 +262,12 @@ def summarize_event(
     window: tuple[pd.Timestamp, pd.Timestamp],
 ) -> E2Summary:
     event_directory = raw_directory / event_id
-    ctxs = e2_config["ctx_systems"]
+    # Urlaube ohne Gegenfall haben keinen Ordner dafür
+    ctxs = [ctx for ctx in e2_config["ctx_systems"] if (event_directory / ctx).exists()]
 
     return summarize_e2(
         comparison.loc[comparison["event_id"].eq(event_id)],
-        read_ctx_anomaly(event_directory, ctxs),
+        read_ctx_anomaly(event_directory, ctxs),  # type: ignore
         pd.concat(
             [read_calendar_availability(event_directory / ctx) for ctx in ctxs],
             ignore_index=True,
@@ -272,6 +281,9 @@ def summarize_event(
         window_end=window[1],
         target_classification=e2_config["target_classification"],
         absence_event_id=event_id,
+        counter_configs=list(
+            e2_config["ctx_systems"].get(e2_config["counter_ctx"], {})
+        ),
         reference_config=e2_config["reference_config"],
     )
 
@@ -354,7 +366,13 @@ def write_full_report(run_directory: Path) -> None:
     write_result_report(
         output_directory,
         title=f"E2 Abwesenheit, Lauf {run_directory.name}",
-        setup=build_setup(e2_config, summaries, windows, run_config["code_version"]),
+        setup=build_setup(
+            e2_config,
+            summaries,
+            windows,
+            {str(event["event_id"]): str(event["title"]) for event in calendar_events},
+            run_config["code_version"],
+        ),
         tables=tables,
         notes=[
             "Urlaubstag = analysierter Tag seit Beginn der Abwesenheit, 0 = erster Urlaubstag",
@@ -365,6 +383,8 @@ def write_full_report(run_directory: Path) -> None:
             "Gate offen: Einzeltag, Drift (weekly und long_term halten an) oder nur eine anhaltende Skala",
             f"Differenz zu {e2_config['reference_config']}: gepaart am selben Tag, negativ = besser",
             "ctx0 ohne, ctx1 mit Kalender im State, ctx2 Kalender per Tool. SYS1 und SYS2 lesen keinen Kalender und laufen nur in ctx0",
+            f"Kalendereinträge als Freitext aus calendar_events.json, im Gegenfall {e2_config['counter_ctx']} steht zu denselben Zeiten nur "
+            f"ein Eintrag, der keine Abwesenheit meint. Dort ist jedes {target_classification} falsch und zählt als {target_classification} ohne Beleg",
             "Kalender im State: bei ctx2 hat das LLM an diesen Tagen nachgeschaut, jeder ctx2-Tag mit LLM kostet einen zusätzlichen Aufruf für die Tool-Entscheidung",
             "Kalenderabruf: nützlich = abgerufen an einem Urlaubstag (ein Eintrag deckt den Tag), überflüssig = abgerufen ohne deckenden Eintrag, "
             "verpasst = nicht abgerufen an einem Urlaubstag. Vergleich: ctx1 schaut immer nach",
@@ -399,6 +419,7 @@ def write_precheck_report(run_directory: Path) -> None:
             window_end=window_end,
             target_classification=target_classification,
             absence_event_id=event_id,
+            counter_configs=[],
         )
         setup[f"Urlaub {event_id}"] = (
             f"{window_start.tz_convert(LOCAL_TIMEZONE):%Y-%m-%d} bis vor {window_end.tz_convert(LOCAL_TIMEZONE):%Y-%m-%d}"

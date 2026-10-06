@@ -13,7 +13,7 @@ DECISION_TIME = "2013-09-02T00:00:00+00:00"
 
 EVENT = {
     "event_id": "absence",
-    "event_type": "absence",
+    "title": "Urlaub bei Oma",
     "start": "2013-09-01T08:00:00+00:00",
     "end": "2013-09-01T20:00:00+00:00",
     "known_at": "2013-08-30T00:00:00+00:00",
@@ -164,7 +164,7 @@ def test_validate_calendar_context_accepts_zulu_suffixed_timestamps() -> None:
         "events": [
             {
                 "event_id": "absence",
-                "event_type": "absence",
+                "title": "Urlaub bei Oma",
                 "start": "2013-09-01T08:00:00Z",
                 "end": "2013-09-01T20:00:00Z",
                 "known_at": "2013-08-30T00:00:00Z",

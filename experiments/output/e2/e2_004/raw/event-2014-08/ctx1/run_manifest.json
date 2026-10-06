@@ -1,0 +1,133 @@
+{
+  "code_version": {
+    "git_commit": "f0664bb9fca42c5c251ae5c2f9cb63569a7d88f5",
+    "git_dirty": true
+  },
+  "configs": {
+    "labels": [
+      "SYS3_CTX1"
+    ],
+    "sha256": "14780d6d65ce57e35b9c908c6b9cc421995eeade6821f6721488b60ce3316e10",
+    "values": {
+      "SYS3_CTX1": {
+        "event_adaptation": true,
+        "forecasting_config": {
+          "baseline_model_ids": [
+            "B1",
+            "B2",
+            "B3"
+          ],
+          "config_version": "0.5",
+          "country_holidays": "UK",
+          "cycle_coldstart_days": 60,
+          "daily_seasonality": true,
+          "experiment_id": "forecasting",
+          "forecast_origin_step_days": 1,
+          "frequency": "1h",
+          "growth": "linear",
+          "horizon_days": 1,
+          "interval_width": 0.8,
+          "log_transform": true,
+          "mape_min_eligible_watts": 10.0,
+          "negative_forecast_handling": "raw",
+          "primary_naive_reference": "B2",
+          "seed": 42,
+          "selected_prophet_variant": {
+            "history_mode": "rolling",
+            "model_id": "C3_30",
+            "retraining_interval_days": 1,
+            "rolling_window_days": 30,
+            "weekly_seasonality": false,
+            "yearly_seasonality": false
+          },
+          "uncertainty_samples": 1000,
+          "weekly_seasonality": false
+        },
+        "llm_config": {
+          "calendar_tool": false,
+          "keep_alive": "5m",
+          "max_attempts": 2,
+          "model": "ministral-3:8b",
+          "num_ctx": 8192,
+          "num_predict": 1024,
+          "presence_penalty": 1.5,
+          "prompt_version": "v28",
+          "request_timeout_seconds": 120.0,
+          "seed": 42,
+          "temperature": 0.0,
+          "think": false
+        },
+        "llm_mode": "real",
+        "numerical_analysis_config": {
+          "level_shift_scales": [
+            "weekly",
+            "long_term"
+          ],
+          "long_term_reference_days": 28,
+          "long_term_streak_threshold_pct": 14.2,
+          "long_term_window_days": 28,
+          "min_daily_reference_samples": 7,
+          "min_longterm_reference_samples": 14,
+          "min_reference_power_w": 10.0,
+          "min_residual_std_w": 1.0,
+          "min_sustained_scales": 2,
+          "min_weekday_reference_samples": 4,
+          "min_weekly_reference_samples": 1,
+          "reference_window_rolling_days": 60,
+          "rolling_window_min_coverage": 0.8,
+          "sample_period_hours_hourly": 1.0,
+          "single_day_scales": [
+            "daily",
+            "weekday"
+          ],
+          "streak_tolerance_window_days": 7,
+          "sustained_anomaly_streak_days": 6,
+          "unusual_threshold": 3.2,
+          "weekly_streak_threshold": 1.02,
+          "weekly_window_days": 7
+        },
+        "window_exclusion": true
+      }
+    }
+  },
+  "created_at_utc": "2026-10-05T21:10:16.867189+00:00",
+  "environment": {
+    "file": "environment-forecasting.yml",
+    "sha256": "00cd8649e33135385246495241a8a4708564d2426ab7e2337cb2fe2517f850dd"
+  },
+  "llm_failures": {
+    "count": 0,
+    "file": null
+  },
+  "outputs": {
+    "comparison_summary": {
+      "path": "experiments/output/e2/e2_003/raw/event-2014-08/ctx1/comparison_summary.csv",
+      "sha256": "7d528f69f4ee6389987a1935caacff55c74fdb0e2efda9b0af2a6c1a96810bdb",
+      "size_bytes": 11656
+    },
+    "evaluation_summary": {
+      "path": "experiments/output/e2/e2_003/raw/event-2014-08/ctx1/evaluation_summary.csv",
+      "sha256": "2deb19bebe78191d4aff871848c6b017058febbdf9e91a106d7c72f2b1c2b9e4",
+      "size_bytes": 87
+    },
+    "forecasts": {
+      "path": "experiments/output/e2/e2_003/raw/event-2014-08/ctx1/forecasts.csv",
+      "sha256": "cc1dcbd1f979d1845099de5c26fe835d8712a558182e9f57066b2e970255e8ce",
+      "size_bytes": 241749
+    },
+    "llm_outputs": {
+      "path": "experiments/output/e2/e2_003/raw/event-2014-08/ctx1/llm_outputs.json",
+      "sha256": "3e03dce8cb2c37a42236c467b2df5d41e9d8bb619f54f98f5c56637ad06d0aa3",
+      "size_bytes": 9233
+    }
+  },
+  "row_count": 75,
+  "run_id": "e2_003_event-2014-08_ctx1",
+  "runtime_seconds": 112.08750162500655,
+  "scenario": {
+    "coldstart_days": 60,
+    "decision_time_count": 75,
+    "decision_time_end": "2014-09-15T23:00:00+00:00",
+    "decision_time_start": "2014-07-03T23:00:00+00:00"
+  }
+}

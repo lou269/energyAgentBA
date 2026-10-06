@@ -57,7 +57,8 @@ def absence_action(context: StructuredState, local_timezone: str) -> AdaptionAct
         start = parse_utc_timestamp(event["start"], "start")
         end = parse_utc_timestamp(event["end"], "end")
 
-        if event["event_type"] == "absence" and start <= last_analyzed_hour < end:
+        # ob Eintrag Abwesenheit ist, hat das LLM mit absence schon entschieden
+        if start <= last_analyzed_hour < end:
             return AdaptionAction(
                 kind="exclude_window",
                 excluded_window=(start, end),

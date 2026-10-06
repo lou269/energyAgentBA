@@ -28,11 +28,11 @@ def test_absence_needs_event() -> None:
     state = valid_structured_state()
 
     assert missing_evidence_paths("absence", BASE_PATHS, state) == (
-        "context.events.<index>.event_type",
+        "context.events.<index>.title",
     )
     assert (
         missing_evidence_paths(
-            "absence", BASE_PATHS + ["context.events.0.event_type"], state
+            "absence", BASE_PATHS + ["context.events.0.title"], state
         )
         == ()
     )

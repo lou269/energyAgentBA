@@ -251,7 +251,7 @@ def test_invalid_parameters_are_rejected_before_calling_client(
 
 VACATION = {
     "event_id": "vacation",
-    "event_type": "absence",
+    "title": "Urlaub bei Oma",
     "start": "2015-12-10T00:00:00+00:00",
     "end": "2015-12-20T00:00:00+00:00",
     "known_at": "2015-11-01T00:00:00+00:00",
@@ -276,7 +276,7 @@ def test_fetched_calendar_replaces_the_context_and_can_ground_absence() -> None:
     output["classification"] = "absence"
     output["evidence_references"] = [
         {"path": "anomaly.direction"},
-        {"path": "context.events.0.event_type"},
+        {"path": "context.events.0.title"},
     ]
     client = ScriptedClient(
         [json.dumps(output)],

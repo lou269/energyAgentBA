@@ -78,7 +78,7 @@ class ContextState <<TypedDict>> {
 
 class CalendarEvent <<TypedDict>> {
   event_id: str
-  <color:#2E7D32>event_type</color>: str
+  <color:#2E7D32>title</color>: str
   <color:#2E7D32>start</color>: str
   <color:#2E7D32>end</color>: str
   known_at: str
@@ -145,7 +145,7 @@ legend right
   |= Farbe |= Bedeutung |
   |<color:#2E7D32>■</color> Grün | als LLM-Evidenzpfad referenzierbar |
   Feste Whitelist (src/llm/validation.py), zusätzlich
-  context.events.<index>.{event_type, start, end}.
+  context.events.<index>.{title, start, end}.
   Alle übrigen Felder sind im State vorhanden,
   aber vom LLM nicht als Beleg referenzierbar.
 endlegend

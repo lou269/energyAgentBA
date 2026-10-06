@@ -10,7 +10,7 @@ from src.pipeline.schema_validation import validate_fields
 REQUIRED_EVENT_FIELDS = frozenset(
     {
         "event_id",
-        "event_type",
+        "title",
         "start",
         "end",
         "known_at",
@@ -32,7 +32,8 @@ CALENDAR_CONTEXT_FIELDS = frozenset(
 
 class CalendarEvent(TypedDict):
     event_id: str
-    event_type: str
+    # Freitext, ob er Abwesenheit meint, entscheidet LLM
+    title: str
     start: str
     end: str
     known_at: str
@@ -109,7 +110,7 @@ def _validate_calendar_event(
     validate_fields(event, REQUIRED_EVENT_FIELDS, field_name)
 
     event_id = _normalized_non_empty_string(event["event_id"], f"{field_name}.event_id")
-    _normalized_non_empty_string(event["event_type"], f"{field_name}.event_type")
+    _normalized_non_empty_string(event["title"], f"{field_name}.title")
 
     start = parse_utc_timestamp_field(event["start"], f"{field_name}.start")
     end = parse_utc_timestamp_field(event["end"], f"{field_name}.end")

@@ -23,7 +23,13 @@ class E2Config:
     split: str = "validation"
 
     # je Urlaub ein eigenes Szenario, 14 und 21 Tage
-    absence_event_ids: tuple[str, ...] = ("vacation-2014-08", "vacation-2015-10")
+    absence_event_ids: tuple[str, ...] = ("event-2014-08", "event-2015-10")
+    # Gegenfall: Eintrag zur selben Zeit, aber absence falsch
+    # In counter_ctx steht nur er im Kalender, in den anderen Varianten nur der Urlaubseintrag
+    counter_event_ids: dict[str, str] = field(
+        default_factory=lambda: {"event-2014-08": "event-2014-08-visit"}
+    )
+    counter_ctx: str = "ctx1_visit"
 
     decision_time_margin_before_days: int = 30
     # bis die Urlaubstage aus dem long_term-Fenster (28 Tage) wieder herausfallen
@@ -41,6 +47,7 @@ class E2Config:
         default_factory=lambda: {
             "ctx0": {"SYS1": "SYS1", "SYS2": "SYS2", "SYS3_CTX0": "SYS3"},
             "ctx1": {"SYS3_CTX1": "SYS3"},
+            "ctx1_visit": {"SYS3_CTX1_VISIT": "SYS3"},
             "ctx2": {"SYS3_CTX2": "SYS3_TOOL"},
         }
     )

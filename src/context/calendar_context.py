@@ -81,16 +81,16 @@ def build_calendar_context(
         validate_fields(event, REQUIRED_EVENT_FIELDS, "Calendar event")
 
         event_id = event["event_id"]
-        event_type = event["event_type"]
+        title = event["title"]
 
         if not isinstance(event_id, str) or not event_id.strip():
             raise ValueError("event_id must be a non-empty string.")
 
-        if not isinstance(event_type, str) or not event_type.strip():
-            raise ValueError("event_type must be a non-empty string.")
+        if not isinstance(title, str) or not title.strip():
+            raise ValueError("title must be a non-empty string.")
 
         event_id = event_id.strip()
-        event_type = event_type.strip()
+        title = title.strip()
 
         if event_id in event_ids:
             raise ValueError(f"Duplicate calendar event_id: {event_id}")
@@ -116,7 +116,7 @@ def build_calendar_context(
                 end,
                 {
                     "event_id": event_id,
-                    "event_type": event_type,
+                    "title": title,
                     "start": local_isoformat(start, local_timezone),
                     "end": local_isoformat(end, local_timezone),
                     "known_at": local_isoformat(known_at, local_timezone),

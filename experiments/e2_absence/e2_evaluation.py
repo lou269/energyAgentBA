@@ -1,3 +1,4 @@
+from collections.abc import Collection
 from dataclasses import dataclass
 
 import numpy as np
@@ -77,6 +78,7 @@ def label_absence_days(
     window_end: pd.Timestamp,
     target_classification: str,
     absence_event_id: str,
+    counter_configs: Collection[str],
 ) -> pd.DataFrame:
     start_day, end_day = local_dates([window_start, window_end])
     days = add_gate_flags(
@@ -88,8 +90,11 @@ def label_absence_days(
     )
     analyzed = pd.to_datetime(days["analyzed_day"])
     target = days["classification"].eq(target_classification)
-    supported = target & days["adaption_reason"].fillna("").str.contains(
-        absence_event_id, regex=False
+    # im Gegenfall meint Eintrag keine Abwesenheit
+    supported = (
+        target
+        & days["adaption_reason"].fillna("").str.contains(absence_event_id, regex=False)
+        & ~days["config"].isin(counter_configs)
     )
 
     drift_gate = days["sustained_drift"].eq(True)
@@ -175,6 +180,7 @@ def summarize_e2(
     window_end: pd.Timestamp,
     target_classification: str,
     absence_event_id: str,
+    counter_configs: Collection[str],
     reference_config: str,
 ) -> E2Summary:
     days = label_absence_days(
@@ -184,6 +190,7 @@ def summarize_e2(
         window_end=window_end,
         target_classification=target_classification,
         absence_event_id=absence_event_id,
+        counter_configs=counter_configs,
     )
     during = days.loc[days["phase"].eq("absence")]
 
@@ -299,6 +306,7 @@ def summarize_gate_precheck(
     window_end: pd.Timestamp,
     target_classification: str,
     absence_event_id: str,
+    counter_configs: Collection[str],
 ) -> GatePrecheckSummary:
     days = label_absence_days(
         comparison,
@@ -307,6 +315,7 @@ def summarize_gate_precheck(
         window_end=window_end,
         target_classification=target_classification,
         absence_event_id=absence_event_id,
+        counter_configs=counter_configs,
     )
     from_absence = days.loc[days["phase"] != "before"]
     first_days = pd.DataFrame(

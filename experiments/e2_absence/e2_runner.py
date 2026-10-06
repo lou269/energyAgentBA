@@ -66,6 +66,8 @@ def run(e2_config: E2Config, run_prefix: str) -> Path:
         )
 
         for ctx, systems in e2_config.ctx_systems.items():
+            if ctx not in scenarios:
+                continue
             scenario = scenarios[ctx]
             logger.info(
                 "Running E2/%s/%s over %d decision times...",

@@ -19,14 +19,16 @@ def test_ctx_scenarios() -> None:
     events = (
         {
             "event_id": "e",
-            "event_type": "absence",
+            "title": "Urlaub bei Oma",
             "start": "2024-01-01T00:00:00+00:00",
             "end": "2024-01-02T00:00:00+00:00",
             "known_at": "2023-12-01T00:00:00+00:00",
         },
     )
 
-    scenarios = build_ctx_scenarios(series, decision_times, events)
+    visit = (dict(events[0], event_id="e-visit", title="Oma kommt zu Besuch"),)
+
+    scenarios = build_ctx_scenarios(series, decision_times, events, visit)
     ctx0, ctx1 = scenarios["ctx0"], scenarios["ctx1"]
 
     assert ctx0.calendar_source_available is False
@@ -37,3 +39,6 @@ def test_ctx_scenarios() -> None:
     assert ctx0.decision_times == ctx1.decision_times
     # ctx2 unterscheidet sich nur im Kalender-Tool
     assert scenarios["ctx2"] == ctx1
+    assert scenarios["ctx1_visit"].calendar_events == visit
+    # ohne Gegenfall-Eintrag gibt es die Variante nicht
+    assert "ctx1_visit" not in build_ctx_scenarios(series, decision_times, events, None)

@@ -27,6 +27,7 @@ def build_ctx_scenarios(
     target_series: pd.Series,
     decision_times: tuple[pd.Timestamp, ...],
     calendar_events: tuple[Mapping[str, object], ...],
+    counter_events: tuple[Mapping[str, object], ...] | None,
     target_imputed: pd.Series | None = None,
     value_implausible: pd.Series | None = None,
 ) -> dict[str, ScenarioData]:
@@ -39,9 +40,13 @@ def build_ctx_scenarios(
         calendar_source_available=True,
         calendar_source="user_calendar",
     )
+    # ctx2 hat dieselben Einträge, das LLM holt sie sich per Tool
+    scenarios = {"ctx0": ctx0, "ctx1": ctx1, "ctx2": ctx1}
+    # Gegenfall nur, wo es für den Urlaub einen gibt
+    if counter_events is not None:
+        scenarios["ctx1_visit"] = replace(ctx1, calendar_events=counter_events)
 
-    # ctx2 hat dieselben Einträge, das LLM holt sie sich per Tool, den State ohne Kalender baut der Harness
-    return {"ctx0": ctx0, "ctx1": ctx1, "ctx2": ctx1}
+    return scenarios
 
 
 def read_channel_selection(
@@ -98,10 +103,17 @@ def build_absence_scenarios(
         window_end=window_end,
     )
 
+    events_by_id = {event["event_id"]: event for event in calendar_events}
+
     return build_ctx_scenarios(
         absence_adjusted_series,
         decision_times,
-        calendar_events,
+        (events_by_id[event_id],),
+        (
+            (events_by_id[e2_config.counter_event_ids[event_id]],)
+            if event_id in e2_config.counter_event_ids
+            else None
+        ),
         target_imputed,
         value_implausible,
     )

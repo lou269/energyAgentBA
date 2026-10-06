@@ -41,8 +41,8 @@ _BASE_STATE_JSON = """
     "events": [
       {
         "end": "2015-12-22T00:00:00+00:00",
-        "event_id": "vacation-2015-12",
-        "event_type": "absence",
+        "event_id": "event-2015-12",
+        "title": "Urlaub bei Oma",
         "known_at": "2015-11-15T00:00:00+00:00",
         "start": "2015-12-15T00:00:00+00:00"
       }

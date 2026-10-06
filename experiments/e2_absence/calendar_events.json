@@ -1,14 +1,21 @@
 [
   {
-    "event_id": "vacation-2014-08",
-    "event_type": "absence",
+    "event_id": "event-2014-08",
+    "title": "Urlaub bei Oma",
     "start": "2014-08-03T00:00:00",
     "end": "2014-08-17T00:00:00",
     "known_at": "2014-07-03T00:00:00"
   },
   {
-    "event_id": "vacation-2015-10",
-    "event_type": "absence",
+    "event_id": "event-2014-08-visit",
+    "title": "Oma kommt zu Besuch",
+    "start": "2014-08-03T00:00:00",
+    "end": "2014-08-17T00:00:00",
+    "known_at": "2014-07-03T00:00:00"
+  },
+  {
+    "event_id": "event-2015-10",
+    "title": "Reise nach Tokio mit Moni",
     "start": "2015-10-04T00:00:00",
     "end": "2015-10-25T00:00:00",
     "known_at": "2015-09-04T00:00:00"

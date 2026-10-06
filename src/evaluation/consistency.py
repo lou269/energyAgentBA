@@ -4,7 +4,7 @@ from collections.abc import Collection
 from src.llm.llm_schema import Classification
 from src.structured_state.structured_state_schema import StructuredState
 
-EVENT_TYPE_PATH = re.compile(r"context\.events\.(\d+)\.event_type")
+EVENT_TITLE_PATH = re.compile(r"context\.events\.(\d+)\.title")
 
 
 def missing_evidence_paths(
@@ -33,7 +33,7 @@ def missing_evidence_paths(
     missing = sorted(required - set(cited_paths))
 
     if classification == "absence" and not _cites_absence_event(cited_paths, state):
-        missing.append("context.events.<index>.event_type")
+        missing.append("context.events.<index>.title")
 
     return tuple(missing)
 
@@ -41,10 +41,7 @@ def missing_evidence_paths(
 def _cites_absence_event(cited_paths: Collection[str], state: StructuredState) -> bool:
     events = state["context"]["events"]
 
-    for path in cited_paths:
-        match = EVENT_TYPE_PATH.fullmatch(path)
-        if match and int(match.group(1)) < len(events):
-            if events[int(match.group(1))]["event_type"] == "absence":
-                return True
-
-    return False
+    return any(
+        match is not None and int(match.group(1)) < len(events)
+        for match in (EVENT_TITLE_PATH.fullmatch(path) for path in cited_paths)
+    )

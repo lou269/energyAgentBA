@@ -87,11 +87,11 @@ def test_event_id_is_not_an_allowed_evidence_path() -> None:
         validate_llm_output_against_state(cast(RawLLMOutput, output), state)
 
 
-def test_event_type_is_an_allowed_evidence_path() -> None:
+def test_event_title_is_an_allowed_evidence_path() -> None:
     state = valid_structured_state()
 
     output = valid_llm_output()
-    output["evidence_references"] = [{"path": "context.events.0.event_type"}]
+    output["evidence_references"] = [{"path": "context.events.0.title"}]
 
     validate_llm_output_against_state(cast(RawLLMOutput, output), state)
 
@@ -118,7 +118,7 @@ def test_collect_scalar_evidence_paths_matches_static_allowlist() -> None:
     paths = set(collect_scalar_evidence_paths(valid_structured_state()))
 
     assert paths <= ALLOWED_EVIDENCE_PATHS | {
-        "context.events.0.event_type",
+        "context.events.0.title",
         "context.events.0.start",
         "context.events.0.end",
     }

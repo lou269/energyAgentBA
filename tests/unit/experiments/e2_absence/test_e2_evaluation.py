@@ -93,6 +93,7 @@ def test_absence_only_counts_as_a_hit_with_the_calendar_event() -> None:
         window_end=WINDOW_END,
         target_classification="absence",
         absence_event_id=EVENT_ID,
+        counter_configs=[],
         reference_config="SYS1",
     )
 
@@ -122,3 +123,22 @@ def test_absence_only_counts_as_a_hit_with_the_calendar_event() -> None:
 
     forecast = summary.forecast.set_index(["config", "phase"])
     assert forecast.loc[("SYS3_CTX1", "after_return"), "mean_delta"] == -10.0
+
+    # als Gegenfall ist kein absence ein Treffer, alle zählen als ohne Beleg
+    counter = summarize_e2(
+        comparison,
+        anomaly,
+        pd.DataFrame(columns=["config", "analyzed_day", "calendar_available"]),
+        pd.DataFrame(columns=["config", "forecast_day", "y_pred"]),
+        pd.DataFrame({"reduction_w": [100.0]}),
+        window_start=WINDOW_START,
+        window_end=WINDOW_END,
+        target_classification="absence",
+        absence_event_id=EVENT_ID,
+        counter_configs=["SYS3_CTX1"],
+        reference_config="SYS1",
+    ).absence_classification.set_index("config")
+    assert list(counter.loc["SYS3_CTX1", ["hit_days", "unsupported_absence_days"]]) == [
+        0,
+        4,
+    ]

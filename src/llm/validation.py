@@ -33,7 +33,7 @@ ALLOWED_EVIDENCE_PATHS = frozenset(
     }
 )
 
-ALLOWED_EVENT_FIELDS = frozenset({"event_type", "start", "end"})
+ALLOWED_EVENT_FIELDS = frozenset({"title", "start", "end"})
 
 
 def _is_allowed_evidence_path(path: str) -> bool:

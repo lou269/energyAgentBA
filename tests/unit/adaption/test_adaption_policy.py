@@ -31,10 +31,10 @@ def _context(
     )
 
 
-def _event(event_type: str) -> dict:
+def _event() -> dict:
     return {
-        "event_id": "vacation-test",
-        "event_type": event_type,
+        "event_id": "event-test",
+        "title": "Urlaub bei Oma",
         "start": "2013-09-14T00:00:00+00:00",
         "end": "2013-09-28T00:00:00+00:00",
         "known_at": "2013-08-14T00:00:00+00:00",
@@ -77,9 +77,7 @@ def test_classifications_without_a_defined_reaction_trigger_no_action(
 
 def test_absence_excludes_the_whole_calendar_window_not_only_the_analyzed_day() -> None:
     # erkannt erst am 26.09., ausgeschlossen wird trotzdem ab dem 14.09.
-    context = _context(
-        decision_time="2013-09-27T00:00:00+00:00", events=[_event("absence")]
-    )
+    context = _context(decision_time="2013-09-27T00:00:00+00:00", events=[_event()])
 
     action = adaption_policy(
         "absence",
@@ -96,18 +94,9 @@ def test_absence_excludes_the_whole_calendar_window_not_only_the_analyzed_day() 
     )
 
 
-@pytest.mark.parametrize(
-    ("decision_time", "event_type"),
-    [
-        ("2013-09-27T00:00:00+00:00", "business_trip"),
-        # analysierter Tag 28.09. liegt schon hinter dem Ende
-        ("2013-09-29T00:00:00+00:00", "absence"),
-    ],
-)
-def test_absence_without_a_matching_calendar_event_triggers_no_action(
-    decision_time: str, event_type: str
-) -> None:
-    context = _context(decision_time=decision_time, events=[_event(event_type)])
+def test_absence_without_a_matching_calendar_event_triggers_no_action() -> None:
+    # analysierter Tag 28.09. liegt schon hinter dem Ende
+    context = _context(decision_time="2013-09-29T00:00:00+00:00", events=[_event()])
 
     action = adaption_policy(
         "absence",
@@ -142,9 +131,7 @@ def test_measurement_error_excludes_only_the_analyzed_day() -> None:
 def test_without_window_exclusion_nothing_is_excluded(
     classification: Classification,
 ) -> None:
-    context = _context(
-        decision_time="2013-09-27T00:00:00+00:00", events=[_event("absence")]
-    )
+    context = _context(decision_time="2013-09-27T00:00:00+00:00", events=[_event()])
 
     action = adaption_policy(
         classification,
