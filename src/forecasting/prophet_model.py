@@ -12,6 +12,7 @@ from src.common.timestamps import shift_local_days
 logging.getLogger("cmdstanpy").setLevel(logging.WARNING)
 
 LEVEL_SHIFT_COLUMN = "level_shift"
+ABSENCE_HOLIDAY = "absence"
 
 
 def fit_prophet_model(
@@ -27,6 +28,7 @@ def fit_prophet_model(
     interval_width: float,
     uncertainty_samples: int,
     level_shift_start: pd.Timestamp | None = None,
+    absence_windows: tuple[tuple[pd.Timestamp, pd.Timestamp], ...] = (),
 ) -> Prophet:
     prophet_data = _prepare_prophet_data(history, local_timezone, log_transform)
 
@@ -35,6 +37,7 @@ def fit_prophet_model(
         daily_seasonality=daily_seasonality,  # pyright: ignore[reportArgumentType]
         weekly_seasonality=weekly_seasonality,  # pyright: ignore[reportArgumentType]
         yearly_seasonality=yearly_seasonality,  # pyright: ignore[reportArgumentType]
+        holidays=absence_holidays(absence_windows, local_timezone),
         interval_width=interval_width,
         uncertainty_samples=uncertainty_samples,
     )
@@ -55,6 +58,29 @@ def fit_prophet_model(
     model.fit(prophet_data)
 
     return model
+
+
+# Urlaubstage als Feiertage für Prophet
+def absence_holidays(
+    absence_windows: tuple[tuple[pd.Timestamp, pd.Timestamp], ...],
+    local_timezone: str,
+) -> pd.DataFrame | None:
+    if not absence_windows:
+        return None
+
+    days = [
+        pd.date_range(
+            start.tz_convert(local_timezone).tz_localize(None).normalize(),
+            (end - pd.Timedelta(hours=1))
+            .tz_convert(local_timezone)
+            .tz_localize(None)
+            .normalize(),
+            freq="D",
+        )
+        for start, end in absence_windows
+    ]
+
+    return pd.DataFrame({"holiday": ABSENCE_HOLIDAY, "ds": days[0].append(days[1:])})
 
 
 def build_prophet_forecast(

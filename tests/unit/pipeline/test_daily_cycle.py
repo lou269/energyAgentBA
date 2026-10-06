@@ -329,3 +329,19 @@ def test_measurement_error_day_is_excluded_from_the_fit_but_kept_in_history(
     # Erstfit und Adaption am selben Tag ergeben nur einen Fit, und der kennt das Fenster schon
     assert len(fitted_histories) == 1
     assert fitted_histories[0].loc[day_start:].dropna().empty
+
+
+def test_ended_absence_window_stays_in_the_fit_as_a_holiday() -> None:
+    series = _calm_series(24 * 50)
+    absence = (series.index[24 * 40], series.index[24 * 45])
+    state = replace(_state(series.iloc[: 24 * 48]), absence_windows=(absence,))
+
+    result, new_state = _advance_one_day(series, state, SYS_VARIANTS["SYS1"])
+
+    assert result.retrained
+    assert new_state.absence_windows == (absence,)
+    assert new_state.excluded_windows == ()
+    assert new_state.model_history is not None
+    assert new_state.model_history.loc[absence[0] : absence[1]].notna().all()
+    assert new_state.prophet_model is not None
+    assert "absence" in list(new_state.prophet_model.train_holiday_names)

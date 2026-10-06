@@ -42,8 +42,10 @@ class CycleState:
     model_fitted_at: pd.Timestamp | None
     fixed_history: pd.Series | None = None
     level_shift_start: pd.Timestamp | None = None
-    # nach absence ausgeschlossene Kalenderfenster, fehlen bei Fit und Referenz, bleiben aber in history
+    # nach measurement_error ausgeschlossene Tage, fehlen bei Fit und Referenz, bleiben aber in history
     excluded_windows: tuple[tuple[pd.Timestamp, pd.Timestamp], ...] = ()
+    # Kalenderfenster nach absence: fehlen in der Referenz, im Fit sind sie ein eigener Prophet-Feiertag
+    absence_windows: tuple[tuple[pd.Timestamp, pd.Timestamp], ...] = ()
     score_history: pd.DataFrame = field(default_factory=pd.DataFrame)
 
 
@@ -109,6 +111,7 @@ def run_cycle(
     )
 
     excluded_windows = state.excluded_windows
+    absence_windows = state.absence_windows
     score_history = state.score_history
     analysis_config = config.numerical_analysis_config
 
@@ -116,7 +119,11 @@ def run_cycle(
     analyzed_day_start = shift_local_days(decision_time, -1, local_timezone)
 
     analysis_row = compute_analysis_row(
-        mask_excluded_windows(history, excluded_windows, keep_from=analyzed_day_start),
+        mask_excluded_windows(
+            history,
+            excluded_windows + absence_windows,
+            keep_from=analyzed_day_start,
+        ),
         target_timestamp=decision_time - pd.Timedelta(hours=1),
         config=analysis_config,
         local_timezone=local_timezone,
@@ -189,9 +196,14 @@ def run_cycle(
         score_history = pd.DataFrame()
 
     if adaption_action is not None and adaption_action.kind == "exclude_window":
-        excluded_windows, adaption_action = add_excluded_window(
-            excluded_windows, adaption_action
-        )
+        if classification == "absence":
+            absence_windows, adaption_action = add_excluded_window(
+                absence_windows, adaption_action
+            )
+        else:
+            excluded_windows, adaption_action = add_excluded_window(
+                excluded_windows, adaption_action
+            )
 
     # erst nach der Einordnung prognostizieren, damit eine Adaption schon in die Prognose für heute eingeht
     if adaption_action is not None and adaption_action.kind != "none":
@@ -207,6 +219,7 @@ def run_cycle(
             variant,
             local_timezone,
             state.level_shift_start,
+            ended_windows(absence_windows, decision_time),
         )
         model_fitted_at = decision_time
     else:
@@ -228,6 +241,7 @@ def run_cycle(
         fixed_history=fixed_history,
         level_shift_start=state.level_shift_start,
         excluded_windows=excluded_windows,
+        absence_windows=absence_windows,
         score_history=score_history,
     )
 
@@ -351,6 +365,7 @@ def _fit_variant(
     variant: ProphetVariantConfig,
     local_timezone: str,
     level_shift_start: pd.Timestamp | None,
+    absence_windows: tuple[tuple[pd.Timestamp, pd.Timestamp], ...],
 ) -> tuple[Prophet, pd.Series]:
     forecasting_config = config.forecasting_config
 
@@ -375,6 +390,7 @@ def _fit_variant(
         interval_width=forecasting_config.interval_width,
         uncertainty_samples=forecasting_config.uncertainty_samples,
         level_shift_start=level_shift_start,
+        absence_windows=absence_windows,
     )
 
     return model, model_history
