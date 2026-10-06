@@ -1,0 +1,16 @@
+System,Phase,Tage,Gate offen,davon Einzeltag,davon Drift,davon nur eine Skala,new_pattern,low,peak,absence,Resets,Meldungen,Ausfalltage
+SYS1,vor dem Urlaub,31,14,0,0,14,0,0,0,0,0,0,0
+SYS1,Urlaub,21,12,0,8,4,8,0,0,0,0,8,0
+SYS1,nach der Rückkehr,30,29,1,6,22,6,0,1,0,0,7,0
+SYS2,vor dem Urlaub,31,14,0,0,14,0,0,0,0,0,0,0
+SYS2,Urlaub,21,7,2,1,4,1,0,2,0,1,3,0
+SYS2,nach der Rückkehr,30,28,12,0,16,0,2,10,0,0,10,0
+SYS3_CTX0,vor dem Urlaub,31,14,0,0,14,0,0,0,0,0,0,0
+SYS3_CTX0,Urlaub,21,7,2,1,4,1,0,2,0,1,3,0
+SYS3_CTX0,nach der Rückkehr,30,28,12,0,16,0,2,10,0,0,10,0
+SYS3_CTX1,vor dem Urlaub,31,14,0,0,14,0,0,0,0,0,0,0
+SYS3_CTX1,Urlaub,21,7,2,1,4,1,0,0,0,1,1,0
+SYS3_CTX1,nach der Rückkehr,30,16,12,0,4,1,0,10,0,1,11,0
+SYS3_CTX2,vor dem Urlaub,31,14,0,0,14,0,0,0,0,0,0,0
+SYS3_CTX2,Urlaub,21,7,2,1,4,1,0,0,0,1,1,0
+SYS3_CTX2,nach der Rückkehr,30,16,12,0,4,1,0,10,0,1,11,0

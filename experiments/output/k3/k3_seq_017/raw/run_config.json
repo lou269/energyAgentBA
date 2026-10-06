@@ -1,0 +1,71 @@
+{
+  "code_version": {
+    "git_commit": "83b23e4818df171d352227dbe2da0a06b241fa17",
+    "git_dirty": true
+  },
+  "k3_config": {
+    "base_llm_config": {
+      "calendar_tool": false,
+      "calendar_tool_prompt_version": "tool_v30",
+      "keep_alive": -1,
+      "max_attempts": 2,
+      "model": "",
+      "num_ctx": 8192,
+      "num_predict": 1024,
+      "presence_penalty": 1.5,
+      "prompt_version": "v30",
+      "request_timeout_seconds": 120.0,
+      "seed": 42,
+      "temperature": 0.0,
+      "think": false
+    },
+    "config_version": "llm-model-0.7",
+    "experiment_id": "K3_1_llm_model",
+    "include_rule_based_baseline": true,
+    "model_variants": [
+      {
+        "model": "qwen3:8b",
+        "model_id": "MDL1"
+      },
+      {
+        "model": "qwen3.5:9b",
+        "model_id": "MDL2"
+      },
+      {
+        "model": "ministral-3:8b",
+        "model_id": "MDL5"
+      }
+    ],
+    "repetitions": 1,
+    "sequence_cutover": "CO3",
+    "sequence_kinds": [
+      "control",
+      "scaled_strong",
+      "peak_strong"
+    ]
+  },
+  "standard_config": {
+    "cutover_dates": {
+      "CO1": "2014-07-15",
+      "CO2": "2014-10-24",
+      "CO3": "2015-03-01",
+      "CO4": "2015-06-10",
+      "CO5": "2015-10-22"
+    },
+    "decimals": 1,
+    "level_extra_w": 190.0,
+    "margin_after_days": 60,
+    "monitoring_before_cutover_days": 40,
+    "peak_extra_w": 670.0,
+    "peak_hours": 6,
+    "peak_start_hour": 17,
+    "ramp_fast_days": 28,
+    "ramp_slow_days": 56,
+    "scale_factor": 1.2,
+    "scale_factor_down": 0.8,
+    "split": "validation",
+    "strong_peak_extra_w": 1000.0,
+    "strong_scale_factor": 1.3,
+    "stuck_hours": 12
+  }
+}

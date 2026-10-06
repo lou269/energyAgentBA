@@ -1,0 +1,5 @@
+Modell,Ereignis-Arten erkannt,Tage anders als die Regel,Gate-Tage,Ausfalltage,Meldungen Kontrolle,unknown Kontrolle,Resets Kontrolle
+qwen3.5:9b,2/2,23,44,0,9,0,3
+ministral-3:8b,2/2,0,96,0,0,0,0
+Regel,2/2,0,96,0,0,0,0
+qwen3:8b,2/2,12,96,0,0,0,0

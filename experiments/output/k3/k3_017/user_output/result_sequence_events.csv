@@ -1,0 +1,9 @@
+config,Ereignis,erwartet,Gate-Tage durch das Ereignis,davon richtig,erster richtiger Tag,Resets
+BASELINE,Spitze +1000 W über 6 h,peak,6,1,1,0
+BASELINE,Sprung +30 %,new_pattern,13,1,22,1
+MDL1,Spitze +1000 W über 6 h,peak,6,1,1,0
+MDL1,Sprung +30 %,new_pattern,13,1,22,1
+MDL2,Spitze +1000 W über 6 h,peak,6,1,1,3
+MDL2,Sprung +30 %,new_pattern,6,4,7,4
+MDL5,Spitze +1000 W über 6 h,peak,6,1,1,0
+MDL5,Sprung +30 %,new_pattern,13,1,22,1

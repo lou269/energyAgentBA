@@ -1,0 +1,16 @@
+{
+  "cases": {
+    "absence_drift_down": "absence",
+    "low_single_scale": "low",
+    "measurement_error_missing_day": "measurement_error",
+    "new_pattern": "new_pattern",
+    "new_pattern_at_min_scales_boundary": "new_pattern",
+    "new_pattern_drift_down": "new_pattern",
+    "normal_single_sustained_scale": "normal",
+    "normal_weekly_after_reset": "normal",
+    "peak": "peak",
+    "peak_single_sustained_scale": "peak"
+  },
+  "experiment_id": "K3_1_llm_model",
+  "runtime_seconds": 670.2997447909875
+}

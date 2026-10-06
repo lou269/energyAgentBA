@@ -1,0 +1,39 @@
+Modell,analysierter Tag,Regel,Modell sagt,in Arten
+qwen3:8b,2015-01-26,normal,low,"control, scaled_strong, peak_strong"
+qwen3:8b,2015-01-27,normal,low,"control, scaled_strong, peak_strong"
+qwen3:8b,2015-04-05,normal,low,scaled_strong
+qwen3:8b,2015-04-06,normal,low,scaled_strong
+qwen3:8b,2015-04-07,normal,low,"control, peak_strong"
+qwen3:8b,2015-04-08,normal,low,scaled_strong
+qwen3:8b,2015-04-09,normal,low,"control, scaled_strong, peak_strong"
+qwen3:8b,2015-04-12,normal,low,"control, scaled_strong, peak_strong"
+qwen3:8b,2015-04-24,normal,low,peak_strong
+qwen3:8b,2015-04-25,normal,low,peak_strong
+qwen3:8b,2015-04-26,normal,low,peak_strong
+qwen3:8b,2015-04-28,normal,low,peak_strong
+qwen3.5:9b,2015-01-24,normal,peak,"control, scaled_strong, peak_strong"
+qwen3.5:9b,2015-01-26,normal,new_pattern,"control, scaled_strong, peak_strong"
+qwen3.5:9b,2015-02-20,normal,low,"control, scaled_strong, peak_strong"
+qwen3.5:9b,2015-02-23,normal,peak,"control, scaled_strong, peak_strong"
+qwen3.5:9b,2015-03-02,normal,peak,scaled_strong
+qwen3.5:9b,2015-03-06,normal,new_pattern,peak_strong
+qwen3.5:9b,2015-03-07,normal,new_pattern,scaled_strong
+qwen3.5:9b,2015-03-15,normal,low,scaled_strong
+qwen3.5:9b,2015-03-15,low,normal,peak_strong
+qwen3.5:9b,2015-03-19,normal,new_pattern,control
+qwen3.5:9b,2015-03-20,normal,new_pattern,scaled_strong
+qwen3.5:9b,2015-03-22,new_pattern,normal,scaled_strong
+qwen3.5:9b,2015-04-02,low,normal,"control, scaled_strong"
+qwen3.5:9b,2015-04-03,low,normal,"control, scaled_strong"
+qwen3.5:9b,2015-04-04,low,normal,control
+qwen3.5:9b,2015-04-05,low,normal,control
+qwen3.5:9b,2015-04-06,low,normal,control
+qwen3.5:9b,2015-04-07,normal,new_pattern,scaled_strong
+qwen3.5:9b,2015-04-08,normal,new_pattern,"control, peak_strong"
+qwen3.5:9b,2015-04-08,normal,peak,scaled_strong
+qwen3.5:9b,2015-04-09,normal,peak,"control, peak_strong"
+qwen3.5:9b,2015-04-10,normal,peak,"control, peak_strong"
+qwen3.5:9b,2015-04-11,normal,peak,"control, peak_strong"
+qwen3.5:9b,2015-04-20,normal,new_pattern,scaled_strong
+qwen3.5:9b,2015-04-22,normal,peak,control
+qwen3.5:9b,2015-04-22,normal,new_pattern,peak_strong

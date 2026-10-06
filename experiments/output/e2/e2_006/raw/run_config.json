@@ -1,0 +1,50 @@
+{
+  "code_version": {
+    "git_commit": "6d06b1af778cb4138017197bc24865a8af3f8a1f",
+    "git_dirty": false
+  },
+  "e2_config": {
+    "absence_event_ids": [
+      "event-2014-08",
+      "event-2015-10"
+    ],
+    "calendar_events_file": "/Users/Katja/Malou BA/energyAgentBA/experiments/e2_absence/calendar_events.json",
+    "counter_ctx": "ctx1_visit",
+    "counter_event_ids": {
+      "event-2014-08": "event-2014-08-visit"
+    },
+    "ctx_systems": {
+      "ctx0": {
+        "SYS1": "SYS1",
+        "SYS2": "SYS2",
+        "SYS3_CTX0": "SYS3"
+      },
+      "ctx1": {
+        "SYS3_CTX1": "SYS3"
+      },
+      "ctx1_visit": {
+        "SYS3_CTX1_VISIT": "SYS3"
+      },
+      "ctx2": {
+        "SYS3_CTX2": "SYS3_TOOL"
+      }
+    },
+    "decision_time_margin_after_days": 30,
+    "decision_time_margin_before_days": 30,
+    "min_coverage_share_for_subtraction": 0.9,
+    "plot_configs": [
+      "SYS1",
+      "SYS3_CTX0",
+      "SYS3_CTX1"
+    ],
+    "precheck_ctx_systems": {
+      "ctx0": {
+        "SYS1": "SYS1",
+        "SYS2": "SYS2"
+      }
+    },
+    "reference_config": "SYS1",
+    "split": "validation",
+    "target_classification": "absence"
+  }
+}
