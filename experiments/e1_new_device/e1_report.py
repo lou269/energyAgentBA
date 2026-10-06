@@ -15,7 +15,11 @@ from experiments.common.report import (
     paired_difference_columns,
     write_result_report,
 )
-from experiments.common.standard_config import DECIMALS, LOCAL_TIMEZONE, PROJECT_CONFIG
+from experiments.common.standard_config import (
+    LOCAL_TIMEZONE,
+    PROJECT_CONFIG,
+    STANDARD_CONFIG,
+)
 from experiments.e1_new_device.e1_config import (
     CONTROL_RUN_PREFIX,
     RUN_PREFIX,
@@ -208,7 +212,7 @@ def build_key_figures(
         (
             f"{SYS_LABELS[row['config']]}: MAE-Differenz zu {reference_config} ab Reset [W]",
             row["mean_delta"],
-            f"±{format_number(2 * row['delta_standard_error'], DECIMALS)} W, {row['paired_count']} Tage, "
+            f"±{format_number(2 * row['delta_standard_error'], STANDARD_CONFIG.decimals)} W, {row['paired_count']} Tage, "
             f"belastbar: {'ja' if row['exceeds_noise'] else 'nein'}",
         )
         for row in reset_comparison.to_dict("records")
@@ -292,7 +296,7 @@ def main() -> None:
         tables=tables,
         notes=build_notes(summary, has_control=control_run_directory is not None),
         images=["e1_timeline.png"],
-        decimals=DECIMALS,
+        decimals=STANDARD_CONFIG.decimals,
         appendix=appendix,
     )
 

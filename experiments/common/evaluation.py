@@ -65,7 +65,7 @@ def add_gate_flags(days: pd.DataFrame) -> pd.DataFrame:
 
 
 def merge_cycle_days(summary: pd.DataFrame, anomaly: pd.DataFrame) -> pd.DataFrame:
-    """Je Tag und Config Einordnung und Reset aus comparison_summary neben den Spalten aus anomaly.csv, dazu Gate-Flags und new_pattern"""
+    """Je Tag und Config Einordnung und Reset und Prognosefehler aus comparison_summary neben den Spalten aus anomaly.csv, dazu Gate-Flags und new_pattern"""
     # summary hat jeden Tag, anomaly.csv fehlt an Tagen ohne Analyse (z.B. direkt nach einem Reset)
     summary = summary[
         [
@@ -74,7 +74,11 @@ def merge_cycle_days(summary: pd.DataFrame, anomaly: pd.DataFrame) -> pd.DataFra
             "config",
             "classification",
             "reference_reset",
+            "adaption_action",
             "error",
+            "explanation",
+            "mae_w",
+            "mape_pct",
         ]
     ]
     days = summary.merge(
@@ -466,7 +470,9 @@ def summarize_scenario_real_data(
     daily = series.groupby(days).mean()
     level = (daily - daily.rolling(reference_days).median().shift(1)).dropna()
 
-    hourly = series.groupby([days, series.index.tz_convert(LOCAL_TIMEZONE).hour]).mean()
+    hourly = series.groupby(
+        [days, pd.DatetimeIndex(series.index).tz_convert(LOCAL_TIMEZONE).hour]
+    ).mean()
     hourly = hourly.unstack()
     excess = hourly - hourly.rolling(reference_days).median().shift(1)
     strongest_block = excess.T.rolling(peak_hours).mean().T.max(axis=1).dropna()

@@ -109,7 +109,6 @@ def run_comparison(
 
     rows: list[dict[str, object]] = []
     forecast_frames: list[pd.DataFrame] = []
-    llm_output_records: list[dict[str, object]] = []
 
     for config_label, config in configs.items():
         config_directory = run_directory / config_label
@@ -254,7 +253,6 @@ def run_comparison(
                         decision_time.tz_convert(local_timezone).date(),
                     )
                     forecast_frames.append(forecast_slice)
-                    append_csv(forecast_slice, config_directory / "forecasts.csv")
 
                     if result.analysis_row is not None:
                         anomaly_row = result.analysis_row.to_frame().T
@@ -281,7 +279,6 @@ def run_comparison(
                             "decision_time": decision_time.isoformat(),
                             **result.llm_output,
                         }
-                        llm_output_records.append(llm_output_record)
                         append_jsonl(
                             llm_output_record, config_directory / "llm_outputs.jsonl"
                         )
@@ -294,16 +291,6 @@ def run_comparison(
                                 **result.calendar_tool_response,
                             },
                             config_directory / "calendar_tool_calls.jsonl",
-                        )
-
-                    if result.rule_output is not None:
-                        rule_output_record = {
-                            "config": config_label,
-                            "decision_time": decision_time.isoformat(),
-                            **asdict(result.rule_output),
-                        }
-                        append_jsonl(
-                            rule_output_record, config_directory / "rule_outputs.jsonl"
                         )
 
                     summary_row = {
@@ -412,25 +399,10 @@ def run_comparison(
 
     output_paths = {"comparison_summary": run_directory / "comparison_summary.csv"}
 
-    # aggregiert die pro Tag schon berechneten mae_w/mape_pct je Config, Tage mit LLM-Fehlschlag haben auch eine Prognose
-    if not comparison.empty:
-        evaluation_summary = comparison.groupby("config", as_index=False).agg(
-            evaluated_days=("mae_w", "count"),
-            mae_w=("mae_w", "mean"),
-            mape_pct=("mape_pct", "mean"),
-        )
-        df_to_csv(evaluation_summary, run_directory, "evaluation_summary")
-        output_paths["evaluation_summary"] = run_directory / "evaluation_summary.csv"
-
     if forecast_frames:
         forecasts = pd.concat(forecast_frames, ignore_index=True)
         df_to_csv(forecasts, run_directory, "forecasts")
         output_paths["forecasts"] = run_directory / "forecasts.csv"
-
-    if llm_output_records:
-        llm_outputs_file = run_directory / "llm_outputs.json"
-        save_json({"llm_outputs": llm_output_records}, llm_outputs_file)
-        output_paths["llm_outputs"] = llm_outputs_file
 
     llm_failures_file = run_directory / "llm_failures.jsonl"
     decision_times = scenario.decision_times

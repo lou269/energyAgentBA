@@ -19,7 +19,7 @@ from experiments.common.report import (
     write_explanation_rating_template,
     write_result_report,
 )
-from experiments.common.standard_config import DECIMALS, PROJECT_CONFIG
+from experiments.common.standard_config import PROJECT_CONFIG, STANDARD_CONFIG
 from experiments.e5_system_compare.e5_config import (
     RESULTS_FILE,
     RUN_PREFIX,
@@ -204,12 +204,12 @@ def build_key_figures(
             (
                 f"{system}: erkannt (TF2, ≥ 90 %)",
                 f"{row['prefilter_detected']}/{row['prefilter_events']}",
-                f"{format_number(row['detection_pct'], DECIMALS)} %",
+                f"{format_number(row['detection_pct'], STANDARD_CONFIG.decimals)} %",
             ),
             (
                 f"{system}: richtig eingeordnet (TF3, ≥ 80 %)",
                 f"{row['correct']}/{row['detected']}",
-                f"{format_number(row['correct_pct'], DECIMALS)} % der erkannten",
+                f"{format_number(row['correct_pct'], STANDARD_CONFIG.decimals)} % der erkannten",
             ),
         ]
     for row in summary.decisions.to_dict("records"):
@@ -218,7 +218,7 @@ def build_key_figures(
                 f"{row['cutover_date']}: {rule} besser als {reference}",
                 YES_NO[row["rule_better"]],
                 f"MAE gegen {reference} ab Dauerlast "
-                f"{format_number(row['rule_mae_delta_w'], DECIMALS)} W, "
+                f"{format_number(row['rule_mae_delta_w'], STANDARD_CONFIG.decimals)} W, "
                 f"{row['rule_single_day_resets']} Resets bei Einzeltag-Ereignissen, "
                 f"{row['rule_control_resets']} im Kontrolllauf",
             ),
@@ -365,7 +365,7 @@ def write_report(run_directory: Path) -> Path:
         tables=tables,
         notes=build_notes(summary, single_day_scales),
         images=["e5_timeline.png"],
-        decimals=DECIMALS,
+        decimals=STANDARD_CONFIG.decimals,
         appendix=appendix,
         appendix_text=[("Antworten des LLM", answer_lines(summary.answers, labels))],
     )

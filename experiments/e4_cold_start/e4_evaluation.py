@@ -56,18 +56,11 @@ def read_system_days(
     injection_day: int | None,
 ) -> pd.DataFrame:
     """Je Entscheidungstag eines E4b-Laufs Einordnung, Gate, Reset, Skalen und der Prognosefehler im Kreislauf"""
-    cycle_outputs = summary[
-        ["decision_time", "config", "explanation", "mae_w", "mape_pct"]
-    ]
-    days = (
-        merge_cycle_days(summary, anomaly)
-        .merge(cycle_outputs, on=["decision_time", "config"])
-        .assign(
-            start_date=start_date,
-            coldstart_days=coldstart_days,
-            scenario=scenario,
-            injection_day=injection_day,
-        )
+    days = merge_cycle_days(summary, anomaly).assign(
+        start_date=start_date,
+        coldstart_days=coldstart_days,
+        scenario=scenario,
+        injection_day=injection_day,
     )
 
     return days[SYSTEM_COLUMNS]

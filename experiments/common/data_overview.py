@@ -57,7 +57,9 @@ def summarize_window(split: str, label: str, config: DataOverviewConfig) -> dict
     series, imputed, implausible = load_target(split)
     daily = series.groupby(local_dates(series.index)).mean()
     missing_days = series.isna().groupby(local_dates(series.index)).any()
-    hourly_profile = series.groupby(series.index.tz_convert(LOCAL_TIMEZONE).hour).mean()  # type: ignore
+    hourly_profile = series.groupby(
+        pd.DatetimeIndex(series.index).tz_convert(LOCAL_TIMEZONE).hour
+    ).mean()
     weekdays = pd.DatetimeIndex(daily.index).dayofweek
     workdays = daily[weekdays < 5].mean()
     weekend = daily[weekdays >= 5].mean()
@@ -94,9 +96,9 @@ def summarize_window(split: str, label: str, config: DataOverviewConfig) -> dict
         "Tagesmittel in W": daily.mean(),
         f"Tagesmittel {low:.0%}-Quantil in W": daily.quantile(low),
         f"Tagesmittel {high:.0%}-Quantil in W": daily.quantile(high),
-        "ruhigste Stunde (Uhr)": int(hourly_profile.idxmin()),
+        "ruhigste Stunde (Uhr)": hourly_profile.idxmin(),
         "Last in der ruhigsten Stunde in W": hourly_profile.min(),
-        "lauteste Stunde (Uhr)": int(hourly_profile.idxmax()),
+        "lauteste Stunde (Uhr)": hourly_profile.idxmax(),
         "Last in der lautesten Stunde in W": hourly_profile.max(),
         "Werktag in W": workdays,
         "Wochenende in W": weekend,

@@ -14,7 +14,7 @@ from experiments.common.report import (
     relabel,
     write_result_report,
 )
-from experiments.common.standard_config import DECIMALS, PROJECT_CONFIG
+from experiments.common.standard_config import PROJECT_CONFIG, STANDARD_CONFIG
 from experiments.e4_cold_start.e4_config import (
     CLEAN_SCENARIO,
     FORECAST_METRICS_FILE,
@@ -166,8 +166,8 @@ def build_price_table(price: pd.DataFrame) -> pd.DataFrame:
             parts.append(f"Tag {row['window']}")
         if row["scenario"] is not None:
             parts.append(SCENARIO_LABELS[row["scenario"]])
-        total = format_number(row["total"], DECIMALS)
-        share = format_number(row["share_pct"], DECIMALS)
+        total = format_number(row["total"], STANDARD_CONFIG.decimals)
+        share = format_number(row["share_pct"], STANDARD_CONFIG.decimals)
         rows.append(
             (
                 ", ".join(parts),
@@ -310,7 +310,7 @@ def build_notes(
         "mape_pct",
     ].iloc[0]
     cycle = ", ".join(
-        f"{row['coldstart_days']} Tage {format_number(row['max_mae_difference_w'], DECIMALS)} W"
+        f"{row['coldstart_days']} Tage {format_number(row['max_mae_difference_w'], STANDARD_CONFIG.decimals)} W"
         for row in summary.cycle_forecast.to_dict("records")
     )
 
@@ -318,7 +318,7 @@ def build_notes(
         "Tag 0 = erster prognostizierter Tag, eingeordnet wird an ihm der letzte Tag der Start-Historie. Ein Injektionstag k wird am Tag k + 1 eingeordnet",
         "Einschwingtag leer: im letzten Fenster, am letzten Tag bzw. am letzten Injektionstag noch abweichend, also nicht eingeschwungen",
         "Einschwingtage Erkennung und Einordnung nur so fein wie die Injektionstage",
-        f"MAPE {adaptive_model_id} mit {shortest} Tagen in Tag {last_window}: {format_number(mape, DECIMALS)} % (Proposal-Kriterium 10 %, hier kein Maßstab)",
+        f"MAPE {adaptive_model_id} mit {shortest} Tagen in Tag {last_window}: {format_number(mape, STANDARD_CONFIG.decimals)} % (Proposal-Kriterium 10 %, hier kein Maßstab)",
         f"Kontrolle Prognose im Kreislauf gegen Walk-Forward bis zum ersten Reset, soll 0 sein: größte Abweichung {cycle}",
         NOISE_RULE_NOTE,
         "Einschränkungen: ein Haushalt, wenige Termine, aufeinanderfolgende Tage sind nicht unabhängig (Standardfehler eher zu klein), "
@@ -385,7 +385,7 @@ def main() -> None:
             summary, adaptive_model_id=adaptive_model_id, shortest=shortest
         ),
         images=["e4_forecast_gap.png", "e4_system.png"],
-        decimals=DECIMALS,
+        decimals=STANDARD_CONFIG.decimals,
         appendix=build_appendix(summary, shortest, longest),
     )
 

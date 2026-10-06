@@ -9,12 +9,14 @@ from experiments.common.report import (
     KIND_LABELS,
     format_commit,
     format_cutovers,
-    key_figures_table,
     write_result_report,
 )
-from experiments.common.standard_config import DECIMALS, PROJECT_CONFIG
+from experiments.common.standard_config import PROJECT_CONFIG, STANDARD_CONFIG
 from experiments.e3_saisonality.e3_config import RESULTS_FILE, RUN_PREFIX
-from experiments.e3_saisonality.e3_evaluation import summarize_ramp_response
+from experiments.e3_saisonality.e3_evaluation import (
+    EVENT_KEYS,
+    summarize_drift_response,
+)
 from src.config.config_forecasting import SYS_LABELS
 from src.pipeline.io import (
     RAW_SUBDIR,
@@ -23,56 +25,52 @@ from src.pipeline.io import (
     user_output_directory,
 )
 
-REPEAT_HEADERS = {"kind": "Ereignis", "mean": "Mittel", "detected": "erkannt"}
+RESPONSE_HEADERS = {
+    "config": "System",
+    "cutover_date": "Cutover",
+    "kind": "Ereignis",
+    "expected": "erwartet",
+    "first_event_new_pattern_day": "erstes new_pattern (Tag)",
+    "gate_open_days": "Tage Gate offen",
+    "reset_forecast_day": "erster Reset (Tag)",
+}
 
 
 def write_report(run_directory: Path) -> Path:
     run_config = read_raw_json(run_directory, "run_config")
     e3_config = run_config["e3_config"]
-    event_kinds = [kind for kind in e3_config["kinds"] if kind != "control"]
+    llm_config = run_config["llm_config"]
+    cutover_dates = run_config["standard_config"]["cutover_dates"]
+    reference = e3_config["reference_system"]
+    systems = [e3_config["rule_system"], e3_config["llm_system"]]
+    kinds_by_cutover = e3_config["kinds_by_cutover"]
+    rows = [
+        (system, cutover_dates[cutover_id], kind)
+        for system in systems
+        for cutover_id, kinds in kinds_by_cutover.items()
+        for kind in kinds
+    ]
 
     results = pd.read_csv(
         run_directory / RAW_SUBDIR / f"{RESULTS_FILE}.csv",
         dtype={"cutover_date": str},
     )
-    summary = summarize_ramp_response(results)
-    detection = summary.detection.set_index("kind").loc[event_kinds].reset_index()
-    gate_open = summary.gate_open.set_index("kind").loc[event_kinds].reset_index()
+    response = (
+        summarize_drift_response(results, reference)
+        .response.set_index(EVENT_KEYS)
+        .loc[rows]
+        .reset_index()
+    )
 
     tables = {
-        "key_figures": (
-            "Kennzahlen",
-            key_figures_table(
-                [
-                    (
-                        f"{KIND_LABELS[kind]}: als new_pattern gemeldet",
-                        detected,
-                        f"im Mittel an Tag {day:.0f}" if pd.notna(day) else "nie",
-                    )
-                    for kind, detected, day in zip(
-                        detection["kind"], detection["detected"], detection["mean"]
-                    )
-                ]
-                + [
-                    (
-                        f"{KIND_LABELS[kind]}: Tage mit offenem Gate",
-                        days,
-                        "Mittel über Cutover, mehr als im Kontrolllauf",
-                    )
-                    for kind, days in zip(gate_open["kind"], gate_open["mean"])
-                ]
-            ),
-        ),
-        "result_detection": (
-            "Erster Tag mit new_pattern, den der Kontrolllauf nicht hat, je Cutover",
-            detection.assign(kind=detection["kind"].map(KIND_LABELS)).rename(
-                columns=REPEAT_HEADERS
-            ),
-        ),
-        "result_gate_open": (
-            "Tage mit offenem Gate ohne Gegenstück im Kontrolllauf, je Cutover",
-            gate_open.assign(kind=gate_open["kind"].map(KIND_LABELS)).rename(
-                columns=REPEAT_HEADERS
+        "result_response": (
+            "Erkennung, Gate und Reset je System, Cutover und Ereignis",
+            response.assign(
+                config=response["config"].map(SYS_LABELS),
+                kind=response["kind"].map(KIND_LABELS),
+            ).rename(
+                columns=RESPONSE_HEADERS
+                | {"mean_delta": f"MAE ab Reset minus {reference} [W]"}
             ),
         ),
     }
@@ -80,23 +78,28 @@ def write_report(run_directory: Path) -> Path:
     output_directory = user_output_directory(run_directory)
     write_result_report(
         output_directory,
-        title=f"E3 Stufe gegen langsame Rampe, Lauf {run_directory.name}",
+        title=f"E3 Saisonaler Drift, Lauf {run_directory.name}",
         setup={
-            "Cutover": format_cutovers(
-                run_config["standard_config"]["cutover_dates"], e3_config["cutovers"]
+            "Cutover und Ereignisse": "; ".join(
+                f"{format_cutovers(cutover_dates, [cutover_id])}: "
+                + ", ".join(KIND_LABELS[kind] for kind in kinds)
+                for cutover_id, kinds in kinds_by_cutover.items()
             ),
-            "Ereignisse": ", ".join(KIND_LABELS[kind] for kind in e3_config["kinds"]),
-            "System": f"{SYS_LABELS[e3_config['system_id']]}, Einordnung und Reset wie im Betrieb, ohne LLM",
+            "Systeme": f"{', '.join(SYS_LABELS[system] for system in systems)}, je im vollen Kreislauf, {SYS_LABELS[reference]} nur als Bezug für den MAE",
+            "LLM": f"{llm_config['model']}, Prompt {llm_config['prompt_version']}",
             "Commit": format_commit(run_config["code_version"]),
         },
         tables=tables,
         notes=[
             "Tag = Entscheidungstag seit Cutover, an Tag 1 wird der Cutover-Tag eingeordnet",
-            "kein Tag = die Veränderung wurde still aufgenommen",
-            "offenes Gate = Tag, an dem SYS3 das LLM fragen würde, die States dieser Tage liegen in raw/",
+            "erwartet: Rampe über 28 Tage ist ein neues Muster, Rampe über 56 Tage nicht, dort ist still aufnehmen richtig und ein Reset ein Fehler",
+            "erstes new_pattern und Gate: gepaart wird je System gegen dessen eigenen Kontrolllauf, leer = still aufgenommen",
+            "offenes Gate = Tag, an dem SYS3 das LLM fragt, States und Antworten liegen in raw/",
+            f"MAE: {reference} ordnet wie die Regel ein, setzt aber nie zurück. Vor den gewählten Cutovern setzt die Regel nicht zurück, bis zum ersten Reset laufen beide also gleich. Negativ = der Reset senkt den Fehler, leer = kein Reset",
+            "keine Änderung: jeder Reset dort ist ein falscher",
         ],
         images=[],
-        decimals=DECIMALS,
+        decimals=STANDARD_CONFIG.decimals,
     )
 
     return output_directory

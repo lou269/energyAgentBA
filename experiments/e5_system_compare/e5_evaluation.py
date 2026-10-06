@@ -62,26 +62,10 @@ RESULT_COLUMNS = (
 def read_e5_results(
     summary: pd.DataFrame, anomaly: pd.DataFrame, *, series: str, cutover_date: str
 ) -> pd.DataFrame:
-    cycle_outputs = summary[
-        [
-            "decision_time",
-            "config",
-            "adaption_action",
-            "explanation",
-            "mae_w",
-            "mape_pct",
-        ]
-    ]
-    days = (
-        merge_cycle_days(summary, anomaly)
-        .merge(cycle_outputs, on=["decision_time", "config"])
-        .assign(
-            series=series,
-            cutover_date=cutover_date,
-            scenario=SCENARIO_DIRECTORY.format(
-                series=series, cutover_date=cutover_date
-            ),
-        )
+    days = merge_cycle_days(summary, anomaly).assign(
+        series=series,
+        cutover_date=cutover_date,
+        scenario=SCENARIO_DIRECTORY.format(series=series, cutover_date=cutover_date),
     )
     # Regel bzw. LLM wurde gefragt, auch wenn das LLM keine gültige Antwort lieferte
     days["classifier_called"] = days["explanation"].notna() | days["error"].notna()
