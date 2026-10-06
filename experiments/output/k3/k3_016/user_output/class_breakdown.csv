@@ -1,0 +1,13 @@
+model_id,classification,precision,recall,f1
+BASELINE,absence,0.0,0.0,0.0
+BASELINE,low,1.0,1.0,1.0
+BASELINE,measurement_error,1.0,1.0,1.0
+BASELINE,new_pattern,0.75,1.0,0.8571428571428571
+BASELINE,normal,1.0,1.0,1.0
+BASELINE,peak,1.0,1.0,1.0
+MDL5,absence,1.0,1.0,1.0
+MDL5,low,1.0,1.0,1.0
+MDL5,measurement_error,1.0,1.0,1.0
+MDL5,new_pattern,1.0,1.0,1.0
+MDL5,normal,1.0,1.0,1.0
+MDL5,peak,1.0,1.0,1.0

@@ -1,0 +1,3 @@
+model_id,model,n_attempts,correct,invalid,mean_attempt_count,mean_generation_seconds,p95_generation_seconds,mean_grounding_coverage,macro_f1,gate_open_days,failed_days,detected_kinds,event_kinds,control_notification_days,control_unknown_days,control_resets,rule_deviation_days
+MDL5,ministral-3:8b,10,10,0,1.0,20.785544129098707,36.01174257675045,0.95,1.0,93,0,2,2,2,0,1,4
+BASELINE,rule_based,10,9,0,1.0,0.0,0.0,,0.8095238095238094,96,0,2,2,0,0,0,0

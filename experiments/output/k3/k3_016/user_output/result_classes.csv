@@ -1,0 +1,13 @@
+Modell,Klasse,Precision,Recall,F1
+Regel,absence,0.0,0.0,0.0
+Regel,low,1.0,1.0,1.0
+Regel,measurement_error,1.0,1.0,1.0
+Regel,new_pattern,0.8,1.0,0.9
+Regel,normal,1.0,1.0,1.0
+Regel,peak,1.0,1.0,1.0
+ministral-3:8b,absence,1.0,1.0,1.0
+ministral-3:8b,low,1.0,1.0,1.0
+ministral-3:8b,measurement_error,1.0,1.0,1.0
+ministral-3:8b,new_pattern,1.0,1.0,1.0
+ministral-3:8b,normal,1.0,1.0,1.0
+ministral-3:8b,peak,1.0,1.0,1.0

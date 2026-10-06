@@ -1,0 +1,37 @@
+{"classification": "normal", "config": "BASELINE", "decision_time": "2015-01-25T00:00:00+00:00", "reasoning": "the day itself is not unusual and fewer than 2 scales are sustained (weekend)."}
+{"classification": "normal", "config": "BASELINE", "decision_time": "2015-01-26T00:00:00+00:00", "reasoning": "the day itself is not unusual and fewer than 2 scales are sustained (weekend)."}
+{"classification": "normal", "config": "BASELINE", "decision_time": "2015-01-27T00:00:00+00:00", "reasoning": "the day itself is not unusual and fewer than 2 scales are sustained (weekday)."}
+{"classification": "normal", "config": "BASELINE", "decision_time": "2015-01-28T00:00:00+00:00", "reasoning": "the day itself is not unusual and fewer than 2 scales are sustained (weekday)."}
+{"classification": "normal", "config": "BASELINE", "decision_time": "2015-01-29T00:00:00+00:00", "reasoning": "the day itself is not unusual and fewer than 2 scales are sustained (weekday)."}
+{"classification": "normal", "config": "BASELINE", "decision_time": "2015-02-19T00:00:00+00:00", "reasoning": "the day itself is not unusual and fewer than 2 scales are sustained (weekday)."}
+{"classification": "normal", "config": "BASELINE", "decision_time": "2015-02-20T00:00:00+00:00", "reasoning": "the day itself is not unusual and fewer than 2 scales are sustained (weekday)."}
+{"classification": "normal", "config": "BASELINE", "decision_time": "2015-02-21T00:00:00+00:00", "reasoning": "the day itself is not unusual and fewer than 2 scales are sustained (weekday)."}
+{"classification": "normal", "config": "BASELINE", "decision_time": "2015-02-22T00:00:00+00:00", "reasoning": "the day itself is not unusual and fewer than 2 scales are sustained (weekend)."}
+{"classification": "normal", "config": "BASELINE", "decision_time": "2015-02-23T00:00:00+00:00", "reasoning": "the day itself is not unusual and fewer than 2 scales are sustained (weekend)."}
+{"classification": "normal", "config": "BASELINE", "decision_time": "2015-02-24T00:00:00+00:00", "reasoning": "the day itself is not unusual and fewer than 2 scales are sustained (weekday)."}
+{"classification": "normal", "config": "BASELINE", "decision_time": "2015-02-25T00:00:00+00:00", "reasoning": "the day itself is not unusual and fewer than 2 scales are sustained (weekday)."}
+{"classification": "normal", "config": "BASELINE", "decision_time": "2015-02-26T00:00:00+00:00", "reasoning": "the day itself is not unusual and fewer than 2 scales are sustained (weekday)."}
+{"classification": "peak", "config": "BASELINE", "decision_time": "2015-03-06T00:00:00+00:00", "reasoning": "unusual (unusual), but no sustained multi-scale signature (weekday)."}
+{"classification": "normal", "config": "BASELINE", "decision_time": "2015-03-09T00:00:00+00:00", "reasoning": "the day itself is not unusual and fewer than 2 scales are sustained (weekend)."}
+{"classification": "normal", "config": "BASELINE", "decision_time": "2015-03-10T00:00:00+00:00", "reasoning": "the day itself is not unusual and fewer than 2 scales are sustained (weekday)."}
+{"classification": "normal", "config": "BASELINE", "decision_time": "2015-03-11T00:00:00+00:00", "reasoning": "the day itself is not unusual and fewer than 2 scales are sustained (weekday)."}
+{"classification": "normal", "config": "BASELINE", "decision_time": "2015-03-12T00:00:00+00:00", "reasoning": "the day itself is not unusual and fewer than 2 scales are sustained (weekday)."}
+{"classification": "normal", "config": "BASELINE", "decision_time": "2015-03-13T00:00:00+00:00", "reasoning": "the day itself is not unusual and fewer than 2 scales are sustained (weekday)."}
+{"classification": "normal", "config": "BASELINE", "decision_time": "2015-03-14T00:00:00+00:00", "reasoning": "the day itself is not unusual and fewer than 2 scales are sustained (weekday)."}
+{"classification": "normal", "config": "BASELINE", "decision_time": "2015-03-15T00:00:00+00:00", "reasoning": "the day itself is not unusual and fewer than 2 scales are sustained (weekend)."}
+{"classification": "normal", "config": "BASELINE", "decision_time": "2015-03-16T00:00:00+00:00", "reasoning": "the day itself is not unusual and fewer than 2 scales are sustained (weekend)."}
+{"classification": "normal", "config": "BASELINE", "decision_time": "2015-03-17T00:00:00+00:00", "reasoning": "the day itself is not unusual and fewer than 2 scales are sustained (weekday)."}
+{"classification": "normal", "config": "BASELINE", "decision_time": "2015-03-18T00:00:00+00:00", "reasoning": "the day itself is not unusual and fewer than 2 scales are sustained (weekday)."}
+{"classification": "normal", "config": "BASELINE", "decision_time": "2015-03-19T00:00:00+00:00", "reasoning": "the day itself is not unusual and fewer than 2 scales are sustained (weekday)."}
+{"classification": "normal", "config": "BASELINE", "decision_time": "2015-03-20T00:00:00+00:00", "reasoning": "the day itself is not unusual and fewer than 2 scales are sustained (weekday)."}
+{"classification": "new_pattern", "config": "BASELINE", "decision_time": "2015-03-23T00:00:00+00:00", "reasoning": "sustained deviation across multiple scales at once (weekly, long_term), on a weekend."}
+{"classification": "low", "config": "BASELINE", "decision_time": "2015-04-02T23:00:00+00:00", "reasoning": "unusual (unusual) low reading, but no sustained multi-scale signature (weekday)."}
+{"classification": "low", "config": "BASELINE", "decision_time": "2015-04-03T23:00:00+00:00", "reasoning": "unusual (unusual) low reading, but no sustained multi-scale signature (weekday)."}
+{"classification": "normal", "config": "BASELINE", "decision_time": "2015-04-05T23:00:00+00:00", "reasoning": "the day itself is not unusual and fewer than 2 scales are sustained (weekend)."}
+{"classification": "normal", "config": "BASELINE", "decision_time": "2015-04-06T23:00:00+00:00", "reasoning": "the day itself is not unusual and fewer than 2 scales are sustained (weekday)."}
+{"classification": "normal", "config": "BASELINE", "decision_time": "2015-04-07T23:00:00+00:00", "reasoning": "the day itself is not unusual and fewer than 2 scales are sustained (weekday)."}
+{"classification": "normal", "config": "BASELINE", "decision_time": "2015-04-08T23:00:00+00:00", "reasoning": "the day itself is not unusual and fewer than 2 scales are sustained (weekday)."}
+{"classification": "normal", "config": "BASELINE", "decision_time": "2015-04-09T23:00:00+00:00", "reasoning": "the day itself is not unusual and fewer than 2 scales are sustained (weekday)."}
+{"classification": "normal", "config": "BASELINE", "decision_time": "2015-04-10T23:00:00+00:00", "reasoning": "the day itself is not unusual and fewer than 2 scales are sustained (weekday)."}
+{"classification": "normal", "config": "BASELINE", "decision_time": "2015-04-11T23:00:00+00:00", "reasoning": "the day itself is not unusual and fewer than 2 scales are sustained (weekend)."}
+{"classification": "normal", "config": "BASELINE", "decision_time": "2015-04-12T23:00:00+00:00", "reasoning": "the day itself is not unusual and fewer than 2 scales are sustained (weekend)."}
