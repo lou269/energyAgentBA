@@ -14,7 +14,7 @@ class SplitDefinition:
     days: int | None  # Länge in lokalen Kalendertagen, None = Rest
 
 
-# Abschnitte in zeitlicher Reihenfolge. train ist nur Historie, ein Jahr für die Jahressaisonalität in K1, die am Anfang von validation beginnt.
+# Abschnitte in zeitlicher Reihenfolge. train ist nur Historie, ein Jahr für die Jahressaisonalität in K4, die am Anfang von validation beginnt.
 # Eingestellt wird in validation, getestet im späteren Fenster test
 SPLITS: dict[str, SplitDefinition] = {
     "train": SplitDefinition(window="development", days=365),
@@ -54,7 +54,7 @@ class NumericalAnalysisConfig:
     single_day_scales: tuple[str, ...] = ("daily", "weekday")
 
     unusual_threshold: float = 3.2
-    # Streak-Schwellen: kalibriert in K2
+    # Streak-Schwellen: kalibriert in K1
     weekly_streak_threshold: float = 1.02
     long_term_streak_threshold_pct: float = 14.2
 
@@ -181,13 +181,13 @@ class ForecastingConfig:
     daily_seasonality: bool = True
     country_holidays: str | None = "UK"
     weekly_seasonality: bool = False
-    # aus: im Log-Raum liefert exp() eher den Median, das Tagesmittel lag in K1 um gut 10 % zu tief, Tagesfehler ohne Log gleich gut
+    # aus: im Log-Raum liefert exp() eher den Median, das Tagesmittel lag in K4 um gut 10 % zu tief, Tagesfehler ohne Log gleich gut
     log_transform: bool = False
     interval_width: float = 0.80
     uncertainty_samples: int = 1000
     seed: int = 42
 
-    # aus dem K1-Validierungslauf übertragen, gilt für Test-Split und E4
+    # aus dem K4-Validierungslauf übertragen, gilt für Test-Split und E4
     primary_naive_reference: str | None = "B2"
     # ohne Log kann Prophet unter 0 W prognostizieren
     clip_negative_forecasts: bool = True
@@ -201,7 +201,7 @@ class ForecastingConfig:
 
 @dataclass(frozen=True)
 class LLMConfig:
-    model: str = "ministral-3:8b"  # in K3 gewählt
+    model: str = "ministral-3:8b"  # in K2 gewählt
     prompt_version: str = "v30"
     temperature: float = 0.0
     # qwen3.5:9b liefert das selbst als Modelfile-Default, gegen Wiederholungsschleifen bei greedy decoding

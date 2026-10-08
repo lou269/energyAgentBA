@@ -36,7 +36,6 @@ class ProjectConfig:
     e2_output_dir: Path = experiment_output_dir / "e2"
     e3_output_dir: Path = experiment_output_dir / "e3"
     e4_output_dir: Path = experiment_output_dir / "e4"
-    e5_output_dir: Path = experiment_output_dir / "e5"
     k1_output_dir: Path = experiment_output_dir / "k1"
     k2_output_dir: Path = experiment_output_dir / "k2"
     k3_output_dir: Path = experiment_output_dir / "k3"

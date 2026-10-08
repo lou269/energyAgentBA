@@ -56,7 +56,7 @@ DETECTION_LABELS: dict[str, str] = {
     "flag": "als Messfehler markieren",
 }
 
-# Vorlage für die Erklärungsbewertung, Texte aus E2 und E5
+# Vorlage für die Erklärungsbewertung, Texte aus E2 und E3
 EXPLANATION_RATING_FILE = "explanation_ratings_template"
 YES_NO = {True: "ja", False: "nein"}
 NOISE_RULE_NOTE = "belastbar: Betrag der Differenz größer als 2 Standardfehler der gepaarten Differenzen, grobe Faustregel"

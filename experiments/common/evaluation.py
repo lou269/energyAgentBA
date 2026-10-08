@@ -28,7 +28,7 @@ SCALE_SUSTAINED_COLUMNS = [f"{scale}_sustained" for scale in SCALE_NAMES]
 # und prognostiziert ihn, eingeordnet wird dabei der Vortag. Einordnung und Adaption zählen deshalb erst ab Tag 1 zum Ereignis
 FIRST_ANALYZED_DAY = 1
 
-# eine Ergebniszeile je System, Cutover und Art in Studien auf Standard-Cutovern mit Kontrolllauf (E1, E3)
+# eine Ergebniszeile je System, Cutover und Art in Studien auf Standard-Cutovern mit Kontrolllauf (E1)
 EVENT_KEYS = ["config", "cutover_date", "kind"]
 
 
@@ -324,7 +324,7 @@ def compare_errors_after_reset(
 def summarize_cutover_response(
     results: pd.DataFrame, reference_config: str, expected: Mapping[str, str]
 ) -> pd.DataFrame:
-    """Eine Zeile je System, Cutover und Art (E1, E3): erwartete Klasse aus expected, erstes new_pattern und Tage mit offenem Gate, die der Kontrolllauf desselben Systems nicht hat, Resets vor dem Cutover, erster Reset ab Cutover und Tagesfehler und MAE ab dort minus reference_config"""
+    """Eine Zeile je System, Cutover und Art (E1): erwartete Klasse aus expected, erstes new_pattern und Tage mit offenem Gate, die der Kontrolllauf desselben Systems nicht hat, Resets vor dem Cutover, erster Reset ab Cutover und Tagesfehler und MAE ab dort minus reference_config"""
     systems = add_days_since_cutover(
         results.loc[results["config"].ne(reference_config)]
     )

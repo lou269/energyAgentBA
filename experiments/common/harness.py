@@ -43,7 +43,7 @@ def run_scenario(
     llm_prompt: str | None = None,
     calendar_tool_prompt: str | None = None,
 ) -> pd.DataFrame:
-    # sonst eine Logzeile je Zyklus und System, bei K2 wären das gut 5.000
+    # sonst eine Logzeile je Zyklus und System, bei K1 wären das gut 5.000
     logging.getLogger("src.pipeline.comparison_harness").setLevel(logging.WARNING)
 
     return run_comparison(
@@ -110,7 +110,7 @@ def read_calendar_availability(output_directory: Path) -> pd.DataFrame:
 
 
 def _scenario_of(file: Path, raw_directory: Path) -> str:
-    # Ordner über dem System (ctx0 in E2, Szenario in E5)
+    # Ordner über dem System (ctx0 in E2, Szenario in E3)
     return file.parent.parent.relative_to(raw_directory).as_posix()
 
 

@@ -108,7 +108,7 @@ def slice_history_window(
     history_days: int | None,
     split_bounds: tuple[pd.Timestamp, pd.Timestamp],
 ) -> tuple[pd.Series, pd.Series, pd.Series]:
-    # history_days Tage Historie vor start, None = alles davor (K1 macro), ausgewertet wird start bis end inklusive
+    # history_days Tage Historie vor start, None = alles davor (K4 macro), ausgewertet wird start bis end inklusive
     history_start = (
         None
         if history_days is None

@@ -34,8 +34,8 @@ RULE_SYSTEM = "SYS2"
 LLM_SYSTEM = "SYS3"
 
 
-# Szenario-Katalog aller Studien. Cutover und Zeitfenster gelten nur für die Komponentenstudien K3 (Ebene 2) und K4,
-# Experimente laufen nicht auf diesen Cutovern, weil K3 darauf eingestellt wurde
+# Szenario-Katalog aller Studien. Cutover und Zeitfenster gelten nur für die Komponentenstudien K2 (Ebene 2) und K3,
+# Experimente laufen nicht auf diesen Cutovern, weil K2 darauf eingestellt wurde
 @dataclass(frozen=True)
 class StandardScenarioConfig:
     decimals: int = 1
@@ -71,7 +71,7 @@ class StandardScenarioConfig:
     peak_hours: int = 6
     level_extra_w: float = 190.0
 
-    # nur für K3 Ebene 2 (Modellwahl, kein Beleg): deutlich über der Grenze, damit das Gate sicher öffnet und es etwas einzuordnen gibt
+    # nur für K2 Ebene 2 (Modellwahl, kein Beleg): deutlich über der Grenze, damit das Gate sicher öffnet und es etwas einzuordnen gibt
     strong_scale_factor: float = 1.3
     strong_peak_extra_w: float = 1000.0
 

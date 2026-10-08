@@ -49,7 +49,7 @@ def run_forecasts(
 
     adaptive = forecast_config.selected_prophet_variant
     static = e4_config.static_variant
-    # None heißt nur in K1 "noch wählen", E4 übernimmt die dort gewählte Baseline
+    # None heißt nur in K4 "noch wählen", E4 übernimmt die dort gewählte Baseline
     reference = forecast_config.primary_naive_reference
     assert reference is not None
     origin_frames: list[pd.DataFrame] = []

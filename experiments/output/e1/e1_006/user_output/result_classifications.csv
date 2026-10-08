@@ -1,4 +1,0 @@
-System,Zeitraum,Tage,low,normal,peak,ohne Ergebnis
-SYS2 Regel,vor Cutover,15,0,15,0,0
-SYS2 Regel,ab Cutover,28,2,25,1,0
-SYS2 Regel,"ab Cutover, Kontrolle",28,2,26,0,0
