@@ -1,6 +1,6 @@
 import pandas as pd
 
-from experiments.e3_saisonality.e3_evaluation import summarize_drift_response
+from experiments.e3_seasonality.e3_evaluation import summarize_drift_response
 from src.common.timestamps import local_calendar_range, local_midnight_utc
 
 TIMEZONE = "Europe/London"

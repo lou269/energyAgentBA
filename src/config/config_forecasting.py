@@ -150,7 +150,7 @@ MODEL_LABELS: dict[str, str] = {
     "C3_60": "C3_60 rolling 60 Tage",
 }
 
-selected_prophet_model = C2_EXPANDING
+selected_prophet_model = C3_ROLLING_30
 """ FORECASTING """
 
 
