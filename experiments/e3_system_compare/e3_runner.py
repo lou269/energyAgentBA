@@ -36,6 +36,7 @@ def run(e3_config: E3Config) -> Path:
     systems = (e3_config.reference_system, e3_config.rule_system, e3_config.llm_system)
     configs = {system: SYS_VARIANTS[system] for system in systems}
     llm_config = configs[e3_config.llm_system].llm_config
+    assert llm_config is not None
     llm_prompt = read_llm_prompt(llm_config.prompt_version)
 
     run_directory, raw_directory = create_experiment_run(
@@ -52,14 +53,9 @@ def run(e3_config: E3Config) -> Path:
     )
     results: list[pd.DataFrame] = []
 
-    for cutover_date in e3_config.cutover_dates:
-        scenarios = build_e3_scenarios(
-            cutover_date,
-            e3_config.events,
-            split=e3_config.split,
-            margin_before_days=e3_config.margin_before_days,
-            margin_after_days=e3_config.margin_after_days,
-        )
+    for cutover_id in e3_config.cutovers[STANDARD_CONFIG.split]:
+        cutover_date = STANDARD_CONFIG.cutover_date(cutover_id)
+        scenarios = build_e3_scenarios(cutover_date, e3_config.events)
 
         for series, scenario in scenarios.items():
             scenario_name = SCENARIO_DIRECTORY.format(

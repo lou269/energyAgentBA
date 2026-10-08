@@ -19,7 +19,11 @@ from experiments.common.scenarios import (
     local_day_window,
     slice_history_window,
 )
-from experiments.common.standard_config import LOCAL_TIMEZONE, PROJECT_CONFIG
+from experiments.common.standard_config import (
+    LOCAL_TIMEZONE,
+    PROJECT_CONFIG,
+    STANDARD_CONFIG,
+)
 from experiments.k4_forecast_model.k4_config import (
     REFERENCE_FILE,
     RUN_PREFIX,
@@ -37,14 +41,17 @@ logger = logging.getLogger(__name__)
 def run_retraining(k4_config: K4Config) -> Path:
     np.random.seed(k4_config.seed)
 
-    split = k4_config.split
+    split = STANDARD_CONFIG.split
     target_series, target_imputed, _target_value_implausible = load_target(split)
     split_start, split_end = read_split_bounds(PROJECT_CONFIG, split)
 
     run_directory, raw_directory = create_experiment_run(
         PROJECT_CONFIG.k4_output_dir,
         RUN_PREFIX,
-        {"k4_config": asdict(k4_config)},
+        {
+            "standard_config": asdict(STANDARD_CONFIG),
+            "k4_config": asdict(k4_config),
+        },
     )
     prophet_model_ids = tuple(
         variant.model_id for variant in k4_config.prophet_variants
@@ -108,9 +115,9 @@ def run_seasonality(k4_config: K4Config) -> Path:
     np.random.seed(k4_config.seed)
 
     target_series, target_imputed, _target_value_implausible = load_target(
-        k4_config.split
+        STANDARD_CONFIG.split
     )
-    split_start, split_end = read_split_bounds(PROJECT_CONFIG, k4_config.split)
+    split_start, split_end = read_split_bounds(PROJECT_CONFIG, STANDARD_CONFIG.split)
     start, end = local_day_window(
         split_start.tz_convert(LOCAL_TIMEZONE).date().isoformat(),
         k4_config.seasonality_days,
@@ -128,7 +135,10 @@ def run_seasonality(k4_config: K4Config) -> Path:
     run_directory, raw_directory = create_experiment_run(
         PROJECT_CONFIG.k4_output_dir,
         SEASONALITY_RUN_PREFIX,
-        {"k4_config": asdict(k4_config)},
+        {
+            "standard_config": asdict(STANDARD_CONFIG),
+            "k4_config": asdict(k4_config),
+        },
     )
     logger.info("K4 seasonality %s, %d days", start, k4_config.seasonality_days)
 
@@ -140,7 +150,7 @@ def run_seasonality(k4_config: K4Config) -> Path:
         k4_config,
         run_id=run_directory.name,
         experiment_id=k4_config.experiment_id,
-        split=k4_config.split,
+        split=STANDARD_CONFIG.split,
         comparison_model_ids=tuple(
             variant.model_id for variant in k4_config.seasonality_variants
         ),

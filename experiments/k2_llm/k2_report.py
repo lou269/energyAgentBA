@@ -137,7 +137,7 @@ def build_setup(
         "LLM": f"temperature {format_number(llm_config['temperature'], 1)}, höchstens {llm_config['max_attempts']} Versuche je Aufruf",
         "Ebene 1": f"{case_count} synthetische Fälle, je Modell {k2_config['repetitions']} Aufruf je Fall, Regel ({BASELINE_ID}) läuft mit",
         "Ebene 2": (
-            f"Standard-Szenarien, Cutover {format_cutovers(standard_config['cutover_dates'], (sequence_config['sequence_cutover'],))}, "
+            f"Standard-Szenarien, Cutover {format_cutovers(standard_config, (sequence_config['sequence_cutover'][standard_config['split']],))}, "
             f"{standard_config['monitoring_before_cutover_days']} Tage davor, {standard_config['margin_after_days']} danach, "
             "jedes Modell als eigener Kreislauf wie SYS3 mit Adaption"
         ),

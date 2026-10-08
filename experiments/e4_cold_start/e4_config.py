@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from experiments.common.standard_config import LLM_SYSTEM
 
@@ -16,8 +16,13 @@ CLEAN_SCENARIO = "clean"
 class E4Config:
     experiment_id: str = "E4"
 
-    # Standard-Cutover als Starttermine, nur die ohne Reset
-    cutovers: tuple[str, ...] = ("CO1", "CO3", "CO5")
+    # Standard-Cutover als Starttermine je Abschnitt, nur die ohne Reset
+    cutovers: dict[str, tuple[str, ...]] = field(
+        default_factory=lambda: {
+            "validation": ("CO2", "CO3", "CO5"),
+            "test": ("CO6", "CO7"),
+        }
+    )
     evaluation_days: int = 56
 
     # E4a: C1 hängt dauerhaft an N, deshalb alle Längen

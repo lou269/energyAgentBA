@@ -21,7 +21,6 @@ class ProactiveCycleConfig:
     llm_config: LLMConfig = LLMConfig(prompt_version="outlook_v3", keep_alive=-1)
 
     # Cutover aus den Standard-Szenarien, vom Cutover an so viele Tage mit Ausblick, ohne Kalender
-    split: str = "validation"
     cutover_date: str = "2015-02-09"
     outlook_days: int = 12
 

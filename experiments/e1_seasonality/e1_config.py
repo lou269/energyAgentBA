@@ -7,24 +7,39 @@ RUN_PREFIX = "e1"
 RESULTS_FILE = "e1_results"
 
 
+BOTH_DIRECTIONS = (
+    "control",
+    "scaled",
+    "scaled_down",
+    "peak",
+    "ramp_28",
+    "ramp_56",
+    "ramp_28_down",
+    "ramp_56_down",
+)
+
+
 @dataclass(frozen=True)
 class E1Config:
-    # keine Cutover, vor denen die Regel im Kontrolllauf zurücksetzt
-    # Sprünge nur mit der Saison: nach unten an CO3 (Niveau fällt um 19 %), an CO4 beide Richtungen, nach oben an CO5
-    kinds_by_cutover: dict[str, tuple[str, ...]] = field(
+    kinds_by_cutover: dict[str, dict[str, tuple[str, ...]]] = field(
         default_factory=lambda: {
-            "CO3": ("control", "scaled_down", "peak", "ramp_28_down", "ramp_56_down"),
-            "CO4": (
-                "control",
-                "scaled",
-                "scaled_down",
-                "peak",
-                "ramp_28",
-                "ramp_56",
-                "ramp_28_down",
-                "ramp_56_down",
-            ),
-            "CO5": ("control", "scaled", "peak", "ramp_28", "ramp_56"),
+            "validation": {
+                "CO1": BOTH_DIRECTIONS,
+                "CO2": BOTH_DIRECTIONS,
+                "CO3": BOTH_DIRECTIONS,
+                "CO4": BOTH_DIRECTIONS,
+                "CO5": BOTH_DIRECTIONS,
+            },
+            "test": {
+                "CO6": ("control", "scaled", "peak", "ramp_28", "ramp_56"),
+                "CO7": (
+                    "control",
+                    "scaled_down",
+                    "peak",
+                    "ramp_28_down",
+                    "ramp_56_down",
+                ),
+            },
         }
     )
     # ohne Adaption und ohne LLM, die Reihen laufen nach dem Ereignis nicht auseinander

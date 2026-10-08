@@ -99,14 +99,14 @@ def build_paired_table(paired: pd.DataFrame) -> pd.DataFrame:
 
 
 def build_setup(
-    config: dict, modes: list[ModeSummary], code_version: dict
+    config: dict, split: str, modes: list[ModeSummary], code_version: dict
 ) -> dict[str, str]:
     # beide Modi werten denselben Split aus, die Prognosetage sind gleich
     days = modes[0]
 
     setup = {
         "Split": (
-            f"{config['split']}, {days.first_forecast_day} bis {days.last_forecast_day}, "
+            f"{split}, {days.first_forecast_day} bis {days.last_forecast_day}, "
             f"{days.forecast_day_count} Prognosetage (Ortszeit)"
         ),
     }
@@ -178,11 +178,10 @@ def build_key_figures(modes: list[ModeSummary]) -> pd.DataFrame:
 def report_retraining(run_directory: Path) -> Path:
     run_config = read_raw_json(run_directory, "run_config")
     config = run_config["k4_config"]
+    split = run_config["standard_config"]["split"]
     variant_ids = tuple(variant["model_id"] for variant in config["prophet_variants"])
     mode_directories = {
-        mode: run_directory
-        / RAW_SUBDIR
-        / f"{mode}_{SPLIT_DIRECTORY_SUFFIX[config['split']]}"
+        mode: run_directory / RAW_SUBDIR / f"{mode}_{SPLIT_DIRECTORY_SUFFIX[split]}"
         for mode in config["comparison_modes"]
     }
     results_by_mode = {
@@ -193,7 +192,7 @@ def report_retraining(run_directory: Path) -> Path:
     summary = summarize_retraining(
         results_by_mode,
         variant_ids,
-        read_preprocessed_daily_target(PROJECT_CONFIG, config["split"]),
+        read_preprocessed_daily_target(PROJECT_CONFIG, split),
     )
     modes = summary.modes
 
@@ -213,7 +212,7 @@ def report_retraining(run_directory: Path) -> Path:
             overall,
             summary.days[mode.mode],
             output_directory / mode.mode,
-            split=config["split"],
+            split=split,
             comparison_mode=mode.mode,
             baseline_model_ids=tuple(config["baseline_model_ids"]),
             variant_model_ids=variant_ids,
@@ -228,7 +227,7 @@ def report_retraining(run_directory: Path) -> Path:
     write_result_report(
         output_directory,
         title=f"K4 Retraining-Vergleich, Lauf {run_directory.name}",
-        setup=build_setup(config, modes, run_config["code_version"]),
+        setup=build_setup(config, split, modes, run_config["code_version"]),
         tables=tables,
         notes=build_notes(modes),
         images=[f"{mode}/forecast_model_comparison.png" for mode in mode_directories],
@@ -241,14 +240,15 @@ def report_retraining(run_directory: Path) -> Path:
 def report_seasonality(run_directory: Path) -> Path:
     run_config = read_raw_json(run_directory, "run_config")
     config = run_config["k4_config"]
+    split = run_config["standard_config"]["split"]
     reference_model_id = config["primary_naive_reference"]
     model_ids = [variant["model_id"] for variant in config["seasonality_variants"]]
-    split_start, _split_end = read_split_bounds(PROJECT_CONFIG, config["split"])
+    split_start, _split_end = read_split_bounds(PROJECT_CONFIG, split)
     seasonality_start = split_start.tz_convert(LOCAL_TIMEZONE).date()
 
     summary = summarize_seasonal_forecast(
         pd.read_csv(run_directory / RAW_SUBDIR / f"{SEASONALITY_FORECASTS_FILE}.csv"),
-        read_preprocessed_daily_target(PROJECT_CONFIG, config["split"]),
+        read_preprocessed_daily_target(PROJECT_CONFIG, split),
         tuple(
             (variant, reference)
             for variant, reference in config["seasonality_comparisons"]
@@ -312,7 +312,7 @@ def report_seasonality(run_directory: Path) -> Path:
         title=f"K4 Prognose mit und ohne Jahressaisonalität, Lauf {run_directory.name}",
         setup={
             "Auswertung": f"{config['seasonality_days']} Tage ab {seasonality_start} "
-            f"({config['split']}), je Tag eine 24-h-Prognose, Historie ab Datenbeginn",
+            f"({split}), je Tag eine 24-h-Prognose, Historie ab Datenbeginn",
             "Varianten": ", ".join(MODEL_LABELS[model_id] for model_id in model_ids),
             "Naive Referenz": MODEL_LABELS[reference_model_id],
             "Commit": format_commit(run_config["code_version"]),

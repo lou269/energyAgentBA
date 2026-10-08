@@ -12,7 +12,11 @@ from experiments.common.scenarios import (
     scenario_without_calendar,
     subtract_channels_in_window,
 )
-from experiments.common.standard_config import COLDSTART_DAYS, PROJECT_CONFIG
+from experiments.common.standard_config import (
+    COLDSTART_DAYS,
+    PROJECT_CONFIG,
+    STANDARD_CONFIG,
+)
 from experiments.e2_absence.e2_config import (
     CHANNEL_DATA_FILE,
     CHANNEL_RANKING_FILE,
@@ -74,7 +78,7 @@ def build_absence_scenarios(
     window_end: pd.Timestamp,
 ) -> dict[str, ScenarioData]:
     # Urlaub: die gewählten Kanäle im Fenster aus Mains herausgerechnet, ohne (CTX0), mit (CTX1) und per Tool (CTX2) Kalender
-    mains_series, target_imputed, value_implausible = load_target(e2_config.split)
+    mains_series, target_imputed, value_implausible = load_target(STANDARD_CONFIG.split)
     ranking, appliance_data_hourly = read_channel_selection(e2_config, event_id)
     # die Auswahl hat e2_select_channels schon getroffen
     selected_channels = ranking.loc[ranking["is_selected"], "meter_key"].tolist()
@@ -95,7 +99,7 @@ def build_absence_scenarios(
             mains_series,
             decision_times,
             COLDSTART_DAYS,
-            load_split_bounds(e2_config.split),
+            load_split_bounds(STANDARD_CONFIG.split),
         ),
         appliance_data_hourly,
         selected_channels,

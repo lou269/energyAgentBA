@@ -26,7 +26,6 @@ SPLIT_DIRECTORY_SUFFIX: dict[str, str] = {"validation": "val", "test": "test"}
 class K4Config(ForecastingConfig):
     config_version: str = "forecast-model-0.1"
     experiment_id: str = "K4_forecast_model"
-    split: str = "validation"
 
     comparison_modes: tuple[str, ...] = ("rolling", "macro")
     # Historie vor Split-Start: rolling wie der Online-Zyklus, macro alles davor

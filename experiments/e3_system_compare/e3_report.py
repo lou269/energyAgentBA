@@ -13,6 +13,7 @@ from experiments.common.report import (
     YES_NO,
     answer_bullets,
     format_commit,
+    format_cutovers,
     format_number,
     forecast_error_table,
     key_figures_table,
@@ -235,13 +236,19 @@ def build_key_figures(
 
 
 def build_setup(
-    e3_config: dict, llm_config: dict, labels: dict[int, str], code_version: dict
+    e3_config: dict,
+    standard_config: dict,
+    llm_config: dict,
+    labels: dict[int, str],
+    code_version: dict,
 ) -> dict[str, str]:
     return {
-        "Cutover": ", ".join(e3_config["cutover_dates"])
+        "Cutover": format_cutovers(
+            standard_config, e3_config["cutovers"][standard_config["split"]]
+        )
         + " (Tag 0, alle Tage und Daten in Ortszeit)",
-        "Fenster": f"{e3_config['margin_before_days']} Tage vor und "
-        f"{e3_config['margin_after_days']} Tage ab Cutover",
+        "Fenster": f"{standard_config['monitoring_before_cutover_days']} Tage vor und "
+        f"{standard_config['margin_after_days']} Tage ab Cutover",
         "Ereignislauf": "; ".join(labels.values()),
         "Systeme": ", ".join(
             SYS_LABELS[e3_config[key]]
@@ -355,7 +362,11 @@ def write_report(run_directory: Path) -> Path:
         output_directory,
         title=f"E3 Dreiervergleich {reference}/{rule}/{llm}, Lauf {run_directory.name}",
         setup=build_setup(
-            e3_config, run_config["llm_config"], labels, run_config["code_version"]
+            e3_config,
+            run_config["standard_config"],
+            run_config["llm_config"],
+            labels,
+            run_config["code_version"],
         ),
         tables=tables,
         notes=build_notes(summary, single_day_scales),

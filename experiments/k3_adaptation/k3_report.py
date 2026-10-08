@@ -104,7 +104,7 @@ def build_setup(run_config: dict, evaluation_days: int) -> dict[str, str]:
 
     return {
         "Cutover": format_cutovers(
-            standard_config["cutover_dates"], k3_config["cutovers"]
+            standard_config, k3_config["cutovers"][standard_config["split"]]
         ),
         "Ereignis": (
             "Sprung, jede Stunde × "
@@ -285,8 +285,10 @@ def report_masking(run_directory: Path, k3_config: K3Config) -> Path:
         title=f"K3 Teil 2, {'/'.join(k3_config.masked_classifications)} für Prophet ausblenden, Lauf {run_directory.name}",
         setup={
             "Cutover": format_cutovers(
-                run_config["standard_config"]["cutover_dates"],
-                run_config["k3_config"]["cutovers"],
+                run_config["standard_config"],
+                run_config["k3_config"]["cutovers"][
+                    run_config["standard_config"]["split"]
+                ],
             ),
             "Entscheidungen": "SYS2, danach zweimal nachgespielt: nur Resets (replay) und zusätzlich ausgeblendet (mask)",
             "Commit": format_commit(run_config["code_version"]),

@@ -10,7 +10,7 @@ from experiments.common.nilmtk_channels import (
     load_nilmtk_context,
     select_appliance_channels,
 )
-from experiments.common.standard_config import PROJECT_CONFIG
+from experiments.common.standard_config import PROJECT_CONFIG, STANDARD_CONFIG
 from experiments.e2_absence.e2_config import (
     CHANNEL_DATA_FILE,
     CHANNEL_RANKING_FILE,
@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 def run(e2_config: E2Config) -> None:
-    context = load_nilmtk_context(e2_config.split)
+    context = load_nilmtk_context(STANDARD_CONFIG.split)
     calendar_events = load_calendar_events(e2_config.calendar_events_file)
 
     # je Urlaub getrennt, die Abdeckung der Kanäle hängt am Fenster

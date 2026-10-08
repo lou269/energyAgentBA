@@ -137,7 +137,7 @@ def build_setup(run_config: dict) -> dict[str, str]:
 
     return {
         "Starttermine": (
-            f"Standard-Cutover {format_cutovers(standard_config['cutover_dates'], e4_config['cutovers'])} "
+            f"Standard-Cutover {format_cutovers(standard_config, e4_config['cutovers'][standard_config['split']])} "
             f"({standard_config['split']})"
         ),
         "Kaltstart": (

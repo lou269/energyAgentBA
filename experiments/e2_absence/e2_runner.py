@@ -6,7 +6,7 @@
 
 # je Urlaub aus E2Config.absence_event_ids die Systeme je Kontextvariante aus E2Config.ctx_systems: ohne (CTX0),
 # mit (CTX1) und per Tool (CTX2) Kalenderkontext
-# dazu je Reihe aus E2Config.event_series ein Lauf an event_cutover_id ohne Kalender, mit event_systems
+# dazu je Reihe aus E2Config.event_series ein Lauf an jedem Cutover aus event_cutovers ohne Kalender, mit event_systems
 # precheck: nur SYS1/SYS2 ohne LLM, zeigt ob und wann der Urlaub das Gate öffnet
 
 import logging
@@ -60,7 +60,10 @@ def run(e2_config: E2Config, run_prefix: str) -> Path:
     run_directory, raw_directory = create_experiment_run(
         PROJECT_CONFIG.e2_output_dir,
         run_prefix,
-        {"e2_config": asdict(e2_config)},
+        {
+            "standard_config": asdict(STANDARD_CONFIG),
+            "e2_config": asdict(e2_config),
+        },
     )
 
     results = []
@@ -74,7 +77,7 @@ def run(e2_config: E2Config, run_prefix: str) -> Path:
         # wie stark der Urlaub Mains überhaupt senkt, unabhängig von den Schwellen
         reductions.append(
             summarize_reduction_by_day(
-                load_target(e2_config.split)[0],
+                load_target(STANDARD_CONFIG.split)[0],
                 scenarios["ctx0"].target_series,
                 window_start=window_start,
                 window_end=window_end,
@@ -126,40 +129,40 @@ def run(e2_config: E2Config, run_prefix: str) -> Path:
 def run_event_scenarios(
     e2_config: E2Config, raw_directory: Path, run_name: str, llm_prompt: str
 ) -> list[pd.DataFrame]:
-    cutover_date = STANDARD_CONFIG.cutover_dates[e2_config.event_cutover_id]
     configs = {system: SYS_VARIANTS[system] for system in e2_config.event_systems}
-    control = build_standard_scenarios(
-        cutover_date, ("control",), split=e2_config.split
-    )["control"]
     event_days = []
 
-    for series, events in e2_config.event_series.items():
-        scenario = build_event_series_scenario(control, cutover_date, events)
-        scenario_name = f"{series}_{cutover_date}"
-        scenario_directory = raw_directory / scenario_name
-        logger.info(
-            "Running E2/%s over %d decision times...",
-            scenario_name,
-            len(scenario.decision_times),
-        )
+    for cutover_id in e2_config.event_cutovers[STANDARD_CONFIG.split]:
+        cutover_date = STANDARD_CONFIG.cutover_date(cutover_id)
+        control = build_standard_scenarios(cutover_date, ("control",))["control"]
 
-        run_scenario(
-            scenario,
-            configs,
-            scenario_directory,
-            run_id=f"{run_name}_{scenario_name}",
-            llm_prompt=llm_prompt,
-        )
-        # die Reihe steht in der Spalte kind, summarize_classification liest sie von dort
-        event_days.append(
-            collect_scenario_results(
-                pd.read_csv(scenario_directory / COMPARISON_SUMMARY_FILE),
-                read_anomaly_rows(scenario_directory),
-                kind=series,
-                cutover_date=cutover_date,
-                columns=CLASSIFICATION_RESULT_COLUMNS,
+        for series, events in e2_config.event_series.items():
+            scenario = build_event_series_scenario(control, cutover_date, events)
+            scenario_name = f"{series}_{cutover_date}"
+            scenario_directory = raw_directory / scenario_name
+            logger.info(
+                "Running E2/%s over %d decision times...",
+                scenario_name,
+                len(scenario.decision_times),
             )
-        )
+
+            run_scenario(
+                scenario,
+                configs,
+                scenario_directory,
+                run_id=f"{run_name}_{scenario_name}",
+                llm_prompt=llm_prompt,
+            )
+            # die Reihe steht in der Spalte kind, summarize_classification liest sie von dort
+            event_days.append(
+                collect_scenario_results(
+                    pd.read_csv(scenario_directory / COMPARISON_SUMMARY_FILE),
+                    read_anomaly_rows(scenario_directory),
+                    kind=series,
+                    cutover_date=cutover_date,
+                    columns=CLASSIFICATION_RESULT_COLUMNS,
+                )
+            )
 
     return event_days
 

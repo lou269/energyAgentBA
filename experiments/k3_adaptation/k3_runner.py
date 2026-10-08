@@ -58,8 +58,8 @@ def run_strategies(k3_config: K3Config) -> Path:
             runs.append((action, day))
     results: list[pd.DataFrame] = []
 
-    for cutover_id in k3_config.cutovers:
-        cutover_date = STANDARD_CONFIG.cutover_dates[cutover_id]
+    for cutover_id in k3_config.cutovers[STANDARD_CONFIG.split]:
+        cutover_date = STANDARD_CONFIG.cutover_date(cutover_id)
         for kind, scenario in build_standard_scenarios(
             cutover_date,
             k3_config.kinds,
@@ -110,8 +110,8 @@ def run_masking(k3_config: K3Config) -> Path:
     decisions: list[pd.DataFrame] = []
     results: list[pd.DataFrame] = []
 
-    for cutover_id in k3_config.cutovers:
-        cutover_date = STANDARD_CONFIG.cutover_dates[cutover_id]
+    for cutover_id in k3_config.cutovers[STANDARD_CONFIG.split]:
+        cutover_date = STANDARD_CONFIG.cutover_date(cutover_id)
         for kind, scenario in build_standard_scenarios(
             cutover_date,
             k3_config.masking_kinds,

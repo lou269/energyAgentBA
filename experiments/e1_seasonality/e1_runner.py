@@ -47,8 +47,8 @@ def run(e1_config: E1Config) -> Path:
     )
     scenario_results: list[pd.DataFrame] = []
 
-    for cutover_id, kinds in e1_config.kinds_by_cutover.items():
-        cutover_date = STANDARD_CONFIG.cutover_dates[cutover_id]
+    for cutover_id, kinds in e1_config.kinds_by_cutover[STANDARD_CONFIG.split].items():
+        cutover_date = STANDARD_CONFIG.cutover_date(cutover_id)
         scenarios = build_standard_scenarios(cutover_date, kinds)
 
         for kind, scenario in scenarios.items():

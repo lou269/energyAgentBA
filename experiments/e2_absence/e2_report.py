@@ -18,6 +18,7 @@ from experiments.common.report import (
     YES_NO,
     forecast_error_table,
     format_commit,
+    format_cutovers,
     key_figures_table,
     write_explanation_rating_template,
     write_result_report,
@@ -153,6 +154,7 @@ def build_reduction_table(reduction: pd.DataFrame) -> pd.DataFrame:
 
 def build_setup(
     e2_config: dict,
+    standard_config: dict,
     summaries: dict[str, E2Summary],
     windows: dict[str, tuple[pd.Timestamp, pd.Timestamp]],
     titles: dict[str, str],
@@ -177,7 +179,7 @@ def build_setup(
     for ctx, systems in e2_config["ctx_systems"].items():
         setup[f"Systeme {ctx}"] = ", ".join(systems)
     setup["Ereignisreihen"] = (
-        f"{STANDARD_CONFIG.cutover_dates[e2_config['event_cutover_id']]}, ohne Kalender, Systeme {', '.join(e2_config['event_systems'])}: "
+        f"{format_cutovers(standard_config, e2_config['event_cutovers'][standard_config['split']])}, ohne Kalender, Systeme {', '.join(e2_config['event_systems'])}: "
         + "; ".join(
             f"{SERIES_LABELS[series]} ("
             + ", ".join(f"Tag {day}: {KIND_LABELS[kind]}" for day, kind in events)
@@ -430,6 +432,7 @@ def write_full_report(run_directory: Path) -> None:
         title=f"E2 Abwesenheit, Lauf {run_directory.name}",
         setup=build_setup(
             e2_config,
+            run_config["standard_config"],
             summaries,
             windows,
             {str(event["event_id"]): str(event["title"]) for event in calendar_events},

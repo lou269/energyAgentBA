@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Literal
 
 from experiments.common.standard_config import REFERENCE_SYSTEM, RULE_SYSTEM
@@ -20,8 +20,10 @@ class K3Config:
     # Zyklus wie dieses System, die Adaptionen gibt das Orakel vor
     cycle_system: str = REFERENCE_SYSTEM
 
-    # Standard-Cutover (Kennungen aus StandardScenarioConfig)
-    cutovers: tuple[str, ...] = ("CO1", "CO2", "CO3", "CO4", "CO5")
+    # Standard-Cutover je Abschnitt (Kennungen aus StandardScenarioConfig)
+    cutovers: dict[str, tuple[str, ...]] = field(
+        default_factory=lambda: {"validation": ("CO1", "CO2", "CO3", "CO4", "CO5")}
+    )
 
     # 6 = frühestmögliches new_pattern (6 von 7 Tagen auffällig, ausgewertet um Mitternacht danach), 19 = späte Erkennung, etwa so spät setzt der Detektor bei scaled im Median zurück (K1-Diagnose)
     trigger_days: tuple[int, ...] = (6, 19)

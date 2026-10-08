@@ -10,6 +10,7 @@ from experiments.common.report import (
     KIND_LABELS,
     format_commit,
     format_cutovers,
+    split_cutover_dates,
     write_result_report,
 )
 from experiments.common.standard_config import PROJECT_CONFIG, STANDARD_CONFIG
@@ -39,9 +40,10 @@ RESPONSE_HEADERS = {
 def write_report(run_directory: Path) -> Path:
     run_config = read_raw_json(run_directory, "run_config")
     e1_config = run_config["e1_config"]
-    cutover_dates = run_config["standard_config"]["cutover_dates"]
+    standard_config = run_config["standard_config"]
+    cutover_dates = split_cutover_dates(standard_config)
     system = e1_config["system"]
-    kinds_by_cutover = e1_config["kinds_by_cutover"]
+    kinds_by_cutover = e1_config["kinds_by_cutover"][standard_config["split"]]
     rows = [
         (system, cutover_dates[cutover_id], kind)
         for cutover_id, kinds in kinds_by_cutover.items()
@@ -75,7 +77,7 @@ def write_report(run_directory: Path) -> Path:
         title=f"E1 Erkennung, Lauf {run_directory.name}",
         setup={
             "Cutover und Ereignisse": "; ".join(
-                f"{format_cutovers(cutover_dates, [cutover_id])}: "
+                f"{format_cutovers(standard_config, [cutover_id])}: "
                 + ", ".join(KIND_LABELS[kind] for kind in kinds)
                 for cutover_id, kinds in kinds_by_cutover.items()
             ),

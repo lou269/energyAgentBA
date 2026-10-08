@@ -54,8 +54,8 @@ def run_forecasts(
     assert reference is not None
     origin_frames: list[pd.DataFrame] = []
 
-    for cutover_id in e4_config.cutovers:
-        start_date = STANDARD_CONFIG.cutover_dates[cutover_id]
+    for cutover_id in e4_config.cutovers[STANDARD_CONFIG.split]:
+        start_date = STANDARD_CONFIG.cutover_date(cutover_id)
         start, end = local_day_window(start_date, e4_config.evaluation_days)
 
         for coldstart_days in e4_config.forecast_coldstart_days:
@@ -96,8 +96,8 @@ def run_system(e4_config: E4Config, run_name: str) -> pd.DataFrame:
     llm_prompt = read_llm_prompt(system_config.llm_config.prompt_version)
     scenario_results: list[pd.DataFrame] = []
 
-    for cutover_id in e4_config.cutovers:
-        start_date = STANDARD_CONFIG.cutover_dates[cutover_id]
+    for cutover_id in e4_config.cutovers[STANDARD_CONFIG.split]:
+        start_date = STANDARD_CONFIG.cutover_date(cutover_id)
         for coldstart_days in e4_config.system_coldstart_days:
             scenarios = build_system_scenarios(
                 start_date,

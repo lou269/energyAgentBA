@@ -44,17 +44,23 @@ LLM_SYSTEM = "SYS3"
 @dataclass(frozen=True)
 class StandardScenarioConfig:
     decimals: int = 1
-    # Abschnitt, in dem die Standard-Cutover liegen
     split: str = "validation"
-    # lokale Kalendertage in validation -> Entscheidungstage der Fenster (Überwachung davor bis margin_after_days danach) überlappen sich nicht
-    # keines enthält Weihnachten und Neujahr
-    cutover_dates: dict[str, str] = field(
+    # lokale Kalendertage je Abschnitt, die Kennungen sind über beide Abschnitte fortlaufend
+    # validation: Entscheidungstage der Fenster (Überwachung davor bis margin_after_days danach) überlappen sich nicht,
+    # test: Entscheidungstage der Fenster überlappen aber nur Überwachung vorher (test zu kurz für 2 nicht überlappennde Fenster)
+    cutover_dates: dict[str, dict[str, str]] = field(
         default_factory=lambda: {
-            "CO1": "2014-07-15",  # Sommer zum Herbst
-            "CO2": "2014-10-24",  # Herbstanstieg
-            "CO3": "2015-03-01",  # Winterende, ohne echtes Ereignis
-            "CO4": "2015-06-10",  # Frühsommer, ohne echtes Ereignis
-            "CO5": "2015-10-22",  # Herbstanstieg im zweiten Jahr
+            "validation": {
+                "CO1": "2014-07-31",  # Spätsommer, steigt um 12 %
+                "CO2": "2015-02-12",  # Winterende, fällt um 9 %
+                "CO3": "2015-05-24",  # Frühsommer, fällt um 7 %
+                "CO4": "2015-09-26",  # Herbstbeginn, kaum Trend
+                "CO5": "2016-01-12",  # Winter nach Neujahr, fällt um 5 %
+            },
+            "test": {
+                "CO6": "2016-12-02",  # Winteranfang, nach dem Niveauwechsel von Mitte Oktober
+                "CO7": "2017-02-20",  # Winterende, ohne echtes Ereignis
+            },
         }
     )
 
@@ -82,6 +88,9 @@ class StandardScenarioConfig:
 
     # mehr als stuck_value_min_hours (6 h), sonst markiert die Plausibilitätsprüfung nichts
     stuck_hours: int = 12
+
+    def cutover_date(self, cutover_id: str) -> str:
+        return self.cutover_dates[self.split][cutover_id]
 
 
 STANDARD_CONFIG = StandardScenarioConfig()

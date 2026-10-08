@@ -39,7 +39,9 @@ logger = logging.getLogger(__name__)
 
 
 def run(k2_config: K2Config) -> Path:
-    cutover_date = STANDARD_CONFIG.cutover_dates[k2_config.sequence_cutover]
+    cutover_date = STANDARD_CONFIG.cutover_date(
+        k2_config.sequence_cutover[STANDARD_CONFIG.split]
+    )
     scenarios = build_standard_scenarios(
         cutover_date,
         k2_config.sequence_kinds,

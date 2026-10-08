@@ -8,9 +8,15 @@ from experiments.common.standard_config import STANDARD_CONFIG
 from src.pipeline.io import df_to_csv, write_text_atomic
 
 
+def split_cutover_dates(standard_config: Mapping[str, Any]) -> Mapping[str, str]:
+    # aus der run_config: die Termine des Abschnitts, auf dem der Lauf war
+    return standard_config["cutover_dates"][standard_config["split"]]
+
+
 def format_cutovers(
-    cutover_dates: Mapping[str, str], cutover_ids: Sequence[str]
+    standard_config: Mapping[str, Any], cutover_ids: Sequence[str]
 ) -> str:
+    cutover_dates = split_cutover_dates(standard_config)
     return ", ".join(
         f"{cutover_id} ({cutover_dates[cutover_id]})" for cutover_id in cutover_ids
     )

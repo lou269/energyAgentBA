@@ -1,4 +1,4 @@
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 
 from experiments.common.standard_config import LLM_SYSTEM
 from src.config.config_forecasting import SYS_VARIANTS, CycleConfig, LLMConfig
@@ -41,7 +41,9 @@ class K2Config:
 
     # Ebene 2: ein Cutover der Standard-Szenarien, nur für die Modellwahl
     # -> strong damit das Gate sicher öffnet
-    sequence_cutover: str = "CO3"
+    sequence_cutover: dict[str, str] = field(
+        default_factory=lambda: {"validation": "CO2"}
+    )
     sequence_kinds: tuple[str, ...] = ("control", "scaled_strong", "peak_strong")
 
 

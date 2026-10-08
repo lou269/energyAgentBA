@@ -26,7 +26,6 @@ class E2Config:
     calendar_events_file: Path = (
         Path(__file__).resolve().parent / "calendar_events.json"
     )
-    split: str = "validation"
 
     # je Urlaub ein eigenes Szenario, 14 und 21 Tage
     absence_event_ids: tuple[str, ...] = ("event-2014-08", "event-2015-10")
@@ -61,12 +60,14 @@ class E2Config:
     # Einordnung auf Ereignisreihen ohne Kalender: Reihe -> (Tag ab Cutover, Art) nacheinander in einem Lauf
     # Starke Arten, damit das Gate sicher öffnet und es um die Klasse geht
     # Spitzen auf verschiedenen Wochentagen, jeweils nach dem Streak-Fenster (7 Tage)
-    event_cutover_id: str = "CO4"
+    event_cutovers: dict[str, tuple[str, ...]] = field(
+        default_factory=lambda: {"validation": ("CO3",), "test": ("CO6", "CO7")}
+    )
     event_series: dict[str, tuple[tuple[int, str], ...]] = field(
         default_factory=lambda: {
             "scaled": ((0, "scaled_strong"),),
             "peaks": ((0, "peak_strong"), (10, "peak_strong"), (20, "peak_strong")),
-            "stucks": ((0, "stuck"), (10, "stuck"), (20, "stuck")),
+            "stucks": ((0, "stuck"), (10, "stuck"), (17, "stuck")),
         }
     )
     event_systems: tuple[str, ...] = (REFERENCE_SYSTEM, RULE_SYSTEM, LLM_SYSTEM)
