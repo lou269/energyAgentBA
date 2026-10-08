@@ -94,70 +94,39 @@ def summarize_effect(summary: pd.DataFrame, metric: str) -> pd.DataFrame:
     return table.drop(columns=f"{metric}_none")
 
 
-# Teil 2: peak/low für Prophet ausblenden
+# Teil 2: Ereignistag für Prophet ausblenden
 
 
-def read_sys2_decisions(
-    summary: pd.DataFrame, *, kind: str, cutover_date: str
-) -> pd.DataFrame:
-    summary = summary.assign(
-        decision_time=pd.to_datetime(summary["decision_time"], utc=True)
-    )
+def pair_masking(results: pd.DataFrame, metrics: tuple[str, ...]) -> pd.DataFrame:
+    """none und mask tageweise nebeneinander auf derselben Reihe. Je Fehlerspalte entstehen <metric>_none, <metric>_mask und <metric>_delta"""
+    keys = ["kind", "cutover_date", "decision_time", "days_since_cutover"]
 
-    return (
-        summary[["decision_time", "classification", "adaption_action", "mae_w"]]
-        .rename(columns={"mae_w": "mae_sys2_w"})
-        .assign(kind=kind, cutover_date=cutover_date)
-    )
-
-
-def pair_masking(
-    results: pd.DataFrame,
-    decisions: pd.DataFrame,
-    masked_classifications: tuple[str, ...],
-    metrics: tuple[str, ...],
-) -> pd.DataFrame:
-    """replay und mask tageweise nebeneinander, dazu die SYS2-Entscheidung desselben Tages. Je Fehlerspalte entstehen <metric>_replay, <metric>_mask und <metric>_delta, mae_w muss dabei sein"""
-    keys = ["kind", "cutover_date", "decision_time"]
-
-    wide = results.pivot(
-        index=keys + ["days_since_cutover"], columns="strategy", values=list(metrics)
-    )
+    wide = results.pivot(index=keys, columns="strategy", values=list(metrics))
     wide.columns = [f"{metric}_{strategy}" for metric, strategy in wide.columns]
-    paired = wide.reset_index().merge(
-        decisions[keys + ["classification", "mae_sys2_w"]], on=keys
-    )
+    paired = wide.reset_index()
 
     for metric in metrics:
-        paired[f"{metric}_delta"] = (
-            paired[f"{metric}_mask"] - paired[f"{metric}_replay"]
-        )
-    # replay muss SYS2 exakt nachbilden, sonst ist das Nachspielen falsch
-    paired["replay_matches_sys2"] = np.isclose(
-        paired["mae_w_replay"], paired["mae_sys2_w"], equal_nan=True
-    )
-    paired["masked_day"] = paired["classification"].isin(masked_classifications)
+        paired[f"{metric}_delta"] = paired[f"{metric}_mask"] - paired[f"{metric}_none"]
 
     return paired
 
 
 def summarize_masking_by_cutover(
-    paired: pd.DataFrame, early_days: int, metric: str
+    paired: pd.DataFrame, first_day: int, last_day: int, window_days: int, metric: str
 ) -> pd.DataFrame:
-    # control: Nutzen bei echten Ausreißern, step: Kosten, wenn der Beginn einer echten Änderung erst als peak ausgeblendet wird
+    # ab dem Tag nach der ersten Spitze steckt sie im Trainingsfenster, bis window_days Tage nach der letzten
     phase = pd.cut(
         paired["days_since_cutover"],
-        [-np.inf, -1, early_days - 1, np.inf],
-        labels=["before_cutover", "early", "late"],
+        [-np.inf, first_day, last_day + window_days, np.inf],
+        labels=["before_peak", "in_window", "after_window"],
     )
     # Tage ohne Wert (beim Tagesfehler unvollständige Tage) zählen nirgends mit
     valid = paired.dropna(subset=[f"{metric}_delta"])
     phased = add_overall_rows(valid.assign(phase=phase.astype(str)), "phase", ALL_DAYS)
 
     grouped = phased.groupby(["kind", "cutover_date", "phase"], sort=False)
-    summary = grouped[[f"{metric}_replay", f"{metric}_mask", f"{metric}_delta"]].mean()
+    summary = grouped[[f"{metric}_none", f"{metric}_mask", f"{metric}_delta"]].mean()
     summary["days"] = grouped[f"{metric}_delta"].count()
-    summary["masked_days"] = grouped["masked_day"].sum()
 
     return summary.reset_index()
 
@@ -165,9 +134,7 @@ def summarize_masking_by_cutover(
 def summarize_masking(summary: pd.DataFrame, metric: str) -> pd.DataFrame:
     keys = ["kind", "phase"]
     table = spread_over_repeats(summary, keys, f"{metric}_delta", count_improved=True)
-    counts = summary.groupby(keys, as_index=False, sort=False).agg(
-        days=("days", "sum"), masked_days=("masked_days", "sum")
-    )
+    counts = summary.groupby(keys, as_index=False, sort=False).agg(days=("days", "sum"))
 
     return counts.merge(table, on=keys).sort_values("kind", kind="stable")
 
@@ -201,17 +168,12 @@ def summarize_strategy_key_figures(
 def summarize_masking_key_figures(
     summary: pd.DataFrame, table: pd.DataFrame, metric: str
 ) -> pd.DataFrame:
-    """Je Szenario über alle Tage, mit dem Fehler ohne Ausblenden (replay) daneben"""
+    """Je Szenario über alle Tage, mit dem Fehler ohne Ausblenden (none) daneben"""
     overall = table.loc[table["phase"].eq(ALL_DAYS)]
-    replay = (
+    none = (
         summary.loc[summary["phase"].eq(ALL_DAYS)]
-        .groupby("kind")[f"{metric}_replay"]
+        .groupby("kind")[f"{metric}_none"]
         .mean()
     )
 
-    return overall.assign(replay=overall["kind"].map(replay))
-
-
-def summarize_replay_match(paired: pd.DataFrame) -> float:
-    # replay muss SYS2 exakt nachbilden, sonst ist das Nachspielen falsch
-    return float(paired["replay_matches_sys2"].mean() * 100)
+    return overall.assign(none=overall["kind"].map(none))

@@ -12,7 +12,6 @@ from src.adaption.adaption_policy import (
     pattern_change_start,
 )
 from src.common.timestamps import (
-    analyzed_day_index,
     local_daily_mean,
     local_day_index,
     local_midnight_utc,
@@ -37,7 +36,7 @@ def run_oracle(
     cycle_config = replace(cycle_config, llm_mode="off")
     np.random.seed(cycle_config.forecasting_config.seed)
 
-    # ausgeblendet wird nur, was der Zyklus zu sehen bekommt, der MAE rechnet weiter gegen die echten Werte
+    # ausgeblendet wird nur, was der Zyklus zu sehen bekommt, der MAE rechnet weiter gegen die Szenario-Reihe ohne Ausblenden
     observed = scenario.target_series
     if masked_days is not None:
         observed = observed.mask(
@@ -117,24 +116,19 @@ def trigger_actions(
     }
 
 
-# SYS2 nachspielen: an jedem Reset-Tag schneiden wie advance_history_start
-def replay_actions(decisions: pd.DataFrame) -> dict[pd.Timestamp, K3Strategy]:
-    resets = decisions.loc[
-        decisions["adaption_action"].eq("advance_history_start"), "decision_time"
-    ]
-    return {decision_time: "cut" for decision_time in resets}
-
-
-def replay_masked_days(
-    decisions: pd.DataFrame, masked_classifications: tuple[str, ...]
-) -> pd.DatetimeIndex | None:
-    if not masked_classifications:
-        return None
-
-    unusual = decisions.loc[
-        decisions["classification"].isin(masked_classifications), "decision_time"
-    ]
-    return analyzed_day_index(pd.Index(unusual), LOCAL_TIMEZONE)
+# lokale Kalendertage der Ereignisse, die dem Zyklus fehlen sollen
+def event_days(
+    cutover_date: str, events: tuple[tuple[int, str], ...]
+) -> pd.DatetimeIndex:
+    return local_day_index(
+        pd.DatetimeIndex(
+            [
+                local_midnight_utc(cutover_date, LOCAL_TIMEZONE, days_offset=day)
+                for day, _kind in events
+            ]
+        ),
+        LOCAL_TIMEZONE,
+    )
 
 
 def _apply_strategy(

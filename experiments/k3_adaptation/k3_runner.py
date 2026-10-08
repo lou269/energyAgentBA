@@ -3,7 +3,7 @@
 # danach: python -m experiments.k3_adaptation.k3_report [strategies|masking] [run_directory]
 
 # strategies: Adaptionsaktion mit festem Trigger (Orakel), none / cut / step_regressor auf dem Standard-Szenario scaled
-# masking: peak/low-Tage nur für Prophet ausblenden. SYS2 zeichnet die Entscheidungen auf, das Orakel spielt sie ohne und mit Ausblenden nach
+# masking: Tage eingebauter Spitzen nur für Prophet ausblenden (Orakel, keine Einordnung), mit und ohne Ausblenden auf derselben Reihe
 
 import logging
 import sys
@@ -12,11 +12,12 @@ from pathlib import Path
 
 import pandas as pd
 
-from experiments.common.harness import run_scenario_in_scratch
 from experiments.common.standard_config import PROJECT_CONFIG, STANDARD_CONFIG
-from experiments.common.standard_scenarios import build_standard_scenarios
+from experiments.common.standard_scenarios import (
+    build_event_series_scenario,
+    build_standard_scenarios,
+)
 from experiments.k3_adaptation.k3_config import (
-    MASKING_DECISIONS_FILE,
     MASKING_RESULTS_FILE,
     MASKING_RUN_PREFIX,
     RESULTS_FILE,
@@ -24,13 +25,9 @@ from experiments.k3_adaptation.k3_config import (
     K3Config,
     K3Strategy,
 )
-from experiments.k3_adaptation.k3_evaluation import (
-    label_oracle_results,
-    read_sys2_decisions,
-)
+from experiments.k3_adaptation.k3_evaluation import label_oracle_results
 from experiments.k3_adaptation.k3_oracle import (
-    replay_actions,
-    replay_masked_days,
+    event_days,
     run_oracle,
     trigger_actions,
 )
@@ -105,49 +102,30 @@ def run_masking(k3_config: K3Config) -> Path:
             "seed": cycle_config.forecasting_config.seed,
         },
     )
-    # replay spielt nur die Resets nach, mask blendet zusätzlich die Tage aus
-    masking_variants = {"replay": (), "mask": k3_config.masked_classifications}
-    decisions: list[pd.DataFrame] = []
     results: list[pd.DataFrame] = []
 
     for cutover_id in k3_config.cutovers[STANDARD_CONFIG.split]:
         cutover_date = STANDARD_CONFIG.cutover_date(cutover_id)
-        for kind, scenario in build_standard_scenarios(
-            cutover_date,
-            k3_config.masking_kinds,
-        ).items():
-            logger.info("K3 masking %s_%s", kind, cutover_date)
+        control = build_standard_scenarios(cutover_date, ("control",))["control"]
+        scenario = build_event_series_scenario(
+            control, cutover_date, k3_config.masking_events
+        )
+        masked_days = event_days(cutover_date, k3_config.masking_events)
 
-            summary, _anomaly = run_scenario_in_scratch(
-                scenario,
-                {k3_config.decision_system: SYS_VARIANTS[k3_config.decision_system]},
-                run_id=f"{run_directory.name}_{kind}_{cutover_date}",
-            )
-            scenario_decisions = read_sys2_decisions(
-                summary, kind=kind, cutover_date=cutover_date
-            )
-            decisions.append(scenario_decisions)
+        for strategy, hidden_days in (("none", None), ("mask", masked_days)):
+            logger.info("K3 masking %s, %s", cutover_date, strategy)
 
-            for variant, masked_classifications in masking_variants.items():
-                oracle_results = run_oracle(
-                    scenario,
-                    cycle_config,
-                    replay_actions(scenario_decisions),
-                    replay_masked_days(scenario_decisions, masked_classifications),
+            oracle_results = run_oracle(scenario, cycle_config, {}, hidden_days)
+            results.append(
+                label_oracle_results(
+                    oracle_results,
+                    kind=k3_config.masking_events[0][1],
+                    cutover_date=cutover_date,
+                    strategy=strategy,
+                    trigger_day=None,
                 )
-                results.append(
-                    label_oracle_results(
-                        oracle_results,
-                        kind=kind,
-                        cutover_date=cutover_date,
-                        strategy=variant,
-                        trigger_day=None,
-                    )
-                )
+            )
 
-    df_to_csv(
-        pd.concat(decisions, ignore_index=True), raw_directory, MASKING_DECISIONS_FILE
-    )
     df_to_csv(
         pd.concat(results, ignore_index=True), raw_directory, MASKING_RESULTS_FILE
     )

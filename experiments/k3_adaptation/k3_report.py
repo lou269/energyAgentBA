@@ -19,7 +19,6 @@ from experiments.common.report import (
 from experiments.common.evaluation import ALL_DAYS
 from experiments.common.standard_config import PROJECT_CONFIG, STANDARD_CONFIG
 from experiments.k3_adaptation.k3_config import (
-    MASKING_DECISIONS_FILE,
     MASKING_RESULTS_FILE,
     MASKING_RUN_PREFIX,
     RESULTS_FILE,
@@ -37,9 +36,9 @@ from experiments.k3_adaptation.k3_evaluation import (
     summarize_masking,
     summarize_masking_by_cutover,
     summarize_masking_key_figures,
-    summarize_replay_match,
     summarize_strategy_key_figures,
 )
+from src.config.config_forecasting import SYS_VARIANTS
 from src.pipeline.io import (
     RAW_SUBDIR,
     read_raw_json,
@@ -55,8 +54,9 @@ STRATEGY_LABELS: dict[str, str] = {
 
 MASKING_PHASE_LABELS: dict[str, str] = {
     "before_cutover": "vor Cutover",
-    "early": f"Tag 0-{K3Config.masking_early_days - 1}",
-    "late": f"ab Tag {K3Config.masking_early_days}",
+    "before_peak": "bis zur ersten Spitze",
+    "in_window": "Spitzen im Trainingsfenster",
+    "after_window": "danach",
     ALL_DAYS: "alle Tage",
 }
 
@@ -79,7 +79,6 @@ MASKING_HEADERS = {
     "kind": "Ereignis",
     "phase": "Zeitraum",
     "days": "Tage",
-    "masked_days": "ausgeblendet",
     "mean": "Mittel",
     "improved": "Cutover besser",
 }
@@ -227,10 +226,10 @@ def build_masking_key_figures(overall: pd.DataFrame, metric: str) -> pd.DataFram
     return key_figures_table(
         [
             (
-                f"Ausblenden, Szenario {KIND_LABELS[row['kind']]}: {metric_label}-Differenz [{unit}]",
+                f"Ausblenden bei {KIND_LABELS[row['kind']]}: {metric_label}-Differenz [{unit}]",
                 row["mean"],
-                f"bei {format_number(row['replay'], STANDARD_CONFIG.decimals)} {unit} ohne Ausblenden, "
-                f"{row['masked_days']} von {row['days']} Tagen ausgeblendet, bei {row['improved']} Cutover besser",
+                f"bei {format_number(row['none'], STANDARD_CONFIG.decimals)} {unit} ohne Ausblenden, "
+                f"{row['days']} Tage, bei {row['improved']} Cutover besser",
             )
             for row in overall.to_dict("records")
         ]
@@ -244,24 +243,25 @@ def report_masking(run_directory: Path, k3_config: K3Config) -> Path:
         run_directory / RAW_SUBDIR / f"{MASKING_RESULTS_FILE}.csv",
         dtype={"cutover_date": str},
     )
-    decisions = pd.read_csv(
-        run_directory / RAW_SUBDIR / f"{MASKING_DECISIONS_FILE}.csv",
-        dtype={"cutover_date": str},
-    )
+    paired = pair_masking(results, k3_config.error_metrics)
+    # so viele Tage steckt eine Spitze im Trainingsfenster der Prognose
+    window_days = SYS_VARIANTS[
+        k3_config.cycle_system
+    ].forecasting_config.selected_prophet_variant.rolling_window_days
 
-    paired = pair_masking(
-        results,
-        decisions,
-        k3_config.masked_classifications,
-        k3_config.error_metrics,
-    )
+    event_day_numbers = [day for day, _kind in k3_config.masking_events]
+    first_day, last_day = min(event_day_numbers), max(event_day_numbers)
 
     tables: dict[str, tuple[str, pd.DataFrame]] = {}
     for metric in k3_config.error_metrics:
         metric_label, unit = METRIC_LABELS[metric]
         suffix = METRIC_FILE_SUFFIX[metric]
         summary = summarize_masking_by_cutover(
-            paired, k3_config.masking_early_days, metric
+            paired,
+            first_day,
+            last_day,
+            window_days,  # type: ignore
+            metric,
         )
         table = summarize_masking(summary, metric)
         key_figures = summarize_masking_key_figures(summary, table, metric)
@@ -282,7 +282,7 @@ def report_masking(run_directory: Path, k3_config: K3Config) -> Path:
     output_directory = user_output_directory(run_directory)
     write_result_report(
         output_directory,
-        title=f"K3 Teil 2, {'/'.join(k3_config.masked_classifications)} für Prophet ausblenden, Lauf {run_directory.name}",
+        title=f"K3 Teil 2, Spitzen-Tage für Prophet ausblenden, Lauf {run_directory.name}",
         setup={
             "Cutover": format_cutovers(
                 run_config["standard_config"],
@@ -290,12 +290,13 @@ def report_masking(run_directory: Path, k3_config: K3Config) -> Path:
                     run_config["standard_config"]["split"]
                 ],
             ),
-            "Entscheidungen": "SYS2, danach zweimal nachgespielt: nur Resets (replay) und zusätzlich ausgeblendet (mask)",
+            "Ereignis": f"{KIND_LABELS[k3_config.masking_events[0][1]]} an Tag {', '.join(str(day) for day in event_day_numbers)} nach dem Cutover (Orakel, ohne Einordnung)",
+            "Vergleich": f"Ereignistage für Prophet ausgeblendet (mask) gegen nicht ausgeblendet (none), {window_days} Tage Trainingsfenster",
             "Commit": format_commit(run_config["code_version"]),
         },
         tables=tables,
         notes=[
-            f"replay trifft SYS2 an {format_number(summarize_replay_match(paired), STANDARD_CONFIG.decimals)} % der Tage",
+            "mask minus none: negativ = Ausblenden besser, beide gegen dieselbe Reihe mit Spitzen bewertet, ausgeblendet ist nur das Training",
             "Tagesfehler wie in Teil 1: Tage mit unvollständig bewerteten Stunden zählen dort nicht mit",
         ],
         images=[],
@@ -309,7 +310,7 @@ def main() -> None:
     part = sys.argv[1] if len(sys.argv) > 1 else "strategies"
     prefix = RUN_PREFIX if part == "strategies" else MASKING_RUN_PREFIX
     run_directory = run_directory_from_argv(PROJECT_CONFIG.k3_output_dir, prefix, 2)
-    # Kennzahlen und Ausblend-Einstellungen aus der aktuellen Config, ältere Läufe haben sie nicht in run_config
+    # Kennzahlen aus der aktuellen Config, ältere Läufe haben sie nicht in run_config
     k3_config = K3Config()
 
     if part == "strategies":
