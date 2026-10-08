@@ -2,7 +2,10 @@ from dataclasses import dataclass
 
 import pandas as pd
 
-from experiments.common.evaluation import summarize_cutover_response
+from experiments.common.evaluation import (
+    SCALE_SUSTAINED_COLUMNS,
+    summarize_cutover_response,
+)
 from experiments.common.standard_config import GOLDSTANDARD_EXPECTED
 
 DRIFT_RESULT_COLUMNS = [
@@ -18,12 +21,7 @@ DRIFT_RESULT_COLUMNS = [
     "alarm",
     "gate_open",
     "new_pattern",
-    "reference_reset",
-    "adaption_action",
-    "day_error_w",
-    "mae_w",
-    "mape_pct",
-]
+] + SCALE_SUSTAINED_COLUMNS
 
 
 @dataclass(frozen=True)
@@ -31,12 +29,7 @@ class DriftSummary:
     response: pd.DataFrame
 
 
-def summarize_drift_response(
-    results: pd.DataFrame, reference_config: str
-) -> DriftSummary:
-    """Je System, Cutover und Art: erwartete Klasse, Erkennung und Gate gegen den eigenen Kontrolllauf, erster Reset und Tagesfehler und MAE ab dort gegen reference_config"""
+def summarize_drift_response(results: pd.DataFrame) -> DriftSummary:
     return DriftSummary(
-        response=summarize_cutover_response(
-            results, reference_config, GOLDSTANDARD_EXPECTED
-        )
+        response=summarize_cutover_response(results, GOLDSTANDARD_EXPECTED)
     )

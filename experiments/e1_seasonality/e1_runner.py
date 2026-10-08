@@ -1,9 +1,8 @@
-# open -a Ollama
 # conda activate forecasting-env
 # caffeinate -i python -m experiments.e1_seasonality.e1_runner
 # danach: python -m experiments.e1_seasonality.e1_report [run_directory]
 
-# langsame Rampen auf den Standard-Szenarien, Regel und LLM komplett, SYS1 nur für MAE
+# Erkennung auf den Standard-Szenarien, nur SYS1 (Regel ordnet ein, keine Adaption, kein LLM)
 # raw/ behält je Szenario den vollen Harness-Output
 
 import logging
@@ -16,7 +15,6 @@ from experiments.common.evaluation import collect_scenario_results
 from experiments.common.harness import (
     COMPARISON_SUMMARY_FILE,
     read_anomaly_rows,
-    read_llm_prompt,
     run_scenario,
 )
 from experiments.common.standard_config import PROJECT_CONFIG, STANDARD_CONFIG
@@ -34,11 +32,7 @@ logger = logging.getLogger(__name__)
 
 
 def run(e1_config: E1Config) -> Path:
-    systems = (e1_config.reference_system, e1_config.rule_system, e1_config.llm_system)
-    configs = {system: SYS_VARIANTS[system] for system in systems}
-    llm_config = configs[e1_config.llm_system].llm_config
-    assert llm_config is not None
-    llm_prompt = read_llm_prompt(llm_config.prompt_version)
+    configs = {e1_config.system: SYS_VARIANTS[e1_config.system]}
 
     run_directory, raw_directory = create_experiment_run(
         PROJECT_CONFIG.e1_output_dir,
@@ -46,9 +40,8 @@ def run(e1_config: E1Config) -> Path:
         {
             "standard_config": asdict(STANDARD_CONFIG),
             "e1_config": asdict(e1_config),
-            "llm_config": asdict(llm_config),
             "numerical_analysis_config": asdict(
-                configs[e1_config.rule_system].numerical_analysis_config
+                configs[e1_config.system].numerical_analysis_config
             ),
         },
     )
@@ -61,14 +54,13 @@ def run(e1_config: E1Config) -> Path:
         for kind, scenario in scenarios.items():
             scenario_name = f"{kind}_{cutover_date}"
             scenario_directory = raw_directory / scenario_name
-            logger.info("E1 drift %s", scenario_name)
+            logger.info("E1 %s", scenario_name)
 
             run_scenario(
                 scenario,
                 configs,
                 scenario_directory,
                 run_id=f"{run_directory.name}_{scenario_name}",
-                llm_prompt=llm_prompt,
             )
             scenario_results.append(
                 collect_scenario_results(

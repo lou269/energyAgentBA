@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 from experiments.common.standard_config import LOCAL_TIMEZONE
-from src.common.timestamps import local_day_index, local_midnight_utc
+from src.common.timestamps import local_day_index
 from src.evaluation.text_check import (
     collect_state_values,
     find_violations,
@@ -322,12 +322,10 @@ def compare_errors_after_reset(
 
 
 def summarize_cutover_response(
-    results: pd.DataFrame, reference_config: str, expected: Mapping[str, str]
+    results: pd.DataFrame, expected: Mapping[str, str]
 ) -> pd.DataFrame:
-    """Eine Zeile je System, Cutover und Art (E1): erwartete Klasse aus expected, erstes new_pattern und Tage mit offenem Gate, die der Kontrolllauf desselben Systems nicht hat, Resets vor dem Cutover, erster Reset ab Cutover und Tagesfehler und MAE ab dort minus reference_config"""
-    systems = add_days_since_cutover(
-        results.loc[results["config"].ne(reference_config)]
-    )
+    """Eine Zeile je System, Cutover und Art (E1): erwartete Klasse aus expected, erster Tag ab Cutover mit offenem Gate und mit new_pattern, die der Kontrolllauf desselben Systems nicht hat, dazu die Skala dieses Gate-Tags, die Zahl solcher Tage und die Tage mit offenem Gate im Kontrolllauf selbst"""
+    systems = add_days_since_cutover(results)
     paired = pair_with_control(
         systems, ["config", "cutover_date", "days_since_cutover"]
     )
@@ -336,28 +334,23 @@ def summarize_cutover_response(
     gate_open = after_cutover.groupby(EVENT_KEYS, as_index=False).agg(
         gate_open_days=("event_gate_open", "sum")
     )
-
-    before_cutover = systems.loc[systems["days_since_cutover"].lt(FIRST_ANALYZED_DAY)]
-    resets_before = (
-        before_cutover.assign(
-            reset=before_cutover["adaption_action"].eq("advance_history_start")
-        )
-        .groupby(EVENT_KEYS, as_index=False)
-        .agg(resets_before_cutover=("reset", "sum"))
+    first_gate = (
+        after_cutover.loc[after_cutover["event_gate_open"]]
+        .sort_values("days_since_cutover")
+        .groupby(EVENT_KEYS)
+        .head(1)
+    )
+    first_gate = first_gate.assign(
+        first_gate_day=first_gate["days_since_cutover"],
+        trigger_scale=detection_scales(first_gate, first_gate["event_alarm"]),
     )
 
-    after_reset = pd.concat(
-        [
-            compare_errors_after_reset(
-                scenario,
-                local_midnight_utc(str(cutover_date), LOCAL_TIMEZONE),
-                reference_config,
-            ).assign(kind=kind, cutover_date=str(cutover_date))  # type: ignore
-            for (kind, cutover_date), scenario in results.groupby(
-                ["kind", "cutover_date"]
-            )
-        ],
-        ignore_index=True,
+    control = systems.loc[
+        systems["kind"].eq("control")
+        & systems["days_since_cutover"].ge(FIRST_ANALYZED_DAY)
+    ]
+    control_gate_open = control.groupby(["config", "cutover_date"], as_index=False).agg(
+        control_gate_open_days=("gate_open", "sum")
     )
 
     response = (
@@ -365,20 +358,15 @@ def summarize_cutover_response(
         .drop_duplicates()
         .merge(summarize_event_response(paired, EVENT_KEYS), how="left")
         .merge(gate_open, how="left")
-        .merge(resets_before, how="left")
-        .merge(
-            after_reset[
-                EVENT_KEYS + ["reset_forecast_day", "mean_delta", "mae_delta_w"]
-            ],
-            how="left",
-        )
+        .merge(first_gate[EVENT_KEYS + ["first_gate_day", "trigger_scale"]], how="left")
+        .merge(control_gate_open, how="left")
     )
     response.insert(3, "expected", response["kind"].map(expected))
     counts = [
         "first_event_new_pattern_day",
+        "first_gate_day",
         "gate_open_days",
-        "resets_before_cutover",
-        "reset_forecast_day",
+        "control_gate_open_days",
     ]
     response[counts] = response[counts].astype("Int64")
 

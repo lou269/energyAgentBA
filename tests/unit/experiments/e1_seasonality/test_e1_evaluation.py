@@ -1,5 +1,6 @@
 import pandas as pd
 
+from experiments.common.evaluation import SCALE_SUSTAINED_COLUMNS
 from experiments.e1_seasonality.e1_evaluation import summarize_drift_response
 from src.common.timestamps import local_calendar_range, local_midnight_utc
 
@@ -7,11 +8,11 @@ TIMEZONE = "Europe/London"
 
 
 def _run(
-    config: str,
     kind: str,
     gate_open: list[bool],
     classifications: list[str],
-    day_error_w: float = 100.0,
+    alarm: list[bool] | None = None,
+    sustained: str | None = None,
 ) -> pd.DataFrame:
     # Tag -1 bis 4, der 15.04. ist Tag 0
     decision_times = local_calendar_range(
@@ -20,74 +21,59 @@ def _run(
         local_midnight_utc("2014-04-19", TIMEZONE),
         TIMEZONE,
     )
-    return pd.DataFrame(
+    days = pd.DataFrame(
         {
-            "config": config,
+            "config": "SYS1",
             "kind": kind,
             "cutover_date": "2014-04-15",
             "decision_time": [time.isoformat() for time in decision_times],
-            "alarm": gate_open,
+            "alarm": alarm if alarm is not None else [False] * 6,
             "gate_open": gate_open,
             "new_pattern": [value == "new_pattern" for value in classifications],
-            # die Regel setzt bei new_pattern zurück
-            "adaption_action": [
-                "advance_history_start" if value == "new_pattern" else "none"
-                for value in classifications
-            ],
-            "day_error_w": day_error_w,
-            "mae_w": day_error_w,
-            "mape_pct": 10.0,
+            "dominant_scale": "daily",
         }
     )
+    for column in SCALE_SUSTAINED_COLUMNS:
+        days[column] = column == sustained and bool(days["gate_open"].any())
+
+    return days
 
 
-def test_drift_response_counts_only_what_the_control_run_did_not_see() -> None:
+def test_response_counts_only_what_the_control_run_did_not_see() -> None:
     normal = ["normal"] * 6
     runs = [
-        _run("SYS1", "control", [False] * 6, normal),
-        _run("SYS1", "ramp_28", [False] * 6, normal),
-        _run("SYS1", "ramp_56", [False] * 6, normal),
-        _run("SYS2", "control", [False, False, True, False, False, False], normal),
+        _run("control", [False, False, True, False, False, False], normal),
         _run(
-            "SYS2",
             "ramp_28",
             [False, False, True, True, True, False],
             ["normal", "normal", "normal", "new_pattern", "normal", "normal"],
-            day_error_w=90.0,
+            sustained="weekly_sustained",
         ),
         # Gate nur dort offen, wo es auch ohne Rampe offen ist, und nie new_pattern
-        _run("SYS2", "ramp_56", [False, False, True, False, False, False], normal),
-        # SYS3 hat schon im Kontrolllauf an Tag 2 ein new_pattern, das zählt nicht gegen SYS2
+        _run("ramp_56", [False, False, True, False, False, False], normal),
         _run(
-            "SYS3",
-            "control",
-            [False, False, True, True, False, False],
-            ["normal", "normal", "normal", "new_pattern", "normal", "normal"],
+            "peak",
+            [False, False, False, True, False, False],
+            normal,
+            alarm=[False, False, False, True, False, False],
         ),
-        _run(
-            "SYS3",
-            "ramp_28",
-            [False, False, True, True, True, False],
-            ["normal", "normal", "normal", "new_pattern", "new_pattern", "normal"],
-        ),
-        _run("SYS3", "ramp_56", [False] * 6, normal),
     ]
 
     response = summarize_drift_response(
-        pd.concat(runs, ignore_index=True), "SYS1"
-    ).response.set_index(["config", "kind"])
+        pd.concat(runs, ignore_index=True)
+    ).response.set_index("kind")
 
-    assert "SYS1" not in response.index.get_level_values("config")
-    assert response.loc[("SYS2", "ramp_28"), "first_event_new_pattern_day"] == 2
-    assert response.loc[("SYS2", "ramp_28"), "gate_open_days"] == 2
-    assert pd.isna(response.loc[("SYS2", "ramp_56"), "first_event_new_pattern_day"])
-    assert response.loc[("SYS2", "ramp_56"), "gate_open_days"] == 0
-    assert response.loc[("SYS2", "ramp_56"), "expected"] == "normal"
-    assert response.loc[("SYS3", "ramp_28"), "first_event_new_pattern_day"] == 3
-    assert response.loc[("SYS3", "ramp_28"), "gate_open_days"] == 1
-    # ab dem Reset an Tag 2 gegen SYS1 am selben Tag
-    assert response.loc[("SYS2", "ramp_28"), "reset_forecast_day"] == 2
-    assert response.loc[("SYS2", "ramp_28"), "mean_delta"] == -10
-    # der Reset im Kontrolllauf von SYS3 ist ein falscher und steht in der control-Zeile
-    assert response.loc[("SYS3", "control"), "reset_forecast_day"] == 2
-    assert pd.isna(response.loc[("SYS2", "control"), "reset_forecast_day"])
+    assert response.loc["ramp_28", "first_event_new_pattern_day"] == 2
+    assert response.loc["ramp_28", "first_gate_day"] == 2
+    assert response.loc["ramp_28", "gate_open_days"] == 2
+    assert response.loc["ramp_28", "trigger_scale"] == "weekly"
+    assert pd.isna(response.loc["ramp_56", "first_event_new_pattern_day"])
+    assert pd.isna(response.loc["ramp_56", "first_gate_day"])
+    assert response.loc["ramp_56", "gate_open_days"] == 0
+    assert response.loc["ramp_56", "expected"] == "normal"
+    # eine Spitze zeigt sich über die dominante Skala des Alarms
+    assert response.loc["peak", "first_gate_day"] == 2
+    assert response.loc["peak", "trigger_scale"] == "daily"
+    assert response.loc["peak", "expected"] == "peak"
+    # das Gate ist im Kontrolllauf an Tag 1 offen, das steht in jeder Zeile
+    assert (response["control_gate_open_days"] == 1).all()

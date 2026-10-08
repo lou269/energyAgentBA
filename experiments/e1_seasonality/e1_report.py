@@ -28,24 +28,22 @@ RESPONSE_HEADERS = {
     "cutover_date": "Cutover",
     "kind": "Ereignis",
     "expected": "erwartet",
+    "first_gate_day": "erster Tag Gate offen",
+    "trigger_scale": "Skala",
     "first_event_new_pattern_day": "erstes new_pattern (Tag)",
     "gate_open_days": "Tage Gate offen",
-    "resets_before_cutover": "Resets vor Cutover",
-    "reset_forecast_day": "erster Reset (Tag)",
+    "control_gate_open_days": "Tage Gate offen im Kontrolllauf",
 }
 
 
 def write_report(run_directory: Path) -> Path:
     run_config = read_raw_json(run_directory, "run_config")
     e1_config = run_config["e1_config"]
-    llm_config = run_config["llm_config"]
     cutover_dates = run_config["standard_config"]["cutover_dates"]
-    reference = e1_config["reference_system"]
-    systems = [e1_config["rule_system"], e1_config["llm_system"]]
+    system = e1_config["system"]
     kinds_by_cutover = e1_config["kinds_by_cutover"]
     rows = [
         (system, cutover_dates[cutover_id], kind)
-        for system in systems
         for cutover_id, kinds in kinds_by_cutover.items()
         for kind in kinds
     ]
@@ -55,7 +53,7 @@ def write_report(run_directory: Path) -> Path:
         dtype={"cutover_date": str},
     )
     response = (
-        summarize_drift_response(results, reference)
+        summarize_drift_response(results)
         .response.set_index(EVENT_KEYS)
         .loc[rows]
         .reset_index()
@@ -63,42 +61,34 @@ def write_report(run_directory: Path) -> Path:
 
     tables = {
         "result_response": (
-            "Erkennung, Gate und Reset je System, Cutover und Ereignis",
+            "Erkennung je Cutover und Ereignis",
             response.assign(
                 config=response["config"].map(SYS_LABELS),
                 kind=response["kind"].map(KIND_LABELS),
-            ).rename(
-                columns=RESPONSE_HEADERS
-                | {
-                    "mean_delta": f"Tagesfehler ab Reset minus {reference} [W]",
-                    "mae_delta_w": f"MAE ab Reset minus {reference} [W]",
-                }
-            ),
+            ).rename(columns=RESPONSE_HEADERS),
         ),
     }
 
     output_directory = user_output_directory(run_directory)
     write_result_report(
         output_directory,
-        title=f"E1 Saisonaler Drift, Lauf {run_directory.name}",
+        title=f"E1 Erkennung, Lauf {run_directory.name}",
         setup={
             "Cutover und Ereignisse": "; ".join(
                 f"{format_cutovers(cutover_dates, [cutover_id])}: "
                 + ", ".join(KIND_LABELS[kind] for kind in kinds)
                 for cutover_id, kinds in kinds_by_cutover.items()
             ),
-            "Systeme": f"{', '.join(SYS_LABELS[system] for system in systems)}, je im vollen Kreislauf, {SYS_LABELS[reference]} nur als Bezug für die Prognosefehler",
-            "LLM": f"{llm_config['model']}, Prompt {llm_config['prompt_version']}",
+            "System": f"{SYS_LABELS[system]}, die Regel ordnet ein, keine Adaption, kein LLM",
             "Commit": format_commit(run_config["code_version"]),
         },
         tables=tables,
         notes=[
             "Tag = Entscheidungstag seit Cutover, an Tag 1 wird der Cutover-Tag eingeordnet",
-            "erwartet: Rampe über 28 Tage ist ein neues Muster, Rampe über 56 Tage nicht, dort ist still aufnehmen richtig und ein Reset ein Fehler",
-            "erstes new_pattern und Gate: gepaart wird je System gegen dessen eigenen Kontrolllauf, leer = still aufgenommen",
-            "offenes Gate = Tag, an dem SYS3 das LLM fragt, States und Antworten liegen in raw/",
-            f"Tagesfehler (Hauptmaß): Betrag von Prognose-Tagesmittel minus gemessenem Tagesmittel, MAE: mittlerer Stundenfehler, beide gemittelt über die Tage ab dem ersten Reset. {reference} ordnet wie die Regel ein, setzt aber nie zurück, bis zum ersten Reset laufen beide also gleich, sofern vor dem Cutover kein Reset war. Negativ = der Reset senkt den Fehler, leer = kein Reset",
-            "keine Änderung: jeder Reset dort ist ein falscher",
+            "erwartet: Rampe über 28 Tage ist ein neues Muster, Rampe über 56 Tage nicht, dort ist still aufnehmen richtig",
+            "erster Tag Gate offen, erstes new_pattern und Tage Gate offen: gepaart gegen den Kontrolllauf desselben Cutovers, leer = nie. Skala = Skala des ersten Gate-Tags (Spitze: dominante Skala, Niveauänderung: Skalen mit anhaltender Abweichung)",
+            "Tage Gate offen im Kontrolllauf: Tage ab Cutover, an denen das Gate auch ohne Ereignis offen ist (echte Saison, Rauschen). Ohne Adaption wird die Referenz nie bereinigt, die Zahl ist daher höher als im Gesamtsystem",
+            "offenes Gate = Tag, an dem in SYS2 und SYS3 die Einordnung gefragt wird",
         ],
         images=[],
         decimals=STANDARD_CONFIG.decimals,
