@@ -1,0 +1,7 @@
+Modell,E1 Antworten,E1 mit Verstoß,E1 Belege fehlen,E2 Antworten,E2 mit Verstoß,E2 Belege fehlen
+qwen3.5:9b,10,2,1,43,0,0
+ministral-3:8b,10,1,1,89,0,0
+qwen3:8b,10,0,0,93,2,0
+gemma4:e4b,10,0,0,93,2,0
+gemma4:e4b-mlx,10,0,0,90,3,0
+qwen3:4b,10,0,1,93,0,5
