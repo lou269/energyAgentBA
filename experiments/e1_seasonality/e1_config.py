@@ -10,13 +10,14 @@ RESULTS_FILE = "e1_results"
 @dataclass(frozen=True)
 class E1Config:
     # keine Cutover, vor denen die Regel im Kontrolllauf zurücksetzt
-    # scaled nicht an CO3, dort fällt das echte Niveau um 19 %
+    # Sprünge nur mit der Saison: nach unten an CO3 (Niveau fällt um 19 %), an CO4 beide Richtungen, nach oben an CO5
     kinds_by_cutover: dict[str, tuple[str, ...]] = field(
         default_factory=lambda: {
-            "CO3": ("control", "peak", "ramp_28_down", "ramp_56_down"),
+            "CO3": ("control", "scaled_down", "peak", "ramp_28_down", "ramp_56_down"),
             "CO4": (
                 "control",
                 "scaled",
+                "scaled_down",
                 "peak",
                 "ramp_28",
                 "ramp_56",

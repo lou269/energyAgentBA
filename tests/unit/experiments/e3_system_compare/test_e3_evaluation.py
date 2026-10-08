@@ -133,7 +133,7 @@ def test_durable_judged_at_drift() -> None:
     # das LLM hält die Drift für eine Spitze und setzt nicht zurück
     _set(results, ("SYS3",), [3], {"classification": "peak"})
 
-    events = _summarize(results, ((0, "step_200"),)).events.set_index("config")
+    events = _summarize(results, ((0, "scaled_strong"),)).events.set_index("config")
 
     assert events.loc["SYS2", "judged_day"] == 3
     assert events.loc["SYS2", "trigger_scale"] == "weekly+long_term"
@@ -158,7 +158,9 @@ def test_false_reset_separation() -> None:
     _set(results, ("SYS3",), [2], {"classification": "peak"})
     _set(results, ("SYS2",), [2, 3, 4, 5], {"day_error_w": 80.0, "mae_w": 80.0})
 
-    summary = _summarize(results, ((0, "peak_6"), (4, "peak_6"), (7, "step_200")))
+    summary = _summarize(
+        results, ((0, "peak_strong"), (4, "peak_strong"), (7, "scaled_strong"))
+    )
     events = summary.events.set_index(["event", "config"])
     separations = summary.separations.set_index("series")
     decision = summary.decisions.iloc[0]
@@ -172,6 +174,8 @@ def test_false_reset_separation() -> None:
     assert pd.isna(separations.loc["control", "separation_day"])
     assert not decision["rule_better"]
     assert decision["rule_single_day_resets"] == 1
+    assert decision["llm_single_day_resets"] == 0
+    assert not decision["llm_better"]
 
 
 def test_stuck_only_in_tf3() -> None:
@@ -190,7 +194,7 @@ def test_stuck_only_in_tf3() -> None:
         {"classification": "new_pattern", "adaption_action": "advance_history_start"},
     )
 
-    summary = _summarize(results, ((3, "stuck"), (6, "step_200")))
+    summary = _summarize(results, ((3, "stuck"), (6, "scaled_strong")))
     events = summary.events.loc[summary.events["event"].eq(1)].set_index("config")
     criteria = summary.criteria.set_index(["config", "expected"])
 
@@ -232,7 +236,9 @@ def test_llm_answers() -> None:
         ]
     )
 
-    answers = _summarize(results, ((3, "peak_6"), (6, "step_200")), outputs).answers
+    answers = _summarize(
+        results, ((3, "peak_strong"), (6, "scaled_strong")), outputs
+    ).answers
 
     assert len(answers) == 1
     answer = answers.iloc[0]

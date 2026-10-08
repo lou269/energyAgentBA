@@ -4,31 +4,29 @@ import numpy as np
 import pandas as pd
 
 from experiments.common.evaluation import (
-    FIRST_ANALYZED_DAY,
+    ALL_EVENTS,
     SCALE_VALUE_COLUMNS,
     SCALE_SUSTAINED_COLUMNS,
     add_days_since_cutover,
+    add_judgement,
     add_overall_rows,
+    assign_events,
     count_notifications,
-    detection_scales,
+    find_judged_days,
+    list_events,
     merge_cycle_days,
     summarize_forecast_errors,
     summarize_latency,
 )
 from experiments.common.standard_config import (
-    GOLDSTANDARD_EXPECTED,
+    FLAG_CLASSIFICATION,
     NOTIFICATION_CLASSIFICATIONS,
     NOTIFICATION_PERIOD_DAYS,
+    SINGLE_DAY_CLASSIFICATIONS,
+    SUSTAINED_CLASSIFICATION,
 )
 from experiments.e3_system_compare.e3_config import SCENARIO_DIRECTORY
 
-# Einzeltag-Ereignisse werden am Ereignistag bewertet, dauerhafte erst mit Drift oder new_pattern,
-# vorher kann ein einzelner Tag noch nicht zeigen, dass die Änderung bleibt
-FLAG_CLASSIFICATION = "measurement_error"
-SINGLE_DAY_CLASSIFICATIONS = ("peak", FLAG_CLASSIFICATION)
-DURABLE_CLASSIFICATION = "new_pattern"
-# Zeile über alle Ereignisse in der TF2/TF3-Tabelle
-ALL_EVENTS = "all"
 
 SERIES_KEYS = ["cutover_date", "series"]
 EVENT_KEYS = ["cutover_date", "config", "event"]
@@ -74,36 +72,6 @@ def read_e3_results(
     return add_days_since_cutover(days)[RESULT_COLUMNS]
 
 
-def _list_events(events: list | tuple) -> pd.DataFrame:
-    return pd.DataFrame(
-        {
-            "event": range(1, len(events) + 1),
-            "kind": [kind for _, kind in events],
-            "start_day": [day for day, _ in events],
-            "first_day": [day + FIRST_ANALYZED_DAY for day, _ in events],
-            "expected": [
-                GOLDSTANDARD_EXPECTED[kind.partition("_")[0]] for _, kind in events
-            ],
-        }
-    )
-
-
-def _assign_events(results: pd.DataFrame, event_list: pd.DataFrame) -> pd.DataFrame:
-    # jeder Tag der Ereignisreihe gehört zum Ereignis, das an ihm eingeordnet wird, bis zum ersten Einordnungstag des nächsten
-    number = pd.Series(
-        np.searchsorted(
-            event_list["first_day"], results["days_since_cutover"], side="right"
-        ),
-        index=results.index,
-    )
-
-    return results.assign(
-        event=number.astype("Int64").where(
-            number.gt(0) & results["series"].eq("events")
-        )
-    )
-
-
 def _find_separation_days(results: pd.DataFrame) -> pd.DataFrame:
     # ab dem ersten Tag mit verschiedener Aktion haben die Systeme verschiedene Zustände, davor muss die Prognose bei allen gleich sein
     rows = []
@@ -130,34 +98,6 @@ def _find_separation_days(results: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows).astype({"separation_day": "Int64"})
 
 
-def _find_judged_days(event_days: pd.DataFrame) -> pd.DataFrame:
-    single_day = event_days["expected"].isin(SINGLE_DAY_CLASSIFICATIONS)
-    judged = (
-        single_day
-        & event_days["days_since_cutover"].eq(event_days["first_day"])
-        & event_days["gate_open"].eq(True)
-    ) | (
-        ~single_day
-        & (
-            event_days["sustained_drift"].eq(True)
-            | event_days["classification"].eq(DURABLE_CLASSIFICATION)
-        )
-    )
-    judged_days = (
-        event_days.loc[judged]
-        .sort_values("days_since_cutover")
-        .groupby(EVENT_KEYS)
-        .head(1)
-    )
-    judged_days = judged_days.assign(
-        trigger_scale=detection_scales(
-            judged_days, judged_days["expected"].isin(SINGLE_DAY_CLASSIFICATIONS)
-        )
-    ).rename(columns={"days_since_cutover": "judged_day"})
-
-    return judged_days[EVENT_KEYS + ["judged_day", "classification", "trigger_scale"]]
-
-
 def _count_lead_notifications(
     event_days: pd.DataFrame, judged_days: pd.DataFrame
 ) -> pd.DataFrame:
@@ -166,7 +106,7 @@ def _count_lead_notifications(
         judged_days[EVENT_KEYS + ["judged_day"]], on=EVENT_KEYS, how="left"
     )
     before_judged = before_judged.loc[
-        before_judged["expected"].eq(DURABLE_CLASSIFICATION)
+        before_judged["expected"].eq(SUSTAINED_CLASSIFICATION)
         & ~before_judged["days_since_cutover"].ge(before_judged["judged_day"])
     ]
 
@@ -184,20 +124,14 @@ def _count_lead_notifications(
 def _summarize_events(
     event_days: pd.DataFrame, event_list: pd.DataFrame, separations: pd.DataFrame
 ) -> pd.DataFrame:
-    """Je Cutover, System und Ereignis die Einordnung am Bewertungstag (TF3), ohne Bewertungstag nicht erkannt (TF2), dazu Skala, Vorlauf-Meldungen und Reset"""
-    judged_days = _find_judged_days(event_days)
-    table = (
+    """Je Cutover, System und Ereignis die Einordnung am Bewertungstag, ohne Bewertungstag nicht erkannt, dazu Skala, Vorlauf-Meldungen und Reset"""
+    judged_days = find_judged_days(event_days, EVENT_KEYS)
+    table = add_judgement(
         event_days[["cutover_date", "config"]]
         .drop_duplicates()
-        .merge(event_list, how="cross")
-        .merge(judged_days, on=EVENT_KEYS, how="left")
-    )
-    table["detected"] = table["judged_day"].notna()
-    table["correct"] = (
-        table["classification"]
-        .eq(table["expected"])
-        .astype("boolean")
-        .mask(~table["detected"])
+        .merge(event_list, how="cross"),
+        judged_days,
+        EVENT_KEYS,
     )
 
     resets = (
@@ -219,7 +153,7 @@ def _summarize_events(
         )
     )
     table["correct_action"] = (
-        table["reset_day"].notna().eq(table["expected"].eq(DURABLE_CLASSIFICATION))
+        table["reset_day"].notna().eq(table["expected"].eq(SUSTAINED_CLASSIFICATION))
     )
     # vor Beginn des Ereignisses hat schon ein System anders gehandelt, die Einordnung beruht nicht mehr auf demselben Zustand
     table["after_separation"] = (
@@ -232,7 +166,7 @@ def _summarize_events(
 
 
 def _summarize_criteria(events_table: pd.DataFrame) -> pd.DataFrame:
-    """Je System und erwarteter Klasse sowie über alle Ereignisse: erkannt (TF2, ≥ 90 %), unter den erkannten richtig eingeordnet (TF3, ≥ 80 %). Der Festhänger öffnet das Gate über das Flag und zählt deshalb nur in TF3"""
+    """Je System und erwarteter Klasse sowie über alle Ereignisse: erkannt (TF1, ≥ 90 %), unter den erkannten richtig eingeordnet (TF2, ≥ 80 %). Der Festhänger öffnet das Gate über das Flag und zählt deshalb nur bei der Einordnung"""
     prefilter_event = events_table["expected"].ne(FLAG_CLASSIFICATION)
     criteria = (
         add_overall_rows(
@@ -333,7 +267,7 @@ def _count_notifications_after_detection(
     event_days: pd.DataFrame, events_table: pd.DataFrame, single_day_scales: list[str]
 ) -> pd.DataFrame:
     detected = events_table.loc[
-        events_table["expected"].eq(DURABLE_CLASSIFICATION) & events_table["detected"]
+        events_table["expected"].eq(SUSTAINED_CLASSIFICATION) & events_table["detected"]
     ]
     after = event_days.merge(detected[EVENT_KEYS + ["judged_day"]], on=EVENT_KEYS)
     after = after.loc[after["days_since_cutover"].gt(after["judged_day"])]
@@ -380,7 +314,7 @@ def _evaluate_decision_rules(
     rule_system: str,
     llm_system: str,
 ) -> pd.DataFrame:
-    """Die vorab festgelegten Aussagen aus Kap. 23 je Cutover: Regel besser als Referenz, LLM gleichwertig bzw. besser als Regel"""
+    """Die vorab festgelegten Aussagen aus Kap. 23 je Cutover: Regel und LLM besser als Referenz, LLM gleichwertig bzw. besser als Regel"""
     correct = (
         events_table.pivot(
             index=["cutover_date", "event"], columns="config", values="correct"
@@ -388,42 +322,45 @@ def _evaluate_decision_rules(
         .fillna(False)
         .astype(bool)
     )
-    rule_events = events_table.loc[events_table["config"].eq(rule_system)]
     control_resets = control.pivot(
         index="cutover_date", columns="config", values="resets"
     )
-    rule_forecast = forecast.loc[
-        forecast["series"].eq("events") & forecast["config"].eq(rule_system)
-    ].set_index("cutover_date")
-
-    decisions = pd.DataFrame(
-        {
-            "rule_day_error_delta_w": rule_forecast["mean_delta"],
-            "rule_single_day_resets": rule_events.loc[
-                rule_events["expected"].isin(SINGLE_DAY_CLASSIFICATIONS)
+    columns = {
+        "llm_only_correct": (correct[llm_system] & ~correct[rule_system])
+        .groupby(level="cutover_date")
+        .sum(),
+        "rule_only_correct": (correct[rule_system] & ~correct[llm_system])
+        .groupby(level="cutover_date")
+        .sum(),
+        "llm_extra_control_resets": control_resets[llm_system]
+        - control_resets[rule_system],
+    }
+    for name, system in (("rule", rule_system), ("llm", llm_system)):
+        system_events = events_table.loc[events_table["config"].eq(system)]
+        system_forecast = forecast.loc[
+            forecast["series"].eq("events") & forecast["config"].eq(system)
+        ].set_index("cutover_date")
+        columns[f"{name}_day_error_delta_w"] = system_forecast["mean_delta"]
+        columns[f"{name}_single_day_resets"] = (
+            system_events.loc[
+                system_events["expected"].isin(SINGLE_DAY_CLASSIFICATIONS)
             ]
             .groupby("cutover_date")["reset_day"]
-            .count(),
-            "rule_control_resets": control_resets[rule_system],
-            "llm_only_correct": (correct[llm_system] & ~correct[rule_system])
-            .groupby(level="cutover_date")
-            .sum(),
-            "rule_only_correct": (correct[rule_system] & ~correct[llm_system])
-            .groupby(level="cutover_date")
-            .sum(),
-            "llm_extra_control_resets": control_resets[llm_system]
-            - control_resets[rule_system],
-        }
-    )
-    decisions["rule_better"] = (
-        decisions["rule_day_error_delta_w"].lt(0)
-        & decisions["rule_single_day_resets"].eq(0)
-        & decisions["rule_control_resets"].eq(0)
-    )
+            .count()
+        )
+        columns[f"{name}_control_resets"] = control_resets[system]
+
+    decisions = pd.DataFrame(columns)
+    for name in ("rule", "llm"):
+        decisions[f"{name}_better"] = (
+            decisions[f"{name}_day_error_delta_w"].lt(0)
+            & decisions[f"{name}_single_day_resets"].eq(0)
+            & decisions[f"{name}_control_resets"].eq(0)
+        )
     decisions["llm_equivalent"] = decisions["rule_only_correct"].eq(0) & decisions[
         "llm_extra_control_resets"
     ].le(0)
-    decisions["llm_better"] = decisions["llm_only_correct"].gt(0) & decisions[
+    decisions["llm_better_than_rule"] = decisions["llm_only_correct"].gt(0) & decisions[
         "rule_only_correct"
     ].eq(0)
 
@@ -457,8 +394,10 @@ def summarize_e3(
     single_day_scales: list[str],
 ) -> E3Summary:
     """Alles, was der E3-Report zeigt"""
-    event_list = _list_events(events)
-    results = _assign_events(results, event_list)
+    event_list = list_events(events)
+    results = results.assign(
+        event=assign_events(results, event_list).where(results["series"].eq("events"))
+    )
     event_days = results.loc[results["event"].notna()].merge(event_list, on="event")
 
     separations = _find_separation_days(results)
@@ -469,7 +408,7 @@ def summarize_e3(
         results,
         int(
             event_list.loc[
-                event_list["expected"].eq(DURABLE_CLASSIFICATION), "start_day"
+                event_list["expected"].eq(SUSTAINED_CLASSIFICATION), "start_day"
             ].max()
         ),
         reference_system,

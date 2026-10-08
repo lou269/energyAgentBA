@@ -3,13 +3,19 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from experiments.common.standard_config import GOLDSTANDARD_EXPECTED, REFERENCE_SYSTEM
+from experiments.common.standard_config import (
+    GOLDSTANDARD_EXPECTED,
+    LLM_SYSTEM,
+    REFERENCE_SYSTEM,
+    RULE_SYSTEM,
+)
 
 RUN_PREFIX = "e2"
 PRECHECK_RUN_PREFIX = "e2_precheck"
 # vom Runner geschrieben, vom Report gelesen
 COMPARISON_FILE = "e2_comparison_summary"
 REDUCTION_FILE = "e2_reduction_by_day"
+CLASSIFICATION_FILE = "e2_classification_days"
 # von e2_select_channels geschrieben (nilmtk-env), von e2_scenarios gelesen
 CHANNEL_RANKING_FILE = "absence_channel_ranking"
 CHANNEL_DATA_FILE = "absence_channel_data_hourly"
@@ -51,6 +57,19 @@ class E2Config:
             "ctx2": {"SYS3_CTX2": "SYS3_TOOL"},
         }
     )
+
+    # Einordnung auf Ereignisreihen ohne Kalender: Reihe -> (Tag ab Cutover, Art) nacheinander in einem Lauf
+    # Starke Arten, damit das Gate sicher öffnet und es um die Klasse geht
+    # Spitzen auf verschiedenen Wochentagen, jeweils nach dem Streak-Fenster (7 Tage)
+    event_cutover_id: str = "CO4"
+    event_series: dict[str, tuple[tuple[int, str], ...]] = field(
+        default_factory=lambda: {
+            "scaled": ((0, "scaled_strong"),),
+            "peaks": ((0, "peak_strong"), (10, "peak_strong"), (20, "peak_strong")),
+            "stucks": ((0, "stuck"), (10, "stuck"), (20, "stuck")),
+        }
+    )
+    event_systems: tuple[str, ...] = (REFERENCE_SYSTEM, RULE_SYSTEM, LLM_SYSTEM)
 
     # Vorprüfung ohne LLM: öffnet der Urlaub das Gate überhaupt, die Regel sieht keinen Kalender, ctx0 reicht
     precheck_ctx_systems: dict[str, dict[str, str]] = field(

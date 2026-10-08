@@ -28,6 +28,11 @@ NOTIFICATION_CLASSIFICATIONS: tuple[str, ...] = (
 )
 NOTIFICATION_PERIOD_DAYS = 30
 
+# Klassen, nach denen Ereignisse bewertet werden: Einzeltag-Ereignisse am Ereignistag, anhaltende erst mit new_pattern
+FLAG_CLASSIFICATION = "measurement_error"
+SINGLE_DAY_CLASSIFICATIONS = ("peak", FLAG_CLASSIFICATION)
+SUSTAINED_CLASSIFICATION = "new_pattern"
+
 # Rollen der Systemvarianten in allen Studien: Referenz ohne Adaption, Regel, LLM
 REFERENCE_SYSTEM = "SYS1"
 RULE_SYSTEM = "SYS2"
@@ -88,6 +93,7 @@ GOLDSTANDARD_EXPECTED: dict[str, str] = {
     "control": "normal",
     "scaled": "new_pattern",
     "scaled_strong": "new_pattern",
+    "scaled_down": "new_pattern",
     "ramp_28": "new_pattern",
     "ramp_28_down": "new_pattern",
     "ramp_56": "normal",
@@ -99,7 +105,7 @@ GOLDSTANDARD_EXPECTED: dict[str, str] = {
     "stuck": "measurement_error",
 }
 
-# was der Vorfilter bei der erwarteten Klasse tun soll, gilt für jede Studie mit Katalog-Arten
+# Sollverhalten bei der erwarteten Klasse
 EXPECTED_DETECTION: dict[str, str] = {
     "new_pattern": "reset",
     "peak": "alarm",

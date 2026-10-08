@@ -12,7 +12,10 @@ from experiments.common.harness import (
     read_calendar_availability,
     read_llm_outputs,
 )
+from experiments.common.evaluation import ALL_EVENTS
 from experiments.common.report import (
+    KIND_LABELS,
+    YES_NO,
     forecast_error_table,
     format_commit,
     key_figures_table,
@@ -25,6 +28,7 @@ from experiments.common.standard_config import (
     STANDARD_CONFIG,
 )
 from experiments.e2_absence.e2_config import (
+    CLASSIFICATION_FILE,
     COMPARISON_FILE,
     PRECHECK_RUN_PREFIX,
     REDUCTION_FILE,
@@ -33,6 +37,8 @@ from experiments.e2_absence.e2_config import (
 from experiments.e2_absence.e2_evaluation import (
     E2Summary,
     GatePrecheckSummary,
+    summarize_classification,
+    summarize_classification_rates,
     summarize_e2,
     summarize_gate_precheck,
 )
@@ -40,6 +46,7 @@ from experiments.e2_absence.e2_selection import (
     load_calendar_events,
     resolve_absence_window,
 )
+from src.config.config_forecasting import SYS_LABELS
 from src.pipeline.io import (
     RAW_SUBDIR,
     read_raw_json,
@@ -55,6 +62,8 @@ CONFIG_LABELS = {
     "SYS3_CTX1_VISIT": "SYS3 mit Kalender, Gegenfall Besuch",
     "SYS3_CTX2": "SYS3 Kalender per Tool",
 }
+
+SERIES_LABELS = {"scaled": "Sprung", "peaks": "Spitzen", "stucks": "Festhänger"}
 
 PHASE_LABELS = {
     "before": "vor dem Urlaub",
@@ -167,6 +176,15 @@ def build_setup(
     )
     for ctx, systems in e2_config["ctx_systems"].items():
         setup[f"Systeme {ctx}"] = ", ".join(systems)
+    setup["Ereignisreihen"] = (
+        f"{STANDARD_CONFIG.cutover_dates[e2_config['event_cutover_id']]}, ohne Kalender, Systeme {', '.join(e2_config['event_systems'])}: "
+        + "; ".join(
+            f"{SERIES_LABELS[series]} ("
+            + ", ".join(f"Tag {day}: {KIND_LABELS[kind]}" for day, kind in events)
+            + ")"
+            for series, events in e2_config["event_series"].items()
+        )
+    )
     setup["Commit"] = format_commit(code_version)
 
     return setup
@@ -191,6 +209,42 @@ def build_key_figures(summary: E2Summary, target_classification: str) -> pd.Data
     )
 
     return key_figures_table(rows)
+
+
+def build_classification_table(rates: pd.DataFrame) -> pd.DataFrame:
+    return pd.DataFrame(
+        {
+            "System": rates["config"].map(SYS_LABELS),
+            "erwartet": rates["expected"].replace(ALL_EVENTS, "alle Ereignisse"),
+            "Ereignisse": rates["events"],
+            "erkannt": rates["detected"],
+            "richtig eingeordnet": [
+                f"{correct}/{detected}"
+                for correct, detected in zip(rates["correct"], rates["detected"])
+            ],
+            "richtig [%]": rates["correct_pct"],
+        }
+    )
+
+
+def build_classification_event_table(events: pd.DataFrame) -> pd.DataFrame:
+    return pd.DataFrame(
+        {
+            "Reihe": events["series"].map(SERIES_LABELS),
+            "Ereignis": [
+                f"{number}: {KIND_LABELS[kind]}, Tag {day}"
+                for number, kind, day in zip(
+                    events["event"], events["kind"], events["start_day"]
+                )
+            ],
+            "System": events["config"].map(SYS_LABELS),
+            "erwartet": events["expected"],
+            "bewertet an Tag": events["judged_day"],
+            "Klasse": events["classification"],
+            "Skala": events["trigger_scale"],
+            "richtig": events["correct"].map(YES_NO),
+        }
+    )
 
 
 def build_precheck_first_days_table(summary: GatePrecheckSummary) -> pd.DataFrame:
@@ -338,8 +392,24 @@ def write_full_report(run_directory: Path) -> None:
         for event_id, window in windows.items()
     }
 
+    classification = summarize_classification(
+        pd.read_csv(
+            raw_directory / f"{CLASSIFICATION_FILE}.csv", dtype={"cutover_date": str}
+        ),
+        e2_config["event_series"],
+    )
+
     output_directory = user_output_directory(run_directory)
-    tables: dict[str, tuple[str, pd.DataFrame]] = {}
+    tables: dict[str, tuple[str, pd.DataFrame]] = {
+        "result_classification": (
+            "Einordnung auf den Ereignisreihen: richtige Klasse am Bewertungstag",
+            build_classification_table(summarize_classification_rates(classification)),
+        ),
+        "result_classification_events": (
+            "Einordnung je Ereignis",
+            build_classification_event_table(classification),
+        ),
+    }
     appendix: dict[str, tuple[str, pd.DataFrame]] = {}
     for event_id, summary in summaries.items():
         build_e2_plot(
@@ -368,6 +438,9 @@ def write_full_report(run_directory: Path) -> None:
         tables=tables,
         notes=[
             "Urlaubstag = analysierter Tag seit Beginn der Abwesenheit, 0 = erster Urlaubstag",
+            "Ereignisreihen: richtig = die Klasse am Bewertungstag ist die erwartete (peak, new_pattern, measurement_error). Bewertet wird bei Spitze und Festhänger am Tag nach dem Ereignis, wenn das Gate offen ist, beim Sprung am ersten Tag mit anhaltender Abweichung oder new_pattern. Kein Bewertungstag = nicht erkannt",
+            "richtig [%]: Anteil unter den erkannten Ereignissen. Die Regel (SYS2) und SYS1 sind der Maßstab für das LLM (SYS3), SYS1 handelt nie",
+            "Nach dem ersten Festhänger schließen SYS2 und SYS3 den Tag aus der Referenz aus, SYS1 nicht. Festhänger 2 und 3 werden daher mit verschiedenem Zustand eingeordnet. Bei den Spitzen gibt es keine Handlung, dort laufen alle Systeme gleich",
             f"Treffer = {target_classification} mit passendem Kalendereintrag. {target_classification} ohne Beleg (ohne Kalender, "
             "Kalender nicht abgerufen oder nach der Rückkehr) zählt als Fehlklassifikation, über alle Phasen",
             "Treffer: von den Urlaubstagen mit offenem Gate, an den übrigen wird nicht eingeordnet. Wenige Tage, deshalb als Anzahl",

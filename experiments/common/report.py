@@ -26,6 +26,7 @@ KIND_LABELS: dict[str, str] = {
     "control": "keine Änderung",
     "scaled": _change_label("Sprung", STANDARD_CONFIG.scale_factor),
     "scaled_strong": _change_label("Sprung", STANDARD_CONFIG.strong_scale_factor),
+    "scaled_down": _change_label("Sprung", STANDARD_CONFIG.scale_factor_down),
     "ramp_28": _change_label(
         f"Rampe über {STANDARD_CONFIG.ramp_fast_days} Tage",
         STANDARD_CONFIG.scale_factor,

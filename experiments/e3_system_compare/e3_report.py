@@ -54,14 +54,14 @@ def build_criteria_table(criteria: pd.DataFrame) -> pd.DataFrame:
         {
             "System": criteria["config"].map(SYS_LABELS),
             "erwartet": criteria["expected"].replace(ALL_EVENTS, "alle Ereignisse"),
-            "erkannt (TF2)": [
+            "erkannt (TF1)": [
                 f"{detected}/{events}"
                 for detected, events in zip(
                     criteria["prefilter_detected"], criteria["prefilter_events"]
                 )
             ],
             "erkannt [%]": criteria["detection_pct"],
-            "richtig eingeordnet (TF3)": [
+            "richtig eingeordnet (TF2)": [
                 f"{correct}/{detected}"
                 for correct, detected in zip(criteria["correct"], criteria["detected"])
             ],
@@ -196,12 +196,12 @@ def build_key_figures(
         system = SYS_LABELS[row["config"]]
         rows += [
             (
-                f"{system}: erkannt (TF2, ≥ 90 %)",
+                f"{system}: erkannt (TF1, ≥ 90 %)",
                 f"{row['prefilter_detected']}/{row['prefilter_events']}",
                 f"{format_number(row['detection_pct'], STANDARD_CONFIG.decimals)} %",
             ),
             (
-                f"{system}: richtig eingeordnet (TF3, ≥ 80 %)",
+                f"{system}: richtig eingeordnet (TF2, ≥ 80 %)",
                 f"{row['correct']}/{row['detected']}",
                 f"{format_number(row['correct_pct'], STANDARD_CONFIG.decimals)} % der erkannten",
             ),
@@ -209,13 +209,15 @@ def build_key_figures(
     for row in summary.decisions.to_dict("records"):
         rows += [
             (
-                f"{row['cutover_date']}: {rule} besser als {reference}",
-                YES_NO[row["rule_better"]],
+                f"{row['cutover_date']}: {system_label} besser als {reference}",
+                YES_NO[row[f"{name}_better"]],
                 f"Tagesfehler gegen {reference} ab Dauerlast "
-                f"{format_number(row['rule_day_error_delta_w'], STANDARD_CONFIG.decimals)} W, "
-                f"{row['rule_single_day_resets']} Resets bei Einzeltag-Ereignissen, "
-                f"{row['rule_control_resets']} im Kontrolllauf",
-            ),
+                f"{format_number(row[f'{name}_day_error_delta_w'], STANDARD_CONFIG.decimals)} W, "
+                f"{row[f'{name}_single_day_resets']} Resets bei Einzeltag-Ereignissen, "
+                f"{row[f'{name}_control_resets']} im Kontrolllauf",
+            )
+            for name, system_label in (("rule", rule), ("llm", llm))
+        ] + [
             (
                 f"{row['cutover_date']}: {llm} gleichwertig zu {rule}",
                 YES_NO[row["llm_equivalent"]],
@@ -224,7 +226,7 @@ def build_key_figures(
             ),
             (
                 f"{row['cutover_date']}: {llm} besser als {rule}",
-                YES_NO[row["llm_better"]],
+                YES_NO[row["llm_better_than_rule"]],
                 f"{row['llm_only_correct']} Ereignisse nur {llm} richtig",
             ),
         ]
@@ -256,7 +258,7 @@ def build_notes(summary: E3Summary, single_day_scales: list[str]) -> list[str]:
         "Tag = Entscheidungstag seit Cutover: an Tag n wird Tag n-1 eingeordnet, ein Ereignis an Tag s also ab Tag s+1",
         "bewertet an Tag: bei einer Spitze und beim Festhänger der eingeordnete Ereignistag, falls das Gate dort offen ist, bei der Dauerlast der "
         "erste Tag mit Drift oder new_pattern. Meldungen davor zählen als Meldungen, nicht als Einordnungsfehler. "
-        "Ohne Bewertungstag gilt das Ereignis als nicht erkannt (TF2) und zählt nicht in TF3. Der Festhänger zählt nicht in TF2, das Flag öffnet das Gate per Aufbau",
+        "Ohne Bewertungstag gilt das Ereignis als nicht erkannt und zählt nicht bei der Einordnung. Der Festhänger zählt nicht bei der Erkennung, das Flag öffnet das Gate per Aufbau",
         "nach Trennung: vor Beginn des Ereignisses hat schon ein System anders gehandelt (Reset), die Systeme entscheiden dann nicht mehr über denselben Zustand",
         f"sehend = alle Einzeltag-Skalen ({', '.join(single_day_scales)}) haben einen Score, sonst blind",
         "Kontrolllauf über das ganze Fenster, auch die Tage vor dem Cutover. Jede Meldung dort ist ein Fehlalarm, jeder Reset unnötig",
@@ -310,7 +312,7 @@ def write_report(run_directory: Path) -> Path:
             build_key_figures(summary, reference=reference, rule=rule, llm=llm),
         ),
         "result_criteria": (
-            "Erkennung (TF2) und erste Einordnung (TF3), gepoolt über Cutover und Ereignisse",
+            "Erkennung (TF1) und erste Einordnung (TF2) als Nebenzahlen, gepoolt über Cutover und Ereignisse",
             build_criteria_table(summary.criteria),
         ),
         "result_events": (

@@ -24,12 +24,13 @@ class E3Config:
 
     margin_before_days: int = 14
     # (Tag ab Cutover, Art) nacheinander in einer Reihe. Erst die Spitzen und der Festhänger, die Dauerlast zuletzt, nach ihrem Reset fehlen Skalen.
-    # Die zweite Spitze liegt nach dem Streak-Fenster (7 Tage) der ersten und auf einem anderen Wochentag, der Festhänger nach dem der zweiten
+    # Die zweite Spitze liegt nach dem Streak-Fenster (7 Tage) der ersten und auf einem anderen Wochentag, der Festhänger nach dem der zweiten.
+    # Starke Arten, hier geht es um die Wirkung der Adaption und nicht um die Erkennung
     events: tuple[tuple[int, str], ...] = (
-        (0, "peak_6"),
-        (10, "peak_6"),
+        (0, "peak_strong"),
+        (10, "peak_strong"),
         (17, "stuck"),
-        (21, "step_200"),
+        (21, "scaled_strong"),
     )
     # rund 30 Tage nach Beginn der Dauerlast
     margin_after_days: int = 51

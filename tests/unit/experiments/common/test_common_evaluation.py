@@ -4,7 +4,6 @@ import pandas as pd
 import pytest
 
 from experiments.common.evaluation import (
-    compare_errors_after_reset,
     count_notifications,
     days_since_event,
     pair_with_control,
@@ -57,42 +56,6 @@ def test_days_since_event_count_calendar_days_across_dst() -> None:
         1,
         2,
     ]
-
-
-def test_after_reset_starts_with_the_first_reset_from_the_event_on() -> None:
-    comparison = pd.concat(
-        [
-            _comparison(
-                "SYS1", [50.0, 50.0, 100.0, 100.0, 100.0], [None] * 5, ["none"] * 5
-            ),
-            # der Reset vor dem Event und der Ausschluss am 01.04. zählen nicht, der erste Reset danach bewertet den 01.04. und prognostiziert den 02.04.
-            _comparison(
-                "SYS2",
-                [50.0, 40.0, 90.0, 80.0, 110.0],
-                ["normal"] * 5,
-                [
-                    "none",
-                    "advance_history_start",
-                    "none",
-                    "exclude_window",
-                    "advance_history_start",
-                ],
-            ),
-        ]
-    )
-
-    result = (
-        compare_errors_after_reset(comparison, EVENT_TIME, "SYS1")
-        .set_index("config")
-        .to_dict("index")["SYS2"]
-    )
-
-    assert result["reset_forecast_day"] == 2
-    assert result["paired_count"] == 1
-    assert result["mean_delta"] == 10.0
-    assert result["better_share"] == 0.0
-    assert result["mean_day_error_w"] == 110.0
-    assert result["mae_delta_w"] == 20.0
 
 
 def test_notifications_count_unknown_separately_and_scale_to_the_period() -> None:

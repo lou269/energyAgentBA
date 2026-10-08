@@ -7,6 +7,7 @@ from experiments.common import standard_scenarios
 from experiments.common.standard_config import LOCAL_TIMEZONE, STANDARD_CONFIG
 from experiments.common.standard_scenarios import add_stuck_flags, add_stuck_value
 from src.common.timestamps import local_midnight_utc
+from src.pipeline.comparison_harness import ScenarioData
 
 CUTOVER = "2014-04-15"
 
@@ -26,6 +27,13 @@ def _constant_mains(monkeypatch: pytest.MonkeyPatch) -> None:
         "load_split_bounds",
         lambda split: (index[0], index[-1]),
     )
+
+
+def _flagged_hours(scenario: ScenarioData) -> pd.DatetimeIndex:
+    flags = scenario.value_implausible
+    assert flags is not None
+
+    return pd.DatetimeIndex(flags[flags].index)
 
 
 def _build(kinds: tuple[str, ...], margin_after_days: int = 30) -> dict:
@@ -121,3 +129,49 @@ def test_stuck_flags_imputed() -> None:
 
     assert add_stuck_flags(constant, never, never).any()
     assert not add_stuck_flags(constant, always, never).any()
+
+
+def test_stuck_scenario_carries_its_flags(monkeypatch: pytest.MonkeyPatch) -> None:
+    index = pd.date_range("2013-12-01", "2014-07-31", freq="1h", tz="UTC")
+    flags = pd.Series(False, index=index)
+    # wechselnde Werte, sonst gilt schon die Kontrollreihe als festhängend
+    mains = pd.Series(200.0 + (index.hour % 7) * 10.0, index=index)
+    monkeypatch.setattr(
+        standard_scenarios, "load_target", lambda split: (mains, flags, flags)
+    )
+    scenarios = _build(("control", "stuck"))
+    cutover_time = local_midnight_utc(CUTOVER, LOCAL_TIMEZONE)
+
+    assert _flagged_hours(scenarios["control"]).empty
+    flagged = _flagged_hours(scenarios["stuck"])
+    # markiert wird erst, wenn der Wert die Mindestdauer erreicht hat, dann bis zum Ende
+    assert not flagged.empty
+    assert flagged.min() >= cutover_time
+    assert flagged.max() < cutover_time + pd.Timedelta(
+        hours=STANDARD_CONFIG.stuck_hours
+    )
+
+
+def test_event_series_flags_each_stuck_event_and_nothing_else(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    index = pd.date_range("2013-12-01", "2014-07-31", freq="1h", tz="UTC")
+    flags = pd.Series(False, index=index)
+    mains = pd.Series(200.0 + (index.hour % 7) * 10.0, index=index)
+    monkeypatch.setattr(
+        standard_scenarios, "load_target", lambda split: (mains, flags, flags)
+    )
+    control = _build(("control",), margin_after_days=40)["control"]
+    events = ((0, "stuck"), (10, "stuck"), (20, "stuck"))
+
+    scenario = standard_scenarios.build_event_series_scenario(control, CUTOVER, events)
+
+    flagged_days = _flagged_hours(scenario).tz_convert(LOCAL_TIMEZONE).normalize()
+    expected_days = [
+        local_midnight_utc(CUTOVER, LOCAL_TIMEZONE, days_offset=day).tz_convert(
+            LOCAL_TIMEZONE
+        )
+        for day, _ in events
+    ]
+    assert list(flagged_days.unique()) == expected_days
+    assert _flagged_hours(control).empty

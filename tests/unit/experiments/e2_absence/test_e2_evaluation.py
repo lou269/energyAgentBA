@@ -2,7 +2,13 @@
 
 import pandas as pd
 
-from experiments.e2_absence.e2_evaluation import PRECHECK_ANOMALY_COLUMNS, summarize_e2
+from experiments.common.evaluation import SCALE_SUSTAINED_COLUMNS
+from experiments.e2_absence.e2_evaluation import (
+    PRECHECK_ANOMALY_COLUMNS,
+    summarize_classification,
+    summarize_classification_rates,
+    summarize_e2,
+)
 from src.common.timestamps import local_midnight_utc
 
 TIMEZONE = "Europe/London"
@@ -158,3 +164,69 @@ def test_absence_only_counts_as_a_hit_with_the_calendar_event() -> None:
         0,
         4,
     ]
+
+
+def _classification_run(
+    config: str, classifications: list[str], gate_open: list[bool]
+) -> pd.DataFrame:
+    # Tag 0 bis 5, der 15.04. ist Tag 0, die Reihe heißt peaks (steht in kind)
+    return pd.DataFrame(
+        {
+            "config": config,
+            "kind": "peaks",
+            "cutover_date": "2014-04-15",
+            "decision_time": [
+                local_midnight_utc(f"2014-04-{15 + day}", TIMEZONE).isoformat()
+                for day in range(6)
+            ],
+            "classification": classifications,
+            "gate_open": gate_open,
+            "sustained_drift": False,
+            "dominant_scale": "daily",
+            **{column: False for column in SCALE_SUSTAINED_COLUMNS},
+        }
+    )
+
+
+def test_classification_is_judged_per_event_on_its_first_day_with_open_gate() -> None:
+    # Ereignis 1 an Tag 0 (bewertet an Tag 1), Ereignis 2 an Tag 2 (bewertet an Tag 3)
+    events = {"peaks": ((0, "peak_strong"), (2, "peak_strong"))}
+    runs = [
+        _classification_run(
+            "SYS2",
+            ["normal", "peak", "normal", "peak", "normal", "normal"],
+            [False, True, False, True, False, False],
+        ),
+        _classification_run(
+            "SYS3",
+            ["normal", "peak", "normal", "low", "normal", "normal"],
+            [False, True, False, True, False, False],
+        ),
+        # Gate bei Ereignis 2 nie offen, also dort nie bewertet
+        _classification_run(
+            "SYS1",
+            ["normal", "peak", "normal", "normal", "normal", "normal"],
+            [False, True, False, False, False, False],
+        ),
+    ]
+
+    events_table = summarize_classification(pd.concat(runs, ignore_index=True), events)
+    result = events_table.set_index(["config", "event"])
+
+    assert result.loc[("SYS2", 1), "judged_day"] == 1
+    assert result.loc[("SYS2", 1), "trigger_scale"] == "daily"
+    assert result.loc[("SYS2", 1), "expected"] == "peak"
+    assert result.loc[("SYS2", 2), "correct"]
+    assert result.loc[("SYS3", 1), "correct"]
+    assert not result.loc[("SYS3", 2), "correct"]
+    assert not result.loc[("SYS1", 2), "detected"]
+    assert pd.isna(result.loc[("SYS1", 2), "correct"])
+
+    rates = summarize_classification_rates(events_table).set_index(
+        ["config", "expected"]
+    )
+    assert rates.loc[("SYS3", "all"), "events"] == 2
+    assert rates.loc[("SYS3", "all"), "correct"] == 1
+    assert rates.loc[("SYS3", "peak"), "correct_pct"] == 50
+    assert rates.loc[("SYS1", "all"), "detected"] == 1
+    assert rates.loc[("SYS1", "all"), "correct_pct"] == 100

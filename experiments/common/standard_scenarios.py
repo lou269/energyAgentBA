@@ -1,4 +1,5 @@
 from dataclasses import replace
+from typing import cast
 
 import pandas as pd
 
@@ -48,12 +49,20 @@ def build_standard_scenarios(
         history, decision_times, COLDSTART_DAYS, target_imputed, value_implausible
     )
 
-    return {
-        kind: replace(
-            control, target_series=build_kind_series(history, cutover_time, kind)
+    scenarios = {}
+    for kind in kinds:
+        series = build_kind_series(history, cutover_time, kind)
+        scenarios[kind] = replace(
+            control,
+            target_series=series,
+            value_implausible=(
+                add_stuck_flags(series, target_imputed, value_implausible)
+                if kind == "stuck"
+                else value_implausible
+            ),
         )
-        for kind in kinds
-    }
+
+    return scenarios
 
 
 def build_kind_series(
@@ -75,6 +84,8 @@ def build_kind_series(
         return scale_from(history, cutover_time, config.scale_factor)
     if kind == "scaled_strong":
         return scale_from(history, cutover_time, config.strong_scale_factor)
+    if kind == "scaled_down":
+        return scale_from(history, cutover_time, config.scale_factor_down)
     if kind in ramps:
         days, factor = ramps[kind]
         return add_linear_ramp(history, cutover_time, days=days, factor=factor)
@@ -153,4 +164,30 @@ def add_stuck_flags(
         series.where(imputed.eq(False)),
         stuck_value_min_hours=STUCK_VALUE_MIN_HOURS,
         sample_period_hours=HOURLY_SAMPLE_PERIOD_HOURS,
+    )
+
+
+def add_events(
+    series: pd.Series, cutover_date: str, events: tuple[tuple[int, str], ...]
+) -> pd.Series:
+    # events: (Tag ab Cutover, Art) nacheinander in einer Reihe
+    for day, kind in events:
+        event_time = local_midnight_utc(cutover_date, LOCAL_TIMEZONE, days_offset=day)
+        series = build_kind_series(series, event_time, kind)
+
+    return series
+
+
+def build_event_series_scenario(
+    control: ScenarioData, cutover_date: str, events: tuple[tuple[int, str], ...]
+) -> ScenarioData:
+    series = add_events(control.target_series, cutover_date, events)
+    # build_standard_scenarios setzt beide Reihen immer
+    target_imputed = cast(pd.Series, control.target_imputed)
+    value_implausible = cast(pd.Series, control.value_implausible)
+
+    return replace(
+        control,
+        target_series=series,
+        value_implausible=add_stuck_flags(series, target_imputed, value_implausible),
     )

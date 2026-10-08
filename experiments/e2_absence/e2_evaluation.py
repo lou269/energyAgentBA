@@ -1,13 +1,20 @@
-from collections.abc import Collection
+from collections.abc import Collection, Mapping
 from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
 
 from experiments.common.evaluation import (
+    ALL_EVENTS,
     SCALE_SUSTAINED_COLUMNS,
+    add_days_since_cutover,
     add_gate_flags,
+    add_judgement,
+    add_overall_rows,
+    assign_events,
     count_notifications,
+    find_judged_days,
+    list_events,
     local_dates,
     summarize_forecast_errors,
 )
@@ -63,6 +70,62 @@ PRECHECK_ANOMALY_COLUMNS = [
 ] + SCALE_SUSTAINED_COLUMNS
 
 PHASES = ("before", "absence", "after_return")
+
+# Spalten der Ereignis-Szenarien, die summarize_classification braucht
+CLASSIFICATION_RESULT_COLUMNS = [
+    "config",
+    "kind",
+    "cutover_date",
+    "decision_time",
+    "analyzed_day",
+    "classification",
+    "dominant_scale",
+    "sustained_drift",
+    "gate_open",
+] + SCALE_SUSTAINED_COLUMNS
+
+
+def summarize_classification(
+    results: pd.DataFrame, event_series: Mapping[str, tuple[tuple[int, str], ...]]
+) -> pd.DataFrame:
+    """Eine Zeile je Reihe, System und Ereignis: erwartete Klasse, Bewertungstag, Klasse an diesem Tag, auslösende Skala, erkannt und richtig eingeordnet. Ab der ersten Handlung (Ausschluss des Festhängers) sehen die Systeme verschiedene Zustände"""
+    days = add_days_since_cutover(results).rename(columns={"kind": "series"})
+    keys = ["series", "cutover_date", "config", "event"]
+    tables = []
+
+    for series, events in event_series.items():
+        event_list = list_events(events)
+        series_days = days.loc[days["series"].eq(series)]
+        event_days = series_days.assign(
+            event=assign_events(series_days, event_list)
+        ).dropna(subset=["event"])
+        event_days = event_days.merge(event_list, on="event")
+        tables.append(
+            add_judgement(
+                series_days[["series", "cutover_date", "config"]]
+                .drop_duplicates()
+                .merge(event_list, how="cross"),
+                find_judged_days(event_days, keys),
+                keys,
+            ).sort_values(["event", "config"])
+        )
+
+    return pd.concat(tables, ignore_index=True)
+
+
+def summarize_classification_rates(events: pd.DataFrame) -> pd.DataFrame:
+    """Je System und erwarteter Klasse sowie über alle Ereignisse: Ereignisse, erkannt (es gibt einen Bewertungstag), richtig eingeordnet und der Anteil richtiger unter den erkannten"""
+    rates = (
+        add_overall_rows(events, "expected", ALL_EVENTS)
+        .groupby(["config", "expected"], as_index=False)
+        .agg(
+            events=("event", "size"),
+            detected=("detected", "sum"),
+            correct=("correct", "sum"),
+        )
+    )
+
+    return rates.assign(correct_pct=rates["correct"] / rates["detected"] * 100)
 
 
 def by_phase(column: pd.Series) -> pd.Series:

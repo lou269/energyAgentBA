@@ -5,7 +5,12 @@ from collections.abc import Collection, Mapping
 import numpy as np
 import pandas as pd
 
-from experiments.common.standard_config import LOCAL_TIMEZONE
+from experiments.common.standard_config import (
+    GOLDSTANDARD_EXPECTED,
+    LOCAL_TIMEZONE,
+    SINGLE_DAY_CLASSIFICATIONS,
+    SUSTAINED_CLASSIFICATION,
+)
 from src.common.timestamps import local_day_index
 from src.evaluation.text_check import (
     collect_state_values,
@@ -28,8 +33,11 @@ SCALE_SUSTAINED_COLUMNS = [f"{scale}_sustained" for scale in SCALE_NAMES]
 # und prognostiziert ihn, eingeordnet wird dabei der Vortag. Einordnung und Adaption zählen deshalb erst ab Tag 1 zum Ereignis
 FIRST_ANALYZED_DAY = 1
 
-# eine Ergebniszeile je System, Cutover und Art in Studien auf Standard-Cutovern mit Kontrolllauf (E1)
+# eine Ergebniszeile je System, Cutover und Art in Studien auf Standard-Cutovern mit Kontrolllauf (E1, E2)
 EVENT_KEYS = ["config", "cutover_date", "kind"]
+
+# Zeile über alle Ereignisse in den Einordnungstabellen
+ALL_EVENTS = "all"
 
 
 def local_dates(times: pd.Series | pd.Index | list) -> pd.DatetimeIndex:
@@ -284,43 +292,6 @@ def summarize_forecast_errors(
     return pd.concat(rows, ignore_index=True)
 
 
-def compare_errors_after_reset(
-    comparison: pd.DataFrame,
-    event_time: pd.Timestamp,
-    reference_config: str,
-) -> pd.DataFrame:
-    """Fehler je config ab ihrem ersten Reset (advance_history_start) nach event_time, gepaart gegen reference_config an denselben Tagen. Ausgeschlossene Tage (exclude_window) zählen nicht"""
-    after_event = comparison.loc[
-        days_since_event(comparison, event_time) >= FIRST_ANALYZED_DAY
-    ]
-    resets = after_event.loc[
-        after_event["adaption_action"].eq("advance_history_start")
-    ].sort_values("decision_time")
-    # der Reset-Zyklus baut seine Prognose schon mit dem angepassten Modell, zählt also mit
-    first_resets = resets.groupby("config").head(1)
-    first_resets = first_resets.assign(
-        reset_forecast_day=days_since_event(first_resets, event_time)
-    )
-    summaries = []
-
-    for row in first_resets.itertuples(index=False):
-        window = comparison.loc[
-            comparison["decision_time"].ge(row.decision_time)
-            & comparison["config"].isin([reference_config, row.config])
-        ].assign(reset_forecast_day=row.reset_forecast_day)
-        errors = summarize_forecast_errors(
-            window, ["reset_forecast_day"], reference_config
-        )
-        summaries.append(errors.loc[errors["config"].eq(row.config)])
-
-    if not summaries:
-        return pd.DataFrame(
-            columns=["config", "reset_forecast_day", "mean_delta", "mae_delta_w"]
-        )
-
-    return pd.concat(summaries, ignore_index=True)
-
-
 def summarize_cutover_response(
     results: pd.DataFrame, expected: Mapping[str, str]
 ) -> pd.DataFrame:
@@ -371,6 +342,75 @@ def summarize_cutover_response(
     response[counts] = response[counts].astype("Int64")
 
     return response
+
+
+def list_events(events: list | tuple) -> pd.DataFrame:
+    """Eine Zeile je Ereignis einer Reihe (Tag ab Cutover, Art): Nummer, Art, Starttag, erster Einordnungstag und erwartete Klasse"""
+    return pd.DataFrame(
+        {
+            "event": range(1, len(events) + 1),
+            "kind": [kind for _, kind in events],
+            "start_day": [day for day, _ in events],
+            "first_day": [day + FIRST_ANALYZED_DAY for day, _ in events],
+            "expected": [
+                GOLDSTANDARD_EXPECTED[kind.partition("_")[0]] for _, kind in events
+            ],
+        }
+    )
+
+
+def assign_events(days: pd.DataFrame, event_list: pd.DataFrame) -> pd.Series:
+    """Nummer des Ereignisses, das an diesem Tag eingeordnet wird, bis zum ersten Einordnungstag des nächsten. Vor dem ersten Ereignis leer"""
+    number = pd.Series(
+        np.searchsorted(
+            event_list["first_day"], days["days_since_cutover"], side="right"
+        ),
+        index=days.index,
+    )
+
+    return number.astype("Int64").where(number.gt(0))
+
+
+def find_judged_days(event_days: pd.DataFrame, keys: list[str]) -> pd.DataFrame:
+    """Je keys der erste Tag, an dem die Einordnung bewertet wird: bei Einzeltag-Ereignissen der Tag first_day mit offenem Gate, bei dauerhaften der erste Tag mit anhaltender Abweichung oder new_pattern, dazu die Klasse an diesem Tag und die Skala, die ihn ausgelöst hat. Ohne Zeile = nicht erkannt"""
+    single_day = event_days["expected"].isin(SINGLE_DAY_CLASSIFICATIONS)
+    judged = (
+        single_day
+        & event_days["days_since_cutover"].eq(event_days["first_day"])
+        & event_days["gate_open"].eq(True)
+    ) | (
+        ~single_day
+        & (
+            event_days["sustained_drift"].eq(True)
+            | event_days["classification"].eq(SUSTAINED_CLASSIFICATION)
+        )
+    )
+    judged_days = (
+        event_days.loc[judged].sort_values("days_since_cutover").groupby(keys).head(1)
+    )
+    judged_days = judged_days.assign(
+        trigger_scale=detection_scales(
+            judged_days, judged_days["expected"].isin(SINGLE_DAY_CLASSIFICATIONS)
+        )
+    ).rename(columns={"days_since_cutover": "judged_day"})
+
+    return judged_days[keys + ["judged_day", "classification", "trigger_scale"]]
+
+
+def add_judgement(
+    events: pd.DataFrame, judged_days: pd.DataFrame, keys: list[str]
+) -> pd.DataFrame:
+    """events (keys und expected) neben den Bewertungstagen: erkannt = es gibt einen Bewertungstag, richtig = die Klasse dort ist die erwartete (leer, wenn nicht erkannt)"""
+    table = events.merge(judged_days, on=keys, how="left")
+    table["detected"] = table["judged_day"].notna()
+    table["correct"] = (
+        table["classification"]
+        .eq(table["expected"])
+        .astype("boolean")
+        .mask(~table["detected"])
+    )
+
+    return table
 
 
 def spread_over_repeats(
