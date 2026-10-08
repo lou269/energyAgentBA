@@ -319,7 +319,7 @@ def report_seasonality(run_directory: Path) -> Path:
         },
         tables=tables,
         notes=[
-            "Y1 − C2 ist der Effekt der Jahressaisonalität allein, C2 − C3_30 der der längeren Historie",
+            "Y1 − C2 ist der Effekt der Jahressaisonalität allein, C2 − C3_60 der der längeren Historie",
             "Monat 2014-04 und 2015-04 sind je ein halber Monat",
             NOISE_RULE_NOTE,
         ],

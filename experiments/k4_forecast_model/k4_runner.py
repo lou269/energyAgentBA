@@ -3,7 +3,7 @@
 # danach: python -m experiments.k4_forecast_model.k4_report [retraining|seasonality] [run_directory]
 
 # retraining: Prophet-Varianten und Baselines auf der Validierung, wählt die produktive Variante
-# seasonality: ein Jahr Prognose, Prophet mit und ohne Jahressaisonalität neben dem produktiven C3_30
+# seasonality: ein Jahr Prognose, Prophet mit und ohne Jahressaisonalität neben dem produktiven C3_60
 
 import logging
 import sys
@@ -122,7 +122,7 @@ def run_seasonality(k4_config: K4Config) -> Path:
         split_start.tz_convert(LOCAL_TIMEZONE).date().isoformat(),
         k4_config.seasonality_days,
     )
-    # die ganze Historie vor dem Start, C3_30 schneidet sich davon selbst die letzten 30 Tage ab
+    # die ganze Historie vor dem Start, C3_60 schneidet sich davon selbst die letzten 60 Tage ab
     history, targets, targets_imputed = slice_history_window(
         target_series,
         target_imputed,

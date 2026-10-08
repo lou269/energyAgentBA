@@ -1,0 +1,4 @@
+Vergleich,Differenz [W],2 Standardfehler [W],Tage,Tage besser [%],belastbar
+Y1 − C2,-1.5,3.5,364,54.9,nein
+C2 − C3_60,-1.2,5.9,364,53.6,nein
+Y1 − C3_60,-2.7,4.8,364,54.1,nein

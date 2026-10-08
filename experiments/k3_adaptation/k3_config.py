@@ -27,7 +27,7 @@ class K3Config:
     # 8 = frühester Reset des Detektors bei scaled in der K1-Diagnose, 19 = Median dieser Resets
     trigger_days: tuple[int, ...] = (8, 19)
     # Trainingsfenster minus Schnitt bei Trigger minus streak_tolerance_window_days: nach so vielen Tagen trainieren Aktion und keine Aktion auf denselben Tagen, die Differenz ist danach null
-    evaluation_days: int = 23
+    evaluation_days: int = 53
     # Spalten der Ergebnisse: Mittel der Stundenfehler und Fehler des Tagesmittels, jeweils je Prognosetag
     error_metrics: tuple[str, ...] = ("mae_w", "day_error_w")
     # Tage seit Cutover, für die Prognose minus Messung (mit Vorzeichen) ohne Aktion ausgewertet wird, davor als Bezug

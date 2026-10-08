@@ -3,7 +3,7 @@ from dataclasses import dataclass, field, replace
 from experiments.common.standard_config import COLDSTART_DAYS
 from src.config.config_forecasting import (
     C2_EXPANDING,
-    C3_ROLLING_30,
+    C3_ROLLING_60,
     FORECAST_MODEL_PROPHET_VARIANTS,
     ForecastingConfig,
     ProphetVariantConfig,
@@ -41,13 +41,13 @@ class K4Config(ForecastingConfig):
     # Jahressaisonalität: volles Jahr Prognose ab Beginn des Abschnitts, davor ein Jahr Historie (train)
     seasonality_days: int = 365
     seasonality_variants: tuple[ProphetVariantConfig, ...] = (
-        C3_ROLLING_30,
+        C3_ROLLING_60,
         C2_EXPANDING,
         Y1_EXPANDING_YEARLY,
     )
     # (Variante, Referenz): Jahressaisonalität allein, längere Historie allein, beides gegen das produktive Modell
     seasonality_comparisons: tuple[tuple[str, str], ...] = (
         ("Y1", "C2"),
-        ("C2", "C3_30"),
-        ("Y1", "C3_30"),
+        ("C2", "C3_60"),
+        ("Y1", "C3_60"),
     )
