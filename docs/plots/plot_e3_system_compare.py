@@ -11,20 +11,25 @@ def build_e3_plot(
     results: pd.DataFrame,
     output_directory: Path,
     *,
-    event_days: list[int],
+    event_days: dict[str, list[int]],
+    series_labels: dict[str, str],
 ) -> None:
-    event_series = results.loc[results["series"].eq("events")]
-    cutover_dates = sorted(event_series["cutover_date"].unique())
+    cutover_dates = sorted(results["cutover_date"].unique())
+    panels = [
+        (cutover_date, series)
+        for cutover_date in cutover_dates
+        for series in event_days
+    ]
     figure, axes = plt.subplots(
-        len(cutover_dates), 1, figsize=(9, 3.2 * len(cutover_dates)), squeeze=False
+        len(panels), 1, figsize=(9, 3.2 * len(panels)), squeeze=False
     )
 
-    for axis, cutover_date in zip(axes[:, 0], cutover_dates):
+    for axis, (cutover_date, series) in zip(axes[:, 0], panels):
+        series_days = results.loc[
+            results["series"].eq(series) & results["cutover_date"].eq(cutover_date)
+        ]
         for config, color in SYSTEM_COLORS.items():
-            days = event_series.loc[
-                event_series["cutover_date"].eq(cutover_date)
-                & event_series["config"].eq(config)
-            ]
+            days = series_days.loc[series_days["config"].eq(config)]
             if days.empty:
                 continue
 
@@ -46,9 +51,9 @@ def build_e3_plot(
             )
 
         # der Ereignistag ist schon der erste Prognosetag mit Ereignis, die Linie liegt davor
-        for day in event_days:
+        for day in event_days[series]:
             axis.axvline(day - 0.5, linewidth=1)
-        axis.set_title(f"Cutover {cutover_date}", loc="left")
+        axis.set_title(f"Cutover {cutover_date}, {series_labels[series]}", loc="left")
         axis.set_ylabel("Tagesfehler (W)")
         axis.grid(axis="y", alpha=0.25)
 

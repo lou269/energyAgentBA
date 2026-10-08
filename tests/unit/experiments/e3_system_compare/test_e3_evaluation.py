@@ -96,7 +96,7 @@ def _summarize(
         results,
         runtimes,
         pd.DataFrame(columns=OUTPUT_COLUMNS) if llm_outputs is None else llm_outputs,
-        events=events,
+        event_series={"events": events},
         reference_system="SYS1",
         rule_system="SYS2",
         llm_system="SYS3",

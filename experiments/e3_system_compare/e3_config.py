@@ -24,12 +24,9 @@ class E3Config:
     rule_system: str = RULE_SYSTEM
     llm_system: str = LLM_SYSTEM
 
-    # (Tag ab Cutover, Art) nacheinander in einer Reihe. Erst die Spitzen und der Festhänger, die Dauerlast zuletzt, nach ihrem Reset fehlen Skalen.
-    # Die zweite Spitze liegt nach dem Streak-Fenster (7 Tage) der ersten und auf einem anderen Wochentag, der Festhänger nach dem der zweiten.
-    # Starke Arten, hier geht es um die Wirkung der Adaption und nicht um die Erkennung
-    events: tuple[tuple[int, str], ...] = (
-        (0, "peak_strong"),
-        (10, "peak_strong"),
-        (17, "stuck"),
-        (21, "scaled_strong"),
+    event_series: dict[str, tuple[tuple[int, str], ...]] = field(
+        default_factory=lambda: {
+            "single_days": ((0, "peak_strong"), (10, "peak_strong"), (17, "stuck")),
+            "scaled": ((0, "scaled_strong"),),
+        }
     )

@@ -38,12 +38,19 @@ from src.pipeline.io import (
     user_output_directory,
 )
 
-SERIES_LABELS = {"control": "Kontrolllauf", "events": "Ereignislauf"}
+SERIES_LABELS = {
+    "control": "Kontrolllauf",
+    "single_days": "Einzeltage-Lauf",
+    "scaled": "Dauerlast-Lauf",
+}
 
 SIGHT_LABELS = {True: "sehend", False: "blind"}
 
 
-def event_labels(events: list) -> dict[int, str]:
+def event_labels(event_series: dict[str, list]) -> dict[int, str]:
+    events = [
+        event for series_events in event_series.values() for event in series_events
+    ]
     return {
         number: f"{number}: {KIND_LABELS[kind]}, Tag {day}"
         for number, (day, kind) in enumerate(events, start=1)
@@ -249,7 +256,7 @@ def build_setup(
         + " (Tag 0, alle Tage und Daten in Ortszeit)",
         "Fenster": f"{standard_config['monitoring_before_cutover_days']} Tage vor und "
         f"{standard_config['margin_after_days']} Tage ab Cutover",
-        "Ereignislauf": "; ".join(labels.values()),
+        "Ereignisse": "; ".join(labels.values()),
         "Systeme": ", ".join(
             SYS_LABELS[e3_config[key]]
             for key in ("reference_system", "rule_system", "llm_system")
@@ -297,7 +304,7 @@ def write_report(run_directory: Path) -> Path:
     reference = e3_config["reference_system"]
     rule = e3_config["rule_system"]
     llm = e3_config["llm_system"]
-    labels = event_labels(e3_config["events"])
+    labels = event_labels(e3_config["event_series"])
 
     results = pd.read_csv(
         raw_directory / f"{RESULTS_FILE}.csv", dtype={"cutover_date": str}
@@ -307,7 +314,7 @@ def write_report(run_directory: Path) -> Path:
         results,
         read_run_meta(raw_directory),
         llm_outputs,
-        events=e3_config["events"],
+        event_series=e3_config["event_series"],
         reference_system=reference,
         rule_system=rule,
         llm_system=llm,
@@ -354,7 +361,11 @@ def write_report(run_directory: Path) -> Path:
     build_e3_plot(
         results,
         output_directory,
-        event_days=[day for day, _ in e3_config["events"]],
+        event_days={
+            series: [day for day, _ in events]
+            for series, events in e3_config["event_series"].items()
+        },
+        series_labels=SERIES_LABELS,
     )
     write_explanation_rating_template(llm_outputs, output_directory)
 

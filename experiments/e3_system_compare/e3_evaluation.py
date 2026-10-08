@@ -1,3 +1,4 @@
+from collections.abc import Mapping
 from dataclasses import dataclass
 
 import numpy as np
@@ -13,7 +14,7 @@ from experiments.common.evaluation import (
     assign_events,
     count_notifications,
     find_judged_days,
-    list_events,
+    list_event_series,
     merge_cycle_days,
     summarize_forecast_errors,
     summarize_latency,
@@ -70,6 +71,17 @@ def read_e3_results(
     days["classifier_called"] = days["explanation"].notna() | days["error"].notna()
 
     return add_days_since_cutover(days)[RESULT_COLUMNS]
+
+
+def _assign_series_events(results: pd.DataFrame, event_list: pd.DataFrame) -> pd.Series:
+    numbers = pd.Series(pd.NA, index=results.index, dtype="Int64")
+    for series, table in event_list.groupby("series"):
+        rows = results["series"].eq(series)
+        numbers.loc[rows] = assign_events(results.loc[rows], table) + (
+            table["event"].min() - 1
+        )
+
+    return numbers
 
 
 def _find_separation_days(results: pd.DataFrame) -> pd.DataFrame:
@@ -145,10 +157,8 @@ def _summarize_events(
         )
         .merge(resets, on=EVENT_KEYS, how="left")
         .merge(
-            separations.loc[
-                separations["series"].eq("events"), ["cutover_date", "separation_day"]
-            ],
-            on="cutover_date",
+            separations[["cutover_date", "series", "separation_day"]],
+            on=["cutover_date", "series"],
             how="left",
         )
     )
@@ -246,12 +256,12 @@ def _summarize_control(results: pd.DataFrame) -> pd.DataFrame:
 
 
 def _compare_forecasts(
-    results: pd.DataFrame, durable_start_day: int, reference_system: str
+    results: pd.DataFrame, durable_start_days: pd.Series, reference_system: str
 ) -> pd.DataFrame:
-    """Prognosefehler gegen reference_system ab Beginn der dauerhaften Änderung und im Kontrolllauf ab Cutover"""
+    """Prognosefehler gegen reference_system in den Reihen mit dauerhafter Änderung ab deren Beginn (Reihe -> Starttag) und im Kontrolllauf ab Cutover"""
     in_window = results["days_since_cutover"].ge(0) & (
         results["series"].eq("control")
-        | results["days_since_cutover"].ge(durable_start_day)
+        | results["days_since_cutover"].ge(results["series"].map(durable_start_days))
     )
     windowed = results.loc[in_window]
     from_day = windowed.groupby(SERIES_KEYS, as_index=False).agg(
@@ -338,7 +348,7 @@ def _evaluate_decision_rules(
     for name, system in (("rule", rule_system), ("llm", llm_system)):
         system_events = events_table.loc[events_table["config"].eq(system)]
         system_forecast = forecast.loc[
-            forecast["series"].eq("events") & forecast["config"].eq(system)
+            forecast["series"].ne("control") & forecast["config"].eq(system)
         ].set_index("cutover_date")
         columns[f"{name}_day_error_delta_w"] = system_forecast["mean_delta"]
         columns[f"{name}_single_day_resets"] = (
@@ -387,30 +397,27 @@ def summarize_e3(
     runtimes: pd.DataFrame,
     llm_outputs: pd.DataFrame,
     *,
-    events: list | tuple,
+    event_series: Mapping[str, tuple[tuple[int, str], ...]],
     reference_system: str,
     rule_system: str,
     llm_system: str,
     single_day_scales: list[str],
 ) -> E3Summary:
     """Alles, was der E3-Report zeigt"""
-    event_list = list_events(events)
-    results = results.assign(
-        event=assign_events(results, event_list).where(results["series"].eq("events"))
+    event_list = list_event_series(event_series)
+    results = results.assign(event=_assign_series_events(results, event_list))
+    event_days = results.loc[results["event"].notna()].merge(
+        event_list, on=["series", "event"]
     )
-    event_days = results.loc[results["event"].notna()].merge(event_list, on="event")
 
     separations = _find_separation_days(results)
     events_table = _summarize_events(event_days, event_list, separations)
     control = _summarize_control(results)
-    # die Dauerlast kommt als letztes Ereignis
     forecast = _compare_forecasts(
         results,
-        int(
-            event_list.loc[
-                event_list["expected"].eq(SUSTAINED_CLASSIFICATION), "start_day"
-            ].max()
-        ),
+        event_list.loc[event_list["expected"].eq(SUSTAINED_CLASSIFICATION)]
+        .groupby("series")["start_day"]
+        .min(),
         reference_system,
     )
 

@@ -5,6 +5,7 @@ RUN_PREFIX = "k1"
 # vom Runner geschrieben, vom Report gelesen
 GRID_FILE = "k1_grid"
 RESETS_FILE = "k1_resets"
+SINGLE_DAY_FILE = "k1_single_day"
 DIAGNOSIS_FILE = "k1_diagnosis"
 # Spalten der Streak-Schwellen in den Tabellen
 STREAK_THRESHOLD_COLUMNS = {
@@ -22,6 +23,12 @@ class K1Config:
     )
     # höchstens so viele Resets im durchgehenden Lauf über validation (etwa 2 je Jahr)
     max_resets: int = 4
+
+    # Einzeltag-Schwelle für daily und weekday zusammen
+    single_day_target_share: float = 0.05
+    single_day_thresholds: tuple[float, ...] = tuple(
+        round(2.0 + 0.1 * step, 1) for step in range(31)
+    )
 
     # Diagnose, nicht für die Wahl: Szenarien an Cutovern im Abstand von margin_after_days der Standard-Szenarien,
     # damit sich die Tage nach den Cutovern nicht überlappen

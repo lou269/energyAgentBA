@@ -53,7 +53,7 @@ class NumericalAnalysisConfig:
     # weekly/long_term sind Rollmittel und bleiben nach einer Verschiebung wochenlang erhöht -> zählen nur über ihre Streaks
     single_day_scales: tuple[str, ...] = ("daily", "weekday")
 
-    unusual_threshold: float = 3.2
+    unusual_threshold: float = 3.4
     # Streak-Schwellen: kalibriert in K1
     weekly_streak_threshold: float = 1.02
     long_term_streak_threshold_pct: float = 14.2

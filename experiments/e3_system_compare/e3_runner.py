@@ -55,7 +55,7 @@ def run(e3_config: E3Config) -> Path:
 
     for cutover_id in e3_config.cutovers[STANDARD_CONFIG.split]:
         cutover_date = STANDARD_CONFIG.cutover_date(cutover_id)
-        scenarios = build_e3_scenarios(cutover_date, e3_config.events)
+        scenarios = build_e3_scenarios(cutover_date, e3_config.event_series)
 
         for series, scenario in scenarios.items():
             scenario_name = SCENARIO_DIRECTORY.format(

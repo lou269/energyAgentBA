@@ -24,8 +24,8 @@ class K3Config:
         default_factory=lambda: {"validation": ("CO1", "CO2", "CO3", "CO4", "CO5")}
     )
 
-    # 6 = frühestmögliches new_pattern (6 von 7 Tagen auffällig, ausgewertet um Mitternacht danach), 19 = späte Erkennung, etwa so spät setzt der Detektor bei scaled im Median zurück (K1-Diagnose)
-    trigger_days: tuple[int, ...] = (6, 19)
+    # 8 = frühester Reset des Detektors bei scaled in der K1-Diagnose, 19 = Median dieser Resets
+    trigger_days: tuple[int, ...] = (8, 19)
     # Trainingsfenster minus Schnitt bei Trigger minus streak_tolerance_window_days: nach so vielen Tagen trainieren Aktion und keine Aktion auf denselben Tagen, die Differenz ist danach null
     evaluation_days: int = 23
     # Spalten der Ergebnisse: Mittel der Stundenfehler und Fehler des Tagesmittels, jeweils je Prognosetag
@@ -44,6 +44,6 @@ class K3Config:
 
     masking_events: tuple[tuple[int, str], ...] = (
         (0, "peak"),
-        (10, "peak"),
-        (20, "peak"),
+        (8, "peak"),
+        (17, "peak"),
     )

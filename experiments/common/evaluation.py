@@ -359,6 +359,21 @@ def list_events(events: list | tuple) -> pd.DataFrame:
     )
 
 
+def list_event_series(
+    event_series: Mapping[str, tuple[tuple[int, str], ...]],
+) -> pd.DataFrame:
+    """Wie list_events für mehrere Reihen, die Nummern laufen über alle Reihen durch und die Spalte series nennt die Reihe"""
+    tables = []
+    offset = 0
+    for series, events in event_series.items():
+        table = list_events(events)
+        table["event"] += offset
+        tables.append(table.assign(series=series))
+        offset += len(events)
+
+    return pd.concat(tables, ignore_index=True)
+
+
 def assign_events(days: pd.DataFrame, event_list: pd.DataFrame) -> pd.Series:
     """Nummer des Ereignisses, das an diesem Tag eingeordnet wird, bis zum ersten Einordnungstag des nächsten. Vor dem ersten Ereignis leer"""
     number = pd.Series(

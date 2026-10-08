@@ -2,9 +2,9 @@
 # python -m experiments.k1_detection.k1_runner
 # danach: python -m experiments.k1_detection.k1_report
 
-# Streak-Schwellen der Niveau-Skalen: gleicher Anteil anhaltender Tage für weekly und long_term
+# Streak-Schwellen der Niveau-Skalen (gleicher Anteil anhaltender Tage für weekly und long_term) und Einzeltag-Schwelle
 import logging
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from pathlib import Path
 
 import pandas as pd
@@ -27,13 +27,16 @@ from experiments.k1_detection.k1_config import (
     GRID_FILE,
     RESETS_FILE,
     RUN_PREFIX,
+    SINGLE_DAY_FILE,
     STREAK_THRESHOLD_COLUMNS,
     K1Config,
 )
 from experiments.k1_detection.k1_evaluation import (
     diagnosis_case,
+    single_day_shares,
     spaced_cutovers,
     summarize_grid,
+    summarize_single_day,
     sustained_values,
     thresholds_for_share,
 )
@@ -173,6 +176,21 @@ def run(k1_config: K1Config) -> Path:
         selected[STREAK_THRESHOLD_COLUMNS["weekly"]],
         selected[STREAK_THRESHOLD_COLUMNS["long_term"]],
     )
+
+    single_day = single_day_shares(
+        chain_for(series, days, chosen_config, cache)["anomaly_score"],
+        k1_config.single_day_thresholds,
+    )
+    df_to_csv(single_day, raw_directory, SINGLE_DAY_FILE)
+    single_day_summary = summarize_single_day(
+        single_day, target_share=k1_config.single_day_target_share
+    )
+    chosen_config = replace(
+        chosen_config,
+        unusual_threshold=float(
+            single_day_summary.loc[single_day_summary["selected"], "threshold"].iloc[0]
+        ),
+    )
     cutovers = spaced_cutovers(
         first_day,
         last_day,
@@ -194,6 +212,7 @@ def run(k1_config: K1Config) -> Path:
         "last_day": str(days[-1].date()),
         "days": len(days),
         "current_thresholds": level_shift_thresholds(analysis_config),
+        "current_single_day_threshold": analysis_config.unusual_threshold,
         "cutovers": cutovers,
     }
     save_json(run_config, raw_directory / "run_config.json")

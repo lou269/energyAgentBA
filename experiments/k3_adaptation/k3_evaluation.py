@@ -1,11 +1,9 @@
 from dataclasses import dataclass
 
-import numpy as np
 import pandas as pd
 
 from experiments.common.evaluation import (
     ALL_DAYS,
-    add_overall_rows,
     days_since_event,
     spread_over_repeats,
 )
@@ -114,17 +112,15 @@ def pair_masking(results: pd.DataFrame, metrics: tuple[str, ...]) -> pd.DataFram
 def summarize_masking_by_cutover(
     paired: pd.DataFrame, first_day: int, last_day: int, window_days: int, metric: str
 ) -> pd.DataFrame:
-    # ab dem Tag nach der ersten Spitze steckt sie im Trainingsfenster, bis window_days Tage nach der letzten
-    phase = pd.cut(
-        paired["days_since_cutover"],
-        [-np.inf, first_day, last_day + window_days, np.inf],
-        labels=["before_peak", "in_window", "after_window"],
+    # nur Tage, an denen eine Spitze im Trainingsfenster steckt: ab dem Tag nach der ersten bis window_days nach der letzten.
+    # Davor und danach trainieren beide Läufe auf denselben Tagen und die Differenz ist null
+    in_window = paired["days_since_cutover"].between(
+        first_day + 1, last_day + window_days
     )
     # Tage ohne Wert (beim Tagesfehler unvollständige Tage) zählen nirgends mit
-    valid = paired.dropna(subset=[f"{metric}_delta"])
-    phased = add_overall_rows(valid.assign(phase=phase.astype(str)), "phase", ALL_DAYS)
+    valid = paired.loc[in_window].dropna(subset=[f"{metric}_delta"])
 
-    grouped = phased.groupby(["kind", "cutover_date", "phase"], sort=False)
+    grouped = valid.groupby(["kind", "cutover_date"], sort=False)
     summary = grouped[[f"{metric}_none", f"{metric}_mask", f"{metric}_delta"]].mean()
     summary["days"] = grouped[f"{metric}_delta"].count()
 
@@ -132,11 +128,15 @@ def summarize_masking_by_cutover(
 
 
 def summarize_masking(summary: pd.DataFrame, metric: str) -> pd.DataFrame:
-    keys = ["kind", "phase"]
-    table = spread_over_repeats(summary, keys, f"{metric}_delta", count_improved=True)
-    counts = summary.groupby(keys, as_index=False, sort=False).agg(days=("days", "sum"))
+    """Je Szenario: Differenz je Cutover und im Mittel, dazu der Fehler ohne Ausblenden (none) und die Zahl der Tage"""
+    table = spread_over_repeats(
+        summary, ["kind"], f"{metric}_delta", count_improved=True
+    )
+    counts = summary.groupby("kind", as_index=False, sort=False).agg(
+        days=("days", "sum"), none=(f"{metric}_none", "mean")
+    )
 
-    return counts.merge(table, on=keys).sort_values("kind", kind="stable")
+    return counts.merge(table, on="kind")
 
 
 @dataclass(frozen=True)

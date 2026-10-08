@@ -48,6 +48,25 @@ def summarize_grid(
     return summary.assign(selected=summary["share"].eq(chosen))
 
 
+def single_day_shares(scores: pd.Series, thresholds: tuple[float, ...]) -> pd.DataFrame:
+    """Anteil der Tage mit Score (größter Betrag aus daily und weekday) ab der Schwelle, Tage ohne Score zählen nicht"""
+    valid = scores.dropna()
+
+    return pd.DataFrame(
+        {
+            "threshold": list(thresholds),
+            "alarm_share": [float(valid.ge(value).mean()) for value in thresholds],
+        }
+    )
+
+
+def summarize_single_day(shares: pd.DataFrame, *, target_share: float) -> pd.DataFrame:
+    """Gewählt ist die Schwelle, deren Anteil am nächsten am Ziel liegt, bei Gleichstand die niedrigere"""
+    closest = (shares["alarm_share"] - target_share).abs().idxmin()
+
+    return shares.assign(selected=shares.index == closest)
+
+
 def spaced_cutovers(
     first_day: pd.Timestamp,
     last_day: pd.Timestamp,
@@ -112,22 +131,33 @@ def summarize_diagnosis(cases: pd.DataFrame) -> pd.DataFrame:
 class K1Summary:
     grid: pd.DataFrame
     selected: pd.Series
+    single_day: pd.DataFrame
+    single_day_selected: pd.Series
     diagnosis: pd.DataFrame
 
 
 def summarize_k1(
     grid: pd.DataFrame,
     resets: pd.DataFrame,
+    single_day: pd.DataFrame,
     cases: pd.DataFrame,
     *,
     days: int,
     max_resets: int,
+    single_day_target_share: float,
 ) -> K1Summary:
     """Raster mit gewähltem Punkt und Diagnose je Einstellung und Art"""
     summary = summarize_grid(grid, resets, days=days, max_resets=max_resets)
+    single_day_summary = summarize_single_day(
+        single_day, target_share=single_day_target_share
+    )
 
     return K1Summary(
         grid=summary,
         selected=summary.loc[summary["selected"]].iloc[0],
+        single_day=single_day_summary,
+        single_day_selected=single_day_summary.loc[single_day_summary["selected"]].iloc[
+            0
+        ],
         diagnosis=summarize_diagnosis(cases),
     )

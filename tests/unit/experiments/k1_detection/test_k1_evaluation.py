@@ -3,8 +3,10 @@ import pandas as pd
 
 from experiments.k1_detection.k1_evaluation import (
     diagnosis_case,
+    single_day_shares,
     summarize_diagnosis,
     summarize_grid,
+    summarize_single_day,
     sustained_values,
     thresholds_for_share,
 )
@@ -80,3 +82,14 @@ def test_diagnosis_counts_only_resets_before_the_control() -> None:
     assert diagnosis.loc["ramp_56", "expected"] == "silent"
     assert diagnosis.loc["peak", "event_alarms"] == 1
     assert diagnosis.loc["control", "own_resets"] == 0
+
+
+def test_single_day_threshold_closest_to_target() -> None:
+    scores = pd.Series([np.nan] + list(np.arange(0.5, 10.0, 0.5)))
+
+    shares = single_day_shares(scores, (3.0, 5.0, 8.0))
+    summary = summarize_single_day(shares, target_share=0.4)
+
+    # 19 gültige Tage: ab 5,0 schlagen 10 an
+    assert shares["alarm_share"].round(3).tolist() == [0.737, 0.526, 0.211]
+    assert summary.loc[summary["selected"], "threshold"].tolist() == [5.0]

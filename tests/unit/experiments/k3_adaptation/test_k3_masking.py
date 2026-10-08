@@ -52,13 +52,11 @@ def test_masking_is_paired_with_none_on_the_same_day() -> None:
     assert paired["day_error_w_delta"].dropna().tolist() == [0.0, -3.0, 0.0]
 
 
-def test_peaks_count_in_window_until_the_window_after_the_last_one() -> None:
+def test_only_days_with_a_peak_in_the_window_count() -> None:
     paired = pair_masking(_results(), ("mae_w", "day_error_w"))
 
-    # Spitzen an Tag 0 und 10, Fenster 30 Tage: Tag 1 bis 40 im Fenster, Tag 41 danach
+    # Spitzen an Tag 0 und 10, Fenster 30 Tage: Tag 1 bis 40 zählen, Tag -1, 0 und 41 nicht
     summary = summarize_masking_by_cutover(paired, 0, 10, 30, "day_error_w")
-    by_phase = summary.set_index("phase")
 
-    assert by_phase.loc["in_window", "day_error_w_delta"] == -3.0
-    assert by_phase.loc["before_peak", "days"] == 1
-    assert by_phase.loc["after_window", "days"] == 1
+    assert summary["days"].tolist() == [1]
+    assert summary["day_error_w_delta"].tolist() == [-3.0]

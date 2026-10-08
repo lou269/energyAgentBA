@@ -16,7 +16,6 @@ from experiments.common.report import (
     relabel,
     write_result_report,
 )
-from experiments.common.evaluation import ALL_DAYS
 from experiments.common.standard_config import PROJECT_CONFIG, STANDARD_CONFIG
 from experiments.k3_adaptation.k3_config import (
     MASKING_RESULTS_FILE,
@@ -35,7 +34,6 @@ from experiments.k3_adaptation.k3_evaluation import (
     summarize_effect,
     summarize_masking,
     summarize_masking_by_cutover,
-    summarize_masking_key_figures,
     summarize_strategy_key_figures,
 )
 from src.config.config_forecasting import SYS_VARIANTS
@@ -50,14 +48,6 @@ STRATEGY_LABELS: dict[str, str] = {
     "none": "keine Aktion",
     "cut": "Reset, Historie ab t_c",
     "step_regressor": "Stufen-Regressor",
-}
-
-MASKING_PHASE_LABELS: dict[str, str] = {
-    "before_cutover": "vor Cutover",
-    "before_peak": "bis zur ersten Spitze",
-    "in_window": "Spitzen im Trainingsfenster",
-    "after_window": "danach",
-    ALL_DAYS: "alle Tage",
 }
 
 # Name und Einheit je Fehlerspalte, die Tabellen des MAE behalten ihre Dateinamen
@@ -77,7 +67,6 @@ HEADERS = {
 }
 MASKING_HEADERS = {
     "kind": "Ereignis",
-    "phase": "Zeitraum",
     "days": "Tage",
     "mean": "Mittel",
     "improved": "Cutover besser",
@@ -264,19 +253,14 @@ def report_masking(run_directory: Path, k3_config: K3Config) -> Path:
             metric,
         )
         table = summarize_masking(summary, metric)
-        key_figures = summarize_masking_key_figures(summary, table, metric)
 
         tables[f"key_figures{suffix}"] = (
             f"Kennzahlen {metric_label}",
-            build_masking_key_figures(key_figures, metric),
+            build_masking_key_figures(table, metric),
         )
         tables[f"result_masking{suffix}"] = (
-            f"{metric_label} mask minus replay je Cutover [{unit}], negativ = besser",
-            relabel(
-                table,
-                MASKING_HEADERS,
-                {"kind": KIND_LABELS, "phase": MASKING_PHASE_LABELS},
-            ),
+            f"{metric_label} mask minus none je Cutover [{unit}], negativ = besser",
+            relabel(table.drop(columns="none"), MASKING_HEADERS, {"kind": KIND_LABELS}),
         )
 
     output_directory = user_output_directory(run_directory)
