@@ -1,0 +1,12 @@
+Ebene,Modell,Fall oder Tag,Verstoß,fehlende Belege
+Ebene 2,ministral-3:8b,2015-04-02 scaled_strong,,anomaly.direction
+Ebene 2,qwen3:8b,2015-02-19 control,number: 3,
+Ebene 2,qwen3:8b,2015-02-19 peak_strong,number: 3,
+Ebene 2,qwen3:8b,2015-02-19 scaled_strong,number: 3,
+Ebene 2,qwen3:8b,2015-04-08 scaled_strong,control: abschalt,
+Ebene 2,qwen3:8b,2015-04-29 control,number: 2,
+Ebene 2,qwen3:8b,2015-04-29 peak_strong,number: 2,
+Ebene 1,qwen3.5:9b,absence_drift_down,,context.events.<index>.title
+Ebene 1,qwen3.5:9b,new_pattern,control: einschalt,
+Ebene 1,qwen3.5:9b,new_pattern_at_min_scales_boundary,control: einschalt,
+Ebene 1,ministral-3:8b,absence_drift_down,number: 21. Dezember,context.events.<index>.title
