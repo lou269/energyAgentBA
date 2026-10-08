@@ -1,0 +1,5 @@
+Cutover,Reihe,Tage,Regel je Tag [s],LLM-Aufrufe,Ausfalltage,Mehrlaufzeit gegen Regel [s],je Aufruf [s]
+2015-02-12,Kontrolllauf,101,0.1,30,0,549.5,18.3
+2015-05-24,Kontrolllauf,101,0.1,11,0,217.8,19.8
+2015-02-12,Ereignislauf,101,0.1,51,0,925.3,18.1
+2015-05-24,Ereignislauf,101,0.1,19,0,355.2,18.7

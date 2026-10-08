@@ -1,0 +1,25 @@
+Cutover,Ereignis,System,erwartet,bewertet an Tag,Klasse,richtig,Skala,Meldungen davor,Reset an Tag,Aktion passend,nach Trennung
+2015-02-12,"1: Spitze +1000 W über 6 h, Tag 0",SYS1 ohne Adaption,peak,1.0,peak,ja,daily,,,ja,nein
+2015-02-12,"1: Spitze +1000 W über 6 h, Tag 0",SYS2 Regel,peak,1.0,peak,ja,daily,,,ja,nein
+2015-02-12,"1: Spitze +1000 W über 6 h, Tag 0",SYS3 LLM,peak,1.0,peak,ja,daily,,,ja,nein
+2015-02-12,"2: Spitze +1000 W über 6 h, Tag 10",SYS1 ohne Adaption,peak,11.0,peak,ja,daily,,,ja,nein
+2015-02-12,"2: Spitze +1000 W über 6 h, Tag 10",SYS2 Regel,peak,11.0,peak,ja,daily,,,ja,nein
+2015-02-12,"2: Spitze +1000 W über 6 h, Tag 10",SYS3 LLM,peak,11.0,peak,ja,daily,,,ja,nein
+2015-02-12,"3: Festhänger über 12 h, Tag 17",SYS1 ohne Adaption,measurement_error,18.0,measurement_error,ja,daily,,,ja,nein
+2015-02-12,"3: Festhänger über 12 h, Tag 17",SYS2 Regel,measurement_error,18.0,measurement_error,ja,daily,,,ja,nein
+2015-02-12,"3: Festhänger über 12 h, Tag 17",SYS3 LLM,measurement_error,18.0,measurement_error,ja,daily,,,ja,nein
+2015-02-12,"4: Sprung +30 %, Tag 21",SYS1 ohne Adaption,new_pattern,49.0,new_pattern,ja,weekly+long_term,2.0,,nein,ja
+2015-02-12,"4: Sprung +30 %, Tag 21",SYS2 Regel,new_pattern,49.0,new_pattern,ja,weekly+long_term,2.0,49.0,ja,ja
+2015-02-12,"4: Sprung +30 %, Tag 21",SYS3 LLM,new_pattern,49.0,new_pattern,ja,weekly+long_term,2.0,49.0,ja,ja
+2015-05-24,"1: Spitze +1000 W über 6 h, Tag 0",SYS1 ohne Adaption,peak,,,,,,,ja,ja
+2015-05-24,"1: Spitze +1000 W über 6 h, Tag 0",SYS2 Regel,peak,,,,,,,ja,ja
+2015-05-24,"1: Spitze +1000 W über 6 h, Tag 0",SYS3 LLM,peak,,,,,,,ja,ja
+2015-05-24,"2: Spitze +1000 W über 6 h, Tag 10",SYS1 ohne Adaption,peak,11.0,peak,ja,weekday,,,ja,ja
+2015-05-24,"2: Spitze +1000 W über 6 h, Tag 10",SYS2 Regel,peak,11.0,peak,ja,weekday,,,ja,ja
+2015-05-24,"2: Spitze +1000 W über 6 h, Tag 10",SYS3 LLM,peak,11.0,peak,ja,weekday,,,ja,ja
+2015-05-24,"3: Festhänger über 12 h, Tag 17",SYS1 ohne Adaption,measurement_error,18.0,measurement_error,ja,weekday,,,ja,ja
+2015-05-24,"3: Festhänger über 12 h, Tag 17",SYS2 Regel,measurement_error,18.0,measurement_error,ja,weekday,,,ja,ja
+2015-05-24,"3: Festhänger über 12 h, Tag 17",SYS3 LLM,measurement_error,18.0,measurement_error,ja,weekday,,,ja,ja
+2015-05-24,"4: Sprung +30 %, Tag 21",SYS1 ohne Adaption,new_pattern,37.0,new_pattern,ja,weekly+long_term,1.0,,nein,ja
+2015-05-24,"4: Sprung +30 %, Tag 21",SYS2 Regel,new_pattern,38.0,new_pattern,ja,weekly+long_term,1.0,38.0,ja,ja
+2015-05-24,"4: Sprung +30 %, Tag 21",SYS3 LLM,new_pattern,38.0,new_pattern,ja,weekly+long_term,1.0,38.0,ja,ja

@@ -1,0 +1,9 @@
+Cutover,System,Tage,Anzahl,Meldungen,unknown
+2015-02-12,SYS1 ohne Adaption,sehend,11,1,0
+2015-02-12,SYS2 Regel,blind,11,0,0
+2015-02-12,SYS3 LLM,blind,11,0,0
+2015-05-24,SYS1 ohne Adaption,sehend,23,4,0
+2015-05-24,SYS2 Regel,blind,21,0,0
+2015-05-24,SYS2 Regel,sehend,1,0,0
+2015-05-24,SYS3 LLM,blind,21,0,0
+2015-05-24,SYS3 LLM,sehend,1,0,0

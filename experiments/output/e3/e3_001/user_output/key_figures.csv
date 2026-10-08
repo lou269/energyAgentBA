@@ -1,0 +1,15 @@
+Kennzahl,Wert,Bezug
+"SYS1 ohne Adaption: erkannt (TF1, ≥ 90 %)",5/6,"83,3 %"
+"SYS1 ohne Adaption: richtig eingeordnet (TF2, ≥ 80 %)",7/7,"100,0 % der erkannten"
+"SYS2 Regel: erkannt (TF1, ≥ 90 %)",5/6,"83,3 %"
+"SYS2 Regel: richtig eingeordnet (TF2, ≥ 80 %)",7/7,"100,0 % der erkannten"
+"SYS3 LLM: erkannt (TF1, ≥ 90 %)",5/6,"83,3 %"
+"SYS3 LLM: richtig eingeordnet (TF2, ≥ 80 %)",7/7,"100,0 % der erkannten"
+2015-02-12: SYS2 besser als SYS1,ja,"Tagesfehler gegen SYS1 ab Dauerlast -11,6 W, 0 Resets bei Einzeltag-Ereignissen, 0 im Kontrolllauf"
+2015-02-12: SYS3 besser als SYS1,nein,"Tagesfehler gegen SYS1 ab Dauerlast -11,6 W, 0 Resets bei Einzeltag-Ereignissen, 1 im Kontrolllauf"
+2015-02-12: SYS3 gleichwertig zu SYS2,nein,"0 Ereignisse nur SYS2 richtig, 1 Resets mehr im Kontrolllauf"
+2015-02-12: SYS3 besser als SYS2,nein,0 Ereignisse nur SYS3 richtig
+2015-05-24: SYS2 besser als SYS1,nein,"Tagesfehler gegen SYS1 ab Dauerlast 2,8 W, 0 Resets bei Einzeltag-Ereignissen, 0 im Kontrolllauf"
+2015-05-24: SYS3 besser als SYS1,nein,"Tagesfehler gegen SYS1 ab Dauerlast 2,8 W, 0 Resets bei Einzeltag-Ereignissen, 0 im Kontrolllauf"
+2015-05-24: SYS3 gleichwertig zu SYS2,ja,"0 Ereignisse nur SYS2 richtig, 0 Resets mehr im Kontrolllauf"
+2015-05-24: SYS3 besser als SYS2,nein,0 Ereignisse nur SYS3 richtig
