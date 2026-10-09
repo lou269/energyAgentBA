@@ -18,6 +18,7 @@ from src.numerical_analysis.daily_analysis import level_shift_thresholds
 from src.pipeline.io import append_csv, append_jsonl
 from src.structured_state.structured_state_schema import (
     DEVIATION_SCALE_NAMES,
+    LEVEL_SHIFT_SCALE_NAMES,
     SCALE_NAMES,
     StructuredState,
 )
@@ -90,7 +91,6 @@ def _anomaly_block(
         )
     ]
     level_values = {
-        "weekday": scores.get("weekday"),
         "weekly": scores.get("weekly"),
         "long_term": deviation_pct.get("long_term"),
     }
@@ -103,7 +103,7 @@ def _anomaly_block(
             if scale in ANALYSIS_CONFIG.level_shift_scales and scale in available
             else None
         )
-        for scale in DEVIATION_SCALE_NAMES
+        for scale in LEVEL_SHIFT_SCALE_NAMES
     }
     since_block = {
         scale: (
@@ -113,11 +113,11 @@ def _anomaly_block(
             if scale in ANALYSIS_CONFIG.level_shift_scales
             else None
         )
-        for scale in DEVIATION_SCALE_NAMES
+        for scale in LEVEL_SHIFT_SCALE_NAMES
     }
     sustained_scales = [
         scale
-        for scale in DEVIATION_SCALE_NAMES
+        for scale in LEVEL_SHIFT_SCALE_NAMES
         if (streak_block[scale] or 0.0) >= ANALYSIS_CONFIG.sustained_anomaly_streak_days
     ]
 
@@ -140,8 +140,8 @@ def _empty_anomaly_block() -> dict[str, object]:
         "level": None,
         "direction": None,
         "alarm_scales": [],
-        "scale_anomaly_streak_days": {scale: None for scale in DEVIATION_SCALE_NAMES},
-        "scale_exceeding_since": {scale: None for scale in DEVIATION_SCALE_NAMES},
+        "scale_anomaly_streak_days": {scale: None for scale in LEVEL_SHIFT_SCALE_NAMES},
+        "scale_exceeding_since": {scale: None for scale in LEVEL_SHIFT_SCALE_NAMES},
         "scale_deviation_pct": {scale: None for scale in DEVIATION_SCALE_NAMES},
         "sustained_scales": [],
         "sustained_drift": False,

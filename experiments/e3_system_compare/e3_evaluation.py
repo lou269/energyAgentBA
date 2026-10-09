@@ -9,6 +9,7 @@ from experiments.common.evaluation import (
     SCALE_VALUE_COLUMNS,
     SCALE_SUSTAINED_COLUMNS,
     add_days_since_cutover,
+    add_weeks,
     add_judgement,
     add_overall_rows,
     assign_events,
@@ -29,6 +30,9 @@ from experiments.common.standard_config import (
 from experiments.e3_system_compare.e3_config import SCENARIO_DIRECTORY
 
 
+MEAN_LABEL = "alle Cutover"
+# über mehrere Cutover zusammengefasste Tage werden je Cutover, Reihe und Zeitpunkt gepaart
+POOL_PAIR_KEYS = ("cutover_date", "series", "decision_time")
 SERIES_KEYS = ["cutover_date", "series"]
 EVENT_KEYS = ["cutover_date", "config", "event"]
 
@@ -255,15 +259,20 @@ def _summarize_control(results: pd.DataFrame) -> pd.DataFrame:
     ).merge(resets, on=keys)
 
 
-def _compare_forecasts(
-    results: pd.DataFrame, durable_start_days: pd.Series, reference_system: str
+def _window_forecast_days(
+    results: pd.DataFrame, durable_start_days: pd.Series
 ) -> pd.DataFrame:
-    """Prognosefehler gegen reference_system in den Reihen mit dauerhafter Änderung ab deren Beginn (Reihe -> Starttag) und im Kontrolllauf ab Cutover"""
+    """Tage mit dauerhafter Änderung ab deren Beginn (Reihe -> Starttag) und im Kontrolllauf ab Cutover"""
     in_window = results["days_since_cutover"].ge(0) & (
         results["series"].eq("control")
         | results["days_since_cutover"].ge(results["series"].map(durable_start_days))
     )
-    windowed = results.loc[in_window]
+
+    return results.loc[in_window]
+
+
+def _compare_forecasts(windowed: pd.DataFrame, reference_system: str) -> pd.DataFrame:
+    """Prognosefehler gegen reference_system je Reihe, in den Reihen mit dauerhafter Änderung ab deren Beginn"""
     from_day = windowed.groupby(SERIES_KEYS, as_index=False).agg(
         from_day=("days_since_cutover", "min")
     )
@@ -273,24 +282,69 @@ def _compare_forecasts(
     )
 
 
-def _count_notifications_after_detection(
-    event_days: pd.DataFrame, events_table: pd.DataFrame, single_day_scales: list[str]
+def _pool_forecasts(windowed: pd.DataFrame, reference_system: str) -> pd.DataFrame:
+    """Prognosefehler gegen reference_system über alle Cutover der Reihen mit dauerhafter Änderung, alle Tage zusammen"""
+    durable = windowed.loc[windowed["series"].ne("control")]
+
+    return summarize_forecast_errors(
+        durable, ["series"], reference_system, POOL_PAIR_KEYS
+    )
+
+
+def _compare_forecasts_by_week(
+    windowed: pd.DataFrame, reference_system: str, week_days: int
 ) -> pd.DataFrame:
+    """Je Cutover und Woche ab der Dauerlast Tagesfehler und Differenz gegen reference_system, eine Spalte je System, dazu je Woche alle Cutover zusammen"""
+    durable = windowed.loc[windowed["series"].ne("control")]
+    start = durable.groupby(SERIES_KEYS)["days_since_cutover"].transform("min")
+    weeks = add_weeks(
+        durable.assign(day_since_start=durable["days_since_cutover"] - start),
+        week_days,
+    )
+    errors = summarize_forecast_errors(weeks, SERIES_KEYS + ["week"], reference_system)
+    pooled = summarize_forecast_errors(
+        weeks, ["week"], reference_system, POOL_PAIR_KEYS
+    ).assign(cutover_date=MEAN_LABEL)
+    values = ["mean_day_error_w", "mean_delta"]
+    table = pd.concat(
+        [
+            errors[["cutover_date", "week", "config"] + values],
+            pooled[["cutover_date", "week", "config"] + values],
+        ]
+    ).pivot(index=["cutover_date", "week"], columns="config", values=values)
+    table.columns = [f"{value}_{config}" for value, config in table.columns]
+
+    return (
+        table.reset_index().sort_values(["week", "cutover_date"]).reset_index(drop=True)
+    )
+
+
+def _count_notifications_after_detection(
+    event_days: pd.DataFrame, events_table: pd.DataFrame
+) -> pd.DataFrame:
+    """Je Cutover und System die Meldungstage nach dem Bewertungstag der Dauerlast, getrennt nach Einzeltag-Klassen und allen Meldungen"""
     detected = events_table.loc[
         events_table["expected"].eq(SUSTAINED_CLASSIFICATION) & events_table["detected"]
     ]
     after = event_days.merge(detected[EVENT_KEYS + ["judged_day"]], on=EVENT_KEYS)
     after = after.loc[after["days_since_cutover"].gt(after["judged_day"])]
 
-    return count_notifications(
-        after.assign(
-            sighted=after[[f"{scale}_score" for scale in single_day_scales]]
-            .notna()
-            .all(axis=1)
-        ),
-        EVENT_KEYS + ["sighted"],
-        notification_classes=NOTIFICATION_CLASSIFICATIONS,
-        period_days=NOTIFICATION_PERIOD_DAYS,
+    def count(classes: tuple[str, ...]) -> pd.DataFrame:
+        return count_notifications(
+            after,
+            EVENT_KEYS,
+            notification_classes=classes,
+            period_days=NOTIFICATION_PERIOD_DAYS,
+        )[EVENT_KEYS + ["days", "notification_days", "notifications_per_period"]]
+
+    return (
+        count(NOTIFICATION_CLASSIFICATIONS)
+        .merge(
+            count(SINGLE_DAY_CLASSIFICATIONS),
+            on=EVENT_KEYS + ["days"],
+            suffixes=("", "_single_day"),
+        )
+        .drop(columns="notifications_per_period_single_day")
     )
 
 
@@ -320,11 +374,13 @@ def _evaluate_decision_rules(
     events_table: pd.DataFrame,
     forecast: pd.DataFrame,
     control: pd.DataFrame,
+    notifications: pd.DataFrame,
     *,
+    reference_system: str,
     rule_system: str,
     llm_system: str,
 ) -> pd.DataFrame:
-    """Die vorab festgelegten Aussagen aus Kap. 23 je Cutover: Regel und LLM besser als Referenz, LLM gleichwertig bzw. besser als Regel"""
+    """Die vorab festgelegten Aussagen aus Kap. 23 je Cutover: Regel und LLM besser als Referenz (belastbar bessere Prognose oder weniger Meldungen, ohne falsche Resets), LLM gleichwertig zur Regel"""
     correct = (
         events_table.pivot(
             index=["cutover_date", "event"], columns="config", values="correct"
@@ -335,10 +391,10 @@ def _evaluate_decision_rules(
     control_resets = control.pivot(
         index="cutover_date", columns="config", values="resets"
     )
+    notification_rates = notifications.pivot(
+        index="cutover_date", columns="config", values="notifications_per_period"
+    ).reindex(columns=[reference_system, rule_system, llm_system])
     columns = {
-        "llm_only_correct": (correct[llm_system] & ~correct[rule_system])
-        .groupby(level="cutover_date")
-        .sum(),
         "rule_only_correct": (correct[rule_system] & ~correct[llm_system])
         .groupby(level="cutover_date")
         .sum(),
@@ -351,6 +407,7 @@ def _evaluate_decision_rules(
             forecast["series"].ne("control") & forecast["config"].eq(system)
         ].set_index("cutover_date")
         columns[f"{name}_day_error_delta_w"] = system_forecast["mean_delta"]
+        columns[f"{name}_day_error_reliable"] = system_forecast["exceeds_noise"]
         columns[f"{name}_single_day_resets"] = (
             system_events.loc[
                 system_events["expected"].isin(SINGLE_DAY_CLASSIFICATIONS)
@@ -359,22 +416,105 @@ def _evaluate_decision_rules(
             .count()
         )
         columns[f"{name}_control_resets"] = control_resets[system]
+        columns[f"{name}_notification_delta"] = (
+            notification_rates[system] - notification_rates[reference_system]
+        )
 
     decisions = pd.DataFrame(columns)
     for name in ("rule", "llm"):
         decisions[f"{name}_better"] = (
-            decisions[f"{name}_day_error_delta_w"].lt(0)
+            (
+                (
+                    decisions[f"{name}_day_error_delta_w"].lt(0)
+                    & decisions[f"{name}_day_error_reliable"].eq(True)
+                )
+                | decisions[f"{name}_notification_delta"].lt(0)
+            )
             & decisions[f"{name}_single_day_resets"].eq(0)
             & decisions[f"{name}_control_resets"].eq(0)
         )
     decisions["llm_equivalent"] = decisions["rule_only_correct"].eq(0) & decisions[
         "llm_extra_control_resets"
     ].le(0)
-    decisions["llm_better_than_rule"] = decisions["llm_only_correct"].gt(0) & decisions[
-        "rule_only_correct"
-    ].eq(0)
 
     return decisions.rename_axis("cutover_date").reset_index()
+
+
+def _summarize_overall(
+    decisions: pd.DataFrame,
+    events_table: pd.DataFrame,
+    pooled_forecast: pd.DataFrame,
+    control: pd.DataFrame,
+    notifications: pd.DataFrame,
+    *,
+    reference_system: str,
+    rule_system: str,
+    llm_system: str,
+) -> pd.DataFrame:
+    """Je System die Hauptkennzahlen über alle Cutover: Tagesfehler ab Dauerlast über alle Tage der Cutover, Meldungen je Zeitraum nach der Erkennung, Resets sowie die Entscheidungsregeln als Anzahl Cutover. Teilfrage 2 nur in den Zeilen von Regel und LLM"""
+    errors = (
+        pooled_forecast.set_index("config")
+        .assign(
+            day_error_delta_two_se_w=lambda frame: 2 * frame["delta_standard_error"]
+        )[
+            [
+                "mean_day_error_w",
+                "mean_delta",
+                "day_error_delta_two_se_w",
+                "exceeds_noise",
+            ]
+        ]
+        .rename(
+            columns={
+                "mean_day_error_w": "day_error_w",
+                "mean_delta": "day_error_delta_w",
+                "exceeds_noise": "day_error_reliable",
+            }
+        )
+    )
+    counts = notifications.groupby("config")[
+        ["days", "notification_days", "notification_days_single_day"]
+    ].sum()
+    rates = (
+        counts[["notification_days", "notification_days_single_day"]].div(
+            counts["days"], axis=0
+        )
+        * NOTIFICATION_PERIOD_DAYS
+    )
+    rates.columns = ["notifications_per_period", "single_day_notifications_per_period"]
+    single_day_events = events_table.loc[
+        events_table["expected"].isin(SINGLE_DAY_CLASSIFICATIONS)
+    ]
+    resets = pd.DataFrame(
+        {
+            "single_day_resets": single_day_events.groupby("config")[
+                "reset_day"
+            ].count(),
+            "control_resets": control.groupby("config")["resets"].sum(),
+        }
+    )
+    verdicts = pd.DataFrame(
+        {
+            "better_cutovers": {
+                rule_system: decisions["rule_better"].sum(),
+                llm_system: decisions["llm_better"].sum(),
+            },
+            "extra_control_resets": {
+                llm_system: decisions["llm_extra_control_resets"].sum()
+            },
+            "equivalent_cutovers": {llm_system: decisions["llm_equivalent"].sum()},
+        }
+    )
+
+    return (
+        errors.join(rates)
+        .join(resets)
+        .join(verdicts)
+        .assign(cutovers=len(decisions))
+        .reindex([reference_system, rule_system, llm_system])
+        .rename_axis("config")
+        .reset_index()
+    )
 
 
 @dataclass(frozen=True)
@@ -382,10 +522,12 @@ class E3Summary:
     events: pd.DataFrame
     criteria: pd.DataFrame
     decisions: pd.DataFrame
+    overall: pd.DataFrame
     separations: pd.DataFrame
     deviations: pd.DataFrame
     control: pd.DataFrame
     forecast: pd.DataFrame
+    forecast_weeks: pd.DataFrame
     notifications: pd.DataFrame
     latency: pd.DataFrame
     answers: pd.DataFrame
@@ -401,7 +543,7 @@ def summarize_e3(
     reference_system: str,
     rule_system: str,
     llm_system: str,
-    single_day_scales: list[str],
+    week_days: int,
 ) -> E3Summary:
     """Alles, was der E3-Report zeigt"""
     event_list = list_event_series(event_series)
@@ -413,33 +555,49 @@ def summarize_e3(
     separations = _find_separation_days(results)
     events_table = _summarize_events(event_days, event_list, separations)
     control = _summarize_control(results)
-    forecast = _compare_forecasts(
+    notifications = _count_notifications_after_detection(event_days, events_table)
+    windowed = _window_forecast_days(
         results,
         event_list.loc[event_list["expected"].eq(SUSTAINED_CLASSIFICATION)]
         .groupby("series")["start_day"]
         .min(),
-        reference_system,
+    )
+    forecast = _compare_forecasts(windowed, reference_system)
+
+    decisions = _evaluate_decision_rules(
+        events_table,
+        forecast,
+        control,
+        notifications,
+        reference_system=reference_system,
+        rule_system=rule_system,
+        llm_system=llm_system,
     )
 
     return E3Summary(
         events=events_table,
         criteria=_summarize_criteria(events_table),
-        decisions=_evaluate_decision_rules(
-            events_table,
-            forecast,
-            control,
-            rule_system=rule_system,
-            llm_system=llm_system,
-        ),
+        decisions=decisions,
         separations=separations,
         deviations=_list_deviation_days(
             results, rule_system=rule_system, llm_system=llm_system
         ),
+        overall=_summarize_overall(
+            decisions,
+            events_table,
+            _pool_forecasts(windowed, reference_system),
+            control,
+            notifications,
+            reference_system=reference_system,
+            rule_system=rule_system,
+            llm_system=llm_system,
+        ),
         control=control,
         forecast=forecast,
-        notifications=_count_notifications_after_detection(
-            event_days, events_table, single_day_scales
+        forecast_weeks=_compare_forecasts_by_week(
+            windowed, reference_system, week_days
         ),
+        notifications=notifications,
         latency=summarize_latency(
             results, runtimes, rule_system=rule_system, llm_system=llm_system
         ).merge(results[["scenario"] + SERIES_KEYS].drop_duplicates(), on="scenario"),

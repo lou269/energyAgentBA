@@ -13,7 +13,7 @@ from src.context.calendar_schema import (
 from src.pipeline.schema_validation import is_real_number, validate_fields
 
 
-SCHEMA_VERSION = "2.3"
+SCHEMA_VERSION = "2.4"
 
 DATE_PATTERN = re.compile(r"\d{4}-\d{2}-\d{2}")
 
@@ -37,6 +37,8 @@ DEVIATION_SCALE_NAMES: tuple[DeviationScaleName, ...] = (
     "weekly",
     "long_term",
 )
+
+LEVEL_SHIFT_SCALE_NAMES = ("weekly", "long_term")
 
 OBSERVATION_FIELDS = frozenset(
     {"observation_start", "observation_end", "value_implausible"}
@@ -75,15 +77,13 @@ class ObservationState(TypedDict):
     value_implausible: bool
 
 
-# Streak und Beginn gibt es nur für die Niveau-Skalen, daily misst die Form des Tages
+# Streak und Beginn gibt es nur für weekly und long_term, daily und weekday messen einen Einzeltag
 class ScaleAnomalyStreakDays(TypedDict):
-    weekday: float | None
     weekly: float | None
     long_term: float | None
 
 
 class ScaleExceedingSince(TypedDict):
-    weekday: str | None
     weekly: str | None
     long_term: str | None
 
@@ -190,11 +190,11 @@ def validate_structured_state(state: Mapping[str, object]) -> None:
     )
     validate_fields(
         scale_streak_days,
-        frozenset(DEVIATION_SCALE_NAMES),
+        frozenset(LEVEL_SHIFT_SCALE_NAMES),
         "anomaly.scale_anomaly_streak_days",
     )
 
-    for scale in DEVIATION_SCALE_NAMES:
+    for scale in LEVEL_SHIFT_SCALE_NAMES:
         streak_days = _number(
             scale_streak_days[scale],
             f"anomaly.scale_anomaly_streak_days.{scale}",
@@ -222,12 +222,12 @@ def validate_structured_state(state: Mapping[str, object]) -> None:
     )
     validate_fields(
         scale_exceeding_since,
-        frozenset(DEVIATION_SCALE_NAMES),
+        frozenset(LEVEL_SHIFT_SCALE_NAMES),
         "anomaly.scale_exceeding_since",
     )
     analyzed_date = datetime.fromisoformat(str(observation["observation_start"])).date()
 
-    for scale in DEVIATION_SCALE_NAMES:
+    for scale in LEVEL_SHIFT_SCALE_NAMES:
         since = scale_exceeding_since[scale]
         # Beginn des Verlaufs als lokales Datum, nie nach dem analysierten Tag
         if since is not None and (

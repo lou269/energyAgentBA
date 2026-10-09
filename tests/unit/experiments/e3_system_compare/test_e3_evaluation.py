@@ -100,7 +100,7 @@ def _summarize(
         reference_system="SYS1",
         rule_system="SYS2",
         llm_system="SYS3",
-        single_day_scales=["daily", "weekday"],
+        week_days=7,
     )
 
 
@@ -246,3 +246,36 @@ def test_llm_answers() -> None:
     assert answer["days_since_cutover"] == 4
     assert answer["rule_classification"] == "peak"
     assert answer["adaption_action"] == "advance_history_start"
+
+
+def test_better_through_fewer_notifications() -> None:
+    results = _results()
+    _set(
+        results,
+        SYSTEMS,
+        [4],
+        {"gate_open": True, "sustained_drift": True, "classification": "new_pattern"},
+    )
+    _set(results, ("SYS2", "SYS3"), [4], {"adaption_action": "advance_history_start"})
+    # SYS1 meldet die Dauerlast an den Tagen danach weiter, mit Reset wird es ruhig
+    _set(results, ("SYS1",), [5, 6, 7], {"classification": "new_pattern"})
+
+    decisions = _summarize(
+        results, ((1, "peak_strong"), (3, "scaled_strong"))
+    ).decisions
+
+    assert bool(decisions["rule_better"].iloc[0])
+    assert bool(decisions["llm_better"].iloc[0])
+
+
+def test_small_error_difference_is_not_better() -> None:
+    results = _results()
+    _set(results, ("SYS2",), [4, 5, 6], {"day_error_w": 99.9})
+    _set(results, ("SYS2",), [7], {"day_error_w": 100.2})
+
+    decisions = _summarize(
+        results, ((1, "peak_strong"), (3, "scaled_strong"))
+    ).decisions
+
+    assert not bool(decisions["rule_day_error_reliable"].iloc[0])
+    assert not bool(decisions["rule_better"].iloc[0])

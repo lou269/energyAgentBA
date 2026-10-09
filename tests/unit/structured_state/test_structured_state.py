@@ -32,13 +32,10 @@ def _analysis_row() -> pd.Series:
             "weekly_score": None,
             "daily_alarm": True,
             "weekday_alarm": False,
-            "weekday_anomaly_streak_days": 2.0,
             "weekly_anomaly_streak_days": None,
             "long_term_anomaly_streak_days": 0.0,
-            "weekday_exceeding_since": pd.Timestamp("2013-08-30T00:00:00+00:00"),
             "weekly_exceeding_since": None,
-            "long_term_exceeding_since": None,
-            "weekday_sustained": False,
+            "long_term_exceeding_since": pd.Timestamp("2013-08-30T00:00:00+00:00"),
             "weekly_sustained": False,
             "long_term_sustained": False,
             "sustained_drift": False,
@@ -114,8 +111,7 @@ def test_missing_scale_scores() -> None:
         "weekday_score",
         "weekly_score",
         "long_term_deviation_pct",
-        "weekday_exceeding_since",
-        "weekday_anomaly_streak_days",
+        "long_term_exceeding_since",
         "weekly_anomaly_streak_days",
         "long_term_anomaly_streak_days",
         "anomaly_direction",
@@ -224,7 +220,6 @@ def test_alarm_and_since_in_state() -> None:
 
     assert anomaly["alarm_scales"] == ["daily"]
     assert anomaly["scale_exceeding_since"] == {
-        "weekday": "2013-08-30",
         "weekly": None,
-        "long_term": None,
+        "long_term": "2013-08-30",
     }

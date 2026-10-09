@@ -148,19 +148,15 @@ def test_streak_counts_elevated_days() -> None:
     assert streak.iloc[6] == 1.0
 
 
-def _level_shift_values(
-    weekday: float, weekly: float, long_term: float
-) -> pd.DataFrame:
+def _level_shift_values(weekly: float, long_term: float) -> pd.DataFrame:
     index = pd.date_range("2024-01-01", periods=8, freq="D", tz="UTC")
-    return pd.DataFrame(
-        {"weekday": weekday, "weekly": weekly, "long_term": long_term}, index=index
-    )
+    return pd.DataFrame({"weekly": weekly, "long_term": long_term}, index=index)
 
 
 def _streaks(values: pd.DataFrame, min_sustained_scales: int) -> pd.DataFrame:
     return build_level_shift_streaks(
         values,
-        streak_thresholds={"weekday": 2.0, "weekly": 1.0, "long_term": 20.0},
+        streak_thresholds={"weekly": 1.0, "long_term": 20.0},
         sustained_anomaly_streak_days=6,
         min_sustained_scales=min_sustained_scales,
         streak_tolerance_window_days=7,
@@ -169,17 +165,17 @@ def _streaks(values: pd.DataFrame, min_sustained_scales: int) -> pd.DataFrame:
 
 
 def test_scale_sustained_after_streak() -> None:
-    result = _streaks(_level_shift_values(3.0, 3.0, 5.0), min_sustained_scales=2)
+    result = _streaks(_level_shift_values(3.0, 5.0), min_sustained_scales=2)
 
-    assert not result["weekday_sustained"].iloc[4]
-    assert result["weekday_sustained"].iloc[5]
+    assert not result["weekly_sustained"].iloc[4]
+    assert result["weekly_sustained"].iloc[5]
     assert not result["long_term_sustained"].any()
 
 
 def test_drift_needs_enough_scales() -> None:
-    two_scales = _level_shift_values(3.0, 3.0, 5.0)
+    two_scales = _level_shift_values(3.0, 30.0)
 
     assert _streaks(two_scales, min_sustained_scales=2)["sustained_drift"].iloc[-1]
     assert not _streaks(two_scales, min_sustained_scales=3)["sustained_drift"].iloc[-1]
-    one_scale = _level_shift_values(3.0, 0.2, 5.0)
+    one_scale = _level_shift_values(0.2, 30.0)
     assert not _streaks(one_scale, min_sustained_scales=2)["sustained_drift"].any()

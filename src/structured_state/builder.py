@@ -15,7 +15,7 @@ from src.pipeline.schema_validation import is_real_number
 from src.structured_state.structured_state_schema import (
     ANOMALY_DIRECTIONS,
     ANOMALY_LEVELS,
-    DEVIATION_SCALE_NAMES,
+    LEVEL_SHIFT_SCALE_NAMES,
     SCALE_NAMES,
     SCORE_SCALE_NAMES,
     SCHEMA_VERSION,
@@ -40,13 +40,10 @@ ANALYSIS_FIELDS = frozenset(
         "weekly_score",
         "daily_alarm",
         "weekday_alarm",
-        "weekday_anomaly_streak_days",
         "weekly_anomaly_streak_days",
         "long_term_anomaly_streak_days",
-        "weekday_exceeding_since",
         "weekly_exceeding_since",
         "long_term_exceeding_since",
-        "weekday_sustained",
         "weekly_sustained",
         "long_term_sustained",
         "sustained_drift",
@@ -101,10 +98,6 @@ def build_structured_state(
         raise ValueError("Calendar context decision_time must match decision_time.")
 
     scale_streak_days: ScaleAnomalyStreakDays = {
-        "weekday": _nullable_float(
-            analysis_row["weekday_anomaly_streak_days"],
-            "analysis.weekday_anomaly_streak_days",
-        ),
         "weekly": _nullable_float(
             analysis_row["weekly_anomaly_streak_days"],
             "analysis.weekly_anomaly_streak_days",
@@ -140,7 +133,7 @@ def build_structured_state(
 
     sustained_scales: list[ScaleName] = [
         scale
-        for scale in DEVIATION_SCALE_NAMES
+        for scale in LEVEL_SHIFT_SCALE_NAMES
         if _bool(analysis_row[f"{scale}_sustained"], f"analysis.{scale}_sustained")
     ]
 
@@ -157,7 +150,7 @@ def build_structured_state(
             f"analysis.{scale}_exceeding_since",
             local_timezone,
         )
-        for scale in DEVIATION_SCALE_NAMES
+        for scale in LEVEL_SHIFT_SCALE_NAMES
     }  # type: ignore[typeddict-item]
 
     state: StructuredState = {

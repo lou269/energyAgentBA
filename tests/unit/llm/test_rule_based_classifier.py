@@ -46,7 +46,7 @@ def test_one_sustained_scale_on_a_normal_day_is_normal() -> None:
 
 def test_enough_sustained_scales_are_a_new_pattern_in_both_directions() -> None:
     for direction in ("high", "low"):
-        state = _state(direction=direction, sustained_scales=["weekday", "weekly"])
+        state = _state(direction=direction, sustained_scales=["weekly", "long_term"])
 
         result = rule_based_classify(
             state, local_timezone="UTC", min_sustained_scales=2

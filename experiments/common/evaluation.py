@@ -10,6 +10,7 @@ from experiments.common.standard_config import (
     LOCAL_TIMEZONE,
     SINGLE_DAY_CLASSIFICATIONS,
     SUSTAINED_CLASSIFICATION,
+    ANALYSIS_CONFIG,
 )
 from src.common.timestamps import local_day_index
 from src.evaluation.text_check import (
@@ -26,7 +27,9 @@ SCALE_VALUE_COLUMNS = [
     "long_term_deviation_pct" if scale == "long_term" else f"{scale}_score"
     for scale in SCALE_NAMES
 ]
-SCALE_SUSTAINED_COLUMNS = [f"{scale}_sustained" for scale in SCALE_NAMES]
+SCALE_SUSTAINED_COLUMNS = [
+    f"{scale}_sustained" for scale in ANALYSIS_CONFIG.level_shift_scales
+]
 
 
 # Tag seit Ereignis = Tag der Entscheidung, decision_time ist dessen Mitternacht. An diesem Tag meldet das System
@@ -259,10 +262,20 @@ def summarize_paired_differences(
     return summary.rename_axis("variant").reset_index()
 
 
-def summarize_forecast_errors(
-    days: pd.DataFrame, keys: list[str], reference_config: str
+def add_weeks(
+    days: pd.DataFrame, week_days: int, day_column: str = "day_since_start"
 ) -> pd.DataFrame:
-    """Je config und keys Mittel von Tagesfehler (Hauptmaß), MAE und MAPE aus dem Harness, dazu Tagesfehler und MAE gepaart gegen reference_config am selben decision_time"""
+    """Woche 1 ab Tag 0 der Spalte day_column, je week_days Tage"""
+    return days.assign(week=days[day_column] // week_days + 1)
+
+
+def summarize_forecast_errors(
+    days: pd.DataFrame,
+    keys: list[str],
+    reference_config: str,
+    pair_keys: tuple[str, ...] = ("decision_time",),
+) -> pd.DataFrame:
+    """Je config und keys Mittel von Tagesfehler (Hauptmaß), MAE und MAPE aus dem Harness, dazu Tagesfehler und MAE gepaart gegen reference_config je Paarung (pair_keys, sonst decision_time). Fasst keys mehrere Läufe zusammen, muss pair_keys den Lauf mit enthalten"""
     rows = []
 
     for group_values, group in days.groupby(keys):
@@ -272,11 +285,11 @@ def summarize_forecast_errors(
             mean_mape_pct=("mape_pct", "mean"),
         )
         day_error = summarize_paired_differences(
-            group.pivot(index="decision_time", columns="config", values="day_error_w"),
+            group.pivot(index=list(pair_keys), columns="config", values="day_error_w"),
             reference_config,
         ).set_index("variant")
         mae = summarize_paired_differences(
-            group.pivot(index="decision_time", columns="config", values="mae_w"),
+            group.pivot(index=list(pair_keys), columns="config", values="mae_w"),
             reference_config,
         ).set_index("variant")["mean_delta"]
 

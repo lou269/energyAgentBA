@@ -11,6 +11,7 @@ from src.config.project_config import ProjectConfig
 
 # für alle Studien gleich, wird deshalb nicht durch die Funktionen gereicht
 PROJECT_CONFIG = ProjectConfig()
+ANALYSIS_CONFIG = NumericalAnalysisConfig()
 LOCAL_TIMEZONE = PROJECT_CONFIG.timezone
 
 # Kaltstart des Online-Zyklus vor dem ersten Entscheidungstag

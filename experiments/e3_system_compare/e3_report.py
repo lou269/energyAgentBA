@@ -44,8 +44,6 @@ SERIES_LABELS = {
     "scaled": "Dauerlast-Lauf",
 }
 
-SIGHT_LABELS = {True: "sehend", False: "blind"}
-
 
 def event_labels(event_series: dict[str, list]) -> dict[int, str]:
     events = [
@@ -76,6 +74,94 @@ def build_criteria_table(criteria: pd.DataFrame) -> pd.DataFrame:
             "richtig [%]": criteria["correct_pct"],
         }
     )
+
+
+OVERVIEW_ROWS = (
+    ("Teilfrage 1: Hilft die Adaption?", None, ""),
+    ("Tagesfehler ab Dauerlast [W], alle Tage der Cutover", "day_error_w", "number"),
+    ("Differenz gegen {reference} [W]", "day_error_delta_w", "number"),
+    ("2 Standardfehler der Differenz [W]", "day_error_delta_two_se_w", "number"),
+    ("Differenz belastbar", "day_error_reliable", "yes_no"),
+    (
+        "Meldungen je 30 Tage nach Erkennung, insgesamt",
+        "notifications_per_period",
+        "number",
+    ),
+    (
+        "davon Einzeltag-Anomalien",
+        "single_day_notifications_per_period",
+        "number",
+    ),
+    (
+        "falsche Resets bei Einzeltag-Ereignissen",
+        "single_day_resets",
+        "count",
+    ),
+    ("Resets im Kontrolllauf (Fehlalarme)", "control_resets", "count"),
+    ("besser als {reference} (Cutover)", "better_cutovers", "share"),
+    ("Teilfrage 2: Macht das LLM es korrekt?", None, ""),
+    (
+        "zusätzliche Resets im Kontrolllauf gegen {rule}",
+        "extra_control_resets",
+        "count",
+    ),
+    ("gleichwertig zu {rule} (Cutover)", "equivalent_cutovers", "share"),
+)
+
+
+def build_overview_table(
+    overall: pd.DataFrame, *, reference: str, rule: str
+) -> pd.DataFrame:
+    systems = {row["config"]: row for row in overall.to_dict("records")}
+    cutovers = int(overall["cutovers"].iloc[0])
+
+    def cell(config: str, column: str | None, kind: str) -> object:
+        if column is None:
+            return ""
+        value = systems[config][column]
+        if pd.isna(value):
+            return "-"
+        if kind == "yes_no":
+            return YES_NO[bool(value)]
+        if kind == "count":
+            return int(value)
+        if kind == "share":
+            return f"{int(value)}/{cutovers}"
+        return float(value)
+
+    rows: dict[str, list[object]] = {
+        "Kennzahl": [
+            label.format(reference=reference, rule=rule)
+            for label, _, _ in OVERVIEW_ROWS
+        ]
+    }
+    for config in systems:
+        rows[SYS_LABELS[config]] = [
+            cell(config, column, kind) for _, column, kind in OVERVIEW_ROWS
+        ]
+
+    return pd.DataFrame(rows, dtype=object)
+
+
+def build_week_table(
+    weeks: pd.DataFrame, *, reference: str, others: list[str]
+) -> pd.DataFrame:
+    table = pd.DataFrame(
+        {
+            "Cutover": weeks["cutover_date"],
+            "Woche ab Dauerlast": weeks["week"],
+        }
+    )
+    for config in (reference, *others):
+        table[f"Tagesfehler {SYS_LABELS[config]} [W]"] = weeks[
+            f"mean_day_error_w_{config}"
+        ]
+    for config in others:
+        table[f"Differenz {SYS_LABELS[config]} gegen {reference} [W]"] = weeks[
+            f"mean_delta_{config}"
+        ]
+
+    return table
 
 
 def build_event_table(events: pd.DataFrame, labels: dict[int, str]) -> pd.DataFrame:
@@ -115,10 +201,12 @@ def build_notification_table(notifications: pd.DataFrame) -> pd.DataFrame:
         {
             "Cutover": notifications["cutover_date"],
             "System": notifications["config"].map(SYS_LABELS),
-            "Tage": notifications["sighted"].map(SIGHT_LABELS),
-            "Anzahl": notifications["days"],
-            "Meldungen": notifications["notification_days"],
-            "unknown": notifications["unknown_days"],
+            "Tage nach Erkennung": notifications["days"],
+            "Meldungen Einzeltag-Anomalien": notifications[
+                "notification_days_single_day"
+            ],
+            "Meldungen insgesamt": notifications["notification_days"],
+            "Meldungen je 30 Tage": notifications["notifications_per_period"],
         }
     )
 
@@ -199,28 +287,16 @@ def build_key_figures(
     summary: E3Summary, *, reference: str, rule: str, llm: str
 ) -> pd.DataFrame:
     rows = []
-    pooled = summary.criteria.loc[summary.criteria["expected"].eq(ALL_EVENTS)]
-    for row in pooled.to_dict("records"):
-        system = SYS_LABELS[row["config"]]
-        rows += [
-            (
-                f"{system}: erkannt (TF1, ≥ 90 %)",
-                f"{row['prefilter_detected']}/{row['prefilter_events']}",
-                f"{format_number(row['detection_pct'], STANDARD_CONFIG.decimals)} %",
-            ),
-            (
-                f"{system}: richtig eingeordnet (TF2, ≥ 80 %)",
-                f"{row['correct']}/{row['detected']}",
-                f"{format_number(row['correct_pct'], STANDARD_CONFIG.decimals)} % der erkannten",
-            ),
-        ]
     for row in summary.decisions.to_dict("records"):
         rows += [
             (
                 f"{row['cutover_date']}: {system_label} besser als {reference}",
                 YES_NO[row[f"{name}_better"]],
                 f"Tagesfehler gegen {reference} ab Dauerlast "
-                f"{format_number(row[f'{name}_day_error_delta_w'], STANDARD_CONFIG.decimals)} W, "
+                f"{format_number(row[f'{name}_day_error_delta_w'], STANDARD_CONFIG.decimals)} W "
+                f"({'belastbar' if row[f'{name}_day_error_reliable'] else 'nicht belastbar'}), "
+                f"Meldungen je 30 Tage nach Erkennung "
+                f"{format_number(row[f'{name}_notification_delta'], STANDARD_CONFIG.decimals)} gegen {reference}, "
                 f"{row[f'{name}_single_day_resets']} Resets bei Einzeltag-Ereignissen, "
                 f"{row[f'{name}_control_resets']} im Kontrolllauf",
             )
@@ -231,11 +307,6 @@ def build_key_figures(
                 YES_NO[row["llm_equivalent"]],
                 f"{row['rule_only_correct']} Ereignisse nur {rule} richtig, "
                 f"{row['llm_extra_control_resets']} Resets mehr im Kontrolllauf",
-            ),
-            (
-                f"{row['cutover_date']}: {llm} besser als {rule}",
-                YES_NO[row["llm_better_than_rule"]],
-                f"{row['llm_only_correct']} Ereignisse nur {llm} richtig",
             ),
         ]
 
@@ -267,14 +338,14 @@ def build_setup(
     }
 
 
-def build_notes(summary: E3Summary, single_day_scales: list[str]) -> list[str]:
+def build_notes(summary: E3Summary) -> list[str]:
     notes = [
         "Tag = Entscheidungstag seit Cutover: an Tag n wird Tag n-1 eingeordnet, ein Ereignis an Tag s also ab Tag s+1",
         "bewertet an Tag: bei einer Spitze und beim Festhänger der eingeordnete Ereignistag, falls das Gate dort offen ist, bei der Dauerlast der "
         "erste Tag mit Drift oder new_pattern. Meldungen davor zählen als Meldungen, nicht als Einordnungsfehler. "
         "Ohne Bewertungstag gilt das Ereignis als nicht erkannt und zählt nicht bei der Einordnung. Der Festhänger zählt nicht bei der Erkennung, das Flag öffnet das Gate per Aufbau",
         "nach Trennung: vor Beginn des Ereignisses hat schon ein System anders gehandelt (Reset), die Systeme entscheiden dann nicht mehr über denselben Zustand",
-        f"sehend = alle Einzeltag-Skalen ({', '.join(single_day_scales)}) haben einen Score, sonst blind",
+        "Meldungen nach Erkennung: Tage nach dem Bewertungstag der Dauerlast, an denen das System peak, measurement_error oder new_pattern meldet. Einzeltag-Anomalien sind peak und measurement_error",
         "Kontrolllauf über das ganze Fenster, auch die Tage vor dem Cutover. Jede Meldung dort ist ein Fehlalarm, jeder Reset unnötig",
         NOISE_RULE_NOTE,
     ]
@@ -298,9 +369,6 @@ def write_report(run_directory: Path) -> Path:
     raw_directory = run_directory / RAW_SUBDIR
     run_config = read_raw_json(run_directory, "run_config")
     e3_config = run_config["e3_config"]
-    single_day_scales = list(
-        run_config["numerical_analysis_config"]["single_day_scales"]
-    )
     reference = e3_config["reference_system"]
     rule = e3_config["rule_system"]
     llm = e3_config["llm_system"]
@@ -318,16 +386,24 @@ def write_report(run_directory: Path) -> Path:
         reference_system=reference,
         rule_system=rule,
         llm_system=llm,
-        single_day_scales=single_day_scales,
+        week_days=e3_config["week_days"],
     )
     tables = {
+        "result_overview": (
+            "Hauptkennzahlen, gepoolt über die Cutover",
+            build_overview_table(summary.overall, reference=reference, rule=rule),
+        ),
+    }
+    appendix = {
         "key_figures": (
-            "Kennzahlen",
+            "Kennzahlen je Cutover",
             build_key_figures(summary, reference=reference, rule=rule, llm=llm),
         ),
-        "result_criteria": (
-            "Erkennung (TF1) und erste Einordnung (TF2) als Nebenzahlen, gepoolt über Cutover und Ereignisse",
-            build_criteria_table(summary.criteria),
+        "result_forecast_weeks": (
+            f"Tagesfehler je Woche ab der Dauerlast, Differenz gegen {reference}",
+            build_week_table(
+                summary.forecast_weeks, reference=reference, others=[rule, llm]
+            ),
         ),
         "result_events": (
             "Erste Einordnung je Ereignis",
@@ -338,7 +414,7 @@ def write_report(run_directory: Path) -> Path:
             build_forecast_table(summary.forecast),
         ),
         "result_notifications": (
-            "Meldungen nach der Erkennung der Dauerlast, sehend und blind",
+            "Meldungen nach der Erkennung der Dauerlast (Reihe Dauerlast ab Tag 0)",
             build_notification_table(summary.notifications),
         ),
         "result_control": (
@@ -349,8 +425,10 @@ def write_report(run_directory: Path) -> Path:
             f"Abweichungstage {rule} gegen {llm}",
             build_deviation_table(summary.deviations, labels, rule=rule, llm=llm),
         ),
-    }
-    appendix = {
+        "result_criteria": (
+            "Erkennung (TF1) und erste Einordnung (TF2) als Nebenzahlen, gepoolt über Cutover und Ereignisse",
+            build_criteria_table(summary.criteria),
+        ),
         "result_latency": (
             f"Laufzeit und Kosten {llm}, nur beschreibend",
             build_latency_table(summary.latency),
@@ -380,7 +458,7 @@ def write_report(run_directory: Path) -> Path:
             run_config["code_version"],
         ),
         tables=tables,
-        notes=build_notes(summary, single_day_scales),
+        notes=build_notes(summary),
         images=["e3_timeline.png"],
         decimals=STANDARD_CONFIG.decimals,
         appendix=appendix,

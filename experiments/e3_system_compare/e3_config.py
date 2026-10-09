@@ -24,6 +24,8 @@ class E3Config:
     rule_system: str = RULE_SYSTEM
     llm_system: str = LLM_SYSTEM
 
+    week_days: int = 7
+
     event_series: dict[str, tuple[tuple[int, str], ...]] = field(
         default_factory=lambda: {
             "single_days": ((0, "peak_strong"), (10, "peak_strong"), (17, "stuck")),

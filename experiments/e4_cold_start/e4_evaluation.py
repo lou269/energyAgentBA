@@ -6,6 +6,7 @@ from experiments.common.evaluation import (
     FIRST_ANALYZED_DAY,
     SCALE_VALUE_COLUMNS,
     SCALE_SUSTAINED_COLUMNS,
+    add_weeks,
     days_since_date,
     merge_cycle_days,
     summarize_forecast_errors,
@@ -70,10 +71,6 @@ def read_system_days(
     )
 
     return days[SYSTEM_COLUMNS]
-
-
-def add_weeks(days: pd.DataFrame, week_days: int) -> pd.DataFrame:
-    return days.assign(week=days["day_since_start"] // week_days + 1)
 
 
 def find_settling_day(

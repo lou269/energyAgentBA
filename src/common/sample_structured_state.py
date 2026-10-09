@@ -20,12 +20,10 @@ _BASE_STATE_JSON = """
     "direction": "high",
     "level": "unusual",
     "scale_anomaly_streak_days": {
-      "weekday": 1.0,
       "weekly": null,
       "long_term": 1.0
     },
     "scale_exceeding_since": {
-      "weekday": "2015-12-15",
       "weekly": null,
       "long_term": "2015-12-15"
     },
