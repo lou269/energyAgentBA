@@ -1,0 +1,13 @@
+System,erwartet,Ereignisse,erkannt,richtig eingeordnet,richtig [%]
+SYS1 ohne Adaption,alle Ereignisse,7,6,6/6,100.0
+SYS1 ohne Adaption,measurement_error,3,3,3/3,100.0
+SYS1 ohne Adaption,new_pattern,1,1,1/1,100.0
+SYS1 ohne Adaption,peak,3,2,2/2,100.0
+SYS2 Regel,alle Ereignisse,7,6,6/6,100.0
+SYS2 Regel,measurement_error,3,3,3/3,100.0
+SYS2 Regel,new_pattern,1,1,1/1,100.0
+SYS2 Regel,peak,3,2,2/2,100.0
+SYS3 LLM,alle Ereignisse,7,6,6/6,100.0
+SYS3 LLM,measurement_error,3,3,3/3,100.0
+SYS3 LLM,new_pattern,1,1,1/1,100.0
+SYS3 LLM,peak,3,2,2/2,100.0

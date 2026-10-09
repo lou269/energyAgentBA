@@ -1,0 +1,129 @@
+{
+  "code_version": {
+    "git_commit": "a46b8ad0b417c35c3a7627b9be64756e3fcc953a",
+    "git_dirty": false
+  },
+  "e2_config": {
+    "absence_event_ids": [
+      "event-2014-08",
+      "event-2015-10"
+    ],
+    "calendar_events_file": "/Users/Katja/Malou BA/energyAgentBA/experiments/e2_absence/calendar_events.json",
+    "counter_ctx": "ctx1_visit",
+    "counter_event_ids": {
+      "event-2014-08": "event-2014-08-visit"
+    },
+    "ctx_systems": {
+      "ctx0": {
+        "SYS1": "SYS1",
+        "SYS2": "SYS2",
+        "SYS3_CTX0": "SYS3"
+      },
+      "ctx1": {
+        "SYS3_CTX1": "SYS3"
+      },
+      "ctx1_visit": {
+        "SYS3_CTX1_VISIT": "SYS3"
+      },
+      "ctx2": {
+        "SYS3_CTX2": "SYS3_TOOL"
+      }
+    },
+    "decision_time_margin_after_days": 30,
+    "decision_time_margin_before_days": 30,
+    "event_cutovers": {
+      "test": [
+        "CO6",
+        "CO7"
+      ],
+      "validation": [
+        "CO3"
+      ]
+    },
+    "event_series": {
+      "peaks": [
+        [
+          0,
+          "peak_strong"
+        ],
+        [
+          10,
+          "peak_strong"
+        ],
+        [
+          20,
+          "peak_strong"
+        ]
+      ],
+      "scaled": [
+        [
+          0,
+          "scaled_strong"
+        ]
+      ],
+      "stucks": [
+        [
+          0,
+          "stuck"
+        ],
+        [
+          10,
+          "stuck"
+        ],
+        [
+          17,
+          "stuck"
+        ]
+      ]
+    },
+    "event_systems": [
+      "SYS1",
+      "SYS2",
+      "SYS3"
+    ],
+    "min_coverage_share_for_subtraction": 0.9,
+    "plot_configs": [
+      "SYS1",
+      "SYS3_CTX0",
+      "SYS3_CTX1"
+    ],
+    "precheck_ctx_systems": {
+      "ctx0": {
+        "SYS1": "SYS1",
+        "SYS2": "SYS2"
+      }
+    },
+    "reference_config": "SYS1",
+    "target_classification": "absence"
+  },
+  "standard_config": {
+    "cutover_dates": {
+      "test": {
+        "CO6": "2016-12-02",
+        "CO7": "2017-02-20"
+      },
+      "validation": {
+        "CO1": "2014-07-31",
+        "CO2": "2015-02-12",
+        "CO3": "2015-05-24",
+        "CO4": "2015-09-26",
+        "CO5": "2016-01-12"
+      }
+    },
+    "decimals": 1,
+    "level_extra_w": 190.0,
+    "margin_after_days": 60,
+    "monitoring_before_cutover_days": 40,
+    "peak_extra_w": 670.0,
+    "peak_hours": 6,
+    "peak_start_hour": 17,
+    "ramp_fast_days": 28,
+    "ramp_slow_days": 56,
+    "scale_factor": 1.2,
+    "scale_factor_down": 0.8,
+    "split": "validation",
+    "strong_peak_extra_w": 1000.0,
+    "strong_scale_factor": 1.3,
+    "stuck_hours": 12
+  }
+}

@@ -1,0 +1,19 @@
+System,Phase,Tagesfehler [W],Bias [W],MAE [W],MAPE [%],Differenz Tagesfehler [W],Differenz MAE [W],2 Standardfehler [W],Tage,Tage besser [%],belastbar
+SYS1,vor dem Urlaub,68.4,4.9,130.8,49.1,,,,,,
+SYS1,Urlaub,65.3,0.9,81.6,55.3,,,,,,
+SYS1,nach der Rückkehr,80.2,0.9,151.3,55.8,,,,,,
+SYS2,vor dem Urlaub,68.4,4.9,130.8,49.1,0.0,0.0,0.0,29.0,0.0,nein
+SYS2,Urlaub,65.3,0.9,81.6,55.3,0.0,0.0,0.0,14.0,0.0,nein
+SYS2,nach der Rückkehr,79.6,3.6,155.4,57.5,-0.5,4.1,17.6,31.0,48.4,nein
+SYS3_CTX0,vor dem Urlaub,79.4,-1.5,136.7,51.2,11.0,5.8,12.8,29.0,0.0,nein
+SYS3_CTX0,Urlaub,49.9,-18.6,65.8,43.1,-15.4,-15.8,22.3,14.0,71.4,nein
+SYS3_CTX0,nach der Rückkehr,76.0,9.0,154.1,58.0,-4.2,2.8,9.9,31.0,54.8,nein
+SYS3_CTX1,vor dem Urlaub,68.4,4.9,130.8,49.1,0.0,0.0,0.0,29.0,0.0,nein
+SYS3_CTX1,Urlaub,65.3,0.9,81.6,55.3,0.0,0.0,0.0,14.0,0.0,nein
+SYS3_CTX1,nach der Rückkehr,67.9,0.3,145.0,53.1,-12.2,-6.3,13.3,31.0,54.8,nein
+SYS3_CTX1_VISIT,vor dem Urlaub,68.4,4.9,130.8,49.1,0.0,0.0,0.0,29.0,0.0,nein
+SYS3_CTX1_VISIT,Urlaub,43.8,33.2,67.5,46.0,-21.5,-14.1,14.2,14.0,57.1,ja
+SYS3_CTX1_VISIT,nach der Rückkehr,74.7,-5.4,148.2,52.5,-5.5,-3.1,17.5,31.0,51.6,nein
+SYS3_CTX2,vor dem Urlaub,68.4,4.9,130.8,49.1,0.0,0.0,0.0,29.0,0.0,nein
+SYS3_CTX2,Urlaub,65.3,0.9,81.6,55.3,0.0,0.0,0.0,14.0,0.0,nein
+SYS3_CTX2,nach der Rückkehr,67.9,0.3,145.0,53.1,-12.2,-6.3,13.3,31.0,54.8,nein
