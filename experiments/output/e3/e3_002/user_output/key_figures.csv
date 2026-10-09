@@ -1,0 +1,7 @@
+Kennzahl,Wert,Bezug
+2015-02-12: SYS2 besser als SYS1,ja,"Tagesfehler gegen SYS1 ab Dauerlast 2,4 W (nicht belastbar), Meldungen je 30 Tage nach Erkennung -11,2 gegen SYS1, 0 Resets bei Einzeltag-Ereignissen, 0 im Kontrolllauf"
+2015-02-12: SYS3 besser als SYS1,nein,"Tagesfehler gegen SYS1 ab Dauerlast -2,0 W (nicht belastbar), Meldungen je 30 Tage nach Erkennung -10,0 gegen SYS1, 0 Resets bei Einzeltag-Ereignissen, 1 im Kontrolllauf"
+2015-02-12: SYS3 gleichwertig zu SYS2,nein,"0 Ereignisse nur SYS2 richtig, 1 Resets mehr im Kontrolllauf"
+2015-05-24: SYS2 besser als SYS1,nein,"Tagesfehler gegen SYS1 ab Dauerlast 0,5 W (nicht belastbar), Meldungen je 30 Tage nach Erkennung 0,0 gegen SYS1, 0 Resets bei Einzeltag-Ereignissen, 0 im Kontrolllauf"
+2015-05-24: SYS3 besser als SYS1,nein,"Tagesfehler gegen SYS1 ab Dauerlast 0,5 W (nicht belastbar), Meldungen je 30 Tage nach Erkennung 0,0 gegen SYS1, 0 Resets bei Einzeltag-Ereignissen, 0 im Kontrolllauf"
+2015-05-24: SYS3 gleichwertig zu SYS2,ja,"0 Ereignisse nur SYS2 richtig, 0 Resets mehr im Kontrolllauf"

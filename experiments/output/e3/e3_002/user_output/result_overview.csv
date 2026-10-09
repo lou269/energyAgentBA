@@ -1,0 +1,14 @@
+Kennzahl,SYS1 ohne Adaption,SYS2 Regel,SYS3 LLM
+Teilfrage 1: Hilft die Adaption?,,,
+"Tagesfehler ab Dauerlast [W], alle Tage der Cutover",98.9,100.3,98.1
+Differenz gegen SYS1 [W],-,1.4,-0.8
+2 Standardfehler der Differenz [W],-,2.2,6.4
+Differenz belastbar,-,nein,nein
+"Meldungen je 30 Tage nach Erkennung, insgesamt",7.8,0.4,1.2
+davon Einzeltag-Anomalien,0.0,0.4,0.8
+falsche Resets bei Einzeltag-Ereignissen,0,0,0
+Resets im Kontrolllauf (Fehlalarme),0,0,1
+besser als SYS1 (Cutover),-,1/2,0/2
+Teilfrage 2: Macht das LLM es korrekt?,,,
+zusätzliche Resets im Kontrolllauf gegen SYS2,-,-,1
+gleichwertig zu SYS2 (Cutover),-,-,1/2

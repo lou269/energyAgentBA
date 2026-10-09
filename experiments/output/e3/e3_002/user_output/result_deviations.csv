@@ -1,0 +1,6 @@
+Cutover,Reihe,Tag,Datum,Ereignis,Klasse SYS2,Klasse SYS3,Aktion SYS2,Aktion SYS3,LLM-Ausfall
+2015-02-12,Kontrolllauf,55,2015-04-07,,normal,new_pattern,none,advance_history_start,nein
+2015-02-12,Kontrolllauf,56,2015-04-08,,normal,peak,none,none,nein
+2015-02-12,Kontrolllauf,57,2015-04-09,,normal,peak,none,none,nein
+2015-02-12,Dauerlast-Lauf,57,2015-04-09,"1: Sprung +30 %, Tag 0",normal,new_pattern,none,advance_history_start,nein
+2015-02-12,Dauerlast-Lauf,58,2015-04-10,"1: Sprung +30 %, Tag 0",normal,peak,none,none,nein

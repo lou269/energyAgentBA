@@ -1,0 +1,13 @@
+Cutover,Zeitraum,System,Tagesfehler [W],MAE [W],MAPE [%],Differenz Tagesfehler [W],Differenz MAE [W],2 Standardfehler [W],Tage,Tage besser [%],belastbar
+2015-02-12,Kontrolllauf ab Tag 0,SYS1 ohne Adaption,86.8,185.4,60.3,,,,,,
+2015-02-12,Kontrolllauf ab Tag 0,SYS2 Regel,86.8,185.4,60.3,0.0,0.0,0.0,61.0,0.0,nein
+2015-02-12,Kontrolllauf ab Tag 0,SYS3 LLM,85.2,189.7,63.5,-1.6,4.3,10.3,61.0,6.6,nein
+2015-02-12,Dauerlast-Lauf ab Tag 0,SYS1 ohne Adaption,116.0,243.0,61.5,,,,,,
+2015-02-12,Dauerlast-Lauf ab Tag 0,SYS2 Regel,118.4,244.9,60.8,2.4,1.9,3.6,61.0,32.8,nein
+2015-02-12,Dauerlast-Lauf ab Tag 0,SYS3 LLM,114.0,249.4,63.3,-2.0,6.4,12.5,61.0,36.1,nein
+2015-05-24,Kontrolllauf ab Tag 0,SYS1 ohne Adaption,67.2,147.8,52.8,,,,,,
+2015-05-24,Kontrolllauf ab Tag 0,SYS2 Regel,67.2,147.8,52.8,0.0,0.0,0.0,61.0,0.0,nein
+2015-05-24,Kontrolllauf ab Tag 0,SYS3 LLM,67.2,147.8,52.8,0.0,0.0,0.0,61.0,0.0,nein
+2015-05-24,Dauerlast-Lauf ab Tag 0,SYS1 ohne Adaption,81.8,188.3,52.0,,,,,,
+2015-05-24,Dauerlast-Lauf ab Tag 0,SYS2 Regel,82.2,188.6,51.7,0.5,0.3,2.5,61.0,24.6,nein
+2015-05-24,Dauerlast-Lauf ab Tag 0,SYS3 LLM,82.2,188.6,51.7,0.5,0.3,2.5,61.0,24.6,nein

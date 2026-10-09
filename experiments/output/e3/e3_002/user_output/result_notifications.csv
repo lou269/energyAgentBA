@@ -1,0 +1,7 @@
+Cutover,System,Tage nach Erkennung,Meldungen Einzeltag-Anomalien,Meldungen insgesamt,Meldungen je 30 Tage
+2015-02-12,SYS1 ohne Adaption,51,0,20,11.8
+2015-02-12,SYS2 Regel,51,1,1,0.6
+2015-02-12,SYS3 LLM,51,2,3,1.8
+2015-05-24,SYS1 ohne Adaption,26,0,0,0.0
+2015-05-24,SYS2 Regel,26,0,0,0.0
+2015-05-24,SYS3 LLM,26,0,0,0.0
