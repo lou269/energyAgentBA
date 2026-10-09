@@ -33,7 +33,7 @@ class E4Config:
     # Katalog-Arten, beide am 99-%-Quantil echter Tage: peak auf 6 h konzentriert (daily), level über den Tag verteilt (nur weekday)
     injection_kinds: tuple[str, ...] = ("peak", "level")
     # um Tag 22, ab dem CS7 weekday hat: 18 wird noch ohne eingeordnet, 26 mit, je Tag eine eigene Woche
-    injection_days: tuple[int, ...] = (3, 10, 18, 26, 35)
+    injection_days: tuple[int, ...] = (3, 10, 18, 26, 35, 43, 51)
 
     # Tages-MAEs schwanken stark, die Kurve im Plot wird kausal über so viele Tage gemittelt
     smoothing_days: int = 7
