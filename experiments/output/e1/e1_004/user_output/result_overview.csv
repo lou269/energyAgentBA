@@ -1,0 +1,8 @@
+Ereignis,erwartet,erkannt,Ø Tag,Tag min–max,Skala (Spitze),Kontrolle mit Signal [Tage]
+Sprung +20 %,auffällig,4/5,25.5,17–39,,0
+Sprung −20 %,auffällig,3/5,26.7,12–39,,0
+Rampe über 28 Tage +20 %,auffällig,3/5,29.7,20–39,,0
+Rampe über 28 Tage −20 %,auffällig,5/5,32.8,13–45,,0
+Rampe über 56 Tage +20 %,unauffällig,2/5,45.5,41–50,,0
+Rampe über 56 Tage −20 %,unauffällig,3/5,41.0,13–55,,0
+Spitze +670 W über 6 h,auffällig,3/5,,-,"daily, weekday",0
