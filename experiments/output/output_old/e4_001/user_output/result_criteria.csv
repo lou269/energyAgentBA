@@ -1,0 +1,9 @@
+Kriterium,Prüfung,erfüllt,Wert
+keine Fehlfunktion,"Resets, solange nicht alle Skalen einen Score haben",ja,0.0
+von Anfang an nutzbar,Skill der Prognose im Tagesfehler gegenüber der Baseline in Woche 1 [%],ja,6.8
+von Anfang an nutzbar,"erster Tag mit Gate-Skala, spätester Termin",ja,1.0
+passt sich an,Einschwingtag Prognose,ja,0.0
+passt sich an,"Einschwingtag Meldungen, spätester Termin",nein,48.0
+passt sich an,"Einschwingtag Erkennung, spätester Termin und Art",nein,26.0
+passt sich an,"Einschwingtag Einordnung, spätester Termin und Art",ja,3.0
+adaptiv gegen statisch,"Anteil der Fenster ab Woche 2, in denen statisch an jedem Termin schlechter ist",nein,0.2
