@@ -1,0 +1,82 @@
+{
+  "code_version": {
+    "git_commit": "83412b7f167ed7fd42c2a445c0647680aa3ef394",
+    "git_dirty": false
+  },
+  "k3_config": {
+    "bias_first_day": -3,
+    "bias_last_day": 10,
+    "cutovers": {
+      "validation": [
+        "CO1",
+        "CO2",
+        "CO3",
+        "CO4",
+        "CO5"
+      ]
+    },
+    "cycle_system": "SYS1",
+    "error_metrics": [
+      "mae_w",
+      "day_error_w"
+    ],
+    "evaluation_days": 53,
+    "key_figure_kind": "scaled",
+    "kinds": [
+      "scaled"
+    ],
+    "masking_events": [
+      [
+        0,
+        "peak"
+      ],
+      [
+        8,
+        "peak"
+      ],
+      [
+        17,
+        "peak"
+      ]
+    ],
+    "strategies": [
+      "cut",
+      "step_regressor"
+    ],
+    "trigger_days": [
+      8,
+      19
+    ]
+  },
+  "seed": 42,
+  "standard_config": {
+    "cutover_dates": {
+      "test": {
+        "CO6": "2016-12-02",
+        "CO7": "2017-02-20"
+      },
+      "validation": {
+        "CO1": "2014-07-31",
+        "CO2": "2015-02-12",
+        "CO3": "2015-05-24",
+        "CO4": "2015-09-26",
+        "CO5": "2016-01-12"
+      }
+    },
+    "decimals": 1,
+    "level_extra_w": 190.0,
+    "margin_after_days": 60,
+    "monitoring_before_cutover_days": 40,
+    "peak_extra_w": 670.0,
+    "peak_hours": 6,
+    "peak_start_hour": 17,
+    "ramp_fast_days": 28,
+    "ramp_slow_days": 56,
+    "scale_factor": 1.2,
+    "scale_factor_down": 0.8,
+    "split": "validation",
+    "strong_peak_extra_w": 1000.0,
+    "strong_scale_factor": 1.3,
+    "stuck_hours": 12
+  }
+}
