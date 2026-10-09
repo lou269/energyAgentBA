@@ -1,0 +1,9 @@
+eingebautes Ereignis,soll,neue Schwellen: Reset wegen des Ereignisses,neue Schwellen: Tage bis zum Reset,neue Schwellen: Ereignistag gemeldet,bisherige Schwellen: Reset wegen des Ereignisses,bisherige Schwellen: Tage bis zum Reset,bisherige Schwellen: Ereignistag gemeldet
+keine Änderung,still bleiben,0/11,,0/11,0/11,,0/11
+Sprung +20 %,erkennen (Reset),6/11,18.5,3/11,6/11,18.5,3/11
+Rampe über 28 Tage +20 %,erkennen (Reset),7/11,32.0,0/11,7/11,32.0,0/11
+Rampe über 28 Tage −20 %,erkennen (Reset),7/11,31.0,0/11,7/11,31.0,0/11
+Rampe über 56 Tage +20 %,still bleiben,5/11,34.0,0/11,5/11,34.0,0/11
+Rampe über 56 Tage −20 %,still bleiben,5/11,35.0,0/11,5/11,35.0,0/11
+Spitze +670 W über 6 h,Alarm am Ereignistag,2/11,19.0,8/11,2/11,19.0,8/11
+ganzer Tag +190 W,Alarm am Ereignistag,2/11,19.0,8/11,2/11,19.0,8/11

@@ -123,9 +123,11 @@ def test_event_response_only_counts_new_pattern_the_control_run_did_not_see() ->
     keys = ["cutover_date", "days_since_cutover"]
 
     paired = pair_with_control(pd.concat([control, ramp], ignore_index=True), keys)
-    response = summarize_event_response(paired, ["cutover_date", "kind"]).iloc[0]
+    response = summarize_event_response(
+        paired, ["cutover_date", "kind"], "event_new_pattern"
+    ).iloc[0]
 
-    assert response["first_event_new_pattern_day"] == 2
+    assert response["first_event_day"] == 2
 
 
 def test_latency_per_call() -> None:

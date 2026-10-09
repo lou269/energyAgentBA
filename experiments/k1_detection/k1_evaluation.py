@@ -48,14 +48,18 @@ def summarize_grid(
     return summary.assign(selected=summary["share"].eq(chosen))
 
 
-def single_day_shares(scores: pd.Series, thresholds: tuple[float, ...]) -> pd.DataFrame:
-    """Anteil der Tage mit Score (größter Betrag aus daily und weekday) ab der Schwelle, Tage ohne Score zählen nicht"""
-    valid = scores.dropna()
-
+def single_day_shares(
+    scores: pd.Series, directions: pd.Series, thresholds: tuple[float, ...]
+) -> pd.DataFrame:
+    """Anteil der Tage mit Score ab der Schwelle und Richtung high, Tage ohne Score zählen nicht"""
+    valid = scores.notna()
+    peak_scores = scores.where(directions.eq("high"), 0.0)[valid]
     return pd.DataFrame(
         {
             "threshold": list(thresholds),
-            "alarm_share": [float(valid.ge(value).mean()) for value in thresholds],
+            "alarm_share": [
+                float(peak_scores.ge(value).mean()) for value in thresholds
+            ],
         }
     )
 

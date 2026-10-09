@@ -25,19 +25,17 @@ class E4Config:
     )
     evaluation_days: int = 56
 
-    # E4a: C1 hängt dauerhaft an N, deshalb alle Längen
-    forecast_coldstart_days: tuple[int, ...] = (7, 14, 30, 60)
-    # nur auf den N Tagen vor Start trainiert, danach nie wieder
+    coldstart_days: tuple[int, ...] = (7, 60)
     static_variant: ProphetVariantConfig = C1_STATIC
 
     # E4b: im Vorfilter zählt nur die Gesamthistorie N + Tag, der Verlauf steckt schon in der x-Achse von CS7
-    system_coldstart_days: tuple[int, ...] = (7, 60)
     system: str = LLM_SYSTEM
     # Katalog-Arten, beide am 99-%-Quantil echter Tage: peak auf 6 h konzentriert (daily), level über den Tag verteilt (nur weekday)
     injection_kinds: tuple[str, ...] = ("peak", "level")
-    # um Tag 22, ab dem CS7 weekday hat: 18 wird noch ohne eingeordnet, 26 mit
+    # um Tag 22, ab dem CS7 weekday hat: 18 wird noch ohne eingeordnet, 26 mit, je Tag eine eigene Woche
     injection_days: tuple[int, ...] = (3, 10, 18, 26, 35)
 
-    # Tages-MAEs schwanken stark, die Abstandskurve im Plot wird kausal über so viele Tage gemittelt
+    # Tages-MAEs schwanken stark, die Kurve im Plot wird kausal über so viele Tage gemittelt
     smoothing_days: int = 7
-    window_edges_days: tuple[int, ...] = (7, 14, 28, 56)
+    # Auswertungsfenster sind Wochen nach Start
+    week_days: int = 7

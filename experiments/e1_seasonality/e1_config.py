@@ -18,6 +18,17 @@ BOTH_DIRECTIONS = (
     "ramp_56_down",
 )
 
+# Kennwert, an dem der Vorfilter ein Ereignis meldet (E1)
+DETECTION_SIGNAL: dict[str, str] = {
+    "peak": "alarm",
+    "scaled": "sustained_drift",
+    "scaled_down": "sustained_drift",
+    "ramp_28": "sustained_drift",
+    "ramp_28_down": "sustained_drift",
+    "ramp_56": "sustained_drift",
+    "ramp_56_down": "sustained_drift",
+}
+
 
 @dataclass(frozen=True)
 class E1Config:

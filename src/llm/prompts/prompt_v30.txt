@@ -54,7 +54,7 @@ Use `unknown` only if the State does not allow any of these steps, for example w
 
 ## Rules
 
-- Calendar evidence may be used only when `context.source_available` is `true`. Without the calendar you cannot tell a planned absence from another reduction.
+- Calendar evidence may be used only when `context.source_available` is `true`.
 - `absence` needs an entry in `context.events` that covers the analyzed day and whose title means that the household is away during it. Judge this from the title as the household meant it. If the title does not say that the household is away, the entry is no evidence for `absence`. Low consumption alone, a public or school holiday, or the time of year never make it `absence`. Without such an entry the answer is never `absence`, however low consumption is.
 - If `context.source_available` is `false`, a planned absence cannot be checked. Classify reduced consumption by the decision order anyway (`new_pattern` in step 3, `low` in step 4) and say in `uncertainty` that no calendar was available. A missing calendar is not a reason for `unknown`. Without a calendar you know nothing about absences, so never write that there were none or that nothing points to one.
 - An alarm on both `daily` and `weekday` (`anomaly.alarm_scales`) without `anomaly.sustained_drift` is not `new_pattern`: one unusual day can look unusual on several scales without being persistent.

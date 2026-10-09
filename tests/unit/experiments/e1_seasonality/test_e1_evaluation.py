@@ -1,7 +1,6 @@
 import pandas as pd
 
-from experiments.common.evaluation import SCALE_SUSTAINED_COLUMNS
-from experiments.e1_seasonality.e1_evaluation import summarize_drift_response
+from experiments.e1_seasonality.e1_evaluation import summarize_detection
 from src.common.timestamps import local_calendar_range, local_midnight_utc
 
 TIMEZONE = "Europe/London"
@@ -9,71 +8,106 @@ TIMEZONE = "Europe/London"
 
 def _run(
     kind: str,
-    gate_open: list[bool],
-    classifications: list[str],
     alarm: list[bool] | None = None,
-    sustained: str | None = None,
+    sustained_drift: list[bool] | None = None,
+    cutover_date: str = "2014-04-15",
 ) -> pd.DataFrame:
-    # Tag -1 bis 4, der 15.04. ist Tag 0
+    # Tag -1 bis 4
+    cutover = pd.Timestamp(cutover_date)
     decision_times = local_calendar_range(
-        local_midnight_utc("2014-04-14", TIMEZONE),
+        local_midnight_utc(
+            (cutover - pd.Timedelta(days=1)).strftime("%Y-%m-%d"), TIMEZONE
+        ),
         1,
-        local_midnight_utc("2014-04-19", TIMEZONE),
+        local_midnight_utc(
+            (cutover + pd.Timedelta(days=4)).strftime("%Y-%m-%d"), TIMEZONE
+        ),
         TIMEZONE,
     )
-    days = pd.DataFrame(
+    return pd.DataFrame(
         {
             "config": "SYS1",
             "kind": kind,
-            "cutover_date": "2014-04-15",
+            "cutover_date": cutover_date,
             "decision_time": [time.isoformat() for time in decision_times],
-            "alarm": alarm if alarm is not None else [False] * 6,
-            "gate_open": gate_open,
-            "new_pattern": [value == "new_pattern" for value in classifications],
-            "dominant_scale": "daily",
+            "dominant_scale": "weekday",
+            "alarm": alarm or [False] * 6,
+            "sustained_drift": sustained_drift or [False] * 6,
         }
     )
-    for column in SCALE_SUSTAINED_COLUMNS:
-        days[column] = column == sustained and bool(days["gate_open"].any())
-
-    return days
 
 
-def test_response_counts_only_what_the_control_run_did_not_see() -> None:
-    normal = ["normal"] * 6
+def test_event_counts_only_its_own_signal_the_control_run_did_not_have() -> None:
     runs = [
-        _run("control", [False, False, True, False, False, False], normal),
+        # Alarm an Tag 1 und Streak an Tag 3 auch ohne Ereignis
+        _run(
+            "control",
+            alarm=[False, False, True, False, False, False],
+            sustained_drift=[False, False, False, False, True, False],
+        ),
         _run(
             "ramp_28",
-            [False, False, True, True, True, False],
-            ["normal", "normal", "normal", "new_pattern", "normal", "normal"],
-            sustained="weekly_sustained",
+            sustained_drift=[False, False, False, True, True, False],
         ),
-        # Gate nur dort offen, wo es auch ohne Rampe offen ist, und nie new_pattern
-        _run("ramp_56", [False, False, True, False, False, False], normal),
+        # der Streak ist schon in der Kontrolle da, der Alarm zählt für die Rampe nicht
+        _run(
+            "ramp_56",
+            alarm=[False, False, True, True, False, False],
+            sustained_drift=[False, False, False, False, True, False],
+        ),
+        # ein Streak zählt für die Spitze nicht, der Alarm an Tag 1 ist schon in der Kontrolle da
         _run(
             "peak",
-            [False, False, False, True, False, False],
-            normal,
-            alarm=[False, False, False, True, False, False],
+            alarm=[False, False, True, False, True, False],
+            sustained_drift=[False, False, False, True, False, False],
         ),
     ]
 
-    response = summarize_drift_response(
-        pd.concat(runs, ignore_index=True)
-    ).response.set_index("kind")
+    summary = summarize_detection(pd.concat(runs, ignore_index=True))
+    cases = summary.cases.set_index("kind")
 
-    assert response.loc["ramp_28", "first_event_new_pattern_day"] == 2
-    assert response.loc["ramp_28", "first_gate_day"] == 2
-    assert response.loc["ramp_28", "gate_open_days"] == 2
-    assert response.loc["ramp_28", "trigger_scale"] == "weekly"
-    assert pd.isna(response.loc["ramp_56", "first_event_new_pattern_day"])
-    assert pd.isna(response.loc["ramp_56", "first_gate_day"])
-    assert response.loc["ramp_56", "gate_open_days"] == 0
-    assert response.loc["ramp_56", "expected"] == "normal"
-    # eine Spitze zeigt sich über die dominante Skala des Alarms
-    assert response.loc["peak", "first_gate_day"] == 2
-    assert response.loc["peak", "trigger_scale"] == "daily"
-    assert response.loc["peak", "expected"] == "peak"
-    # das Gate ist im Kontrolllauf an Tag 1 offen, das steht in jeder Zeile
-    assert (response["control_gate_open_days"] == 1).all()
+    assert cases.loc["ramp_28", "first_event_day"] == 2
+    assert pd.isna(cases.loc["ramp_56", "first_event_day"])
+    # der Alarm an Tag 3 zählt nicht, eine Spitze gilt nur an Tag 1
+    assert pd.isna(cases.loc["peak", "first_event_day"])
+    assert pd.isna(cases.loc["ramp_28", "trigger_scale"])
+    assert cases.loc["ramp_28", "expected"] == "reset"
+    assert cases.loc["ramp_56", "expected"] == "silent"
+    assert cases.loc["peak", "control_signal_days"] == 1
+    assert cases.loc["ramp_28", "control_signal_days"] == 1
+
+
+def test_overview_averages_over_detected_cutovers_only() -> None:
+    runs = []
+    for cutover, drift_days in [
+        ("2014-04-15", [2, 4]),
+        ("2014-05-15", [3]),
+        ("2014-06-15", []),
+    ]:
+        drift = [index in drift_days for index in range(6)]
+        runs += [
+            _run("control", cutover_date=cutover),
+            _run("scaled", sustained_drift=drift, cutover_date=cutover),
+        ]
+
+    overview = summarize_detection(pd.concat(runs, ignore_index=True)).overview.iloc[0]
+
+    assert (overview["cases"], overview["detected"]) == (3, 2)
+    assert overview["mean_day"] == 1.5
+    assert (overview["first_day"], overview["last_day"]) == (1, 2)
+
+
+def test_peak_counts_only_on_its_own_day() -> None:
+    runs = [
+        _run("control"),
+        _run("peak", alarm=[False, False, True, False, False, False]),
+    ]
+
+    summary = summarize_detection(pd.concat(runs, ignore_index=True))
+    case = summary.cases.iloc[0]
+    overview = summary.overview.iloc[0]
+
+    assert case["first_event_day"] == 1
+    assert case["trigger_scale"] == "weekday"
+    assert overview["detected"] == 1
+    assert pd.isna(overview["mean_day"])

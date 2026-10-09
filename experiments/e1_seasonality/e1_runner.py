@@ -24,7 +24,7 @@ from experiments.e1_seasonality.e1_config import (
     RUN_PREFIX,
     E1Config,
 )
-from experiments.e1_seasonality.e1_evaluation import DRIFT_RESULT_COLUMNS
+from experiments.e1_seasonality.e1_evaluation import DETECTION_RESULT_COLUMNS
 from src.config.config_forecasting import SYS_VARIANTS
 from src.pipeline.io import create_experiment_run, df_to_csv
 
@@ -68,7 +68,7 @@ def run(e1_config: E1Config) -> Path:
                     read_anomaly_rows(scenario_directory),
                     kind=kind,
                     cutover_date=cutover_date,
-                    columns=DRIFT_RESULT_COLUMNS,
+                    columns=DETECTION_RESULT_COLUMNS,
                 )
             )
 

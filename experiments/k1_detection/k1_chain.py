@@ -158,6 +158,7 @@ def run_chain(
             "reset": reset,
             "alarm": row["anomaly_level"] != "normal",
             "anomaly_score": row["anomaly_score"],
+            "anomaly_direction": row["anomaly_direction"],
         }
         for column in SCALE_SUSTAINED_COLUMNS:
             record[column] = bool(row.get(column, False))

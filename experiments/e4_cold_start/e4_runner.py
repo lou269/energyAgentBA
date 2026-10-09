@@ -58,7 +58,7 @@ def run_forecasts(
         start_date = STANDARD_CONFIG.cutover_date(cutover_id)
         start, end = local_day_window(start_date, e4_config.evaluation_days)
 
-        for coldstart_days in e4_config.forecast_coldstart_days:
+        for coldstart_days in e4_config.coldstart_days:
             logger.info("E4a start=%s, Cold Start: %d days", start_date, coldstart_days)
 
             history, targets, targets_imputed = slice_history_window(
@@ -98,7 +98,7 @@ def run_system(e4_config: E4Config, run_name: str) -> pd.DataFrame:
 
     for cutover_id in e4_config.cutovers[STANDARD_CONFIG.split]:
         start_date = STANDARD_CONFIG.cutover_date(cutover_id)
-        for coldstart_days in e4_config.system_coldstart_days:
+        for coldstart_days in e4_config.coldstart_days:
             scenarios = build_system_scenarios(
                 start_date,
                 coldstart_days,

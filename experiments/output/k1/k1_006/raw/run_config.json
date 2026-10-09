@@ -1,0 +1,165 @@
+{
+  "analysis": {
+    "current_single_day_threshold": 2.3,
+    "current_thresholds": {
+      "long_term": 14.2,
+      "weekly": 1.02
+    },
+    "cutovers": [
+      "2014-05-12",
+      "2014-07-11",
+      "2014-09-09",
+      "2014-11-08",
+      "2015-01-07",
+      "2015-03-08",
+      "2015-05-07",
+      "2015-07-06",
+      "2015-09-04",
+      "2015-11-03",
+      "2016-01-02"
+    ],
+    "days": 718,
+    "first_day": "2014-04-02",
+    "last_day": "2016-03-19"
+  },
+  "code_version": {
+    "git_commit": "9ef1fd94cc822163e6f6f071ff601bedb6271068",
+    "git_dirty": true
+  },
+  "k1_config": {
+    "diagnosis_kinds": [
+      "control",
+      "scaled",
+      "ramp_28",
+      "ramp_28_down",
+      "ramp_56",
+      "ramp_56_down",
+      "peak",
+      "level"
+    ],
+    "max_resets": 4,
+    "single_day_target_share": 0.05,
+    "single_day_thresholds": [
+      2.0,
+      2.1,
+      2.2,
+      2.3,
+      2.4,
+      2.5,
+      2.6,
+      2.7,
+      2.8,
+      2.9,
+      3.0,
+      3.1,
+      3.2,
+      3.3,
+      3.4,
+      3.5,
+      3.6,
+      3.7,
+      3.8,
+      3.9,
+      4.0,
+      4.1,
+      4.2,
+      4.3,
+      4.4,
+      4.5,
+      4.6,
+      4.7,
+      4.8,
+      4.9,
+      5.0
+    ],
+    "sustained_shares": [
+      0.02,
+      0.03,
+      0.04,
+      0.05,
+      0.06,
+      0.07,
+      0.08,
+      0.09,
+      0.1,
+      0.11,
+      0.12,
+      0.13,
+      0.14,
+      0.15,
+      0.16,
+      0.17,
+      0.18,
+      0.19,
+      0.2,
+      0.21,
+      0.22,
+      0.23,
+      0.24,
+      0.25,
+      0.26,
+      0.27,
+      0.28,
+      0.29,
+      0.3
+    ]
+  },
+  "numerical_analysis_config": {
+    "level_shift_scales": [
+      "weekly",
+      "long_term"
+    ],
+    "long_term_reference_days": 28,
+    "long_term_streak_threshold_pct": 14.203264365702726,
+    "long_term_window_days": 28,
+    "min_daily_reference_samples": 7,
+    "min_longterm_reference_samples": 14,
+    "min_reference_power_w": 10.0,
+    "min_residual_std_w": 1.0,
+    "min_sustained_scales": 2,
+    "min_weekday_reference_samples": 4,
+    "min_weekly_reference_samples": 1,
+    "reference_window_rolling_days": 60,
+    "rolling_window_min_coverage": 0.8,
+    "sample_period_hours_hourly": 1.0,
+    "single_day_scales": [
+      "daily",
+      "weekday"
+    ],
+    "streak_tolerance_window_days": 7,
+    "sustained_anomaly_streak_days": 6,
+    "unusual_threshold": 2.3,
+    "weekly_streak_threshold": 1.018894539438668,
+    "weekly_window_days": 7
+  },
+  "standard_config": {
+    "cutover_dates": {
+      "test": {
+        "CO6": "2016-12-02",
+        "CO7": "2017-02-20"
+      },
+      "validation": {
+        "CO1": "2014-07-31",
+        "CO2": "2015-02-12",
+        "CO3": "2015-05-24",
+        "CO4": "2015-09-26",
+        "CO5": "2016-01-12"
+      }
+    },
+    "decimals": 1,
+    "level_extra_w": 190.0,
+    "margin_after_days": 60,
+    "monitoring_before_cutover_days": 40,
+    "peak_extra_w": 670.0,
+    "peak_hours": 6,
+    "peak_start_hour": 17,
+    "ramp_fast_days": 28,
+    "ramp_slow_days": 56,
+    "scale_factor": 1.2,
+    "scale_factor_down": 0.8,
+    "split": "validation",
+    "strong_peak_extra_w": 1000.0,
+    "strong_scale_factor": 1.3,
+    "stuck_hours": 12
+  }
+}

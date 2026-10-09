@@ -177,8 +177,10 @@ def run(k1_config: K1Config) -> Path:
         selected[STREAK_THRESHOLD_COLUMNS["long_term"]],
     )
 
+    chain = chain_for(series, days, chosen_config, cache)
     single_day = single_day_shares(
-        chain_for(series, days, chosen_config, cache)["anomaly_score"],
+        chain["anomaly_score"],
+        chain["anomaly_direction"],
         k1_config.single_day_thresholds,
     )
     df_to_csv(single_day, raw_directory, SINGLE_DAY_FILE)
@@ -197,6 +199,7 @@ def run(k1_config: K1Config) -> Path:
         before_days=STANDARD_CONFIG.monitoring_before_cutover_days,
         after_days=STANDARD_CONFIG.margin_after_days,
     )
+
     df_to_csv(
         run_diagnosis(
             {"chosen": chosen_config, "current": analysis_config}, cutovers, k1_config

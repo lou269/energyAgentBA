@@ -4,28 +4,30 @@ import pandas as pd
 
 from experiments.common.evaluation import (
     FIRST_ANALYZED_DAY,
-    join_scale_names,
     SCALE_VALUE_COLUMNS,
     SCALE_SUSTAINED_COLUMNS,
-    count_notifications,
     days_since_date,
     merge_cycle_days,
-    spread_over_repeats,
+    summarize_forecast_errors,
     summarize_paired_differences,
 )
 from experiments.common.standard_config import (
+    GOLDSTANDARD_EXPECTED,
     LOCAL_TIMEZONE,
     NOTIFICATION_CLASSIFICATIONS,
-    NOTIFICATION_PERIOD_DAYS,
 )
 from experiments.e4_cold_start.e4_config import CLEAN_SCENARIO
 from src.common.timestamps import local_daily_mean
 from src.forecasting.evaluation import score_daily_means
 from src.structured_state.structured_state_schema import SCALE_NAMES
 
-# neben den vier Skalen: die erste Gate-Skala und alle vier zusammen (Einschwingzeit)
-GATE_SCALE = "gate"
+# neben den vier Skalen: alle vier zusammen (Einschwingzeit)
 ALL_SCALES = "all"
+WEEKDAY_SCALE = "weekday"
+RESET_CLASSIFICATION = "new_pattern"
+
+# Einschwingwoche je Größe, Schlüssel in summarize_settling
+SETTLING_MEASURES = ("forecast", "notifications", "detection")
 
 SYSTEM_COLUMNS = (
     [
@@ -70,20 +72,8 @@ def read_system_days(
     return days[SYSTEM_COLUMNS]
 
 
-def add_windows(days: pd.DataFrame, window_edges_days: tuple[int, ...]) -> pd.DataFrame:
-    lower_edges = (0,) + window_edges_days[:-1]
-
-    return days.assign(
-        window=pd.cut(
-            days["day_since_start"],
-            bins=[0] + list(window_edges_days),
-            right=False,
-            labels=[
-                f"{lower}-{upper - 1}"
-                for lower, upper in zip(lower_edges, window_edges_days)
-            ],
-        )
-    )
+def add_weeks(days: pd.DataFrame, week_days: int) -> pd.DataFrame:
+    return days.assign(week=days["day_since_start"] // week_days + 1)
 
 
 def find_settling_day(
@@ -94,6 +84,7 @@ def find_settling_day(
     deviation_column: str,
     points: tuple[int, ...],
 ) -> pd.Series:
+    """Erster Punkt je Gruppe, ab dem es bis zum Ende keine Abweichung mehr gibt. Weicht der letzte Punkt ab: NaN"""
     next_point = dict(zip(points, points[1:]))
     groups = deviations.groupby(group_columns).size().index
     last_deviation = (
@@ -132,110 +123,17 @@ def add_day_errors(
     )
 
 
-def summarize_windows(
-    windowed: pd.DataFrame, *, reference_model_id: str
-) -> pd.DataFrame:
-    """Tagesfehler, MAE und MAPE je Kaltstart-Länge, Fenster und Modell über alle Termine, dazu der Skill im Tagesfehler gegenüber reference_model_id in %"""
-    keys = ["coldstart_days", "window"]
-    metrics = windowed.groupby(keys + ["model_id"], observed=True, as_index=False).agg(
-        day_error_w=("day_error_w", "mean"),
-        mae_w=("mae_w", "mean"),
-        mape_pct=("mape_pct", "mean"),
-    )
-    reference = metrics.loc[
-        metrics["model_id"].eq(reference_model_id), keys + ["day_error_w"]
-    ]
-    metrics = metrics.merge(reference, on=keys, suffixes=("", "_reference"))
-    metrics["skill_pct"] = (
-        1 - metrics["day_error_w"] / metrics["day_error_w_reference"]
-    ) * 100
-
-    return metrics
-
-
-def compare_to_longest_coldstart(prophet: pd.DataFrame) -> pd.DataFrame:
-    longest = prophet["coldstart_days"].max()
-    summaries = []
-    for key in prophet[["window", "model_id"]].drop_duplicates().to_dict("records"):
-        days = prophet.loc[
-            prophet["window"].eq(key["window"])
-            & prophet["model_id"].eq(key["model_id"])
-        ]
-        day_errors = days.pivot(
-            index=["start_date", "day_since_start"],
-            columns="coldstart_days",
-            values="day_error_w",
-        )
-        summaries.append(
-            summarize_paired_differences(day_errors, longest).assign(
-                window=key["window"], model_id=key["model_id"]
-            )
-        )
-
-    return (
-        pd.concat(summaries, ignore_index=True)
-        .rename(columns={"variant": "coldstart_days"})
-        .astype({"window": prophet["window"].dtype})
-    )
-
-
-def compare_static_by_start(
-    prophet: pd.DataFrame, *, adaptive_model_id: str
-) -> pd.DataFrame:
-    keys = ["window", "coldstart_days", "start_date"]
-    means = prophet.groupby(keys + ["model_id"], observed=True, as_index=False)[
-        "day_error_w"
-    ].mean()
-    adaptive = means.loc[
-        means["model_id"].eq(adaptive_model_id), keys + ["day_error_w"]
-    ]
-    differences = means.loc[means["model_id"].ne(adaptive_model_id)].merge(
-        adaptive, on=keys, suffixes=("", "_adaptive")
-    )
-    differences["day_error_difference_w"] = (
-        differences["day_error_w"] - differences["day_error_w_adaptive"]
-    )
-
-    return spread_over_repeats(
-        differences,
-        ["window", "coldstart_days", "model_id"],
-        "day_error_difference_w",
-        repeat="start_date",
-        count_same_direction=True,
-    )
-
-
-def build_gap_curve(days: pd.DataFrame, *, smoothing_days: int) -> pd.DataFrame:
-    keys = ["model_id", "day_since_start"]
-    longest = days["coldstart_days"].max()
-    means = days.groupby(keys + ["coldstart_days"], as_index=False)[
-        "day_error_w"
-    ].mean()
-    longest_means = means.loc[
-        means["coldstart_days"].eq(longest), keys + ["day_error_w"]
-    ]
-    curve = means.loc[means["coldstart_days"].lt(longest)].merge(
-        longest_means, on=keys, suffixes=("", "_longest")
-    )
-    curve["gap_w"] = curve["day_error_w"] - curve["day_error_w_longest"]
-    curve["gap_w_smoothed"] = curve.groupby(["model_id", "coldstart_days"])[
-        "gap_w"
-    ].transform(lambda gap: gap.rolling(smoothing_days, min_periods=1).mean())
-
-    return curve
-
-
 @dataclass(frozen=True)
 class ForecastSummary:
-    # Tagesfehler, MAE, MAPE und Skill gegenüber der Baseline je Kaltstart-Länge, Fenster und Modell
-    windows: pd.DataFrame
-    # Abstand zum längsten Kaltstart je Fenster und Modell, gepaart über Termin und Tag
+    # Tagesfehler von adaptiv, statisch und Baseline, adaptiv minus statisch bzw. Baseline und MAPE adaptiv, je Kaltstart-Länge über alle Termine und Tage
+    overall: pd.DataFrame
+    # Differenzen und Abstand zum langen Kaltstart je Woche, eine Spalte je Größe und Kaltstart-Länge
+    weeks: pd.DataFrame
+    # Tagesfehler adaptiv: kurzer minus langer Kaltstart je Woche und insgesamt, gepaart über Termin und Tag
     gap: pd.DataFrame
-    # erster Tag, ab dem der Abstand im Rauschen liegt, je Modell und Kaltstart-Länge
-    settling: pd.DataFrame
-    # statisch minus adaptiv je Fenster und Kaltstart-Länge, je Termin und im Mittel, positiv = adaptiv besser
-    static_minus_adaptive: pd.DataFrame
-    gap_curve: pd.DataFrame
+    gap_total: pd.DataFrame
+    # geglätteter Tagesfehler je Tag seit Start, nur für den Plot
+    curve: pd.DataFrame
 
 
 def summarize_forecast(
@@ -244,48 +142,107 @@ def summarize_forecast(
     adaptive_model_id: str,
     static_model_id: str,
     reference_model_id: str,
-    window_edges_days: tuple[int, ...],
+    week_days: int,
     smoothing_days: int,
 ) -> ForecastSummary:
-    windowed = add_windows(forecast_days, window_edges_days)
-    window_starts = (0,) + window_edges_days[:-1]
+    days = add_weeks(forecast_days, week_days)
+    longest = days["coldstart_days"].max()
+    by_day = ["start_date", "day_since_start"]
+    adaptive_days = days.loc[days["model_id"].eq(adaptive_model_id)]
 
-    prophet = windowed.loc[
-        windowed["model_id"].isin([adaptive_model_id, static_model_id])
-    ]
-    gap = compare_to_longest_coldstart(prophet)
+    gap = pd.concat(
+        [
+            summarize_paired_differences(
+                week_days_frame.pivot(
+                    index=by_day, columns="coldstart_days", values="day_error_w"
+                ),
+                longest,
+            ).assign(week=week)
+            for week, week_days_frame in adaptive_days.groupby("week")
+        ],
+        ignore_index=True,
+    ).rename(columns={"variant": "coldstart_days"})
+    gap_total = summarize_paired_differences(
+        adaptive_days.pivot(
+            index=by_day, columns="coldstart_days", values="day_error_w"
+        ),
+        longest,
+    ).rename(columns={"variant": "coldstart_days"})
+    gap_by_week = gap.pivot(index="week", columns="coldstart_days", values="mean_delta")
+    gap_by_week.columns = [f"gap_{coldstart}" for coldstart in gap_by_week.columns]
+
+    paired = days.rename(
+        columns={"model_id": "config", "forecast_origin": "decision_time"}
+    )
+
+    def against(reference_id: str, keys: list[str]) -> pd.DataFrame:
+        table = summarize_forecast_errors(paired, keys, reference_id)
+        return table.loc[table["config"].eq(adaptive_model_id)].set_index(keys)
+
+    overall_keys = ["coldstart_days"]
+    week_keys = ["coldstart_days", "week"]
+    overall = (
+        against(static_model_id, overall_keys)[
+            ["mean_day_error_w", "mean_mape_pct", "mean_delta"]
+        ]
+        .rename(
+            columns={
+                "mean_day_error_w": "adaptive",
+                "mean_mape_pct": "mape_pct",
+                "mean_delta": "minus_static",
+            }
+        )
+        .join(
+            against(reference_model_id, overall_keys)["mean_delta"].rename(
+                "minus_reference"
+            )
+        )
+    )
+    weeks = (
+        against(static_model_id, week_keys)["mean_delta"]
+        .unstack("coldstart_days")
+        .add_prefix("minus_static_")
+        .join(
+            against(reference_model_id, week_keys)["mean_delta"]
+            .unstack("coldstart_days")
+            .add_prefix("minus_reference_")
+        )
+        .join(gap_by_week)
+    )
+
+    curve = (
+        days.groupby(["coldstart_days", "day_since_start", "model_id"])["day_error_w"]
+        .mean()
+        .unstack("model_id")
+        .rename(
+            columns={
+                adaptive_model_id: "adaptive",
+                static_model_id: "static",
+                reference_model_id: "reference",
+            }
+        )
+    )
+    curve = (
+        curve.groupby(level="coldstart_days")
+        .transform(lambda errors: errors.rolling(smoothing_days, min_periods=1).mean())
+        .reset_index()
+    )
 
     return ForecastSummary(
-        windows=summarize_windows(windowed, reference_model_id=reference_model_id),
+        overall=overall.reset_index(),
+        weeks=weeks.reset_index(),
         gap=gap,
-        settling=find_settling_day(
-            gap.assign(
-                window_start=gap["window"].cat.codes.map(dict(enumerate(window_starts)))
-            ),
-            group_columns=["model_id", "coldstart_days"],
-            point_column="window_start",
-            deviation_column="exceeds_noise",
-            points=window_starts,
-        ).reset_index(),
-        static_minus_adaptive=compare_static_by_start(
-            prophet, adaptive_model_id=adaptive_model_id
-        ),
-        gap_curve=build_gap_curve(
-            forecast_days.loc[forecast_days["model_id"].ne(reference_model_id)],
-            smoothing_days=smoothing_days,
-        ),
+        gap_total=gap_total,
+        curve=curve,
     )
 
 
 # E4b Kreislauf
 
 
-def summarize_scale_days(
-    clean: pd.DataFrame, *, single_day_scales: tuple[str, ...]
-) -> pd.DataFrame:
+def summarize_scale_days(clean: pd.DataFrame) -> pd.DataFrame:
     available = clean[SCALE_VALUE_COLUMNS].notna()
     available.columns = list(SCALE_NAMES)
-    available[GATE_SCALE] = available[list(single_day_scales)].any(axis=1)
     available[ALL_SCALES] = available[list(SCALE_NAMES)].all(axis=1)
 
     by_day = pd.concat(
@@ -318,183 +275,142 @@ def summarize_scale_days(
     return scale_days
 
 
-def list_resets_in_settling(days: pd.DataFrame) -> pd.DataFrame:
-    resets = days.loc[
-        days["reference_reset"].eq(True) & days[SCALE_VALUE_COLUMNS].isna().any(axis=1)
-    ]
+def compare_clean_notifications(
+    clean: pd.DataFrame, *, shortest: int, longest: int, week_days: int
+) -> pd.DataFrame:
+    """Je sauberem Tag, ob nur der kurze bzw. nur der lange Kaltstart meldet. Gemeldet heißt eine Klasse, die den Nutzer erreicht, low und unknown nicht"""
+    notified = (
+        clean.assign(
+            notified=clean["classification"].isin(NOTIFICATION_CLASSIFICATIONS)
+        )
+        .pivot(
+            index=["start_date", "day_since_start"],
+            columns="coldstart_days",
+            values="notified",
+        )
+        .astype(bool)
+    )
+    paired = pd.DataFrame(
+        {
+            "only_shortest": notified[shortest] & ~notified[longest],
+            "only_longest": ~notified[shortest] & notified[longest],
+        }
+    ).reset_index()
 
-    return resets[
+    return add_weeks(paired, week_days)
+
+
+def find_extra_resets(
+    days: pd.DataFrame, *, shortest: int, longest: int, week_days: int
+) -> pd.DataFrame:
+    """Je Lauf der erste Tag mit new_pattern beim kurzen Kaltstart, an dem der lange keins hat"""
+    run_keys = ["start_date", "scenario", "injection_day"]
+    flags = days.assign(reset=days["classification"].eq(RESET_CLASSIFICATION))
+    keys = run_keys + ["day_since_start"]
+    paired = flags.loc[flags["coldstart_days"].eq(shortest), keys + ["reset"]].merge(
+        flags.loc[flags["coldstart_days"].eq(longest), keys + ["reset"]],
+        on=keys,
+        suffixes=("", "_longest"),
+    )
+    extra = paired.loc[paired["reset"] & ~paired["reset_longest"]]
+    first_days = extra.sort_values("day_since_start").groupby(run_keys, dropna=False)
+
+    return add_weeks(first_days.head(1)[keys].reset_index(drop=True), week_days)
+
+
+def judge_injections(days: pd.DataFrame) -> pd.DataFrame:
+    """Je Injektion die Klasse am Tag nach dem Injektionstag. Erkannt heißt die erwartete Klasse, nicht erst irgendwann später"""
+    injected = days.loc[
+        days["scenario"].ne(CLEAN_SCENARIO)
+        & days["day_since_start"].eq(days["injection_day"] + FIRST_ANALYZED_DAY)
+    ].astype({"injection_day": int})
+    injected = injected.assign(expected=injected["scenario"].map(GOLDSTANDARD_EXPECTED))
+    injected["detected"] = injected["classification"].eq(injected["expected"])
+
+    return injected[
         [
             "start_date",
             "coldstart_days",
             "scenario",
             "injection_day",
-            "analyzed_day",
-            "day_since_start",
+            "expected",
             "classification",
+            "detected",
         ]
-    ].assign(
-        available_scales=join_scale_names(resets[SCALE_VALUE_COLUMNS].notna(), ", "),
-        sustained_scales=join_scale_names(
-            resets[SCALE_SUSTAINED_COLUMNS].eq(True), ", "
-        ),
-    )
+    ].reset_index(drop=True)
 
 
-def compare_clean_gate(
-    clean: pd.DataFrame, *, shortest: int, longest: int
+def pair_injections(
+    injections: pd.DataFrame, *, shortest: int, longest: int, week_days: int
 ) -> pd.DataFrame:
-    gate = clean.pivot(
-        index=["start_date", "day_since_start"],
-        columns="coldstart_days",
-        values="gate_open",
-    ).eq(True)
-
-    return pd.DataFrame(
-        {
-            "only_shortest": gate[shortest] & ~gate[longest],
-            "only_longest": ~gate[shortest] & gate[longest],
-        }
-    ).reset_index()
-
-
-def summarize_gate_deviations(
-    gate_days: pd.DataFrame, *, evaluation_days: int
-) -> pd.DataFrame:
-    by_start = gate_days.groupby("start_date").agg(
-        only_shortest=("only_shortest", "sum"), only_longest=("only_longest", "sum")
-    )
-    by_start["settling_day"] = find_settling_day(
-        gate_days.assign(
-            deviates=gate_days["only_shortest"] | gate_days["only_longest"]
-        ),
-        group_columns=["start_date"],
-        point_column="day_since_start",
-        deviation_column="deviates",
-        points=tuple(range(evaluation_days)),
-    )
-
-    return by_start.reset_index()
-
-
-def compare_injections(
-    days: pd.DataFrame, *, shortest: int, longest: int
-) -> pd.DataFrame:
-    injected = days.loc[
-        days["scenario"].ne(CLEAN_SCENARIO)
-        & days["day_since_start"].eq(days["injection_day"] + FIRST_ANALYZED_DAY)
-    ].astype({"injection_day": int})
-    pairs = injected.pivot(
+    detected = injections.pivot(
         index=["start_date", "scenario", "injection_day"],
         columns="coldstart_days",
-        values=["gate_open", "classification"],
+        values="detected",
     )
-
-    injections = pd.DataFrame(
+    pairs = pd.DataFrame(
         {
-            "reference_detected": pairs[("gate_open", longest)].eq(True),
-            "detected": pairs[("gate_open", shortest)].eq(True),
-            "reference_classification": pairs[("classification", longest)],
-            "classification": pairs[("classification", shortest)],
+            "detected_shortest": detected[shortest],
+            "detected_longest": detected[longest],
         }
     ).reset_index()
+    pairs["missed"] = pairs["detected_longest"] & ~pairs["detected_shortest"]
+    # Woche des Entscheidungstags, an dem die Injektion eingeordnet wird
+    pairs["week"] = (pairs["injection_day"] + FIRST_ANALYZED_DAY) // week_days + 1
 
-    injections["missed"] = injections["reference_detected"] & ~injections["detected"]
-    other_class = (
-        injections["reference_detected"]
-        & injections["detected"]
-        & injections["classification"].ne(injections["reference_classification"])
+    return pairs
+
+
+def build_injection_matrix(injections: pd.DataFrame) -> pd.DataFrame:
+    matrix = injections.pivot(
+        index=["scenario", "injection_day"],
+        columns=["start_date", "coldstart_days"],
+        values="detected",
     )
-    injections["class_unknown"] = other_class & injections["classification"].eq(
-        "unknown"
-    )
-    injections["class_other"] = other_class & ~injections["class_unknown"]
-    injections["class_deviation"] = other_class
+    matrix.columns = [f"{start}_{days}" for start, days in matrix.columns]
 
-    return injections
-
-
-def summarize_injection_price(injections: pd.DataFrame) -> pd.DataFrame:
-    return injections.groupby("scenario", as_index=False).agg(
-        injections=("reference_detected", "size"),
-        reference_detected=("reference_detected", "sum"),
-        missed=("missed", "sum"),
-        class_other=("class_other", "sum"),
-        class_unknown=("class_unknown", "sum"),
-    )
+    return matrix.reset_index()
 
 
 @dataclass(frozen=True)
 class SystemSummary:
-    # erster Tag je Skala, Gate-Skala und alle vier, saubere Läufe
+    # erster Tag je Skala und alle vier, saubere Läufe
     scale_days: pd.DataFrame
-    # Resets, solange nicht alle Skalen einen Score haben, alle Läufe
-    resets: pd.DataFrame
-    # Meldungen und unknown je Fenster, saubere Läufe
+    # je sauberem Tag: nur beim kurzen bzw. nur beim langen Kaltstart gemeldet
     notifications: pd.DataFrame
-    # zusätzliche und fehlende Meldetage je Termin mit Einschwingtag Meldungen
-    gate_deviations: pd.DataFrame
-    # Einschwingtag Erkennung und Einordnung je Termin und Art
-    injection_settling: pd.DataFrame
-    injection_price: pd.DataFrame
-    # nur für den Plot: Abweichungen im Gate je Tag und Ergebnis je Injektionstag, summiert über die Termine
-    gate_by_day: pd.DataFrame
-    injection_by_day: pd.DataFrame
+    # Läufe mit new_pattern nur beim kurzen Kaltstart, und wie viele Läufe der kurze insgesamt hat
+    extra_resets: pd.DataFrame
+    runs: int
+    # eine Zeile je Injektion und Kaltstart-Länge, dazu der Vergleich kurz gegen lang
+    injections: pd.DataFrame
+    injection_pairs: pd.DataFrame
+    # Art und Injektionstag gegen Starttermin und Kaltstart-Länge ("Termin_Länge"), erkannt ja/nein
+    injection_matrix: pd.DataFrame
 
 
-def summarize_system(
-    system_days: pd.DataFrame,
-    *,
-    single_day_scales: tuple[str, ...],
-    injection_days: tuple[int, ...],
-    window_edges_days: tuple[int, ...],
-) -> SystemSummary:
+def summarize_system(system_days: pd.DataFrame, *, week_days: int) -> SystemSummary:
     shortest = system_days["coldstart_days"].min()
     longest = system_days["coldstart_days"].max()
     clean = system_days.loc[system_days["scenario"].eq(CLEAN_SCENARIO)]
-
-    gate_days = compare_clean_gate(clean, shortest=shortest, longest=longest)
-    injections = compare_injections(system_days, shortest=shortest, longest=longest)
-    injection_settling = pd.DataFrame(
-        {
-            f"{name}_settling_day": find_settling_day(
-                injections,
-                group_columns=["start_date", "scenario"],
-                point_column="injection_day",
-                deviation_column=deviation_column,
-                points=injection_days,
-            )
-            for name, deviation_column in (
-                ("detection", "missed"),
-                ("classification", "class_deviation"),
-            )
-        }
-    ).reset_index()
+    injections = judge_injections(system_days)
+    short_runs = system_days.loc[system_days["coldstart_days"].eq(shortest)]
 
     return SystemSummary(
-        scale_days=summarize_scale_days(clean, single_day_scales=single_day_scales),
-        resets=list_resets_in_settling(system_days),
-        notifications=count_notifications(
-            add_windows(clean, window_edges_days),
-            ["coldstart_days", "window"],
-            notification_classes=NOTIFICATION_CLASSIFICATIONS,
-            period_days=NOTIFICATION_PERIOD_DAYS,
+        scale_days=summarize_scale_days(clean),
+        notifications=compare_clean_notifications(
+            clean, shortest=shortest, longest=longest, week_days=week_days
         ),
-        gate_deviations=summarize_gate_deviations(
-            gate_days, evaluation_days=window_edges_days[-1]
+        extra_resets=find_extra_resets(
+            system_days, shortest=shortest, longest=longest, week_days=week_days
         ),
-        injection_settling=injection_settling,
-        injection_price=summarize_injection_price(injections),
-        gate_by_day=gate_days.groupby("day_since_start", as_index=False)[
-            ["only_shortest", "only_longest"]
-        ].sum(),
-        injection_by_day=injections.groupby(
-            ["scenario", "injection_day"], as_index=False
-        ).agg(
-            reference_detected=("reference_detected", "sum"),
-            missed=("missed", "sum"),
-            class_deviation=("class_deviation", "sum"),
+        runs=short_runs.groupby(
+            ["start_date", "scenario", "injection_day"], dropna=False
+        ).ngroups,
+        injections=injections,
+        injection_pairs=pair_injections(
+            injections, shortest=shortest, longest=longest, week_days=week_days
         ),
+        injection_matrix=build_injection_matrix(injections),
     )
 
 
@@ -523,138 +439,158 @@ def compare_cycle_forecast(
     )
 
 
-def summarize_price(
-    forecast: ForecastSummary, system: SystemSummary, *, adaptive_model_id: str
+# Zusammenfassung
+
+
+def build_week_table(
+    forecast: ForecastSummary, system: SystemSummary, *, shortest: int
 ) -> pd.DataFrame:
-    shortest = system.scale_days["coldstart_days"].min()
-    longest = system.scale_days["coldstart_days"].max()
-    first_window = forecast.windows["window"].cat.categories[0]
-
-    adaptive = forecast.windows.loc[forecast.windows["model_id"].eq(adaptive_model_id)]
-    longest_error = adaptive.loc[adaptive["coldstart_days"].eq(longest)].set_index(
-        "window"
-    )["day_error_w"]
-    gap = forecast.gap.loc[
-        forecast.gap["model_id"].eq(adaptive_model_id)
-        & forecast.gap["coldstart_days"].eq(shortest)
+    """Kurzer gegen langen Kaltstart je Woche, zuletzt eine Zeile über alle Wochen (week leer)"""
+    gap_columns = ["mean_delta", "delta_standard_error", "exceeds_noise"]
+    gap = forecast.gap.loc[forecast.gap["coldstart_days"].eq(shortest)]
+    gap_total = forecast.gap_total.loc[
+        forecast.gap_total["coldstart_days"].eq(shortest)
     ]
-    notifications = system.notifications.loc[
-        system.notifications["coldstart_days"].eq(shortest)
-    ]
-    first_week = notifications.loc[notifications["window"].eq(first_window)].iloc[0]
-    clean_days = notifications["days"].sum()
 
-    rows = (
-        [
-            (
-                "day_error_gap_w",
-                row["window"],
-                None,
-                row["mean_delta"],
-                longest_error[row["window"]],
-            )
-            for row in gap.to_dict("records")
-        ]
-        + [
-            (column, None, None, system.gate_deviations[column].sum(), clean_days)
-            for column in ("only_shortest", "only_longest")
-        ]
-        + [
-            (
-                "unknown",
-                first_window,
-                None,
-                first_week["unknown_days"],
-                first_week["days"],
-            )
-        ]
-        + [
-            (column, None, row["scenario"], row[column], row["reference_detected"])
-            for column in ("missed", "class_other", "class_unknown")
-            for row in system.injection_price.to_dict("records")
-        ]
+    notifications = system.notifications.groupby("week", as_index=False).agg(
+        only_shortest=("only_shortest", "sum"), only_longest=("only_longest", "sum")
     )
+    injections = system.injection_pairs.groupby("week", as_index=False).agg(
+        injections=("scenario", "size"),
+        detected_shortest=("detected_shortest", "sum"),
+        detected_longest=("detected_longest", "sum"),
+        missed=("missed", "sum"),
+    )
+    resets = system.extra_resets.groupby("week", as_index=False).agg(
+        extra_resets=("start_date", "size")
+    )
+
+    weeks = (
+        gap[["week"] + gap_columns]
+        .merge(notifications, on="week", how="left")
+        .merge(injections, on="week", how="left")
+        .merge(resets, on="week", how="left")
+    )
+    weeks["extra_resets"] = weeks["extra_resets"].fillna(0)
+
+    total = weeks.drop(columns=["week"] + gap_columns).sum().to_frame().T
+    total[gap_columns] = gap_total[gap_columns].to_numpy()
+    total["week"] = pd.NA
+
+    return pd.concat([weeks, total], ignore_index=True).astype({"week": "Int64"})
+
+
+def summarize_settling(weeks: pd.DataFrame) -> pd.DataFrame:
+    """Einschwingwoche je Größe: erste Woche, ab der es keine Abweichung zwischen kurzem und langem Kaltstart mehr gibt. NaN = in der letzten Woche noch abweichend"""
+    by_week = weeks.dropna(subset=["week"]).astype({"week": int})
+    deviations = pd.DataFrame(
+        {
+            "week": by_week["week"],
+            "group": "all",
+            "forecast": by_week["exceeds_noise"].astype(bool),
+            "notifications": by_week["only_shortest"] + by_week["only_longest"] > 0,
+            "detection": by_week["missed"].fillna(0) > 0,
+        }
+    )
+    points = tuple(by_week["week"])
+
+    return pd.DataFrame(
+        {
+            "measure": list(SETTLING_MEASURES),
+            "settling_week": [
+                find_settling_day(
+                    deviations,
+                    group_columns=["group"],
+                    point_column="week",
+                    deviation_column=measure,
+                    points=points,
+                ).iloc[0]
+                for measure in SETTLING_MEASURES
+            ],
+        }
+    )
+
+
+def summarize_totals(forecast: ForecastSummary, system: SystemSummary) -> pd.DataFrame:
+    """Kennzahlen über alle Wochen: je Zeile Größe, Kaltstart-Länge, Wert und Bezugsgröße (leer = keine). Meldungen und Resets nur für den kurzen Kaltstart, der lange ist dort die Referenz"""
+    shortest = system.scale_days["coldstart_days"].min()
+    rows: list[tuple] = []
+
+    for row in forecast.overall.to_dict("records"):
+        for measure, column in (
+            ("day_error_w", "adaptive"),
+            ("minus_static_w", "minus_static"),
+            ("minus_reference_w", "minus_reference"),
+        ):
+            rows.append((measure, row["coldstart_days"], row[column], None))
+
+    clean_days = len(system.notifications)
+    rows += [
+        (
+            "only_shortest",
+            shortest,
+            system.notifications["only_shortest"].sum(),
+            clean_days,
+        ),
+        (
+            "only_longest",
+            shortest,
+            system.notifications["only_longest"].sum(),
+            clean_days,
+        ),
+        ("extra_resets", shortest, len(system.extra_resets), system.runs),
+    ]
+    for coldstart_days, injections in system.injections.groupby("coldstart_days"):
+        rows.append(
+            ("detected", coldstart_days, injections["detected"].sum(), len(injections))
+        )
+
     # object, sonst werden Zählungen zu 16,0
-    price = pd.DataFrame(
-        rows, columns=["price", "window", "scenario", "value", "total"], dtype=object
-    )
-    price["share_pct"] = (
-        price["value"].astype(float) / price["total"].astype(float) * 100
+    return pd.DataFrame(
+        rows, columns=["measure", "coldstart_days", "value", "total"], dtype=object
     )
 
-    return price
 
-
-def evaluate_criteria(
-    forecast: ForecastSummary,
-    system: SystemSummary,
-    *,
-    adaptive_model_id: str,
-    start_dates: list[str],
-    window_edges_days: tuple[int, ...],
-) -> pd.DataFrame:
+def evaluate_criteria(forecast: ForecastSummary, system: SystemSummary) -> pd.DataFrame:
+    """Die drei Bedingungen für funktioniert mit dem kurzen Kaltstart, alle gegenüber dem langen"""
     shortest = system.scale_days["coldstart_days"].min()
-    first_window = forecast.windows["window"].cat.categories[0]
-
-    skill = forecast.windows.loc[
-        forecast.windows["model_id"].eq(adaptive_model_id)
-        & forecast.windows["coldstart_days"].eq(shortest)
-        & forecast.windows["window"].eq(first_window),
-        "skill_pct",
-    ].iloc[0]
-    gate_day = system.scale_days.loc[
+    short_scales = system.scale_days.loc[
         system.scale_days["coldstart_days"].eq(shortest)
-        & system.scale_days["scale"].eq(GATE_SCALE),
-        "latest_day",
-    ].iloc[0]
-    forecast_settling = forecast.settling.loc[
-        forecast.settling["model_id"].eq(adaptive_model_id)
-        & forecast.settling["coldstart_days"].eq(shortest),
-        "settling_day",
-    ].iloc[0]
-    resets = system.resets["coldstart_days"].eq(shortest).sum()
-    notification = system.gate_deviations["settling_day"]
-    detection = system.injection_settling["detection_settling_day"]
-    classification = system.injection_settling["classification_settling_day"]
+    ].set_index("scale")["latest_day"]
 
-    # ab dem zweiten Fenster soll adaptiv an jedem Termin besser sein als statisch
-    by_start = forecast.static_minus_adaptive
-    later = by_start.loc[by_start["window"].ne(first_window)]
-    static_worse = later[start_dates].gt(0).all(axis=1)
+    gap = forecast.gap.loc[forecast.gap["coldstart_days"].eq(shortest)]
+    weeks_worse = (gap["exceeds_noise"] & gap["mean_delta"].gt(0)).sum()
+    first_week_vs_reference = forecast.weeks[f"minus_reference_{shortest}"].iloc[0]
+
+    resets_before_all_scales = system.extra_resets["day_since_start"].le(
+        short_scales[ALL_SCALES]
+    )
+    # ab dem Entscheidungstag, an dem weekday da ist, soll erkannt werden, was der lange erkennt
+    pairs = system.injection_pairs
+    after_weekday = (
+        pairs["injection_day"] + FIRST_ANALYZED_DAY >= short_scales[WEEKDAY_SCALE]
+    )
+    missed_after_weekday = pairs.loc[after_weekday, "missed"].sum()
 
     rows = [
-        ("no_malfunction", "resets_in_settling", resets == 0, resets),
-        ("usable_from_start", "forecast_skill_first_window_pct", skill > 0, skill),
+        ("forecast", "weeks_worse_than_longest", weeks_worse == 0, weeks_worse),
         (
-            "usable_from_start",
-            "first_gate_scale_day",
-            gate_day < window_edges_days[0],
-            gate_day,
+            "forecast",
+            "first_week_minus_reference_w",
+            first_week_vs_reference <= 0,
+            first_week_vs_reference,
         ),
         (
-            "adapts",
-            "forecast_settling_day",
-            pd.notna(forecast_settling),
-            forecast_settling,
+            "no_malfunction",
+            "extra_resets_before_all_scales",
+            resets_before_all_scales.sum() == 0,
+            resets_before_all_scales.sum(),
         ),
         (
-            "adapts",
-            "notification_settling_day",
-            notification.notna().all(),
-            notification.max(),
-        ),
-        ("adapts", "detection_settling_day", detection.notna().all(), detection.max()),
-        (
-            "adapts",
-            "classification_settling_day",
-            classification.notna().all(),
-            classification.max(),
-        ),
-        (
-            "adaptive_vs_static",
-            "static_worse_share",
-            static_worse.all(),
-            static_worse.mean(),
+            "detection",
+            "missed_after_weekday",
+            missed_after_weekday == 0,
+            missed_after_weekday,
         ),
     ]
 
@@ -667,10 +603,12 @@ class E4Summary:
     system: SystemSummary
     # Prognose im Kreislauf gegen Walk-Forward, sollte gleich sein
     cycle_forecast: pd.DataFrame
+    # kurzer gegen langer Kaltstart je Woche und insgesamt
+    weeks: pd.DataFrame
+    settling: pd.DataFrame
+    totals: pd.DataFrame
     criteria: pd.DataFrame
-    # Preis bis zum Einschwingen, kompakt für ergebnis.md
-    price: pd.DataFrame
-    # funktioniert mit 7 Tagen: keine Fehlfunktion, von Anfang an nutzbar, passt sich an
+    # funktioniert mit dem kurzen Kaltstart: alle Bedingungen erfüllt
     works: bool
 
 
@@ -681,9 +619,7 @@ def summarize_e4(
     adaptive_model_id: str,
     static_model_id: str,
     reference_model_id: str,
-    single_day_scales: tuple[str, ...],
-    injection_days: tuple[int, ...],
-    window_edges_days: tuple[int, ...],
+    week_days: int,
     smoothing_days: int,
 ) -> E4Summary:
     # Tag 0 = erster prognostizierter Tag, eingeordnet wird an ihm der letzte Tag der Start-Historie
@@ -703,22 +639,13 @@ def summarize_e4(
         adaptive_model_id=adaptive_model_id,
         static_model_id=static_model_id,
         reference_model_id=reference_model_id,
-        window_edges_days=window_edges_days,
+        week_days=week_days,
         smoothing_days=smoothing_days,
     )
-    system = summarize_system(
-        system_days,
-        single_day_scales=single_day_scales,
-        injection_days=injection_days,
-        window_edges_days=window_edges_days,
-    )
-    criteria = evaluate_criteria(
-        forecast,
-        system,
-        adaptive_model_id=adaptive_model_id,
-        start_dates=sorted(forecast_days["start_date"].unique()),
-        window_edges_days=window_edges_days,
-    )
+    system = summarize_system(system_days, week_days=week_days)
+    shortest = system.scale_days["coldstart_days"].min()
+    weeks = build_week_table(forecast, system, shortest=shortest)
+    criteria = evaluate_criteria(forecast, system)
 
     return E4Summary(
         forecast=forecast,
@@ -726,14 +653,9 @@ def summarize_e4(
         cycle_forecast=compare_cycle_forecast(
             system_days, forecast_days, adaptive_model_id=adaptive_model_id
         ),
+        weeks=weeks,
+        settling=summarize_settling(weeks),
+        totals=summarize_totals(forecast, system),
         criteria=criteria,
-        price=summarize_price(forecast, system, adaptive_model_id=adaptive_model_id),
-        works=bool(
-            criteria.loc[
-                criteria["criterion"].isin(
-                    ["no_malfunction", "usable_from_start", "adapts"]
-                ),
-                "fulfilled",
-            ].all()
-        ),
+        works=bool(criteria["fulfilled"].all()),
     )

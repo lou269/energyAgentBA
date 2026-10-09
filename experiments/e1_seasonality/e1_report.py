@@ -5,17 +5,15 @@ from pathlib import Path
 
 import pandas as pd
 
-from experiments.common.evaluation import EVENT_KEYS
 from experiments.common.report import (
     KIND_LABELS,
     format_commit,
     format_cutovers,
-    split_cutover_dates,
     write_result_report,
 )
 from experiments.common.standard_config import PROJECT_CONFIG, STANDARD_CONFIG
 from experiments.e1_seasonality.e1_config import RESULTS_FILE, RUN_PREFIX
-from experiments.e1_seasonality.e1_evaluation import summarize_drift_response
+from experiments.e1_seasonality.e1_evaluation import summarize_detection
 from src.config.config_forecasting import SYS_LABELS
 from src.pipeline.io import (
     RAW_SUBDIR,
@@ -24,50 +22,72 @@ from src.pipeline.io import (
     user_output_directory,
 )
 
-RESPONSE_HEADERS = {
-    "config": "System",
-    "cutover_date": "Cutover",
-    "kind": "Ereignis",
-    "expected": "erwartet",
-    "first_gate_day": "erster Tag Gate offen",
-    "trigger_scale": "Skala",
-    "first_event_new_pattern_day": "erstes new_pattern (Tag)",
-    "gate_open_days": "Tage Gate offen",
-    "control_gate_open_days": "Tage Gate offen im Kontrolllauf",
-}
+EXPECTED_LABELS = {"reset": "auffällig", "alarm": "auffällig", "silent": "unauffällig"}
+
+
+def format_range(first: float, last: float) -> str:
+    if pd.isna(first):
+        return "-"
+    return str(first) if first == last else f"{first}–{last}"
 
 
 def write_report(run_directory: Path) -> Path:
     run_config = read_raw_json(run_directory, "run_config")
     e1_config = run_config["e1_config"]
     standard_config = run_config["standard_config"]
-    cutover_dates = split_cutover_dates(standard_config)
     system = e1_config["system"]
     kinds_by_cutover = e1_config["kinds_by_cutover"][standard_config["split"]]
-    rows = [
-        (system, cutover_dates[cutover_id], kind)
-        for cutover_id, kinds in kinds_by_cutover.items()
-        for kind in kinds
-    ]
 
     results = pd.read_csv(
         run_directory / RAW_SUBDIR / f"{RESULTS_FILE}.csv",
         dtype={"cutover_date": str},
     )
-    response = (
-        summarize_drift_response(results)
-        .response.set_index(EVENT_KEYS)
-        .loc[rows]
-        .reset_index()
-    )
+    summary = summarize_detection(results)
+    kinds = [kind for kind in KIND_LABELS if kind in summary.overview["kind"].values]
+    overview = summary.overview.set_index("kind").loc[kinds].reset_index()
+    cases = summary.cases.set_index("kind").loc[kinds].reset_index()
 
     tables = {
-        "result_response": (
+        "result_overview": (
+            "Erkennung je Ereignis über alle Cutover",
+            pd.DataFrame(
+                {
+                    "Ereignis": overview["kind"].map(KIND_LABELS),
+                    "erwartet": overview["expected"].map(EXPECTED_LABELS),
+                    "erkannt": overview["detected"].astype(str)
+                    + "/"
+                    + overview["cases"].astype(str),
+                    "Ø Tag": overview["mean_day"],
+                    "Tag min–max": [
+                        format_range(first, last)
+                        for first, last in zip(
+                            overview["first_day"], overview["last_day"]
+                        )
+                    ],
+                    "Skala (Spitze)": overview["trigger_scale"],
+                    "Kontrolle mit Signal [Tage]": [
+                        format_range(first, last)
+                        for first, last in zip(
+                            overview["control_days_min"],
+                            overview["control_days_max"],
+                        )
+                    ],
+                }
+            ),
+        ),
+    }
+    appendix = {
+        "result_cases": (
             "Erkennung je Cutover und Ereignis",
-            response.assign(
-                config=response["config"].map(SYS_LABELS),
-                kind=response["kind"].map(KIND_LABELS),
-            ).rename(columns=RESPONSE_HEADERS),
+            pd.DataFrame(
+                {
+                    "Cutover": cases["cutover_date"],
+                    "Ereignis": cases["kind"].map(KIND_LABELS),
+                    "erkannt am Tag": cases["first_event_day"],
+                    "Skala (Spitze)": cases["trigger_scale"],
+                    "Kontrolle mit Signal [Tage]": cases["control_signal_days"],
+                }
+            ),
         ),
     }
 
@@ -76,21 +96,19 @@ def write_report(run_directory: Path) -> Path:
         output_directory,
         title=f"E1 Erkennung, Lauf {run_directory.name}",
         setup={
-            "Cutover und Ereignisse": "; ".join(
-                f"{format_cutovers(standard_config, [cutover_id])}: "
-                + ", ".join(KIND_LABELS[kind] for kind in kinds)
-                for cutover_id, kinds in kinds_by_cutover.items()
-            ),
+            "Cutover": format_cutovers(standard_config, list(kinds_by_cutover)),
             "System": f"{SYS_LABELS[system]}, die Regel ordnet ein, keine Adaption, kein LLM",
             "Commit": format_commit(run_config["code_version"]),
         },
         tables=tables,
+        appendix=appendix,
         notes=[
             "Tag = Entscheidungstag seit Cutover, an Tag 1 wird der Cutover-Tag eingeordnet",
-            "erwartet: Rampe über 28 Tage ist ein neues Muster, Rampe über 56 Tage nicht, dort ist still aufnehmen richtig",
-            "erster Tag Gate offen, erstes new_pattern und Tage Gate offen: gepaart gegen den Kontrolllauf desselben Cutovers, leer = nie. Skala = Skala des ersten Gate-Tags (Spitze: dominante Skala, Niveauänderung: Skalen mit anhaltender Abweichung)",
-            "Tage Gate offen im Kontrolllauf: Tage ab Cutover, an denen das Gate auch ohne Ereignis offen ist (echte Saison, Rauschen). Ohne Adaption wird die Referenz nie bereinigt, die Zahl ist daher höher als im Gesamtsystem",
-            "offenes Gate = Tag, an dem in SYS2 und SYS3 die Einordnung gefragt wird",
+            "erkannt: Spitze = Einzeltag-Alarm (daily oder weekday) an Tag 1, dem Tag ihres Einbaus, Niveauänderung und Rampe = Streak auf mehreren Skalen gleichzeitig (weekly und long_term). Gezählt wird der erste Tag, an dem das Ereignis den Kennwert hat und der Kontrolllauf desselben Cutovers nicht",
+            "erwartet: auffällig = der Vorfilter soll das Ereignis melden, unauffällig = still bleiben (Rampe über 56 Tage gilt nicht als Ereignis). Kein Maß für die Einordnung",
+            "Ø Tag und Tag min–max nur über die erkannten Fälle, nicht erkannt = nie innerhalb des Fensters. Bei der Spitze entfallen sie, sie zählt nur an Tag 1",
+            "Skala (Spitze): dominante Einzeltag-Skala am Erkennungstag, bei Niveau und Rampen gilt immer der Streak auf weekly und long_term",
+            "Kontrolle mit Signal: Tage ab Cutover (Spitze: Tag 1), an denen der Kontrolllauf denselben Kennwert hat (echte Saison, Rauschen), min–max über die Cutover. Ohne Adaption wird die Referenz nie bereinigt, die Zahl ist daher höher als im Gesamtsystem",
         ],
         images=[],
         decimals=STANDARD_CONFIG.decimals,

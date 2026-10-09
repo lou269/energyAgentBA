@@ -148,34 +148,35 @@ def collect_scenario_results(
     return results[columns]
 
 
-def pair_with_control(results: pd.DataFrame, keys: list[str]) -> pd.DataFrame:
+def pair_with_control(
+    results: pd.DataFrame,
+    keys: list[str],
+    flags: tuple[str, ...] = ("alarm", "gate_open", "new_pattern"),
+) -> pd.DataFrame:
     """Jede Ereignis-Art tageweise neben control, keys enthält days_since_cutover. Im Kreislauf laufen die Reihen nach einem Reset auseinander, bis zur ersten Erkennung bleiben sie vergleichbar"""
-    control = results.loc[
-        results["kind"].eq("control"), keys + ["alarm", "gate_open", "new_pattern"]
-    ]
+    control = results.loc[results["kind"].eq("control"), keys + list(flags)]
     events = results.loc[results["kind"].ne("control")]
 
     paired = events.merge(control, on=keys, suffixes=("", "_control"))
 
-    # Alarm, offenes Gate bzw. new_pattern, das es ohne Ereignis an diesem Tag nicht gegeben hätte
-    paired["event_alarm"] = paired["alarm"] & ~paired["alarm_control"]
-    paired["event_gate_open"] = paired["gate_open"] & ~paired["gate_open_control"]
-    paired["event_new_pattern"] = paired["new_pattern"] & ~paired["new_pattern_control"]
+    # event_<flag>: Flag, den es ohne Ereignis an diesem Tag nicht gegeben hätte
+    for flag in flags:
+        paired[f"event_{flag}"] = paired[flag] & ~paired[f"{flag}_control"]
 
     return paired
 
 
-def summarize_event_response(paired: pd.DataFrame, keys: list[str]) -> pd.DataFrame:
-    """Erster Tag ab Cutover je keys mit einem new_pattern, das der Kontrolllauf nicht hat, NaN = nie"""
+def summarize_event_response(
+    paired: pd.DataFrame, keys: list[str], event_column: str
+) -> pd.DataFrame:
+    """Erster Tag ab Cutover je keys, an dem event_column gesetzt ist, NaN = nie"""
     after_cutover = paired.loc[paired["days_since_cutover"].ge(FIRST_ANALYZED_DAY)]
-    event_days = after_cutover["days_since_cutover"].where(
-        after_cutover["event_new_pattern"]
-    )
+    event_days = after_cutover["days_since_cutover"].where(after_cutover[event_column])
 
     return (
         after_cutover.assign(event_day=event_days)
         .groupby(keys, as_index=False)
-        .agg(first_event_new_pattern_day=("event_day", "min"))
+        .agg(first_event_day=("event_day", "min"))
     )
 
 
@@ -290,58 +291,6 @@ def summarize_forecast_errors(
         rows.append(summary)
 
     return pd.concat(rows, ignore_index=True)
-
-
-def summarize_cutover_response(
-    results: pd.DataFrame, expected: Mapping[str, str]
-) -> pd.DataFrame:
-    """Eine Zeile je System, Cutover und Art (E1): erwartete Klasse aus expected, erster Tag ab Cutover mit offenem Gate und mit new_pattern, die der Kontrolllauf desselben Systems nicht hat, dazu die Skala dieses Gate-Tags, die Zahl solcher Tage und die Tage mit offenem Gate im Kontrolllauf selbst"""
-    systems = add_days_since_cutover(results)
-    paired = pair_with_control(
-        systems, ["config", "cutover_date", "days_since_cutover"]
-    )
-
-    after_cutover = paired.loc[paired["days_since_cutover"].ge(FIRST_ANALYZED_DAY)]
-    gate_open = after_cutover.groupby(EVENT_KEYS, as_index=False).agg(
-        gate_open_days=("event_gate_open", "sum")
-    )
-    first_gate = (
-        after_cutover.loc[after_cutover["event_gate_open"]]
-        .sort_values("days_since_cutover")
-        .groupby(EVENT_KEYS)
-        .head(1)
-    )
-    first_gate = first_gate.assign(
-        first_gate_day=first_gate["days_since_cutover"],
-        trigger_scale=detection_scales(first_gate, first_gate["event_alarm"]),
-    )
-
-    control = systems.loc[
-        systems["kind"].eq("control")
-        & systems["days_since_cutover"].ge(FIRST_ANALYZED_DAY)
-    ]
-    control_gate_open = control.groupby(["config", "cutover_date"], as_index=False).agg(
-        control_gate_open_days=("gate_open", "sum")
-    )
-
-    response = (
-        systems[EVENT_KEYS]
-        .drop_duplicates()
-        .merge(summarize_event_response(paired, EVENT_KEYS), how="left")
-        .merge(gate_open, how="left")
-        .merge(first_gate[EVENT_KEYS + ["first_gate_day", "trigger_scale"]], how="left")
-        .merge(control_gate_open, how="left")
-    )
-    response.insert(3, "expected", response["kind"].map(expected))
-    counts = [
-        "first_event_new_pattern_day",
-        "first_gate_day",
-        "gate_open_days",
-        "control_gate_open_days",
-    ]
-    response[counts] = response[counts].astype("Int64")
-
-    return response
 
 
 def list_events(events: list | tuple) -> pd.DataFrame:
