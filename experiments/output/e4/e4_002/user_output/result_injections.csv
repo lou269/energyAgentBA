@@ -1,0 +1,15 @@
+Szenario,Injektionstag,"2015-02-12, 7 Tage","2015-02-12, 60 Tage","2015-05-24, 7 Tage","2015-05-24, 60 Tage","2016-01-12, 7 Tage","2016-01-12, 60 Tage"
+ganzer Tag +190 W,3,–,✓,–,–,–,–
+ganzer Tag +190 W,10,–,✓,–,✓,–,✓
+ganzer Tag +190 W,18,–,✓,–,✓,–,–
+ganzer Tag +190 W,26,✓,✓,✓,✓,–,–
+ganzer Tag +190 W,35,–,–,✓,✓,–,–
+ganzer Tag +190 W,43,✓,✓,✓,✓,✓,✓
+ganzer Tag +190 W,51,–,–,✓,✓,–,–
+Spitze +670 W über 6 h,3,✓,✓,–,–,–,–
+Spitze +670 W über 6 h,10,✓,✓,–,✓,–,✓
+Spitze +670 W über 6 h,18,✓,✓,–,–,–,–
+Spitze +670 W über 6 h,26,✓,✓,✓,✓,–,–
+Spitze +670 W über 6 h,35,–,–,✓,✓,–,–
+Spitze +670 W über 6 h,43,✓,–,✓,✓,✓,✓
+Spitze +670 W über 6 h,51,–,–,✓,✓,–,–

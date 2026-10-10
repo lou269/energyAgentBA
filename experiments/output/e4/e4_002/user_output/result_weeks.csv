@@ -1,0 +1,10 @@
+Woche,Prognose C3_60: 7 minus 60 Tage [W],belastbar,Falschmeldungen (nur bei 7 Tagen gemeldet),Verpasste Meldungen (nur bei 60 Tagen gemeldet),"Anomalie erkannt, 7 Tage","Anomalie erkannt, 60 Tage",falsche new_pattern (nur bei 7 Tagen)
+1,-6.6,nein,1,0,1 von 6,2 von 6,0
+2,-1.8,nein,0,0,1 von 6,6 von 6,0
+3,11.5,nein,0,0,1 von 6,3 von 6,0
+4,-0.7,nein,1,0,4 von 6,4 von 6,0
+5,2.5,nein,2,0,,,0
+6,1.2,nein,0,0,2 von 6,2 von 6,0
+7,1.8,nein,2,0,6 von 6,5 von 6,0
+8,0.3,nein,0,1,2 von 6,2 von 6,0
+gesamt,1.0,nein,6,1,17 von 42,24 von 42,0
