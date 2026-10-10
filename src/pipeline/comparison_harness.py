@@ -294,6 +294,7 @@ def run_comparison(
                         llm_output_record = {
                             "config": config_label,
                             "decision_time": decision_time.isoformat(),
+                            "analyzed_day": analyzed_date.isoformat(),
                             **result.llm_output,
                         }
                         append_jsonl(
@@ -305,6 +306,7 @@ def run_comparison(
                             {
                                 "config": config_label,
                                 "decision_time": decision_time.isoformat(),
+                                "analyzed_day": analyzed_date.isoformat(),
                                 **result.calendar_tool_response,
                             },
                             config_directory / "calendar_tool_calls.jsonl",

@@ -108,7 +108,7 @@ def write_report(run_directory: Path) -> Path:
             "erwartet: auffällig = der Vorfilter soll das Ereignis melden, unauffällig = still bleiben (Rampe über 56 Tage gilt nicht als Ereignis). Kein Maß für die Einordnung",
             "Ø Tag und Tag min–max nur über die erkannten Fälle, nicht erkannt = nie innerhalb des Fensters. Bei der Spitze entfallen sie, sie zählt nur an Tag 1",
             "Skala (Spitze): dominante Einzeltag-Skala am Erkennungstag, bei Niveau und Rampen gilt immer der Streak auf weekly und long_term",
-            "Kontrolle mit Signal: Tage ab Cutover (Spitze: Tag 1), an denen der Kontrolllauf denselben Kennwert hat (echte Saison, Rauschen), min–max über die Cutover. Ohne Adaption wird die Referenz nie bereinigt, die Zahl ist daher höher als im Gesamtsystem",
+            "Kontrolle mit Signal: Tage ab Cutover (Spitze: Tag 1), an denen der Kontrolllauf denselben Kennwert hat (echte Saison, Rauschen), min–max über die Cutover.",
         ],
         images=[],
         decimals=STANDARD_CONFIG.decimals,
