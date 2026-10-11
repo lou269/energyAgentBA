@@ -1,0 +1,8 @@
+model_id,model,n_attempts,correct,invalid,mean_attempt_count,mean_generation_seconds,p95_generation_seconds,mean_grounding_coverage,macro_f1,gate_open_days,failed_days,detected_kinds,event_kinds,control_notification_days,control_unknown_days,control_resets,rule_deviation_days
+MDL2,qwen3.5:9b,10,10,0,1.0,9.797359058599977,17.27699924650222,0.85,1.0,74,0,2,2,11,0,5,15
+MDL5,ministral-3:8b,10,10,0,1.0,10.49603242930316,18.705522437801104,0.95,1.0,105,0,1,2,3,0,1,4
+BASELINE,rule_based,10,9,0,1.0,0.0,0.0,,0.8095238095238094,110,0,1,2,0,0,0,0
+MDL0,qwen3:4b,10,9,0,1.0,5.261341537399858,9.390978706094021,0.75,0.8095238095238094,110,0,1,2,0,0,0,6
+MDL1,qwen3:8b,10,9,0,1.0,10.518542245795834,17.817573922547297,0.9,0.8095238095238094,110,0,1,2,0,0,0,13
+MDL3,gemma4:e4b,10,0,10,2.0,0.0032928415035711903,0.004453816307795859,,0.0,110,0,1,2,0,0,0,5
+MDL4,gemma4:e4b-mlx,10,0,10,2.0,0.00436043350055109,0.006702079100796204,,0.0,115,0,1,2,1,0,1,13
