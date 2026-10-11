@@ -559,9 +559,6 @@ def evaluate_criteria(forecast: ForecastSummary, system: SystemSummary) -> pd.Da
     weeks_worse = (gap["exceeds_noise"] & gap["mean_delta"].gt(0)).sum()
     first_week_vs_reference = forecast.weeks[f"minus_reference_{shortest}"].iloc[0]
 
-    resets_before_all_scales = system.extra_resets["day_since_start"].le(
-        short_scales[ALL_SCALES]
-    )
     # ab dem Entscheidungstag, an dem weekday da ist, soll erkannt werden, was der lange erkennt
     pairs = system.injection_pairs
     after_weekday = (
@@ -579,9 +576,9 @@ def evaluate_criteria(forecast: ForecastSummary, system: SystemSummary) -> pd.Da
         ),
         (
             "no_malfunction",
-            "extra_resets_before_all_scales",
-            resets_before_all_scales.sum() == 0,
-            resets_before_all_scales.sum(),
+            "extra_resets",
+            len(system.extra_resets) == 0,
+            len(system.extra_resets),
         ),
         (
             "detection",

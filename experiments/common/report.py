@@ -33,6 +33,9 @@ KIND_LABELS: dict[str, str] = {
     "scaled": _change_label("Sprung", STANDARD_CONFIG.scale_factor),
     "scaled_strong": _change_label("Sprung", STANDARD_CONFIG.strong_scale_factor),
     "scaled_down": _change_label("Sprung", STANDARD_CONFIG.scale_factor_down),
+    "scaled_down_strong": _change_label(
+        "Sprung", STANDARD_CONFIG.strong_scale_factor_down
+    ),
     "ramp_28": _change_label(
         f"Rampe über {STANDARD_CONFIG.ramp_fast_days} Tage",
         STANDARD_CONFIG.scale_factor,
@@ -193,7 +196,9 @@ def paired_difference_columns(paired: pd.DataFrame, unit: str) -> pd.DataFrame:
     )
 
 
-def forecast_error_table(errors: pd.DataFrame, unit: str) -> pd.DataFrame:
+def forecast_error_table(
+    errors: pd.DataFrame, unit: str, reference: str
+) -> pd.DataFrame:
     table = pd.DataFrame(
         {
             "Tagesfehler [W]": errors["mean_day_error_w"],
@@ -201,9 +206,11 @@ def forecast_error_table(errors: pd.DataFrame, unit: str) -> pd.DataFrame:
             "MAPE [%]": errors["mean_mape_pct"],
         }
     ).join(paired_difference_columns(errors, unit))
-    table.insert(4, "Differenz MAE [W]", errors["mae_delta_w"])
+    table.insert(4, f"Differenz MAE gegen {reference} [W]", errors["mae_delta_w"])
 
-    return table.rename(columns={"Differenz [W]": "Differenz Tagesfehler [W]"})
+    return table.rename(
+        columns={"Differenz [W]": f"Differenz Tagesfehler gegen {reference} [W]"}
+    )
 
 
 def write_explanation_rating_template(

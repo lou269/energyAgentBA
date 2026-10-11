@@ -86,6 +86,8 @@ def build_kind_series(
         return scale_from(history, cutover_time, config.strong_scale_factor)
     if kind == "scaled_down":
         return scale_from(history, cutover_time, config.scale_factor_down)
+    if kind == "scaled_down_strong":
+        return scale_from(history, cutover_time, config.strong_scale_factor_down)
     if kind in ramps:
         days, factor = ramps[kind]
         return add_linear_ramp(history, cutover_time, days=days, factor=factor)

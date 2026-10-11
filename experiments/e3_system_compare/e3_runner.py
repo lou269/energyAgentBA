@@ -3,7 +3,7 @@
 # caffeinate -i python -m experiments.e3_system_compare.e3_runner
 # danach: python -m experiments.e3_system_compare.e3_report [run_directory]
 
-# je Cutover Kontroll- und Ereignisreihe mit SYS1 (ohne Adaption), SYS2 (Regel) und SYS3 (LLM), ohne Kalender
+# je Cutover Kontroll- und Ereignisreihen mit SYS1 (ohne Adaption) und SYS3 (LLM), ohne Kalender
 
 import logging
 from dataclasses import asdict
@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 
 def run(e3_config: E3Config) -> Path:
-    systems = (e3_config.reference_system, e3_config.rule_system, e3_config.llm_system)
+    systems = (e3_config.reference_system, e3_config.llm_system)
     configs = {system: SYS_VARIANTS[system] for system in systems}
     llm_config = configs[e3_config.llm_system].llm_config
     assert llm_config is not None
@@ -47,7 +47,7 @@ def run(e3_config: E3Config) -> Path:
             "standard_config": asdict(STANDARD_CONFIG),
             "llm_config": asdict(llm_config),
             "numerical_analysis_config": asdict(
-                configs[e3_config.rule_system].numerical_analysis_config
+                configs[e3_config.reference_system].numerical_analysis_config
             ),
         },
     )

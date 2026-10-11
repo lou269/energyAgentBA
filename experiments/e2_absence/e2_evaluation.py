@@ -12,8 +12,11 @@ from experiments.common.evaluation import (
     add_judgement,
     add_overall_rows,
     assign_events,
+    attach_states,
+    check_answer,
     count_notifications,
     find_judged_days,
+    list_deviation_days,
     list_events,
     local_dates,
     summarize_forecast_errors,
@@ -21,6 +24,7 @@ from experiments.common.evaluation import (
 from experiments.common.standard_config import (
     NOTIFICATION_CLASSIFICATIONS,
     NOTIFICATION_PERIOD_DAYS,
+    RULE_SYSTEM,
 )
 
 
@@ -79,6 +83,8 @@ CLASSIFICATION_RESULT_COLUMNS = [
     "decision_time",
     "analyzed_day",
     "classification",
+    "adaption_action",
+    "error",
     "dominant_scale",
     "sustained_drift",
     "gate_open",
@@ -94,6 +100,9 @@ def summarize_classification(
     tables = []
 
     for series, events in event_series.items():
+        # die Kontrolle hat keine Ereignisse und zählt nicht in die Quote
+        if not events:
+            continue
         event_list = list_events(events)
         series_days = days.loc[days["series"].eq(series)]
         event_days = series_days.assign(
@@ -126,6 +135,112 @@ def summarize_classification_rates(events: pd.DataFrame) -> pd.DataFrame:
     )
 
     return rates.assign(correct_pct=rates["correct"] / rates["detected"] * 100)
+
+
+@dataclass(frozen=True)
+class RuleAgreement:
+    summary: pd.DataFrame
+    deviations: pd.DataFrame
+
+
+def summarize_rule_agreement(
+    results: pd.DataFrame, *, rule_system: str, llm_system: str
+) -> RuleAgreement:
+    """Je Reihe (auch die Kontrolle ohne Ereignis): verglichene Tage, Tage mit offenem Gate, Tage mit anderer Klasse als die Regel und Meldungen beider Systeme, dazu die abweichenden Tage"""
+    days = add_days_since_cutover(results).rename(columns={"kind": "series"})
+    keys = ["cutover_date", "series"]
+    deviations = list_deviation_days(
+        days, keys, ["analyzed_day"], rule_system=rule_system, llm_system=llm_system
+    )
+    notifications = count_notifications(
+        days.loc[days["config"].isin([rule_system, llm_system])],
+        keys + ["config"],
+        notification_classes=NOTIFICATION_CLASSIFICATIONS,
+        period_days=NOTIFICATION_PERIOD_DAYS,
+    ).pivot(index=keys, columns="config", values="notification_days")
+
+    llm_days = days.loc[days["config"].eq(llm_system)]
+    summary = llm_days.groupby(keys).agg(
+        days=("gate_open", "size"), gate_open_days=("gate_open", "sum")
+    )
+
+    return RuleAgreement(
+        summary=summary.assign(
+            deviation_days=deviations.groupby(keys)
+            .size()
+            .reindex(summary.index, fill_value=0),
+            rule_notification_days=notifications[rule_system],
+            llm_notification_days=notifications[llm_system],
+        ).reset_index(),
+        deviations=deviations,
+    )
+
+
+@dataclass(frozen=True)
+class AnswerChecks:
+    summary: pd.DataFrame
+    findings: pd.DataFrame
+
+
+def summarize_answer_checks(
+    outputs: pd.DataFrame,
+    states: pd.DataFrame,
+    *,
+    target_classification: str,
+    control_words: tuple[str, ...],
+    number_tolerance: float,
+    rounding_step: float,
+    prompt_numbers: tuple[float, ...],
+) -> AnswerChecks:
+    """Je Lauf und System: Antworten, davon mit fehlendem Beleg zur Klasse, davon mit Verstoß im Text, dazu die Antworten der Zielklasse und wie viele davon belegt sind (bei absence: ein Kalendereintrag, der existiert). Die Funde nennen Tag und Grund"""
+    checked = attach_states(outputs, states)
+    checks = [
+        check_answer(
+            row,
+            row["state"],
+            control_words=control_words,
+            number_tolerance=number_tolerance,
+            rounding_step=rounding_step,
+            prompt_numbers=prompt_numbers,
+        )
+        for _, row in checked.iterrows()
+    ]
+    checked = checked.assign(
+        violations=[violations for violations, _ in checks],
+        missing_evidence=[missing for _, missing in checks],
+    )
+    target = checked["classification"].eq(target_classification)
+    unsupported = checked["missing_evidence"].ne("")
+    flagged = checked.assign(
+        violation=checked["violations"].ne(""),
+        unsupported=unsupported,
+        target_answer=target,
+        target_supported=target & unsupported.eq(False),
+    )
+    summary = flagged.groupby(["scenario", "config"], as_index=False).agg(
+        answers=("config", "size"),
+        unsupported_answers=("unsupported", "sum"),
+        violation_answers=("violation", "sum"),
+        target_answers=("target_answer", "sum"),
+        target_supported_answers=("target_supported", "sum"),
+    )
+    findings = (
+        flagged.loc[
+            flagged["violation"] | flagged["unsupported"],
+            [
+                "scenario",
+                "config",
+                "analyzed_day",
+                "classification",
+                "violations",
+                "missing_evidence",
+            ],
+        ]
+        .sort_values(["scenario", "config", "analyzed_day"])
+        .reset_index(drop=True)
+    )
+
+    return AnswerChecks(summary=summary, findings=findings)
 
 
 def by_phase(column: pd.Series) -> pd.Series:
@@ -232,11 +347,29 @@ class E2Summary:
     calendar_use: pd.DataFrame
     calendar_calls: pd.DataFrame
     forecast: pd.DataFrame
+    context_forecast: pd.DataFrame
+    deviations: pd.DataFrame
     timeline: pd.DataFrame
     reduction: pd.DataFrame
     mean_reduction_w: float
     first_analyzed_day: str
     last_analyzed_day: str
+
+
+def summarize_phase_forecast(
+    forecast_days: pd.DataFrame, reference_config: str
+) -> pd.DataFrame:
+    # Fehler je Phase und System, gepaart gegen reference_config, dazu der Bias mit Vorzeichen
+    bias = forecast_days.groupby(["config", "phase"], as_index=False).agg(
+        mean_day_bias_w=("day_bias_w", "mean")
+    )
+
+    return (
+        summarize_forecast_errors(forecast_days, ["phase"], reference_config)
+        .merge(bias, on=["config", "phase"])
+        .sort_values(["config", "phase"], key=by_phase)
+        .reset_index(drop=True)
+    )
 
 
 def summarize_e2(
@@ -251,6 +384,7 @@ def summarize_e2(
     absence_event_id: str,
     counter_configs: Collection[str],
     reference_config: str,
+    context_reference_config: str,
 ) -> E2Summary:
     days = label_absence_days(
         comparison,
@@ -308,14 +442,26 @@ def summarize_e2(
         forecast_day=forecast_day,
         phase=absence_phase(forecast_day, window_start, window_end),  # type: ignore
     )
-    bias = forecast_days.groupby(["config", "phase"], as_index=False).agg(
-        mean_day_bias_w=("day_bias_w", "mean")
-    )
-    forecast = (
-        summarize_forecast_errors(forecast_days, ["phase"], reference_config)
-        .merge(bias, on=["config", "phase"])
-        .sort_values(["config", "phase"], key=by_phase)
-        .reset_index(drop=True)
+
+    # Tage mit anderer Klasse als die Regel, gepaart über den Urlaubstag, alle Systeme mit LLM gegen SYS2
+    llm_configs = [
+        config
+        for config in days["config"].unique()
+        if config not in (reference_config, RULE_SYSTEM)
+    ]
+    paired_days = days.rename(columns={"absence_day": "days_since_cutover"})
+    deviations = pd.concat(
+        [
+            list_deviation_days(
+                paired_days,
+                [],
+                ["analyzed_day"],
+                rule_system=RULE_SYSTEM,
+                llm_system=config,
+            ).assign(config=config)
+            for config in llm_configs
+        ],
+        ignore_index=True,
     )
 
     # je Kalendertag Ist und Prognose für diesen Tag, dazu die Einordnung dieses Tages, die am Folgetag getroffen wird
@@ -346,7 +492,11 @@ def summarize_e2(
         absence_classification=absence_classification.reset_index(),
         calendar_use=calendar_use.sort_values(["config", "phase"], key=by_phase),
         calendar_calls=calendar_calls,
-        forecast=forecast,
+        forecast=summarize_phase_forecast(forecast_days, reference_config),
+        context_forecast=summarize_phase_forecast(
+            forecast_days, context_reference_config
+        ),
+        deviations=deviations,
         timeline=timeline.sort_values(["config", "absence_day"]).reset_index(drop=True),
         reduction=reduction,
         mean_reduction_w=reduction["reduction_w"].mean(),

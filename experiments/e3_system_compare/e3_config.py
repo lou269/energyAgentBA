@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from experiments.common.standard_config import LLM_SYSTEM, REFERENCE_SYSTEM, RULE_SYSTEM
+from experiments.common.standard_config import LLM_SYSTEM, REFERENCE_SYSTEM
 
 RUN_PREFIX = "e3"
 # vom Runner geschrieben, vom Report gelesen
@@ -21,14 +21,15 @@ class E3Config:
     )
 
     reference_system: str = REFERENCE_SYSTEM
-    rule_system: str = RULE_SYSTEM
     llm_system: str = LLM_SYSTEM
 
     week_days: int = 7
 
     event_series: dict[str, tuple[tuple[int, str], ...]] = field(
         default_factory=lambda: {
-            "single_days": ((0, "peak_strong"), (10, "peak_strong"), (17, "stuck")),
             "scaled": ((0, "scaled_strong"),),
+            "scaled_down": ((0, "scaled_down_strong"),),
+            "ramp_28": ((0, "ramp_28"),),
+            "ramp_28_down": ((0, "ramp_28_down"),),
         }
     )

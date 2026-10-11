@@ -42,6 +42,18 @@ def test_control_words() -> None:
     assert [violation.kind for violation in _check(text)] == ["control"]
 
 
+def test_tariff_and_price_words() -> None:
+    text = "Vielleicht ein neuer Tarif oder höhere Kosten."
+
+    assert [violation.found for violation in _check(text)] == ["tarif", "kosten"]
+
+
+def test_switching_on_as_cause_is_allowed() -> None:
+    text = "Möglich ist das Einschalten neuer Geräte."
+
+    assert _check(text) == ()
+
+
 def test_rounded_to_tens() -> None:
     # 311 im State: etwa 310 passt, 320 und 315 nicht
     assert _check("Etwa 310 % mehr.") == ()

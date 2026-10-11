@@ -45,7 +45,7 @@ CRITERION_LABELS = {
 CHECK_LABELS = {
     "weeks_worse_than_longest": "Wochen, in denen der Tagesfehler belastbar über dem des langen Kaltstarts liegt",
     "first_week_minus_reference_w": "Tagesfehler gegenüber der Baseline in Woche 1 [W], höchstens 0",
-    "extra_resets_before_all_scales": "Resets nur beim kurzen Kaltstart, solange nicht alle Skalen einen Score haben",
+    "extra_resets": "Läufe, in denen nur der kurze Kaltstart zurücksetzt, über alle Tage",
     "missed_after_weekday": "Injektionen ab dem Tag mit weekday, die nur der lange Kaltstart erkennt",
 }
 

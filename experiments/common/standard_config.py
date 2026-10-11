@@ -19,6 +19,11 @@ COLDSTART_DAYS = ForecastingConfig().cycle_coldstart_days
 # für die Festhänger-Flags nach der Vorverarbeitung eingebauter Reihen, dieselbe Regel wie bei den echten Daten
 STUCK_VALUE_MIN_HOURS = PreprocessingConfig().stuck_value_min_hours
 HOURLY_SAMPLE_PERIOD_HOURS = NumericalAnalysisConfig().sample_period_hours_hourly
+# Fensterlängen aus der Skalenbeschreibung im Prompt, sie stehen nicht im State, kommen aber in den Antworten vor
+PROMPT_WINDOW_NUMBERS = (
+    float(ANALYSIS_CONFIG.weekly_window_days),
+    float(ANALYSIS_CONFIG.long_term_window_days),
+)
 
 # Meldung = Tag, zu dem der Nutzer eine Erklärung bekäme (in SYS3 ein LLM-Aufruf) (low und absence brauchen keine Meldung)
 # measurement_error schon, Zähler und Anschluss kann nur der Haushalt prüfen
@@ -85,6 +90,7 @@ class StandardScenarioConfig:
 
     # nur für K2 Ebene 2 (Modellwahl, kein Beleg): deutlich über der Grenze, damit das Gate sicher öffnet und es etwas einzuordnen gibt
     strong_scale_factor: float = 1.3
+    strong_scale_factor_down: float = 0.7
     strong_peak_extra_w: float = 1000.0
 
     # mehr als stuck_value_min_hours (6 h), sonst markiert die Plausibilitätsprüfung nichts
@@ -104,6 +110,7 @@ GOLDSTANDARD_EXPECTED: dict[str, str] = {
     "scaled": "new_pattern",
     "scaled_strong": "new_pattern",
     "scaled_down": "new_pattern",
+    "scaled_down_strong": "new_pattern",
     "ramp_28": "new_pattern",
     "ramp_28_down": "new_pattern",
     "ramp_56": "normal",

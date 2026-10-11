@@ -7,8 +7,9 @@ from src.common.timestamps import local_midnight_utc
 
 TIMEZONE = "Europe/London"
 CUTOVER = "2014-01-15"
-SYSTEMS = ("SYS1", "SYS2", "SYS3")
+SYSTEMS = ("SYS1", "SYS3")
 LAST_DAY = 8
+EVENT_SERIES = {"scaled": ((0, "scaled_strong"),), "ramp": ((0, "ramp_28"),)}
 
 
 def _days(series: str) -> pd.DataFrame:
@@ -53,17 +54,44 @@ def _days(series: str) -> pd.DataFrame:
 
 def _set(
     results: pd.DataFrame,
+    series: str,
     configs: tuple[str, ...],
     days: list[int],
     values: dict[str, str | float | bool],
 ) -> None:
     rows = (
-        results["series"].eq("events")
+        results["series"].eq(series)
         & results["config"].isin(configs)
         & results["days_since_cutover"].isin(days)
     )
     for column, value in values.items():
         results.loc[rows, column] = value
+
+
+def _results() -> pd.DataFrame:
+    return pd.concat(
+        [_days(series) for series in ("control",) + tuple(EVENT_SERIES)],
+        ignore_index=True,
+    )
+
+
+def _drift_with_reset(results: pd.DataFrame, series: str) -> None:
+    # ab Tag 3 Drift aus weekly und long_term, SYS3 setzt zurück und prognostiziert danach besser
+    _set(
+        results,
+        series,
+        SYSTEMS,
+        [3],
+        {
+            "gate_open": True,
+            "sustained_drift": True,
+            "weekly_sustained": True,
+            "long_term_sustained": True,
+            "classification": "new_pattern",
+        },
+    )
+    _set(results, series, ("SYS3",), [3], {"adaption_action": "advance_history_start"})
+    _set(results, series, ("SYS3",), [3, 4, 5, 6, 7, 8], {"day_error_w": 80.0})
 
 
 OUTPUT_COLUMNS = [
@@ -79,15 +107,12 @@ OUTPUT_COLUMNS = [
 ]
 
 
-def _summarize(
-    results: pd.DataFrame,
-    events: tuple[tuple[int, str], ...],
-    llm_outputs: pd.DataFrame | None = None,
-):
+def _summarize(results: pd.DataFrame):
+    scenarios = [f"{series}_{CUTOVER}" for series in ("control",) + tuple(EVENT_SERIES)]
     runtimes = pd.DataFrame(
         {
-            "scenario": [f"{series}_{CUTOVER}" for series in ("control", "events")] * 3,
-            "config": [config for config in SYSTEMS for _ in range(2)],
+            "scenario": scenarios * len(SYSTEMS),
+            "config": [config for config in SYSTEMS for _ in scenarios],
             "runtime_seconds": 10.0,
             "interrupted": False,
         }
@@ -95,187 +120,112 @@ def _summarize(
     return summarize_e3(
         results,
         runtimes,
-        pd.DataFrame(columns=OUTPUT_COLUMNS) if llm_outputs is None else llm_outputs,
-        event_series={"events": events},
+        pd.DataFrame(columns=OUTPUT_COLUMNS),
+        event_series=EVENT_SERIES,
         reference_system="SYS1",
-        rule_system="SYS2",
         llm_system="SYS3",
         week_days=7,
     )
 
 
-def _results() -> pd.DataFrame:
-    return pd.concat([_days("control"), _days("events")], ignore_index=True)
-
-
-def test_durable_judged_at_drift() -> None:
+def test_only_cases_with_reset_count() -> None:
     results = _results()
-    # Tag 1 nur ein Alarm, die Regel sagt peak, ab Tag 3 Drift aus weekly und long_term
-    _set(
-        results,
-        SYSTEMS,
-        [1],
-        {"alarm": True, "gate_open": True, "classification": "peak"},
-    )
-    _set(
-        results,
-        SYSTEMS,
-        [3],
-        {
-            "gate_open": True,
-            "sustained_drift": True,
-            "weekly_sustained": True,
-            "long_term_sustained": True,
-            "classification": "new_pattern",
-        },
-    )
-    _set(results, ("SYS2",), [3], {"adaption_action": "advance_history_start"})
-    # das LLM hält die Drift für eine Spitze und setzt nicht zurück
-    _set(results, ("SYS3",), [3], {"classification": "peak"})
+    _drift_with_reset(results, "scaled")
+    # vor dem Reset ist SYS3 an den Tagen 1 und 2 anders, das zählt nicht in den Vergleich
+    _set(results, "scaled", ("SYS3",), [1, 2], {"day_error_w": 50.0})
 
-    events = _summarize(results, ((0, "scaled_strong"),)).events.set_index("config")
+    summary = _summarize(results)
+    overall = summary.overall.set_index("config")
+    cases = summary.cases.set_index("series")
+    weeks = summary.forecast_weeks
 
-    assert events.loc["SYS2", "judged_day"] == 3
-    assert events.loc["SYS2", "trigger_scale"] == "weekly+long_term"
-    assert bool(events.loc["SYS2", "correct"])
-    assert events.loc["SYS2", "lead_notification_days"] == 1
-    assert events.loc["SYS2", "correct_action"]
-    assert not bool(events.loc["SYS3", "correct"])
-    assert not events.loc["SYS1", "correct_action"]
+    assert cases.loc["scaled", "triggered"]
+    assert cases.loc["scaled", "reset_day"] == 3
+    assert not cases.loc["ramp", "triggered"]
+    assert overall.loc["SYS3", "triggered_cases"] == 1
+    assert overall.loc["SYS1", "triggered_cases"] == 0
+    assert overall.loc["SYS3", "cases"] == 2
+    assert overall.loc["SYS3", "day_error_w"] == 80.0
+    assert overall.loc["SYS1", "day_error_w"] == 100.0
+    assert overall.loc["SYS3", "day_error_delta_w"] == -20.0
+    assert overall.loc["SYS3", "paired_days"] == 6
+    assert bool(overall.loc["SYS3", "day_error_reliable"])
+    assert overall.loc["SYS3", "better_cases"] == 1
+    assert list(weeks["week"]) == [1]
+    assert list(weeks["cases"]) == [1]
+    assert list(weeks["day_error_delta_w"]) == [-20.0]
+    by_case = summary.forecast_weeks_by_case
+    assert len(by_case) == 1
+    assert by_case["series"].iloc[0] == "scaled"
+    assert by_case["day_error_delta_w"].iloc[0] == -20.0
 
 
-def test_false_reset_separation() -> None:
-    results = _results()
-    _set(
-        results,
-        SYSTEMS,
-        [1, 5],
-        {"alarm": True, "gate_open": True, "classification": "peak"},
-    )
-    _set(results, SYSTEMS, [2], {"gate_open": True, "sustained_drift": True})
-    _set(results, ("SYS1", "SYS2"), [2], {"classification": "new_pattern"})
-    _set(results, ("SYS2",), [2], {"adaption_action": "advance_history_start"})
-    _set(results, ("SYS3",), [2], {"classification": "peak"})
-    _set(results, ("SYS2",), [2, 3, 4, 5], {"day_error_w": 80.0, "mae_w": 80.0})
+def test_no_reset_no_case() -> None:
+    summary = _summarize(_results())
+    overall = summary.overall.set_index("config")
 
-    summary = _summarize(
-        results, ((0, "peak_strong"), (4, "peak_strong"), (7, "scaled_strong"))
-    )
-    events = summary.events.set_index(["event", "config"])
-    separations = summary.separations.set_index("series")
-    decision = summary.decisions.iloc[0]
-
-    assert not events.loc[(1, "SYS2"), "correct_action"]
-    assert events.loc[(1, "SYS3"), "correct_action"]
-    assert not events.loc[(1, "SYS2"), "after_separation"]
-    assert events.loc[(2, "SYS3"), "after_separation"]
-    assert separations.loc["events", "separation_day"] == 2
-    assert separations.loc["events", "forecast_identical_before"]
-    assert pd.isna(separations.loc["control", "separation_day"])
-    assert not decision["rule_better"]
-    assert decision["rule_single_day_resets"] == 1
-    assert decision["llm_single_day_resets"] == 0
-    assert not decision["llm_better"]
-
-
-def test_stuck_only_in_tf3() -> None:
-    results = _results()
-    # Festhänger an Tag 3, eingeordnet an Tag 4, das Flag öffnet das Gate bei allen
-    _set(
-        results,
-        SYSTEMS,
-        [4],
-        {"gate_open": True, "classification": "measurement_error"},
-    )
-    _set(
-        results,
-        ("SYS3",),
-        [4],
-        {"classification": "new_pattern", "adaption_action": "advance_history_start"},
-    )
-
-    summary = _summarize(results, ((3, "stuck"), (6, "scaled_strong")))
-    events = summary.events.loc[summary.events["event"].eq(1)].set_index("config")
-    criteria = summary.criteria.set_index(["config", "expected"])
-
-    assert events.loc["SYS2", "judged_day"] == 4
-    assert bool(events.loc["SYS2", "correct"])
-    assert events.loc["SYS2", "correct_action"]
-    assert not bool(events.loc["SYS3", "correct"])
-    assert not events.loc["SYS3", "correct_action"]
-    # die Dauerlast bleibt unentdeckt, der Festhänger zählt nicht in TF2
-    assert criteria.loc[("SYS2", "all"), "prefilter_events"] == 1
-    assert criteria.loc[("SYS2", "all"), "prefilter_detected"] == 0
-    assert criteria.loc[("SYS2", "all"), "detected"] == 1
-    assert criteria.loc[("SYS2", "all"), "correct"] == 1
-    assert summary.decisions.iloc[0]["rule_single_day_resets"] == 0
-
-
-def test_llm_answers() -> None:
-    results = _results()
-    _set(results, ("SYS2",), [4], {"classification": "peak"})
-    _set(
-        results,
-        ("SYS3",),
-        [4],
-        {"classification": "new_pattern", "adaption_action": "advance_history_start"},
-    )
-    outputs = pd.DataFrame(
-        [
-            {
-                "scenario": f"events_{CUTOVER}",
-                "config": "SYS3",
-                "decision_time": "2014-01-19T00:00:00+00:00",
-                "analyzed_day": "2014-01-18",
-                "classification": "new_pattern",
-                "explanation": "Text",
-                "user_recommendation": "Rat",
-                "uncertainty": "Unsicher",
-                "evidence_paths": "anomaly.level",
-            }
-        ]
-    )
-
-    answers = _summarize(
-        results, ((3, "peak_strong"), (6, "scaled_strong")), outputs
-    ).answers
-
-    assert len(answers) == 1
-    answer = answers.iloc[0]
-    assert answer["event"] == 1
-    assert answer["days_since_cutover"] == 4
-    assert answer["rule_classification"] == "peak"
-    assert answer["adaption_action"] == "advance_history_start"
+    assert not summary.cases["triggered"].any()
+    assert not summary.cases["better"].any()
+    assert overall.loc["SYS3", "triggered_cases"] == 0
+    assert summary.forecast.empty
+    assert summary.forecast_weeks.empty
 
 
 def test_better_through_fewer_notifications() -> None:
     results = _results()
-    _set(
-        results,
-        SYSTEMS,
-        [4],
-        {"gate_open": True, "sustained_drift": True, "classification": "new_pattern"},
-    )
-    _set(results, ("SYS2", "SYS3"), [4], {"adaption_action": "advance_history_start"})
+    _drift_with_reset(results, "scaled")
+    _set(results, "scaled", ("SYS3",), [3, 4, 5, 6, 7, 8], {"day_error_w": 100.0})
     # SYS1 meldet die Dauerlast an den Tagen danach weiter, mit Reset wird es ruhig
-    _set(results, ("SYS1",), [5, 6, 7], {"classification": "new_pattern"})
+    _set(results, "scaled", ("SYS1",), [5, 6, 7], {"classification": "new_pattern"})
+    # SYS3 ist nach dem Reset an zwei Tagen blind
+    _set(results, "scaled", ("SYS3",), [4, 5], {"classification": "unknown"})
 
-    decisions = _summarize(
-        results, ((1, "peak_strong"), (3, "scaled_strong"))
-    ).decisions
+    summary = _summarize(results)
+    case = summary.cases.set_index("series").to_dict("index")["scaled"]
+    overall = summary.overall.set_index("config")
 
-    assert bool(decisions["rule_better"].iloc[0])
-    assert bool(decisions["llm_better"].iloc[0])
+    assert not bool(case["day_error_reliable"])
+    assert float(case["notification_delta"]) < 0
+    assert bool(case["better"])
+    assert list(overall["notification_window_days"]) == [5, 5]
+    assert list(overall["notification_days"]) == [3, 0]
+    assert list(overall["unknown_days"]) == [0, 2]
+    weeks = summary.notifications_weeks.set_index("config")
+    assert weeks.loc["SYS1", "week"] == 1
+    assert weeks.loc["SYS1", "days"] == 5
+    assert weeks.loc["SYS1", "new_pattern_days"] == 3
+    assert weeks.loc["SYS1", "peak_days"] == 0
+    assert weeks.loc["SYS3", "unknown_days"] == 2
+    pooled = summary.notifications_weeks_pooled.set_index("config")
+    assert pooled.loc["SYS1", "notification_share_pct"] == 60.0
+    assert pooled.loc["SYS3", "unknown_share_pct"] == 40.0
 
 
 def test_small_error_difference_is_not_better() -> None:
     results = _results()
-    _set(results, ("SYS2",), [4, 5, 6], {"day_error_w": 99.9})
-    _set(results, ("SYS2",), [7], {"day_error_w": 100.2})
+    _drift_with_reset(results, "scaled")
+    _set(results, "scaled", ("SYS3",), [3, 4, 5], {"day_error_w": 99.9})
+    _set(results, "scaled", ("SYS3",), [6, 7, 8], {"day_error_w": 100.2})
 
-    decisions = _summarize(
-        results, ((1, "peak_strong"), (3, "scaled_strong"))
-    ).decisions
+    case = _summarize(results).cases.set_index("series").to_dict("index")["scaled"]
 
-    assert not bool(decisions["rule_day_error_reliable"].iloc[0])
-    assert not bool(decisions["rule_better"].iloc[0])
+    assert not bool(case["day_error_reliable"])
+    assert not bool(case["better"])
+
+
+def test_reset_in_control_blocks_better() -> None:
+    results = _results()
+    _drift_with_reset(results, "scaled")
+    _set(
+        results,
+        "control",
+        ("SYS3",),
+        [2],
+        {"adaption_action": "advance_history_start"},
+    )
+
+    summary = _summarize(results)
+    case = summary.cases.set_index("series").to_dict("index")["scaled"]
+
+    assert int(case["control_resets"]) == 1
+    assert not bool(case["better"])

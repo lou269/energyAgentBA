@@ -16,7 +16,7 @@
 |---|---|---|---:|
 | Prognose | Wochen, in denen der Tagesfehler belastbar über dem des langen Kaltstarts liegt | ja | 0,0 |
 | Prognose | Tagesfehler gegenüber der Baseline in Woche 1 [W], höchstens 0 | ja | -5,6 |
-| keine Fehlfunktion | Resets nur beim kurzen Kaltstart, solange nicht alle Skalen einen Score haben | ja | 0,0 |
+| keine Fehlfunktion | Läufe, in denen nur der kurze Kaltstart zurücksetzt, über alle Tage | ja | 0,0 |
 | Erkennung | Injektionen ab dem Tag mit weekday, die nur der lange Kaltstart erkennt | ja | 0,0 |
 
 ## Kennzahlen insgesamt: 7 gegenüber 60 Tagen Kaltstart, alle Termine

@@ -37,8 +37,8 @@ class E2Config:
     counter_ctx: str = "ctx1_visit"
 
     decision_time_margin_before_days: int = 30
-    # bis die Urlaubstage aus dem long_term-Fenster (28 Tage) wieder herausfallen
-    decision_time_margin_after_days: int = 30
+    # bis die Urlaubstage aus dem Trainingsfenster von Prophet (60 Tage) wieder herausrollen
+    decision_time_margin_after_days: int = 60
 
     min_coverage_share_for_subtraction: float = 0.9
 
@@ -46,6 +46,8 @@ class E2Config:
     # Prognose je Phase gepaart gegen das System ohne Adaption
     reference_config: str = REFERENCE_SYSTEM
     plot_configs: tuple[str, ...] = ("SYS1", "SYS3_CTX0", "SYS3_CTX1")
+    # Prognose je Phase zusätzlich gepaart gegen die Variante ohne Kalender
+    context_reference_config: str = "SYS3_CTX0"
 
     # je Kontextvariante: Name im Ergebnis -> Systemvariante
     ctx_systems: dict[str, dict[str, str]] = field(
@@ -63,9 +65,14 @@ class E2Config:
     event_cutovers: dict[str, tuple[str, ...]] = field(
         default_factory=lambda: {"validation": ("CO3",), "test": ("CO6", "CO7")}
     )
+    # control ohne Ereignis: zählt nicht in die Quote, zeigt Meldungen und Abweichungen von der Regel auf unveränderten Daten
     event_series: dict[str, tuple[tuple[int, str], ...]] = field(
         default_factory=lambda: {
+            "control": (),
             "scaled": ((0, "scaled_strong"),),
+            "scaled_down": ((0, "scaled_down_strong"),),
+            "ramp_28": ((0, "ramp_28"),),
+            "ramp_28_down": ((0, "ramp_28_down"),),
             "peaks": ((0, "peak_strong"), (10, "peak_strong"), (20, "peak_strong")),
             "stucks": ((0, "stuck"), (10, "stuck"), (17, "stuck")),
         }

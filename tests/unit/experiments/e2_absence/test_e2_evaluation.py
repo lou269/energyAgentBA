@@ -6,10 +6,14 @@ from experiments.common.evaluation import SCALE_SUSTAINED_COLUMNS
 from experiments.e2_absence.e2_evaluation import (
     PRECHECK_ANOMALY_COLUMNS,
     summarize_classification,
+    summarize_answer_checks,
     summarize_classification_rates,
     summarize_e2,
+    summarize_rule_agreement,
 )
+from src.common.sample_structured_state import valid_structured_state
 from src.common.timestamps import local_midnight_utc
+from src.config.config_forecasting import TextCheckConfig
 
 TIMEZONE = "Europe/London"
 WINDOW_START = local_midnight_utc("2013-09-14", TIMEZONE)
@@ -114,6 +118,7 @@ def test_absence_only_counts_as_a_hit_with_the_calendar_event() -> None:
         absence_event_id=EVENT_ID,
         counter_configs=[],
         reference_config="SYS1",
+        context_reference_config="SYS3_CTX0",
     )
 
     hits = summary.absence_classification.set_index("config")
@@ -159,6 +164,7 @@ def test_absence_only_counts_as_a_hit_with_the_calendar_event() -> None:
         absence_event_id=EVENT_ID,
         counter_configs=["SYS3_CTX1"],
         reference_config="SYS1",
+        context_reference_config="SYS3_CTX0",
     ).absence_classification.set_index("config")
     assert list(counter.loc["SYS3_CTX1", ["hit_days", "unsupported_absence_days"]]) == [
         0,
@@ -167,19 +173,25 @@ def test_absence_only_counts_as_a_hit_with_the_calendar_event() -> None:
 
 
 def _classification_run(
-    config: str, classifications: list[str], gate_open: list[bool]
+    config: str,
+    classifications: list[str],
+    gate_open: list[bool],
+    kind: str = "peaks",
 ) -> pd.DataFrame:
-    # Tag 0 bis 5, der 15.04. ist Tag 0, die Reihe heißt peaks (steht in kind)
+    # Tag 0 bis 5, der 15.04. ist Tag 0, die Reihe steht in kind
     return pd.DataFrame(
         {
             "config": config,
-            "kind": "peaks",
+            "kind": kind,
             "cutover_date": "2014-04-15",
+            "analyzed_day": [f"2014-04-{14 + day}" for day in range(6)],
             "decision_time": [
                 local_midnight_utc(f"2014-04-{15 + day}", TIMEZONE).isoformat()
                 for day in range(6)
             ],
             "classification": classifications,
+            "adaption_action": "none",
+            "error": None,
             "gate_open": gate_open,
             "sustained_drift": False,
             "dominant_scale": "daily",
@@ -230,3 +242,98 @@ def test_classification_is_judged_per_event_on_its_first_day_with_open_gate() ->
     assert rates.loc[("SYS3", "peak"), "correct_pct"] == 50
     assert rates.loc[("SYS1", "all"), "detected"] == 1
     assert rates.loc[("SYS1", "all"), "correct_pct"] == 100
+
+
+def test_rule_agreement_lists_the_days_with_another_class_and_counts_notifications() -> (
+    None
+):
+    peaks = ["normal", "peak", "normal", "peak", "normal", "normal"]
+    gate = [False, True, False, True, False, False]
+    runs = [
+        _classification_run("SYS2", peaks, gate),
+        # am Tag 3 ordnet das LLM als low statt peak ein
+        _classification_run(
+            "SYS3", ["normal", "peak", "normal", "low", "normal", "normal"], gate
+        ),
+        # die Kontrolle ohne Ereignis, beide gleich
+        _classification_run("SYS2", ["normal"] * 6, [False] * 6, kind="control"),
+        _classification_run("SYS3", ["normal"] * 6, [False] * 6, kind="control"),
+    ]
+
+    agreement = summarize_rule_agreement(
+        pd.concat(runs, ignore_index=True), rule_system="SYS2", llm_system="SYS3"
+    )
+    summary = agreement.summary.set_index("series")
+
+    assert list(summary.loc["peaks", ["days", "gate_open_days", "deviation_days"]]) == [
+        6,
+        2,
+        1,
+    ]
+    assert list(
+        summary.loc["peaks", ["rule_notification_days", "llm_notification_days"]]
+    ) == [2, 1]
+    assert summary.loc["control", "deviation_days"] == 0
+    assert agreement.deviations["days_since_cutover"].tolist() == [3]
+    assert agreement.deviations["classification_llm"].tolist() == ["low"]
+
+
+def test_answer_checks_find_missing_evidence_and_words_across_time_zones() -> None:
+    config = TextCheckConfig()
+    # der State schreibt die lokale Zeit mit Offset, die Antwort UTC
+    local_times = [f"2015-06-0{day}T00:00:00+01:00" for day in (2, 3, 4)]
+    utc_times = [f"2015-06-0{day}T23:00:00+00:00" for day in (1, 2, 3)]
+    scenario = "event-2015-06/ctx1"
+    states = pd.DataFrame(
+        {
+            "scenario": scenario,
+            "config": "SYS3_CTX1",
+            "decision_time": local_times,
+            "state": [
+                {**valid_structured_state(), "decision_time": time}
+                for time in local_times
+            ],
+        }
+    )
+    outputs = pd.DataFrame(
+        {
+            "scenario": scenario,
+            "config": "SYS3_CTX1",
+            "decision_time": utc_times,
+            "analyzed_day": ["2015-06-02", "2015-06-03", "2015-06-04"],
+            "classification": ["absence", "absence", "peak"],
+            "explanation": ["Laut Kalender weg."] * 2 + ["Ein Ausreißer."],
+            "user_recommendation": ["Nichts zu tun."] * 2 + ["Schalte die Geräte aus."],
+            "uncertainty": ["Gering."] * 3,
+            "evidence_paths": [
+                "anomaly.level;context.events.0.title",
+                "anomaly.level",
+                "anomaly.level;anomaly.direction",
+            ],
+        }
+    )
+
+    checks = summarize_answer_checks(
+        outputs,
+        states,
+        target_classification="absence",
+        control_words=config.control_words,
+        number_tolerance=config.number_tolerance,
+        rounding_step=config.rounding_step,
+        prompt_numbers=(7.0, 28.0),
+    )
+    row = checks.summary.iloc[0]
+
+    assert list(
+        row[
+            [
+                "answers",
+                "unsupported_answers",
+                "violation_answers",
+                "target_answers",
+                "target_supported_answers",
+            ]
+        ]
+    ) == [3, 1, 1, 2, 1]
+    assert checks.findings["analyzed_day"].tolist() == ["2015-06-03", "2015-06-04"]
+    assert "context.events.<index>.title" in checks.findings["missing_evidence"].iloc[0]

@@ -225,12 +225,18 @@ class TextCheckConfig:
         "schalte",
         "ausschalt",
         "abschalt",
-        "einschalt",
         "ausstecken",
         "abstecken",
         "verschieb",
         "sparen",
         "einspar",
+        "tarif",
+        "preis",
+        "strompreis",
+        "kosten",
+        "kostet",
+        "euro",
+        "cent",
     )
     # erlaubte Abweichung einer genannten Zahl von den Zahlen im State (Rundung im Text)
     number_tolerance: float = 0.5

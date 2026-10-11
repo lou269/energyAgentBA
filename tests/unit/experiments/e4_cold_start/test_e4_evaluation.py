@@ -173,12 +173,12 @@ def test_injection_counts_only_the_day_after_the_injection_day() -> None:
     assert pairs.at[0, "week"] == 2
 
 
-def test_extra_reset_before_all_scales_fails_the_criterion() -> None:
+def test_extra_reset_fails_the_criterion() -> None:
     summary = _summary()
     criteria = summary.criteria.set_index("check")
 
     assert len(summary.system.extra_resets) == 1
-    assert criteria.at["extra_resets_before_all_scales", "value"] == 1
+    assert criteria.at["extra_resets", "value"] == 1
     assert not summary.works
 
 

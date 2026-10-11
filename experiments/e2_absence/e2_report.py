@@ -11,6 +11,7 @@ from experiments.common.harness import (
     read_anomaly_rows,
     read_calendar_availability,
     read_llm_outputs,
+    read_structured_states,
 )
 from experiments.common.evaluation import ALL_EVENTS
 from experiments.common.report import (
@@ -24,8 +25,11 @@ from experiments.common.report import (
     write_result_report,
 )
 from experiments.common.standard_config import (
+    LLM_SYSTEM,
     LOCAL_TIMEZONE,
     PROJECT_CONFIG,
+    PROMPT_WINDOW_NUMBERS,
+    RULE_SYSTEM,
     STANDARD_CONFIG,
 )
 from experiments.e2_absence.e2_config import (
@@ -36,18 +40,22 @@ from experiments.e2_absence.e2_config import (
     RUN_PREFIX,
 )
 from experiments.e2_absence.e2_evaluation import (
+    AnswerChecks,
     E2Summary,
     GatePrecheckSummary,
+    RuleAgreement,
+    summarize_answer_checks,
     summarize_classification,
     summarize_classification_rates,
     summarize_e2,
     summarize_gate_precheck,
+    summarize_rule_agreement,
 )
 from experiments.e2_absence.e2_selection import (
     load_calendar_events,
     resolve_absence_window,
 )
-from src.config.config_forecasting import SYS_LABELS
+from src.config.config_forecasting import SYS_LABELS, TextCheckConfig
 from src.pipeline.io import (
     RAW_SUBDIR,
     read_raw_json,
@@ -64,7 +72,15 @@ CONFIG_LABELS = {
     "SYS3_CTX2": "SYS3 Kalender per Tool",
 }
 
-SERIES_LABELS = {"scaled": "Sprung", "peaks": "Spitzen", "stucks": "Festhänger"}
+SERIES_LABELS = {
+    "control": "Kontrolle",
+    "scaled": "Sprung hoch",
+    "scaled_down": "Sprung runter",
+    "ramp_28": "Rampe hoch",
+    "ramp_28_down": "Rampe runter",
+    "peaks": "Spitzen",
+    "stucks": "Festhänger",
+}
 
 PHASE_LABELS = {
     "before": "vor dem Urlaub",
@@ -129,13 +145,13 @@ def build_calendar_call_table(
     )
 
 
-def build_forecast_table(forecast: pd.DataFrame) -> pd.DataFrame:
+def build_forecast_table(forecast: pd.DataFrame, reference: str) -> pd.DataFrame:
     table = pd.DataFrame(
         {
             "System": forecast["config"],
             "Phase": forecast["phase"].map(PHASE_LABELS),
         }
-    ).join(forecast_error_table(forecast, "Tage"))
+    ).join(forecast_error_table(forecast, "Tage", reference))
     table.insert(3, "Bias [W]", forecast["mean_day_bias_w"])
 
     return table
@@ -182,7 +198,10 @@ def build_setup(
         f"{format_cutovers(standard_config, e2_config['event_cutovers'][standard_config['split']])}, ohne Kalender, Systeme {', '.join(e2_config['event_systems'])}: "
         + "; ".join(
             f"{SERIES_LABELS[series]} ("
-            + ", ".join(f"Tag {day}: {KIND_LABELS[kind]}" for day, kind in events)
+            + (
+                ", ".join(f"Tag {day}: {KIND_LABELS[kind]}" for day, kind in events)
+                or "ohne Ereignis"
+            )
             + ")"
             for series, events in e2_config["event_series"].items()
         )
@@ -245,6 +264,91 @@ def build_classification_event_table(events: pd.DataFrame) -> pd.DataFrame:
             "Klasse": events["classification"],
             "Skala": events["trigger_scale"],
             "richtig": events["correct"].map(YES_NO),
+        }
+    )
+
+
+def build_agreement_table(agreement: RuleAgreement) -> pd.DataFrame:
+    summary = agreement.summary
+
+    return pd.DataFrame(
+        {
+            "Cutover": summary["cutover_date"],
+            "Reihe": summary["series"].map(SERIES_LABELS),
+            "Tage": summary["days"],
+            "Gate offen": summary["gate_open_days"],
+            f"Tage mit anderer Klasse als {RULE_SYSTEM}": summary["deviation_days"],
+            f"Meldungen {RULE_SYSTEM}": summary["rule_notification_days"],
+            f"Meldungen {LLM_SYSTEM}": summary["llm_notification_days"],
+        }
+    )
+
+
+def build_deviation_table(deviations: pd.DataFrame) -> pd.DataFrame:
+    return pd.DataFrame(
+        {
+            "Cutover": deviations["cutover_date"],
+            "Reihe": deviations["series"].map(SERIES_LABELS),
+            "Tag": deviations["days_since_cutover"],
+            "Datum": deviations["analyzed_day"],
+            f"Klasse {RULE_SYSTEM}": deviations["classification_rule"],
+            f"Klasse {LLM_SYSTEM}": deviations["classification_llm"],
+            f"Aktion {RULE_SYSTEM}": deviations["adaption_action_rule"],
+            f"Aktion {LLM_SYSTEM}": deviations["adaption_action_llm"],
+            "LLM-Ausfall": deviations["llm_failed"].map(YES_NO),
+        }
+    )
+
+
+def build_event_deviation_table(deviations: pd.DataFrame) -> pd.DataFrame:
+    return pd.DataFrame(
+        {
+            "System": deviations["config"],
+            "Urlaubstag": deviations["days_since_cutover"],
+            "Datum": deviations["analyzed_day"],
+            f"Klasse {RULE_SYSTEM}": deviations["classification_rule"],
+            "Klasse System": deviations["classification_llm"],
+            f"Aktion {RULE_SYSTEM}": deviations["adaption_action_rule"],
+            "Aktion System": deviations["adaption_action_llm"],
+            "LLM-Ausfall": deviations["llm_failed"].map(YES_NO),
+        }
+    ).sort_values(["System", "Urlaubstag"])
+
+
+def build_answer_check_table(
+    checks: AnswerChecks, target_classification: str
+) -> pd.DataFrame:
+    summary = checks.summary
+
+    return pd.DataFrame(
+        {
+            "Lauf": summary["scenario"],
+            "System": summary["config"],
+            "Antworten": summary["answers"],
+            "Beleg fehlt": summary["unsupported_answers"],
+            "Verstoß im Text": summary["violation_answers"],
+            f"{target_classification}-Antworten": summary["target_answers"],
+            "davon belegt": [
+                f"{supported}/{answers}"
+                for supported, answers in zip(
+                    summary["target_supported_answers"], summary["target_answers"]
+                )
+            ],
+        }
+    )
+
+
+def build_answer_findings_table(checks: AnswerChecks) -> pd.DataFrame:
+    findings = checks.findings
+
+    return pd.DataFrame(
+        {
+            "Lauf": findings["scenario"],
+            "System": findings["config"],
+            "Datum": findings["analyzed_day"],
+            "Klasse": findings["classification"],
+            "Verstoß im Text": findings["violations"],
+            "fehlende Belege": findings["missing_evidence"],
         }
     )
 
@@ -333,6 +437,7 @@ def summarize_event(
             e2_config["ctx_systems"].get(e2_config["counter_ctx"], {})
         ),
         reference_config=e2_config["reference_config"],
+        context_reference_config=e2_config["context_reference_config"],
     )
 
 
@@ -340,6 +445,14 @@ def build_event_tables(
     summary: E2Summary, e2_config: dict, event_id: str
 ) -> dict[str, tuple[str, pd.DataFrame]]:
     target_classification = e2_config["target_classification"]
+    context_reference = e2_config["context_reference_config"]
+    # die Varianten mit Kalender, ctx0 ist die Referenz
+    context_configs = [
+        config
+        for ctx, systems in e2_config["ctx_systems"].items()
+        if ctx != "ctx0"
+        for config in systems
+    ]
 
     return {
         f"key_figures_{event_id}": (
@@ -365,8 +478,21 @@ def build_event_tables(
             ),
         ),
         f"result_forecast_{event_id}": (
-            f"{event_id}: Prognose je Phase",
-            build_forecast_table(summary.forecast),
+            f"{event_id}: Prognose je Phase, gepaart gegen {e2_config['reference_config']}",
+            build_forecast_table(summary.forecast, e2_config["reference_config"]),
+        ),
+        f"result_forecast_context_{event_id}": (
+            f"{event_id}: Prognose je Phase der Varianten mit Kalender, gepaart gegen {context_reference}",
+            build_forecast_table(
+                summary.context_forecast.loc[
+                    summary.context_forecast["config"].isin(context_configs)
+                ],
+                context_reference,
+            ),
+        ),
+        f"result_deviations_{event_id}": (
+            f"{event_id}: Tage mit anderer Klasse als {RULE_SYSTEM}",
+            build_event_deviation_table(summary.deviations),
         ),
     }
 
@@ -394,11 +520,23 @@ def write_full_report(run_directory: Path) -> None:
         for event_id, window in windows.items()
     }
 
-    classification = summarize_classification(
-        pd.read_csv(
-            raw_directory / f"{CLASSIFICATION_FILE}.csv", dtype={"cutover_date": str}
-        ),
-        e2_config["event_series"],
+    series_days = pd.read_csv(
+        raw_directory / f"{CLASSIFICATION_FILE}.csv", dtype={"cutover_date": str}
+    )
+    classification = summarize_classification(series_days, e2_config["event_series"])
+    agreement = summarize_rule_agreement(
+        series_days, rule_system=RULE_SYSTEM, llm_system=LLM_SYSTEM
+    )
+    text_check_config = TextCheckConfig()
+    llm_outputs = read_llm_outputs(raw_directory)
+    checks = summarize_answer_checks(
+        llm_outputs,
+        read_structured_states(raw_directory),
+        target_classification=target_classification,
+        control_words=text_check_config.control_words,
+        number_tolerance=text_check_config.number_tolerance,
+        rounding_step=text_check_config.rounding_step,
+        prompt_numbers=PROMPT_WINDOW_NUMBERS,
     )
 
     output_directory = user_output_directory(run_directory)
@@ -411,8 +549,25 @@ def write_full_report(run_directory: Path) -> None:
             "Einordnung je Ereignis",
             build_classification_event_table(classification),
         ),
+        "result_agreement": (
+            f"Ereignisreihen: Übereinstimmung von {LLM_SYSTEM} mit der Regel {RULE_SYSTEM}, auch ohne Ereignis",
+            build_agreement_table(agreement),
+        ),
+        "result_deviations": (
+            f"Ereignisreihen: Tage, an denen {LLM_SYSTEM} anders einordnet als {RULE_SYSTEM}",
+            build_deviation_table(agreement.deviations),
+        ),
+        "result_answer_checks": (
+            "Belege und Text der LLM-Antworten",
+            build_answer_check_table(checks, target_classification),
+        ),
     }
-    appendix: dict[str, tuple[str, pd.DataFrame]] = {}
+    appendix: dict[str, tuple[str, pd.DataFrame]] = {
+        "result_answer_findings": (
+            "Antworten mit fehlendem Beleg oder Verstoß im Text",
+            build_answer_findings_table(checks),
+        )
+    }
     for event_id, summary in summaries.items():
         build_e2_plot(
             summary.timeline,
@@ -451,7 +606,11 @@ def write_full_report(run_directory: Path) -> None:
             "Gate offen: Einzeltag, Drift (weekly und long_term halten an) oder nur eine anhaltende Skala",
             "Prognose je Phase: Phase und Fehler nach dem Prognosetag. Tagesfehler (Hauptmaß) = Betrag von Prognose-Tagesmittel minus Ist-Tagesmittel, "
             "gemittelt über die Tage. Bias = dasselbe mit Vorzeichen, negativ = Prognose zu niedrig. MAE = mittlerer Stundenfehler",
-            f"Differenzen zu {e2_config['reference_config']}: gepaart am selben Prognosetag, negativ = besser",
+            f"Differenzen gegen {e2_config['reference_config']} bzw. gegen {e2_config['context_reference_config']} (Tabellen mit Kalender): gepaart am selben Prognosetag, negativ = besser",
+            f"Prognosephase nach der Rückkehr: {e2_config['decision_time_margin_after_days']} Tage, so lange dauert es, bis die Urlaubstage aus dem Trainingsfenster von Prophet herausgerollt sind",
+            f"Ereignisreihen ohne Kalender, Kontrolle = unveränderte Daten ohne Ereignis, zählt nicht in die Quote. Tage mit anderer Klasse als {RULE_SYSTEM}: ab der ersten Abweichung sehen die Systeme verschiedene Zustände, spätere Unterschiede können Folgen sein",
+            "Belege: Beleg fehlt = zur Klasse fehlt ein Pfad (peak und low die Richtung, new_pattern die Streaks der anhaltenden Skalen, measurement_error das Flag, absence ein Kalendereintrag, der im State steht). Verstoß im Text = Steuerung, Preis oder Tarif, Zahl oder Uhrzeit, die nicht im State steht",
+            "Die Belegprüfung sagt nichts über die Wahrheit des Textes, Passung zur Klasse bewerten Personen (explanation_ratings_template.csv)",
             "ctx0 ohne, ctx1 mit Kalender im State, ctx2 Kalender per Tool. SYS1 und SYS2 lesen keinen Kalender und laufen nur in ctx0",
             f"Kalendereinträge als Freitext aus calendar_events.json, im Gegenfall {e2_config['counter_ctx']} steht zu denselben Zeiten nur "
             f"ein Eintrag, der keine Abwesenheit meint. Dort ist jedes {target_classification} falsch und zählt als {target_classification} ohne Beleg",
@@ -463,7 +622,7 @@ def write_full_report(run_directory: Path) -> None:
         decimals=STANDARD_CONFIG.decimals,
         appendix=appendix,
     )
-    write_explanation_rating_template(read_llm_outputs(raw_directory), output_directory)
+    write_explanation_rating_template(llm_outputs, output_directory)
 
     print(f"Result written to {output_directory / 'ergebnis.md'}")
 

@@ -8,6 +8,7 @@ from experiments.common.evaluation import (
     days_since_event,
     pair_with_control,
     spread_over_repeats,
+    streak_scale_names,
     summarize_event_response,
     summarize_latency,
 )
@@ -157,3 +158,18 @@ def test_latency_per_call() -> None:
     assert latency["rule_seconds_per_day"] == pytest.approx(10.0)
     assert latency["extra_seconds"] == pytest.approx(60.0)
     assert latency["extra_seconds_per_call"] == pytest.approx(30.0)
+
+
+def test_streak_scale_names_use_the_sustained_scales():
+    hits = pd.DataFrame(
+        {
+            "weekly_sustained": [True, False, True],
+            "long_term_sustained": [True, True, False],
+        }
+    )
+
+    assert streak_scale_names(hits).tolist() == [
+        "weekly+long_term",
+        "long_term",
+        "weekly",
+    ]

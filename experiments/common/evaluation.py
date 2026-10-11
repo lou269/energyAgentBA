@@ -13,11 +13,12 @@ from experiments.common.standard_config import (
     ANALYSIS_CONFIG,
 )
 from src.common.timestamps import local_day_index
+from src.evaluation.consistency import missing_evidence_paths
 from src.evaluation.text_check import (
     collect_state_values,
     find_violations,
 )
-from src.structured_state.structured_state_schema import SCALE_NAMES
+from src.structured_state.structured_state_schema import SCALE_NAMES, StructuredState
 
 # Phase über das ganze Fenster, zusätzlich zu vor/ab Cutover
 ALL_DAYS = "all_days"
@@ -108,9 +109,13 @@ def merge_cycle_days(summary: pd.DataFrame, anomaly: pd.DataFrame) -> pd.DataFra
 
 
 def join_scale_names(flags: pd.DataFrame, separator: str) -> list[str]:
-    # je Zeile die Skalen, deren Flag gesetzt ist, in der Reihenfolge von SCALE_NAMES
+    # je Zeile die Skalen, deren Flag gesetzt ist, die Spalten folgen level_shift_scales
     return [
-        separator.join(scale for scale, flag in zip(SCALE_NAMES, row) if flag)
+        separator.join(
+            scale
+            for scale, flag in zip(ANALYSIS_CONFIG.level_shift_scales, row)
+            if flag
+        )
         for row in flags.itertuples(index=False)
     ]
 
@@ -314,9 +319,7 @@ def list_events(events: list | tuple) -> pd.DataFrame:
             "kind": [kind for _, kind in events],
             "start_day": [day for day, _ in events],
             "first_day": [day + FIRST_ANALYZED_DAY for day, _ in events],
-            "expected": [
-                GOLDSTANDARD_EXPECTED[kind.partition("_")[0]] for _, kind in events
-            ],
+            "expected": [GOLDSTANDARD_EXPECTED[kind] for _, kind in events],
         }
     )
 
@@ -456,6 +459,84 @@ def check_answer_text(
     )
 
     return "; ".join(f"{item.kind}: {item.found}" for item in violations)
+
+
+def check_answer(
+    answer: pd.Series,
+    state: StructuredState,
+    *,
+    control_words: Collection[str],
+    number_tolerance: float,
+    rounding_step: float,
+    prompt_numbers: Collection[float],
+) -> tuple[str, str]:
+    """Textprüfung und Belegprüfung einer Antwort: Verstöße im Text und die Pfade, die zur Klasse fehlen, je als Text, leer = nichts gefunden"""
+    text = " ".join(
+        answer[column]
+        for column in ["explanation", "user_recommendation", "uncertainty"]
+    )
+    violations = check_answer_text(
+        text,
+        state,
+        control_words=control_words,
+        number_tolerance=number_tolerance,
+        rounding_step=rounding_step,
+        prompt_numbers=prompt_numbers,
+    )
+    missing = missing_evidence_paths(
+        answer["classification"], answer["evidence_paths"].split(";"), state
+    )
+
+    return violations, "; ".join(missing)
+
+
+def attach_states(outputs: pd.DataFrame, states: pd.DataFrame) -> pd.DataFrame:
+    """LLM-Antworten neben dem State des Tages, verbunden über Szenario, System und Zeitpunkt in UTC. Die Ausgabe schreibt UTC, der State die lokale Zeit mit Offset"""
+    return outputs.assign(
+        time=pd.to_datetime(outputs["decision_time"], utc=True)
+    ).merge(
+        states.assign(time=pd.to_datetime(states["decision_time"], utc=True))[
+            ["scenario", "config", "time", "state"]
+        ],
+        on=["scenario", "config", "time"],
+    )
+
+
+def list_deviation_days(
+    results: pd.DataFrame,
+    keys: list[str],
+    extra_columns: list[str],
+    *,
+    rule_system: str,
+    llm_system: str,
+) -> pd.DataFrame:
+    """Die Tage, an denen das LLM-System eine andere Klasse hat als die Regel oder ausgefallen ist, je Zeile Klasse und Adaption beider. keys nennt die Läufe, in denen gepaart wird (mit days_since_cutover), extra_columns kommen von der Regel dazu"""
+    decision_columns = ["classification", "adaption_action", "error"]
+    joined = results.loc[
+        results["config"].eq(rule_system),
+        keys + ["days_since_cutover"] + extra_columns + decision_columns,
+    ].merge(
+        results.loc[
+            results["config"].eq(llm_system),
+            keys + ["days_since_cutover"] + decision_columns,
+        ],
+        on=keys + ["days_since_cutover"],
+        suffixes=("_rule", "_llm"),
+    )
+    llm_failed = joined["error_llm"].notna()
+    differs = (
+        joined["classification_rule"]
+        .fillna("")
+        .ne(joined["classification_llm"].fillna(""))
+        | llm_failed
+    )
+
+    return (
+        joined.assign(llm_failed=llm_failed)
+        .loc[differs]
+        .drop(columns=["error_rule", "error_llm"])
+        .reset_index(drop=True)
+    )
 
 
 def summarize_scenario_real_data(
