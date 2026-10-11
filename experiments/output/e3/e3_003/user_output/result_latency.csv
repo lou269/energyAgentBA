@@ -1,0 +1,11 @@
+Cutover,Reihe,Tage,SYS1 je Tag [s],LLM-Aufrufe,Ausfalltage,Mehrlaufzeit gegen SYS1 [s],je Aufruf [s]
+2015-02-12,Kontrolllauf,101,0.1,33,0,632.8,19.2
+2015-05-24,Kontrolllauf,101,0.1,15,0,291.1,19.4
+2015-02-12,Rampe hoch,101,0.1,53,0,950.8,17.9
+2015-05-24,Rampe hoch,101,0.1,40,0,714.4,17.9
+2015-02-12,Rampe runter,101,0.1,39,0,698.7,17.9
+2015-05-24,Rampe runter,101,0.1,30,0,541.2,18.0
+2015-02-12,Sprung hoch,101,0.1,34,0,647.5,19.0
+2015-05-24,Sprung hoch,101,0.1,24,0,437.9,18.2
+2015-02-12,Sprung runter,101,0.1,40,0,723.9,18.1
+2015-05-24,Sprung runter,101,0.1,18,0,340.9,18.9
