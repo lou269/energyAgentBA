@@ -57,15 +57,15 @@ class StandardScenarioConfig:
     cutover_dates: dict[str, dict[str, str]] = field(
         default_factory=lambda: {
             "validation": {
-                "CO1": "2014-07-31",  # Spätsommer, steigt um 12 %
-                "CO2": "2015-02-12",  # Winterende, fällt um 9 %
-                "CO3": "2015-05-24",  # Frühsommer, fällt um 7 %
-                "CO4": "2015-09-26",  # Herbstbeginn, kaum Trend
-                "CO5": "2016-01-12",  # Winter nach Neujahr, fällt um 5 %
+                "CO1": "2014-07-31",  # Spätsommer
+                "CO2": "2015-02-12",  # Winterende
+                "CO3": "2015-05-24",  # Frühsommer
+                "CO4": "2015-09-26",  # Herbstbeginn
+                "CO5": "2016-01-12",  # Winteranfang
             },
             "test": {
-                "CO6": "2016-12-02",  # Winteranfang, nach dem Niveauwechsel von Mitte Oktober
-                "CO7": "2017-02-20",  # Winterende, ohne echtes Ereignis
+                "CO6": "2016-12-02",  # Winteranfang
+                "CO7": "2017-02-20",  # Winterende
             },
         }
     )

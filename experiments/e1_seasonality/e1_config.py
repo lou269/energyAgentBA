@@ -42,14 +42,8 @@ class E1Config:
                 "CO5": BOTH_DIRECTIONS,
             },
             "test": {
-                "CO6": ("control", "scaled", "peak", "ramp_28", "ramp_56"),
-                "CO7": (
-                    "control",
-                    "scaled_down",
-                    "peak",
-                    "ramp_28_down",
-                    "ramp_56_down",
-                ),
+                "CO6": BOTH_DIRECTIONS,
+                "CO7": BOTH_DIRECTIONS,
             },
         }
     )
