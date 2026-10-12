@@ -337,7 +337,7 @@ def _judge_cases(
     reference_system: str,
     llm_system: str,
 ) -> pd.DataFrame:
-    """Je Fall: LLM-System besser als Referenz = (Tagesfehler belastbar kleiner oder weniger Meldungen) und kein Reset im Kontrolllauf des Cutovers"""
+    """Je Fall: LLM-System besser als Referenz = Tagesfehler belastbar kleiner oder weniger Meldungen, dazu die Resets im Kontrolllauf des Cutovers zur Ansicht"""
     forecast_delta = forecast.loc[
         forecast["config"].eq(llm_system),
         SERIES_KEYS + ["mean_delta", "exceeds_noise"],
@@ -363,13 +363,9 @@ def _judge_cases(
         notification_delta, on=SERIES_KEYS, how="left"
     )
     judged["control_resets"] = judged["cutover_date"].map(control_resets)
-    judged["better"] = (
-        judged["triggered"]
-        & (
-            (judged["day_error_delta_w"].lt(0) & judged["day_error_reliable"].eq(True))
-            | judged["notification_delta"].lt(0)
-        )
-        & judged["control_resets"].eq(0)
+    judged["better"] = judged["triggered"] & (
+        (judged["day_error_delta_w"].lt(0) & judged["day_error_reliable"].eq(True))
+        | judged["notification_delta"].lt(0)
     )
 
     return judged

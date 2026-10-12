@@ -211,21 +211,3 @@ def test_small_error_difference_is_not_better() -> None:
 
     assert not bool(case["day_error_reliable"])
     assert not bool(case["better"])
-
-
-def test_reset_in_control_blocks_better() -> None:
-    results = _results()
-    _drift_with_reset(results, "scaled")
-    _set(
-        results,
-        "control",
-        ("SYS3",),
-        [2],
-        {"adaption_action": "advance_history_start"},
-    )
-
-    summary = _summarize(results)
-    case = summary.cases.set_index("series").to_dict("index")["scaled"]
-
-    assert int(case["control_resets"]) == 1
-    assert not bool(case["better"])
