@@ -1,0 +1,14 @@
+\begin{tabular}{lllrrrrl}
+\toprule
+Modus & Modell & Referenz & Differenz [W] & 2 Standardfehler [W] & Tage & Tage besser [\%] & belastbar \\
+\midrule
+rolling & C3\_60 rolling 60 Tage & C2 expanding & 2,0 & 3,4 & 716 & 46,2 & nein \\
+rolling & C3\_30 rolling 30 Tage & C2 expanding & 3,5 & 4,1 & 716 & 46,6 & nein \\
+rolling & C3\_7 rolling 7 Tage & C2 expanding & 10,2 & 5,9 & 716 & 43,3 & ja \\
+rolling & C1 statisch & C2 expanding & 1307,2 & 56,3 & 716 & 0,8 & ja \\
+macro & C3\_60 rolling 60 Tage & C2 expanding & 0,7 & 3,9 & 716 & 48,7 & nein \\
+macro & C3\_30 rolling 30 Tage & C2 expanding & 2,1 & 4,5 & 716 & 47,6 & nein \\
+macro & C3\_7 rolling 7 Tage & C2 expanding & 8,8 & 6,1 & 716 & 46,8 & ja \\
+macro & C1 statisch & C2 expanding & 117,6 & 9,0 & 716 & 16,9 & ja \\
+\bottomrule
+\end{tabular}

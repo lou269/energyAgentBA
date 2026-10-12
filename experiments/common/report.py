@@ -131,6 +131,55 @@ def _rounded(table: pd.DataFrame, decimals: int) -> pd.DataFrame:
     )
 
 
+LATEX_ESCAPES = {
+    "\\": r"\textbackslash{}",
+    "&": r"\&",
+    "%": r"\%",
+    "$": r"\$",
+    "#": r"\#",
+    "_": r"\_",
+    "{": r"\{",
+    "}": r"\}",
+    "^": r"\textasciicircum{}",
+    "−": r"\textminus{}",
+    "×": r"\texttimes{}",
+}
+
+
+def _latex_cell(value: Any, decimals: int) -> str:
+    text = format_number(value, decimals)
+    escaped = "".join(LATEX_ESCAPES.get(char, char) for char in text)
+    if isinstance(value, float) and len(escaped) > 1:
+        escaped = escaped.replace("-", "$-$")
+
+    return escaped
+
+
+def latex_table(table: pd.DataFrame, decimals: int) -> str:
+    alignment = "".join(
+        "r" if pd.api.types.is_numeric_dtype(table[column]) else "l"
+        for column in table.columns
+    )
+    header = " & ".join(_latex_cell(str(column), decimals) for column in table.columns)
+    rows = [
+        " & ".join(_latex_cell(value, decimals) for value in row) + r" \\"
+        for row in table.itertuples(index=False)
+    ]
+    start = [rf"\begin{{tabular}}{{{alignment}}}", r"\toprule", header + r" \\"]
+
+    return "\n".join(start + [r"\midrule"] + rows + [r"\bottomrule", r"\end{tabular}"])
+
+
+def _save_table(
+    output_directory: Path, filename: str, table: pd.DataFrame, decimals: int
+) -> None:
+    # CSV und LaTeX-Tabelle zum Einbinden mit \input, ergebnis.md baut die Markdown-Tabelle selbst
+    df_to_csv(_rounded(table, decimals), output_directory, filename)
+    write_text_atomic(
+        latex_table(table, decimals) + "\n", output_directory / f"{filename}.tex"
+    )
+
+
 def write_result_report(
     output_directory: Path,
     *,
@@ -144,7 +193,7 @@ def write_result_report(
     appendix_text: list[tuple[str, list[str]]] | None = None,
     summary: list[str] | None = None,
 ) -> None:
-    # ergebnis.md plus je Tabelle eine gerundete CSV, tables/appendix bilden Dateiname auf (Überschrift, Tabelle) ab
+    # ergebnis.md plus je Tabelle eine gerundete CSV und eine .tex, tables/appendix bilden Dateiname auf (Überschrift, Tabelle) ab
     lines = [f"# {title}"]
     if summary:
         lines += ["", "## Kurzfassung", ""] + [f"- {line}" for line in summary]
@@ -152,7 +201,7 @@ def write_result_report(
     lines += [f"- {key}: {value}" for key, value in setup.items()]
 
     for filename, (heading, table) in tables.items():
-        df_to_csv(_rounded(table, decimals), output_directory, filename)
+        _save_table(output_directory, filename, table, decimals)
         lines += ["", f"## {heading}", "", markdown_table(table, decimals)]
 
     if notes:
@@ -165,7 +214,7 @@ def write_result_report(
     if appendix or appendix_text:
         lines += ["", "## Anhang"]
         for filename, (heading, table) in (appendix or {}).items():
-            df_to_csv(_rounded(table, decimals), output_directory, filename)
+            _save_table(output_directory, filename, table, decimals)
             lines += ["", f"### {heading}", "", markdown_table(table, decimals)]
         for heading, text_lines in appendix_text or []:
             lines += ["", f"### {heading}", ""] + text_lines
