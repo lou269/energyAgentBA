@@ -1,0 +1,8 @@
+Kennzahl,"C3_60, Kaltstart 7 Tage","C3_60, Kaltstart 60 Tage (Referenz)"
+Prognosefehler gesamt [W],95.4,97.9
+"Prognosefehler gegenüber C1 [W], negativ = besser",-988.1,-106.5
+"Prognosefehler gegenüber B2 [W], negativ = besser",12.3,14.8
+"Falschmeldungen: Tage, an denen nur der kurze Kaltstart meldet",4 von 112,
+"Verpasste Meldungen: Tage, an denen nur der lange Kaltstart meldet",7 von 112,
+Anomalie erkannt: eingebaute Injektionen mit der erwarteten Klasse,13 von 28,17 von 28
+Falsche new_pattern: Läufe mit Reset nur beim kurzen Kaltstart,0 von 30,

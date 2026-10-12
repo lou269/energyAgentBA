@@ -1,0 +1,5 @@
+Bedingung,Prüfung,erfüllt,Wert
+Prognose,"Wochen, in denen der Tagesfehler belastbar über dem des langen Kaltstarts liegt",ja,0.0
+Prognose,"Tagesfehler gegenüber der Baseline in Woche 1 [W], höchstens 0",nein,43.7
+keine Fehlfunktion,"Läufe, in denen nur der kurze Kaltstart zurücksetzt, über alle Tage",ja,0.0
+Erkennung,"Injektionen ab dem Tag mit weekday, die nur der lange Kaltstart erkennt",ja,0.0
