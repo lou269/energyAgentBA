@@ -1,0 +1,73 @@
+Cutover,Reihe,System,Woche ab Reset,Tage,Meldungstage,davon peak,davon new_pattern,davon measurement_error,unknown-Tage,Meldungen je 30 Tage
+2015-02-12,Rampe runter,SYS1 ohne Adaption,1,6,3,0,3,0,0,15.0
+2015-02-12,Rampe runter,SYS1 ohne Adaption,2,7,0,0,0,0,0,0.0
+2015-02-12,Rampe runter,SYS1 ohne Adaption,3,7,3,0,3,0,0,12.9
+2015-02-12,Rampe runter,SYS1 ohne Adaption,4,4,4,0,4,0,0,30.0
+2015-02-12,Rampe runter,SYS3 LLM,1,6,0,0,0,0,0,0.0
+2015-02-12,Rampe runter,SYS3 LLM,2,7,0,0,0,0,0,0.0
+2015-02-12,Rampe runter,SYS3 LLM,3,7,0,0,0,0,0,0.0
+2015-02-12,Rampe runter,SYS3 LLM,4,4,0,0,0,0,0,0.0
+2015-02-12,Sprung hoch,SYS1 ohne Adaption,1,6,6,0,6,0,0,30.0
+2015-02-12,Sprung hoch,SYS1 ohne Adaption,2,7,7,0,7,0,0,30.0
+2015-02-12,Sprung hoch,SYS1 ohne Adaption,3,7,7,0,7,0,0,30.0
+2015-02-12,Sprung hoch,SYS1 ohne Adaption,4,7,0,0,0,0,0,0.0
+2015-02-12,Sprung hoch,SYS1 ohne Adaption,5,7,0,0,0,0,0,0.0
+2015-02-12,Sprung hoch,SYS1 ohne Adaption,6,7,0,0,0,0,0,0.0
+2015-02-12,Sprung hoch,SYS1 ohne Adaption,7,7,0,0,0,0,0,0.0
+2015-02-12,Sprung hoch,SYS1 ohne Adaption,8,3,0,0,0,0,0,0.0
+2015-02-12,Sprung hoch,SYS3 LLM,1,6,0,0,0,0,0,0.0
+2015-02-12,Sprung hoch,SYS3 LLM,2,7,0,0,0,0,0,0.0
+2015-02-12,Sprung hoch,SYS3 LLM,3,7,0,0,0,0,0,0.0
+2015-02-12,Sprung hoch,SYS3 LLM,4,7,1,1,0,0,0,4.3
+2015-02-12,Sprung hoch,SYS3 LLM,5,7,0,0,0,0,0,0.0
+2015-02-12,Sprung hoch,SYS3 LLM,6,7,0,0,0,0,0,0.0
+2015-02-12,Sprung hoch,SYS3 LLM,7,7,1,0,1,0,0,4.3
+2015-02-12,Sprung hoch,SYS3 LLM,8,3,1,1,0,0,0,10.0
+2015-02-12,Sprung runter,SYS1 ohne Adaption,1,6,6,0,6,0,0,30.0
+2015-02-12,Sprung runter,SYS1 ohne Adaption,2,7,4,0,4,0,0,17.1
+2015-02-12,Sprung runter,SYS1 ohne Adaption,3,7,0,0,0,0,0,0.0
+2015-02-12,Sprung runter,SYS1 ohne Adaption,4,7,0,0,0,0,0,0.0
+2015-02-12,Sprung runter,SYS1 ohne Adaption,5,5,0,0,0,0,0,0.0
+2015-02-12,Sprung runter,SYS3 LLM,1,6,0,0,0,0,0,0.0
+2015-02-12,Sprung runter,SYS3 LLM,2,7,0,0,0,0,0,0.0
+2015-02-12,Sprung runter,SYS3 LLM,3,7,0,0,0,0,0,0.0
+2015-02-12,Sprung runter,SYS3 LLM,4,7,0,0,0,0,0,0.0
+2015-02-12,Sprung runter,SYS3 LLM,5,5,2,1,1,0,0,12.0
+2015-05-24,Rampe runter,SYS1 ohne Adaption,1,6,2,1,1,0,0,10.0
+2015-05-24,Rampe runter,SYS1 ohne Adaption,2,7,0,0,0,0,0,0.0
+2015-05-24,Rampe runter,SYS1 ohne Adaption,3,7,0,0,0,0,0,0.0
+2015-05-24,Rampe runter,SYS1 ohne Adaption,4,7,0,0,0,0,0,0.0
+2015-05-24,Rampe runter,SYS1 ohne Adaption,5,7,0,0,0,0,0,0.0
+2015-05-24,Rampe runter,SYS1 ohne Adaption,6,7,0,0,0,0,0,0.0
+2015-05-24,Rampe runter,SYS1 ohne Adaption,7,6,0,0,0,0,0,0.0
+2015-05-24,Rampe runter,SYS3 LLM,1,6,1,1,0,0,0,5.0
+2015-05-24,Rampe runter,SYS3 LLM,2,7,1,1,0,0,0,4.3
+2015-05-24,Rampe runter,SYS3 LLM,3,7,0,0,0,0,0,0.0
+2015-05-24,Rampe runter,SYS3 LLM,4,7,0,0,0,0,0,0.0
+2015-05-24,Rampe runter,SYS3 LLM,5,7,1,1,0,0,0,4.3
+2015-05-24,Rampe runter,SYS3 LLM,6,7,0,0,0,0,0,0.0
+2015-05-24,Rampe runter,SYS3 LLM,7,6,0,0,0,0,0,0.0
+2015-05-24,Sprung hoch,SYS1 ohne Adaption,1,6,0,0,0,0,0,0.0
+2015-05-24,Sprung hoch,SYS1 ohne Adaption,2,7,0,0,0,0,0,0.0
+2015-05-24,Sprung hoch,SYS1 ohne Adaption,3,7,0,0,0,0,0,0.0
+2015-05-24,Sprung hoch,SYS1 ohne Adaption,4,6,0,0,0,0,0,0.0
+2015-05-24,Sprung hoch,SYS3 LLM,1,6,0,0,0,0,0,0.0
+2015-05-24,Sprung hoch,SYS3 LLM,2,7,0,0,0,0,0,0.0
+2015-05-24,Sprung hoch,SYS3 LLM,3,7,0,0,0,0,0,0.0
+2015-05-24,Sprung hoch,SYS3 LLM,4,6,0,0,0,0,0,0.0
+2015-05-24,Sprung runter,SYS1 ohne Adaption,1,6,4,0,4,0,0,20.0
+2015-05-24,Sprung runter,SYS1 ohne Adaption,2,7,0,0,0,0,0,0.0
+2015-05-24,Sprung runter,SYS1 ohne Adaption,3,7,0,0,0,0,0,0.0
+2015-05-24,Sprung runter,SYS1 ohne Adaption,4,7,0,0,0,0,0,0.0
+2015-05-24,Sprung runter,SYS1 ohne Adaption,5,7,0,0,0,0,0,0.0
+2015-05-24,Sprung runter,SYS1 ohne Adaption,6,7,0,0,0,0,0,0.0
+2015-05-24,Sprung runter,SYS1 ohne Adaption,7,7,0,0,0,0,0,0.0
+2015-05-24,Sprung runter,SYS1 ohne Adaption,8,2,0,0,0,0,0,0.0
+2015-05-24,Sprung runter,SYS3 LLM,1,6,1,1,0,0,0,5.0
+2015-05-24,Sprung runter,SYS3 LLM,2,7,0,0,0,0,0,0.0
+2015-05-24,Sprung runter,SYS3 LLM,3,7,1,1,0,0,0,4.3
+2015-05-24,Sprung runter,SYS3 LLM,4,7,1,1,0,0,0,4.3
+2015-05-24,Sprung runter,SYS3 LLM,5,7,1,1,0,0,0,4.3
+2015-05-24,Sprung runter,SYS3 LLM,6,7,1,1,0,0,0,4.3
+2015-05-24,Sprung runter,SYS3 LLM,7,7,0,0,0,0,0,0.0
+2015-05-24,Sprung runter,SYS3 LLM,8,2,0,0,0,0,0,0.0

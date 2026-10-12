@@ -50,7 +50,7 @@ LLM_SYSTEM = "SYS3"
 @dataclass(frozen=True)
 class StandardScenarioConfig:
     decimals: int = 1
-    split: str = "test"
+    split: str = "validation"
     # lokale Kalendertage je Abschnitt, die Kennungen sind über beide Abschnitte fortlaufend
     # validation: Entscheidungstage der Fenster (Überwachung davor bis margin_after_days danach) überlappen sich nicht,
     # test: Entscheidungstage der Fenster überlappen aber nur Überwachung vorher (test zu kurz für 2 nicht überlappennde Fenster)

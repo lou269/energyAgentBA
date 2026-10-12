@@ -1,0 +1,17 @@
+Cutover,Ereignis,System,bewertet an Tag,Klasse,Skala,Meldungen davor,Reset an Tag,nach Trennung
+2015-02-12,"1: Rampe über 28 Tage +20 %, Tag 0",SYS1 ohne Adaption,,,,4,,nein
+2015-02-12,"1: Rampe über 28 Tage +20 %, Tag 0",SYS3 LLM,,,,4,,nein
+2015-02-12,"2: Rampe über 28 Tage −20 %, Tag 0",SYS1 ohne Adaption,36.0,new_pattern,weekly+long_term,0,,nein
+2015-02-12,"2: Rampe über 28 Tage −20 %, Tag 0",SYS3 LLM,36.0,new_pattern,weekly+long_term,0,36.0,nein
+2015-02-12,"3: Sprung +30 %, Tag 0",SYS1 ohne Adaption,9.0,new_pattern,weekly+long_term,1,,nein
+2015-02-12,"3: Sprung +30 %, Tag 0",SYS3 LLM,9.0,new_pattern,weekly+long_term,1,9.0,nein
+2015-02-12,"4: Sprung −30 %, Tag 0",SYS1 ohne Adaption,28.0,new_pattern,weekly+long_term,0,,nein
+2015-02-12,"4: Sprung −30 %, Tag 0",SYS3 LLM,28.0,new_pattern,weekly+long_term,0,28.0,nein
+2015-05-24,"1: Rampe über 28 Tage +20 %, Tag 0",SYS1 ohne Adaption,,,,4,,ja
+2015-05-24,"1: Rampe über 28 Tage +20 %, Tag 0",SYS3 LLM,,,,4,,ja
+2015-05-24,"2: Rampe über 28 Tage −20 %, Tag 0",SYS1 ohne Adaption,13.0,new_pattern,weekly+long_term,0,,ja
+2015-05-24,"2: Rampe über 28 Tage −20 %, Tag 0",SYS3 LLM,13.0,new_pattern,weekly+long_term,0,13.0,ja
+2015-05-24,"3: Sprung +30 %, Tag 0",SYS1 ohne Adaption,34.0,new_pattern,weekly+long_term,4,,ja
+2015-05-24,"3: Sprung +30 %, Tag 0",SYS3 LLM,34.0,new_pattern,weekly+long_term,4,34.0,ja
+2015-05-24,"4: Sprung −30 %, Tag 0",SYS1 ohne Adaption,12.0,new_pattern,weekly+long_term,0,,ja
+2015-05-24,"4: Sprung −30 %, Tag 0",SYS3 LLM,10.0,new_pattern,weekly,0,10.0,ja
