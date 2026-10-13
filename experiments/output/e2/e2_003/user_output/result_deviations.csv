@@ -1,0 +1,70 @@
+Cutover,Reihe,Tag,Datum,Klasse SYS2,Klasse SYS3,Aktion SYS2,Aktion SYS3,LLM-Ausfall
+2016-12-02,Kontrolle,-40,2016-10-22,low,normal,none,none,nein
+2016-12-02,Kontrolle,-39,2016-10-23,low,normal,none,none,nein
+2016-12-02,Sprung hoch,-40,2016-10-22,low,normal,none,none,nein
+2016-12-02,Sprung hoch,-39,2016-10-23,low,normal,none,none,nein
+2016-12-02,Sprung hoch,25,2016-12-26,peak,normal,none,none,nein
+2016-12-02,Sprung hoch,58,2017-01-28,low,new_pattern,none,advance_history_start,nein
+2016-12-02,Sprung runter,-40,2016-10-22,low,normal,none,none,nein
+2016-12-02,Sprung runter,-39,2016-10-23,low,normal,none,none,nein
+2016-12-02,Sprung runter,31,2017-01-01,peak,normal,none,none,nein
+2016-12-02,Rampe hoch,-40,2016-10-22,low,normal,none,none,nein
+2016-12-02,Rampe hoch,-39,2016-10-23,low,normal,none,none,nein
+2016-12-02,Rampe hoch,17,2016-12-18,low,new_pattern,none,advance_history_start,nein
+2016-12-02,Rampe hoch,21,2016-12-22,peak,normal,none,none,nein
+2016-12-02,Rampe hoch,25,2016-12-26,peak,normal,none,none,nein
+2016-12-02,Rampe hoch,26,2016-12-27,low,normal,none,none,nein
+2016-12-02,Rampe hoch,27,2016-12-28,low,normal,none,none,nein
+2016-12-02,Rampe hoch,28,2016-12-29,low,normal,none,none,nein
+2016-12-02,Rampe hoch,29,2016-12-30,low,normal,none,none,nein
+2016-12-02,Rampe hoch,35,2017-01-05,peak,normal,none,none,nein
+2016-12-02,Rampe hoch,40,2017-01-10,new_pattern,normal,advance_history_start,none,nein
+2016-12-02,Rampe hoch,43,2017-01-13,normal,peak,none,none,nein
+2016-12-02,Rampe hoch,44,2017-01-14,peak,normal,none,none,nein
+2016-12-02,Rampe hoch,46,2017-01-16,normal,peak,none,none,nein
+2016-12-02,Rampe hoch,47,2017-01-17,normal,peak,none,none,nein
+2016-12-02,Rampe hoch,49,2017-01-19,low,normal,none,none,nein
+2016-12-02,Rampe hoch,51,2017-01-21,low,normal,none,none,nein
+2016-12-02,Rampe hoch,57,2017-01-27,low,normal,none,none,nein
+2016-12-02,Rampe hoch,60,2017-01-30,peak,normal,none,none,nein
+2016-12-02,Rampe runter,-40,2016-10-22,low,normal,none,none,nein
+2016-12-02,Rampe runter,-39,2016-10-23,low,normal,none,none,nein
+2016-12-02,Rampe runter,51,2017-01-21,low,normal,none,none,nein
+2016-12-02,Spitzen,-40,2016-10-22,low,normal,none,none,nein
+2016-12-02,Spitzen,-39,2016-10-23,low,normal,none,none,nein
+2016-12-02,Festhänger,-40,2016-10-22,low,normal,none,none,nein
+2016-12-02,Festhänger,-39,2016-10-23,low,normal,none,none,nein
+2016-12-02,Festhänger,32,2017-01-02,normal,new_pattern,none,advance_history_start,nein
+2016-12-02,Festhänger,33,2017-01-03,normal,peak,none,none,nein
+2016-12-02,Festhänger,38,2017-01-08,normal,peak,none,none,nein
+2016-12-02,Festhänger,40,2017-01-10,normal,low,none,none,nein
+2016-12-02,Festhänger,46,2017-01-16,peak,normal,none,none,nein
+2016-12-02,Festhänger,51,2017-01-21,normal,low,none,none,nein
+2016-12-02,Festhänger,52,2017-01-22,peak,normal,none,none,nein
+2017-02-20,Sprung runter,11,2017-03-02,normal,new_pattern,none,advance_history_start,nein
+2017-02-20,Sprung runter,12,2017-03-03,new_pattern,normal,advance_history_start,none,nein
+2017-02-20,Sprung runter,26,2017-03-17,low,normal,none,none,nein
+2017-02-20,Rampe hoch,26,2017-03-17,low,normal,none,none,nein
+2017-02-20,Rampe hoch,34,2017-03-25,low,normal,none,none,nein
+2017-01-13,Sprung hoch,15,2017-01-27,low,normal,none,none,nein
+2017-01-13,Sprung hoch,16,2017-01-28,low,normal,none,none,nein
+2017-01-13,Sprung hoch,36,2017-02-17,normal,new_pattern,none,advance_history_start,nein
+2017-01-13,Sprung hoch,37,2017-02-18,normal,peak,none,none,nein
+2017-01-13,Sprung hoch,38,2017-02-19,normal,peak,none,none,nein
+2017-01-13,Sprung hoch,39,2017-02-20,normal,peak,none,none,nein
+2017-01-13,Sprung hoch,40,2017-02-21,normal,peak,none,none,nein
+2017-01-13,Sprung hoch,41,2017-02-22,normal,peak,none,none,nein
+2017-01-13,Sprung hoch,54,2017-03-07,peak,normal,none,none,nein
+2017-01-13,Sprung runter,33,2017-02-14,low,new_pattern,none,advance_history_start,nein
+2017-01-13,Sprung runter,34,2017-02-15,low,peak,none,none,nein
+2017-01-13,Sprung runter,35,2017-02-16,new_pattern,normal,advance_history_start,none,nein
+2017-01-13,Sprung runter,39,2017-02-20,peak,normal,none,none,nein
+2017-01-13,Rampe hoch,16,2017-01-28,low,new_pattern,none,advance_history_start,nein
+2017-01-13,Rampe hoch,17,2017-01-29,new_pattern,normal,advance_history_start,none,nein
+2017-01-13,Rampe hoch,30,2017-02-11,low,normal,none,none,nein
+2017-01-13,Rampe hoch,33,2017-02-14,low,normal,none,none,nein
+2017-01-13,Spitzen,16,2017-01-28,low,new_pattern,none,advance_history_start,nein
+2017-01-13,Spitzen,17,2017-01-29,new_pattern,normal,advance_history_start,none,nein
+2017-01-13,Spitzen,21,2017-02-02,peak,normal,none,none,nein
+2017-01-13,Spitzen,34,2017-02-15,low,normal,none,none,nein
+2017-01-13,Spitzen,56,2017-03-09,low,normal,none,none,nein

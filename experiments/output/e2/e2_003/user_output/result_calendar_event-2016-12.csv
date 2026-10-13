@@ -1,0 +1,19 @@
+System,Phase,eingeordnete Tage,davon Kalender im State
+SYS1,vor dem Urlaub,7,0
+SYS1,Urlaub,10,0
+SYS1,nach der Rückkehr,46,0
+SYS2,vor dem Urlaub,7,0
+SYS2,Urlaub,9,0
+SYS2,nach der Rückkehr,36,0
+SYS3_CTX0,vor dem Urlaub,7,0
+SYS3_CTX0,Urlaub,8,0
+SYS3_CTX0,nach der Rückkehr,34,0
+SYS3_CTX1,vor dem Urlaub,7,7
+SYS3_CTX1,Urlaub,13,13
+SYS3_CTX1,nach der Rückkehr,26,26
+SYS3_CTX1_VISIT,vor dem Urlaub,7,7
+SYS3_CTX1_VISIT,Urlaub,13,13
+SYS3_CTX1_VISIT,nach der Rückkehr,26,26
+SYS3_CTX2,vor dem Urlaub,7,3
+SYS3_CTX2,Urlaub,13,13
+SYS3_CTX2,nach der Rückkehr,26,14

@@ -1,0 +1,91 @@
+Reihe,Ereignis,System,erwartet,bewertet an Tag,Klasse,Skala,richtig
+Spitzen,"1: Spitze +1000 W über 6 h, Tag 0",SYS1 ohne Adaption,peak,,,,
+Spitzen,"1: Spitze +1000 W über 6 h, Tag 0",SYS1 ohne Adaption,peak,1.0,peak,weekday,ja
+Spitzen,"1: Spitze +1000 W über 6 h, Tag 0",SYS1 ohne Adaption,peak,1.0,peak,weekday,ja
+Spitzen,"1: Spitze +1000 W über 6 h, Tag 0",SYS2 Regel,peak,,,,
+Spitzen,"1: Spitze +1000 W über 6 h, Tag 0",SYS2 Regel,peak,1.0,peak,weekday,ja
+Spitzen,"1: Spitze +1000 W über 6 h, Tag 0",SYS2 Regel,peak,1.0,peak,weekday,ja
+Spitzen,"1: Spitze +1000 W über 6 h, Tag 0",SYS3 LLM,peak,,,,
+Spitzen,"1: Spitze +1000 W über 6 h, Tag 0",SYS3 LLM,peak,1.0,peak,weekday,ja
+Spitzen,"1: Spitze +1000 W über 6 h, Tag 0",SYS3 LLM,peak,1.0,peak,weekday,ja
+Spitzen,"2: Spitze +1000 W über 6 h, Tag 10",SYS1 ohne Adaption,peak,11.0,peak,weekday,ja
+Spitzen,"2: Spitze +1000 W über 6 h, Tag 10",SYS1 ohne Adaption,peak,11.0,peak,weekday,ja
+Spitzen,"2: Spitze +1000 W über 6 h, Tag 10",SYS1 ohne Adaption,peak,11.0,peak,weekday,ja
+Spitzen,"2: Spitze +1000 W über 6 h, Tag 10",SYS2 Regel,peak,11.0,peak,weekday,ja
+Spitzen,"2: Spitze +1000 W über 6 h, Tag 10",SYS2 Regel,peak,11.0,peak,weekday,ja
+Spitzen,"2: Spitze +1000 W über 6 h, Tag 10",SYS2 Regel,peak,11.0,peak,weekday,ja
+Spitzen,"2: Spitze +1000 W über 6 h, Tag 10",SYS3 LLM,peak,11.0,peak,weekday,ja
+Spitzen,"2: Spitze +1000 W über 6 h, Tag 10",SYS3 LLM,peak,11.0,peak,weekday,ja
+Spitzen,"2: Spitze +1000 W über 6 h, Tag 10",SYS3 LLM,peak,11.0,peak,weekday,ja
+Spitzen,"3: Spitze +1000 W über 6 h, Tag 20",SYS1 ohne Adaption,peak,21.0,peak,weekday,ja
+Spitzen,"3: Spitze +1000 W über 6 h, Tag 20",SYS1 ohne Adaption,peak,21.0,peak,weekday,ja
+Spitzen,"3: Spitze +1000 W über 6 h, Tag 20",SYS1 ohne Adaption,peak,21.0,peak,weekday,ja
+Spitzen,"3: Spitze +1000 W über 6 h, Tag 20",SYS2 Regel,peak,21.0,peak,weekday,ja
+Spitzen,"3: Spitze +1000 W über 6 h, Tag 20",SYS2 Regel,peak,21.0,peak,weekday,ja
+Spitzen,"3: Spitze +1000 W über 6 h, Tag 20",SYS2 Regel,peak,21.0,peak,daily,ja
+Spitzen,"3: Spitze +1000 W über 6 h, Tag 20",SYS3 LLM,peak,21.0,peak,weekday,ja
+Spitzen,"3: Spitze +1000 W über 6 h, Tag 20",SYS3 LLM,peak,21.0,peak,weekday,ja
+Spitzen,"3: Spitze +1000 W über 6 h, Tag 20",SYS3 LLM,peak,,,,
+Rampe hoch,"1: Rampe über 28 Tage +30 %, Tag 0",SYS1 ohne Adaption,new_pattern,40.0,new_pattern,weekly+long_term,ja
+Rampe hoch,"1: Rampe über 28 Tage +30 %, Tag 0",SYS1 ohne Adaption,new_pattern,35.0,new_pattern,weekly+long_term,ja
+Rampe hoch,"1: Rampe über 28 Tage +30 %, Tag 0",SYS1 ohne Adaption,new_pattern,17.0,new_pattern,weekly+long_term,ja
+Rampe hoch,"1: Rampe über 28 Tage +30 %, Tag 0",SYS2 Regel,new_pattern,40.0,new_pattern,weekly+long_term,ja
+Rampe hoch,"1: Rampe über 28 Tage +30 %, Tag 0",SYS2 Regel,new_pattern,35.0,new_pattern,weekly+long_term,ja
+Rampe hoch,"1: Rampe über 28 Tage +30 %, Tag 0",SYS2 Regel,new_pattern,17.0,new_pattern,weekly+long_term,ja
+Rampe hoch,"1: Rampe über 28 Tage +30 %, Tag 0",SYS3 LLM,new_pattern,17.0,new_pattern,weekly,ja
+Rampe hoch,"1: Rampe über 28 Tage +30 %, Tag 0",SYS3 LLM,new_pattern,35.0,new_pattern,weekly+long_term,ja
+Rampe hoch,"1: Rampe über 28 Tage +30 %, Tag 0",SYS3 LLM,new_pattern,16.0,new_pattern,weekly,ja
+Rampe runter,"1: Rampe über 28 Tage −30 %, Tag 0",SYS1 ohne Adaption,new_pattern,28.0,new_pattern,weekly+long_term,ja
+Rampe runter,"1: Rampe über 28 Tage −30 %, Tag 0",SYS1 ohne Adaption,new_pattern,56.0,new_pattern,weekly+long_term,ja
+Rampe runter,"1: Rampe über 28 Tage −30 %, Tag 0",SYS1 ohne Adaption,new_pattern,38.0,new_pattern,weekly+long_term,ja
+Rampe runter,"1: Rampe über 28 Tage −30 %, Tag 0",SYS2 Regel,new_pattern,28.0,new_pattern,weekly+long_term,ja
+Rampe runter,"1: Rampe über 28 Tage −30 %, Tag 0",SYS2 Regel,new_pattern,56.0,new_pattern,weekly+long_term,ja
+Rampe runter,"1: Rampe über 28 Tage −30 %, Tag 0",SYS2 Regel,new_pattern,38.0,new_pattern,weekly+long_term,ja
+Rampe runter,"1: Rampe über 28 Tage −30 %, Tag 0",SYS3 LLM,new_pattern,28.0,new_pattern,weekly+long_term,ja
+Rampe runter,"1: Rampe über 28 Tage −30 %, Tag 0",SYS3 LLM,new_pattern,56.0,new_pattern,weekly+long_term,ja
+Rampe runter,"1: Rampe über 28 Tage −30 %, Tag 0",SYS3 LLM,new_pattern,38.0,new_pattern,weekly+long_term,ja
+Sprung hoch,"1: Sprung +30 %, Tag 0",SYS1 ohne Adaption,new_pattern,,,,
+Sprung hoch,"1: Sprung +30 %, Tag 0",SYS1 ohne Adaption,new_pattern,,,,
+Sprung hoch,"1: Sprung +30 %, Tag 0",SYS1 ohne Adaption,new_pattern,14.0,new_pattern,weekly+long_term,ja
+Sprung hoch,"1: Sprung +30 %, Tag 0",SYS2 Regel,new_pattern,,,,
+Sprung hoch,"1: Sprung +30 %, Tag 0",SYS2 Regel,new_pattern,,,,
+Sprung hoch,"1: Sprung +30 %, Tag 0",SYS2 Regel,new_pattern,14.0,new_pattern,weekly+long_term,ja
+Sprung hoch,"1: Sprung +30 %, Tag 0",SYS3 LLM,new_pattern,58.0,new_pattern,weekly,ja
+Sprung hoch,"1: Sprung +30 %, Tag 0",SYS3 LLM,new_pattern,,,,
+Sprung hoch,"1: Sprung +30 %, Tag 0",SYS3 LLM,new_pattern,14.0,new_pattern,weekly+long_term,ja
+Sprung runter,"1: Sprung −30 %, Tag 0",SYS1 ohne Adaption,new_pattern,18.0,new_pattern,weekly+long_term,ja
+Sprung runter,"1: Sprung −30 %, Tag 0",SYS1 ohne Adaption,new_pattern,12.0,new_pattern,weekly+long_term,ja
+Sprung runter,"1: Sprung −30 %, Tag 0",SYS1 ohne Adaption,new_pattern,35.0,new_pattern,weekly+long_term,ja
+Sprung runter,"1: Sprung −30 %, Tag 0",SYS2 Regel,new_pattern,18.0,new_pattern,weekly+long_term,ja
+Sprung runter,"1: Sprung −30 %, Tag 0",SYS2 Regel,new_pattern,12.0,new_pattern,weekly+long_term,ja
+Sprung runter,"1: Sprung −30 %, Tag 0",SYS2 Regel,new_pattern,35.0,new_pattern,weekly+long_term,ja
+Sprung runter,"1: Sprung −30 %, Tag 0",SYS3 LLM,new_pattern,18.0,new_pattern,weekly+long_term,ja
+Sprung runter,"1: Sprung −30 %, Tag 0",SYS3 LLM,new_pattern,11.0,new_pattern,long_term,ja
+Sprung runter,"1: Sprung −30 %, Tag 0",SYS3 LLM,new_pattern,33.0,new_pattern,long_term,ja
+Festhänger,"1: Festhänger über 12 h, Tag 0",SYS1 ohne Adaption,measurement_error,1.0,measurement_error,weekday,ja
+Festhänger,"1: Festhänger über 12 h, Tag 0",SYS1 ohne Adaption,measurement_error,1.0,measurement_error,daily,ja
+Festhänger,"1: Festhänger über 12 h, Tag 0",SYS1 ohne Adaption,measurement_error,1.0,measurement_error,weekday,ja
+Festhänger,"1: Festhänger über 12 h, Tag 0",SYS2 Regel,measurement_error,1.0,measurement_error,weekday,ja
+Festhänger,"1: Festhänger über 12 h, Tag 0",SYS2 Regel,measurement_error,1.0,measurement_error,daily,ja
+Festhänger,"1: Festhänger über 12 h, Tag 0",SYS2 Regel,measurement_error,1.0,measurement_error,weekday,ja
+Festhänger,"1: Festhänger über 12 h, Tag 0",SYS3 LLM,measurement_error,1.0,measurement_error,weekday,ja
+Festhänger,"1: Festhänger über 12 h, Tag 0",SYS3 LLM,measurement_error,1.0,measurement_error,daily,ja
+Festhänger,"1: Festhänger über 12 h, Tag 0",SYS3 LLM,measurement_error,1.0,measurement_error,weekday,ja
+Festhänger,"2: Festhänger über 12 h, Tag 10",SYS1 ohne Adaption,measurement_error,11.0,measurement_error,weekday,ja
+Festhänger,"2: Festhänger über 12 h, Tag 10",SYS1 ohne Adaption,measurement_error,11.0,measurement_error,weekday,ja
+Festhänger,"2: Festhänger über 12 h, Tag 10",SYS1 ohne Adaption,measurement_error,11.0,measurement_error,weekday,ja
+Festhänger,"2: Festhänger über 12 h, Tag 10",SYS2 Regel,measurement_error,11.0,measurement_error,weekday,ja
+Festhänger,"2: Festhänger über 12 h, Tag 10",SYS2 Regel,measurement_error,11.0,measurement_error,weekday,ja
+Festhänger,"2: Festhänger über 12 h, Tag 10",SYS2 Regel,measurement_error,11.0,measurement_error,weekday,ja
+Festhänger,"2: Festhänger über 12 h, Tag 10",SYS3 LLM,measurement_error,11.0,measurement_error,weekday,ja
+Festhänger,"2: Festhänger über 12 h, Tag 10",SYS3 LLM,measurement_error,11.0,measurement_error,weekday,ja
+Festhänger,"2: Festhänger über 12 h, Tag 10",SYS3 LLM,measurement_error,11.0,measurement_error,weekday,ja
+Festhänger,"3: Festhänger über 12 h, Tag 17",SYS1 ohne Adaption,measurement_error,18.0,measurement_error,daily,ja
+Festhänger,"3: Festhänger über 12 h, Tag 17",SYS1 ohne Adaption,measurement_error,18.0,measurement_error,weekday,ja
+Festhänger,"3: Festhänger über 12 h, Tag 17",SYS1 ohne Adaption,measurement_error,18.0,measurement_error,weekday,ja
+Festhänger,"3: Festhänger über 12 h, Tag 17",SYS2 Regel,measurement_error,18.0,measurement_error,daily,ja
+Festhänger,"3: Festhänger über 12 h, Tag 17",SYS2 Regel,measurement_error,18.0,measurement_error,weekday,ja
+Festhänger,"3: Festhänger über 12 h, Tag 17",SYS2 Regel,measurement_error,18.0,measurement_error,weekday,ja
+Festhänger,"3: Festhänger über 12 h, Tag 17",SYS3 LLM,measurement_error,18.0,measurement_error,daily,ja
+Festhänger,"3: Festhänger über 12 h, Tag 17",SYS3 LLM,measurement_error,18.0,measurement_error,weekday,ja
+Festhänger,"3: Festhänger über 12 h, Tag 17",SYS3 LLM,measurement_error,18.0,measurement_error,weekday,ja
