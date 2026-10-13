@@ -44,6 +44,7 @@ class E1Config:
             "test": {
                 "CO6": BOTH_DIRECTIONS,
                 "CO7": BOTH_DIRECTIONS,
+                "CO8": BOTH_DIRECTIONS,
             },
         }
     )

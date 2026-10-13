@@ -25,6 +25,7 @@ from experiments.common.standard_config import (
     NOTIFICATION_CLASSIFICATIONS,
     NOTIFICATION_PERIOD_DAYS,
     RULE_SYSTEM,
+    SUSTAINED_CLASSIFICATION,
 )
 
 
@@ -174,6 +175,106 @@ def summarize_rule_agreement(
         ).reset_index(),
         deviations=deviations,
     )
+
+
+@dataclass(frozen=True)
+class FalseAlarms:
+    resets: pd.DataFrame
+    notifications: pd.DataFrame
+
+
+def summarize_false_alarms(
+    results: pd.DataFrame,
+    event_series: Mapping[str, tuple[tuple[int, str], ...]],
+    *,
+    rule_system: str,
+    llm_system: str,
+) -> FalseAlarms:
+    """Über alle Cutover der Ereignisreihen, je Reihe und alle zusammen.
+    resets: in den Reihen, in denen kein Ereignis einen Reset verlangt (Kontrolle, Spitzen, Festhänger), die Tage, die Resets der Regel, die des LLM-Systems und davon falsch: der Reset des LLM-Systems an einem Tag, an dem die Regel nicht zurücksetzt.
+    notifications: je System die Tage außerhalb der Ereignisse und die Meldungen darauf. Ein Einzeltag-Ereignis zählt nur an seinem ersten Einordnungstag, ein anhaltendes von dort an
+    """
+    days = add_days_since_cutover(results).rename(columns={"kind": "series"})
+    order = list(event_series) + [ALL_EVENTS]
+    tables = []
+    resetless = []
+
+    for series, events in event_series.items():
+        event_list = list_events(events)
+        if event_list["expected"].ne(SUSTAINED_CLASSIFICATION).all():
+            resetless.append(series)
+        series_days = days.loc[days["series"].eq(series)]
+        joined = series_days.assign(event=assign_events(series_days, event_list)).merge(
+            event_list, on="event", how="left"
+        )
+        in_event = joined["event"].notna() & (
+            joined["expected"].eq(SUSTAINED_CLASSIFICATION)
+            | joined["days_since_cutover"].eq(joined["first_day"])
+        )
+        tables.append(
+            joined.assign(
+                outside=~in_event,
+                notification=joined["classification"].isin(
+                    NOTIFICATION_CLASSIFICATIONS
+                ),
+                reset=joined["adaption_action"].eq("advance_history_start"),
+            )
+        )
+    flagged = pd.concat(tables, ignore_index=True)
+
+    return FalseAlarms(
+        resets=_count_false_resets(
+            flagged.loc[flagged["series"].isin(resetless)],
+            order,
+            rule_system=rule_system,
+            llm_system=llm_system,
+        ),
+        notifications=_count_notifications_outside(
+            flagged.loc[flagged["outside"]], order
+        ),
+    )
+
+
+def _sort_by_series(
+    counts: pd.DataFrame, keys: list[str], order: list[str]
+) -> pd.DataFrame:
+    counts["series"] = pd.Categorical(counts["series"], order, ordered=True)
+
+    return counts.sort_values(keys).astype({"series": str}).reset_index(drop=True)
+
+
+def _count_false_resets(
+    days: pd.DataFrame, order: list[str], *, rule_system: str, llm_system: str
+) -> pd.DataFrame:
+    keys = ["series", "cutover_date", "days_since_cutover"]
+    paired = days.loc[days["config"].eq(rule_system), keys + ["reset"]].merge(
+        days.loc[days["config"].eq(llm_system), keys + ["reset"]],
+        on=keys,
+        suffixes=("_rule", "_llm"),
+    )
+    paired["false_reset"] = paired["reset_llm"] & paired["reset_rule"].eq(False)
+    counts = (
+        add_overall_rows(paired, "series", ALL_EVENTS)
+        .groupby("series", as_index=False)
+        .agg(
+            days=("series", "size"),
+            rule_reset_days=("reset_rule", "sum"),
+            llm_reset_days=("reset_llm", "sum"),
+            false_reset_days=("false_reset", "sum"),
+        )
+    )
+
+    return _sort_by_series(counts, ["series"], order)
+
+
+def _count_notifications_outside(days: pd.DataFrame, order: list[str]) -> pd.DataFrame:
+    counts = (
+        add_overall_rows(days, "series", ALL_EVENTS)
+        .groupby(["config", "series"], as_index=False)
+        .agg(days=("series", "size"), notification_days=("notification", "sum"))
+    )
+
+    return _sort_by_series(counts, ["config", "series"], order)
 
 
 @dataclass(frozen=True)

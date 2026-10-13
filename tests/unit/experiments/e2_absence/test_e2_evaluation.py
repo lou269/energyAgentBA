@@ -9,6 +9,7 @@ from experiments.e2_absence.e2_evaluation import (
     summarize_answer_checks,
     summarize_classification_rates,
     summarize_e2,
+    summarize_false_alarms,
     summarize_rule_agreement,
 )
 from src.common.sample_structured_state import valid_structured_state
@@ -276,6 +277,52 @@ def test_rule_agreement_lists_the_days_with_another_class_and_counts_notificatio
     assert summary.loc["control", "deviation_days"] == 0
     assert agreement.deviations["days_since_cutover"].tolist() == [3]
     assert agreement.deviations["classification_llm"].tolist() == ["low"]
+
+
+def test_a_reset_is_false_when_the_llm_resets_and_the_rule_does_not() -> None:
+    events = {
+        "control": (),
+        "peaks": ((0, "peak_strong"), (2, "peak_strong")),
+        "scaled": ((0, "scaled_strong"),),
+    }
+    gate = [False, True, False, True, False, False]
+    classes = {
+        "control": ["normal"] * 6,
+        "peaks": ["normal", "peak", "normal", "peak", "peak", "new_pattern"],
+        "scaled": ["normal", "new_pattern", "normal", "normal", "normal", "normal"],
+    }
+    # je Reihe die Tage mit Reset: Regel und LLM
+    reset_days = {
+        "control": ([], [2]),
+        "peaks": ([5], [3, 5]),
+        "scaled": ([1], [1]),
+    }
+    runs = []
+    for series, (rule_days, llm_days) in reset_days.items():
+        for config, days in (("SYS2", rule_days), ("SYS3", llm_days)):
+            run = _classification_run(config, classes[series], gate, kind=series)
+            run.loc[days, "adaption_action"] = "advance_history_start"
+            runs.append(run)
+
+    alarms = summarize_false_alarms(
+        pd.concat(runs, ignore_index=True),
+        events,
+        rule_system="SYS2",
+        llm_system="SYS3",
+    )
+    resets = alarms.resets.set_index("series")
+    notifications = alarms.notifications.set_index(["config", "series"])
+
+    # die Dauerlast verlangt einen Reset, sie zählt nicht mit
+    assert alarms.resets["series"].tolist() == ["control", "peaks", "all"]
+    assert list(resets.loc["control"]) == [6, 0, 1, 1]
+    # der Reset an Tag 5 kommt auch von der Regel, nur Tag 3 ist falsch
+    assert list(resets.loc["peaks"]) == [6, 1, 2, 1]
+    assert list(resets.loc["all"]) == [12, 1, 3, 2]
+    # Tag 1 und 3 sind die Ereignisse der Spitzen, bei der Dauerlast zählt erst Tag 1 dazu
+    assert list(notifications.loc[("SYS2", "peaks")]) == [4, 2]
+    assert list(notifications.loc[("SYS2", "scaled")]) == [1, 0]
+    assert list(notifications.loc[("SYS2", "all")]) == [11, 2]
 
 
 def test_answer_checks_find_missing_evidence_and_words_across_time_zones() -> None:

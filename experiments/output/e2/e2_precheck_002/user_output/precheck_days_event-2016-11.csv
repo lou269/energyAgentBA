@@ -1,0 +1,149 @@
+System,Urlaubstag,Datum,Phase,Tagesmittel [W],erwartet Wochentag [W],z daily,z weekday,z weekly,long_term [%],Streak weekly,Streak long_term,Level,Drift,Einordnung,Adaption
+SYS1,0,2016-11-27,Urlaub,258.7,439.8,-1.5,-2.6,-0.5,4.4,0.0,0.0,unusual,False,low,none
+SYS1,1,2016-11-28,Urlaub,202.3,421.5,-2.2,-3.4,-1.1,2.0,1.0,0.0,unusual,False,low,none
+SYS1,2,2016-11-29,Urlaub,226.3,432.4,-2.0,-3.2,-1.8,3.2,2.0,0.0,unusual,False,low,none
+SYS1,3,2016-11-30,Urlaub,247.3,456.1,-1.8,-3.9,-2.3,0.7,3.0,0.0,unusual,False,low,none
+SYS1,4,2016-12-01,Urlaub,174.8,393.7,-1.7,-3.8,-2.8,-3.0,4.0,0.0,unusual,False,low,none
+SYS1,5,2016-12-02,Urlaub,97.0,368.1,-2.4,-4.6,-3.6,-4.0,5.0,0.0,unusual,False,low,none
+SYS1,6,2016-12-03,Urlaub,104.5,379.0,-2.2,-4.4,-4.6,-3.6,6.0,0.0,unusual,False,low,none
+SYS1,7,2016-12-04,Urlaub,98.8,430.1,-2.3,-4.2,-5.1,-4.7,7.0,0.0,unusual,False,low,none
+SYS1,8,2016-12-05,Urlaub,224.7,420.6,-1.2,-2.5,-5.0,-6.0,7.0,0.0,unusual,False,low,none
+SYS1,9,2016-12-06,Urlaub,191.9,374.9,-1.4,-2.2,-4.9,-12.1,7.0,0.0,normal,False,normal,none
+SYS1,10,2016-12-07,Urlaub,257.5,451.1,-0.8,-2.3,-4.7,-13.9,7.0,0.0,normal,False,normal,none
+SYS1,11,2016-12-08,Urlaub,235.8,383.5,-1.1,-1.5,-4.2,-15.1,7.0,1.0,normal,False,normal,none
+SYS1,12,2016-12-09,Urlaub,177.4,346.2,-1.4,-1.6,-3.7,-18.7,7.0,2.0,normal,False,normal,none
+SYS1,13,2016-12-10,Urlaub,238.3,343.3,-1.1,-1.0,-3.0,-19.2,7.0,3.0,normal,False,normal,none
+SYS1,14,2016-12-11,nach der Rückkehr,460.6,388.8,0.3,0.7,-1.9,-19.4,7.0,4.0,normal,False,normal,none
+SYS1,15,2016-12-12,nach der Rückkehr,364.3,404.9,-0.4,-0.4,-1.4,-22.1,7.0,5.0,normal,False,normal,none
+SYS1,16,2016-12-13,nach der Rückkehr,522.0,299.4,1.3,2.1,-0.7,-22.5,6.0,6.0,normal,True,new_pattern,none
+SYS1,17,2016-12-14,nach der Rückkehr,442.4,390.2,0.6,0.4,-0.3,-20.6,5.0,7.0,normal,False,normal,none
+SYS1,18,2016-12-15,nach der Rückkehr,342.1,370.5,-0.3,-0.3,-0.0,-21.8,4.0,7.0,normal,False,normal,none
+SYS1,19,2016-12-16,nach der Rückkehr,460.1,342.0,0.6,1.0,0.5,-22.2,3.0,7.0,normal,False,normal,none
+SYS1,20,2016-12-17,nach der Rückkehr,498.3,339.3,0.6,1.4,0.9,-22.0,2.0,7.0,normal,False,normal,none
+SYS1,21,2016-12-18,nach der Rückkehr,222.6,388.8,-0.2,-1.5,0.6,-24.2,1.0,7.0,normal,False,normal,none
+SYS1,22,2016-12-19,nach der Rückkehr,447.5,392.1,1.0,0.4,0.7,-24.1,0.0,7.0,normal,False,normal,none
+SYS1,23,2016-12-20,nach der Rückkehr,365.0,380.7,0.0,-0.1,0.5,-26.1,0.0,7.0,normal,False,normal,none
+SYS1,24,2016-12-21,nach der Rückkehr,451.7,390.2,1.0,0.5,0.5,-26.7,0.0,7.0,normal,False,normal,none
+SYS1,25,2016-12-22,nach der Rückkehr,517.0,354.0,1.2,1.2,0.8,-26.1,0.0,7.0,normal,False,normal,none
+SYS1,26,2016-12-23,nach der Rückkehr,390.1,342.0,-0.2,0.4,0.7,-26.4,0.0,7.0,normal,False,normal,none
+SYS1,27,2016-12-24,nach der Rückkehr,400.2,341.8,0.1,0.5,0.5,-27.8,0.0,7.0,normal,False,normal,none
+SYS1,28,2016-12-25,nach der Rückkehr,328.0,388.8,-0.7,-0.5,0.7,-26.0,0.0,7.0,normal,False,normal,none
+SYS1,29,2016-12-26,nach der Rückkehr,387.9,404.9,1.9,-0.1,0.6,-22.8,0.0,7.0,normal,False,normal,none
+SYS1,30,2016-12-27,nach der Rückkehr,139.6,401.6,-1.8,-2.2,0.2,-22.9,0.0,7.0,normal,False,normal,none
+SYS1,31,2016-12-28,nach der Rückkehr,118.4,435.8,-1.8,-2.9,-0.3,-22.5,0.0,7.0,unusual,False,low,none
+SYS1,32,2016-12-29,nach der Rückkehr,127.0,370.5,-1.8,-2.2,-0.9,-20.7,0.0,7.0,normal,False,normal,none
+SYS1,33,2016-12-30,nach der Rückkehr,132.6,367.8,-1.2,-2.0,-1.4,-18.5,1.0,7.0,normal,False,normal,none
+SYS1,34,2016-12-31,nach der Rückkehr,399.5,373.0,0.8,0.2,-1.4,-13.8,2.0,6.0,normal,False,normal,none
+SYS1,35,2017-01-01,nach der Rückkehr,611.7,347.9,2.7,2.1,-0.9,-6.5,2.0,5.0,unusual,False,peak,none
+SYS1,36,2017-01-02,nach der Rückkehr,368.8,392.1,0.8,-0.2,-1.0,-3.4,2.0,4.0,normal,False,normal,none
+SYS1,37,2017-01-03,nach der Rückkehr,402.0,401.6,0.8,0.0,-0.6,3.4,2.0,3.0,normal,False,normal,none
+SYS1,38,2017-01-04,nach der Rückkehr,425.4,390.2,0.2,0.3,-0.1,7.6,2.0,2.0,normal,False,normal,none
+SYS1,39,2017-01-05,nach der Rückkehr,461.6,354.0,0.5,0.9,0.4,11.7,2.0,1.0,normal,False,normal,none
+SYS1,40,2017-01-06,nach der Rückkehr,447.2,367.8,0.5,0.6,0.9,18.7,1.0,1.0,normal,False,normal,none
+SYS1,41,2017-01-07,nach der Rückkehr,471.2,399.8,0.4,0.6,1.1,22.9,1.0,2.0,normal,False,normal,none
+SYS1,42,2017-01-08,nach der Rückkehr,472.5,368.9,1.4,1.0,0.9,23.0,1.0,3.0,normal,False,normal,none
+SYS1,43,2017-01-09,nach der Rückkehr,411.1,378.3,0.3,0.3,1.0,26.4,1.0,4.0,normal,False,normal,none
+SYS1,44,2017-01-10,nach der Rückkehr,344.9,383.5,-0.7,-0.4,0.9,23.1,1.0,5.0,normal,False,normal,none
+SYS1,45,2017-01-11,nach der Rückkehr,439.9,388.3,0.6,0.5,1.0,21.8,1.0,6.0,normal,False,normal,none
+SYS1,46,2017-01-12,nach der Rückkehr,455.9,354.0,-0.2,0.9,1.0,24.6,1.0,7.0,normal,False,normal,none
+SYS1,47,2017-01-13,nach der Rückkehr,524.0,367.8,1.0,1.3,1.1,24.9,2.0,7.0,normal,False,normal,none
+SYS1,48,2017-01-14,nach der Rückkehr,495.2,409.0,1.2,0.8,1.1,23.7,2.0,7.0,normal,False,normal,none
+SYS1,49,2017-01-15,nach der Rückkehr,448.8,368.9,0.5,0.7,1.1,29.1,3.0,7.0,normal,False,normal,none
+SYS1,50,2017-01-16,nach der Rückkehr,557.6,378.3,0.5,1.6,1.3,29.9,4.0,7.0,normal,False,normal,none
+SYS1,51,2017-01-17,nach der Rückkehr,503.8,354.9,0.5,1.4,1.6,32.7,5.0,7.0,normal,False,normal,none
+SYS1,52,2017-01-18,nach der Rückkehr,407.6,427.3,0.2,-0.2,1.5,31.8,6.0,7.0,normal,True,new_pattern,none
+SYS1,53,2017-01-19,nach der Rückkehr,375.0,354.0,-0.2,0.2,1.4,27.9,7.0,7.0,normal,True,new_pattern,none
+SYS1,54,2017-01-20,nach der Rückkehr,464.5,367.8,0.2,0.9,1.3,28.1,7.0,7.0,normal,True,new_pattern,none
+SYS1,55,2017-01-21,nach der Rückkehr,414.7,433.4,-0.7,-0.2,1.2,29.2,7.0,7.0,normal,True,new_pattern,none
+SYS1,56,2017-01-22,nach der Rückkehr,590.9,388.4,1.3,1.8,1.4,31.2,7.0,7.0,normal,True,new_pattern,none
+SYS1,57,2017-01-23,nach der Rückkehr,479.5,378.3,0.3,0.8,1.2,29.5,7.0,7.0,normal,True,new_pattern,none
+SYS1,58,2017-01-24,nach der Rückkehr,442.3,354.9,0.2,0.7,1.1,34.2,7.0,7.0,normal,True,new_pattern,none
+SYS1,59,2017-01-25,nach der Rückkehr,397.9,416.5,0.0,-0.1,1.1,39.4,7.0,7.0,normal,True,new_pattern,none
+SYS1,60,2017-01-26,nach der Rückkehr,509.1,358.6,0.4,1.1,1.2,44.6,7.0,7.0,normal,True,new_pattern,none
+SYS1,61,2017-01-27,nach der Rückkehr,377.8,418.6,-0.7,-0.3,1.1,46.9,7.0,7.0,normal,True,new_pattern,none
+SYS1,62,2017-01-28,nach der Rückkehr,251.0,407.4,-1.3,-1.3,0.8,40.4,6.0,7.0,normal,True,new_pattern,none
+SYS1,63,2017-01-29,nach der Rückkehr,465.7,454.7,0.5,0.1,0.6,31.2,5.0,7.0,normal,False,normal,none
+SYS1,64,2017-01-30,nach der Rückkehr,526.2,399.5,1.1,1.1,0.7,30.9,4.0,7.0,normal,False,normal,none
+SYS1,65,2017-01-31,nach der Rückkehr,432.6,383.5,-0.3,0.5,0.6,28.4,3.0,7.0,normal,False,normal,none
+SYS1,66,2017-02-01,nach der Rückkehr,577.1,416.5,0.5,2.1,0.8,27.8,2.0,7.0,normal,False,normal,none
+SYS1,67,2017-02-02,nach der Rückkehr,383.0,415.4,-1.1,-0.4,0.6,24.2,1.0,7.0,normal,False,normal,none
+SYS1,68,2017-02-03,nach der Rückkehr,423.8,418.6,-0.1,0.1,0.6,20.7,0.0,7.0,normal,False,normal,none
+SYS1,69,2017-02-04,nach der Rückkehr,502.1,407.4,0.9,1.2,1.0,18.4,0.0,7.0,normal,False,normal,none
+SYS1,70,2017-02-05,nach der Rückkehr,368.5,463.1,-0.8,-1.2,0.8,17.3,0.0,7.0,normal,False,normal,none
+SYS1,71,2017-02-06,nach der Rückkehr,528.4,429.3,0.6,1.2,0.8,17.9,0.0,7.0,normal,False,normal,none
+SYS1,72,2017-02-07,nach der Rückkehr,419.2,417.3,-0.4,0.0,0.8,20.6,0.0,7.0,normal,False,normal,none
+SYS1,73,2017-02-08,nach der Rückkehr,463.9,432.6,0.0,0.4,0.6,20.8,0.0,7.0,normal,False,normal,none
+SYS2,0,2016-11-27,Urlaub,258.7,439.8,-1.5,-2.6,-0.5,4.4,0.0,0.0,unusual,False,low,none
+SYS2,1,2016-11-28,Urlaub,202.3,421.5,-2.2,-3.4,-1.1,2.0,1.0,0.0,unusual,False,low,none
+SYS2,2,2016-11-29,Urlaub,226.3,432.4,-2.0,-3.2,-1.8,3.2,2.0,0.0,unusual,False,low,none
+SYS2,3,2016-11-30,Urlaub,247.3,456.1,-1.8,-3.9,-2.3,0.7,3.0,0.0,unusual,False,low,none
+SYS2,4,2016-12-01,Urlaub,174.8,393.7,-1.7,-3.8,-2.8,-3.0,4.0,0.0,unusual,False,low,none
+SYS2,5,2016-12-02,Urlaub,97.0,368.1,-2.4,-4.6,-3.6,-4.0,5.0,0.0,unusual,False,low,none
+SYS2,6,2016-12-03,Urlaub,104.5,379.0,-2.2,-4.4,-4.6,-3.6,6.0,0.0,unusual,False,low,none
+SYS2,7,2016-12-04,Urlaub,98.8,430.1,-2.3,-4.2,-5.1,-4.7,7.0,0.0,unusual,False,low,none
+SYS2,8,2016-12-05,Urlaub,224.7,420.6,-1.2,-2.5,-5.0,-6.0,7.0,0.0,unusual,False,low,none
+SYS2,9,2016-12-06,Urlaub,191.9,374.9,-1.4,-2.2,-4.9,-12.1,7.0,0.0,normal,False,normal,none
+SYS2,10,2016-12-07,Urlaub,257.5,451.1,-0.8,-2.3,-4.7,-13.9,7.0,0.0,normal,False,normal,none
+SYS2,11,2016-12-08,Urlaub,235.8,383.5,-1.1,-1.5,-4.2,-15.1,7.0,1.0,normal,False,normal,none
+SYS2,12,2016-12-09,Urlaub,177.4,346.2,-1.4,-1.6,-3.7,-18.7,7.0,2.0,normal,False,normal,none
+SYS2,13,2016-12-10,Urlaub,238.3,343.3,-1.1,-1.0,-3.0,-19.2,7.0,3.0,normal,False,normal,none
+SYS2,14,2016-12-11,nach der Rückkehr,460.6,388.8,0.3,0.7,-1.9,-19.4,7.0,4.0,normal,False,normal,none
+SYS2,15,2016-12-12,nach der Rückkehr,364.3,404.9,-0.4,-0.4,-1.4,-22.1,7.0,5.0,normal,False,normal,none
+SYS2,16,2016-12-13,nach der Rückkehr,522.0,299.4,1.3,2.1,-0.7,-22.5,6.0,6.0,normal,True,new_pattern,advance_history_start
+SYS2,17,2016-12-14,nach der Rückkehr,442.4,,2.1,,,,,,normal,False,normal,none
+SYS2,18,2016-12-15,nach der Rückkehr,342.1,,0.0,,,,,,normal,False,normal,none
+SYS2,19,2016-12-16,nach der Rückkehr,460.1,,1.2,,,,,,normal,False,normal,none
+SYS2,20,2016-12-17,nach der Rückkehr,498.3,,1.0,,,,,,normal,False,normal,none
+SYS2,21,2016-12-18,nach der Rückkehr,222.6,,0.0,,,,,,normal,False,normal,none
+SYS2,22,2016-12-19,nach der Rückkehr,447.5,,1.4,,,,,,normal,False,normal,none
+SYS2,23,2016-12-20,nach der Rückkehr,365.0,,0.2,,,,,,normal,False,normal,none
+SYS2,24,2016-12-21,nach der Rückkehr,451.7,,1.1,,3.4,,,,normal,False,normal,none
+SYS2,25,2016-12-22,nach der Rückkehr,517.0,,1.2,,3.7,,,,normal,False,normal,none
+SYS2,26,2016-12-23,nach der Rückkehr,390.1,,-0.3,,1.6,,,,normal,False,normal,none
+SYS2,27,2016-12-24,nach der Rückkehr,400.2,,0.2,,0.5,,,,normal,False,normal,none
+SYS2,28,2016-12-25,nach der Rückkehr,328.0,,-0.6,,0.7,,,,normal,False,normal,none
+SYS2,29,2016-12-26,nach der Rückkehr,387.9,,2.0,,0.4,,3.0,,normal,False,normal,none
+SYS2,30,2016-12-27,nach der Rückkehr,139.6,,-1.8,,-0.4,,3.0,,normal,False,normal,none
+SYS2,31,2016-12-28,nach der Rückkehr,118.4,,-1.5,,-1.7,,1.0,,normal,False,normal,none
+SYS2,32,2016-12-29,nach der Rückkehr,127.0,,-1.3,,-3.3,,2.0,,normal,False,normal,none
+SYS2,33,2016-12-30,nach der Rückkehr,132.6,,-0.8,,-4.6,,3.0,,normal,False,normal,none
+SYS2,34,2016-12-31,nach der Rückkehr,399.5,,0.9,,-4.8,,4.0,,normal,False,normal,none
+SYS2,35,2017-01-01,nach der Rückkehr,611.7,,2.5,,-3.7,,5.0,,unusual,False,peak,none
+SYS2,36,2017-01-02,nach der Rückkehr,368.8,,0.8,,-4.0,,6.0,,normal,False,normal,none
+SYS2,37,2017-01-03,nach der Rückkehr,402.0,,0.8,,-2.8,,7.0,,normal,False,normal,none
+SYS2,38,2017-01-04,nach der Rückkehr,425.4,350.0,0.2,0.5,-1.1,,7.0,,normal,False,normal,none
+SYS2,39,2017-01-05,nach der Rückkehr,461.6,288.9,0.4,1.7,0.4,,6.0,,normal,False,normal,none
+SYS2,40,2017-01-06,nach der Rückkehr,447.2,283.8,0.5,1.1,1.2,,1.0,,normal,False,normal,none
+SYS2,41,2017-01-07,nach der Rückkehr,471.2,399.8,0.3,0.7,1.4,,2.0,,normal,False,normal,none
+SYS2,42,2017-01-08,nach der Rückkehr,472.5,394.3,1.4,0.8,1.1,,3.0,,normal,False,normal,none
+SYS2,43,2017-01-09,nach der Rückkehr,411.1,378.3,0.2,0.3,1.2,,4.0,,normal,False,normal,none
+SYS2,44,2017-01-10,nach der Rückkehr,344.9,383.5,-1.0,-0.4,1.2,,5.0,,normal,False,normal,none
+SYS2,45,2017-01-11,nach der Rückkehr,439.9,425.4,0.5,0.2,1.2,,6.0,,normal,False,normal,none
+SYS2,46,2017-01-12,nach der Rückkehr,455.9,342.1,-0.4,1.3,1.2,,7.0,,normal,False,normal,none
+SYS2,47,2017-01-13,nach der Rückkehr,524.0,390.1,0.9,1.6,1.3,,7.0,,normal,False,normal,none
+SYS2,48,2017-01-14,nach der Rückkehr,495.2,400.2,1.1,1.1,1.3,,7.0,,normal,False,normal,none
+SYS2,49,2017-01-15,nach der Rückkehr,448.8,460.6,0.2,-0.1,1.2,,7.0,,normal,False,normal,none
+SYS2,50,2017-01-16,nach der Rückkehr,557.6,387.9,0.3,2.3,1.4,,7.0,,unusual,False,peak,none
+SYS2,51,2017-01-17,nach der Rückkehr,503.8,365.0,0.2,2.0,1.8,11.6,7.0,,normal,False,normal,none
+SYS2,52,2017-01-18,nach der Rückkehr,407.6,432.6,-0.1,-0.3,1.7,9.3,7.0,,normal,False,normal,none
+SYS2,53,2017-01-19,nach der Rückkehr,375.0,399.0,-0.6,-0.3,1.5,5.2,7.0,,normal,False,normal,none
+SYS2,54,2017-01-20,nach der Rückkehr,464.5,418.6,-0.1,0.8,1.3,5.6,7.0,,normal,False,normal,none
+SYS2,55,2017-01-21,nach der Rückkehr,414.7,435.7,-1.5,-0.4,1.1,5.4,7.0,,normal,False,normal,none
+SYS2,56,2017-01-22,nach der Rückkehr,590.9,454.7,1.3,2.1,1.4,8.6,7.0,0.0,normal,False,normal,none
+SYS2,57,2017-01-23,nach der Rückkehr,479.5,399.5,-0.0,1.1,1.2,9.3,7.0,0.0,normal,False,normal,none
+SYS2,58,2017-01-24,nach der Rückkehr,442.3,383.5,-0.1,0.8,1.0,15.6,6.0,1.0,normal,False,normal,none
+SYS2,59,2017-01-25,nach der Rückkehr,397.9,425.4,-0.2,-0.3,0.9,22.1,5.0,2.0,normal,False,normal,none
+SYS2,60,2017-01-26,nach der Rückkehr,509.1,375.0,0.4,1.8,1.1,29.6,5.0,3.0,normal,False,normal,none
+SYS2,61,2017-01-27,nach der Rückkehr,377.8,447.2,-1.3,-1.0,0.9,35.6,4.0,4.0,normal,False,normal,none
+SYS2,62,2017-01-28,nach der Rückkehr,251.0,414.7,-2.1,-2.4,0.6,33.0,3.0,5.0,unusual,False,low,none
+SYS2,63,2017-01-29,nach der Rückkehr,465.7,460.6,0.6,0.1,0.3,27.5,2.0,6.0,normal,False,normal,none
+SYS2,64,2017-01-30,nach der Rückkehr,526.2,411.1,1.3,1.7,0.4,28.8,1.0,7.0,normal,False,normal,none
+SYS2,65,2017-01-31,nach der Rückkehr,432.6,402.0,-0.5,0.4,0.3,28.4,1.0,7.0,normal,False,normal,none
+SYS2,66,2017-02-01,nach der Rückkehr,577.1,416.5,0.6,2.1,0.7,27.8,1.0,7.0,normal,False,normal,none
+SYS2,67,2017-02-02,nach der Rückkehr,383.0,415.4,-1.3,-0.4,0.4,24.2,0.0,7.0,normal,False,normal,none
+SYS2,68,2017-02-03,nach der Rückkehr,423.8,418.6,-0.1,0.1,0.5,20.7,0.0,7.0,normal,False,normal,none
+SYS2,69,2017-02-04,nach der Rückkehr,502.1,407.4,0.9,1.2,1.0,18.4,0.0,7.0,normal,False,normal,none
+SYS2,70,2017-02-05,nach der Rückkehr,368.5,463.1,-0.8,-1.2,0.8,17.3,0.0,7.0,normal,False,normal,none
+SYS2,71,2017-02-06,nach der Rückkehr,528.4,429.3,0.6,1.2,0.8,17.9,0.0,7.0,normal,False,normal,none
+SYS2,72,2017-02-07,nach der Rückkehr,419.2,417.3,-0.4,0.0,0.8,20.6,0.0,7.0,normal,False,normal,none
+SYS2,73,2017-02-08,nach der Rückkehr,463.9,432.6,0.0,0.4,0.5,20.8,0.0,7.0,normal,False,normal,none

@@ -43,11 +43,13 @@ from experiments.e2_absence.e2_evaluation import (
     AnswerChecks,
     E2Summary,
     GatePrecheckSummary,
+    FalseAlarms,
     RuleAgreement,
     summarize_answer_checks,
     summarize_classification,
     summarize_classification_rates,
     summarize_e2,
+    summarize_false_alarms,
     summarize_gate_precheck,
     summarize_rule_agreement,
 )
@@ -73,6 +75,7 @@ CONFIG_LABELS = {
 }
 
 SERIES_LABELS = {
+    ALL_EVENTS: "alle Reihen",
     "control": "Kontrolle",
     "scaled": "Sprung hoch",
     "scaled_down": "Sprung runter",
@@ -280,6 +283,33 @@ def build_agreement_table(agreement: RuleAgreement) -> pd.DataFrame:
             f"Tage mit anderer Klasse als {RULE_SYSTEM}": summary["deviation_days"],
             f"Meldungen {RULE_SYSTEM}": summary["rule_notification_days"],
             f"Meldungen {LLM_SYSTEM}": summary["llm_notification_days"],
+        }
+    )
+
+
+def build_false_reset_table(alarms: FalseAlarms) -> pd.DataFrame:
+    resets = alarms.resets
+
+    return pd.DataFrame(
+        {
+            "Reihe": resets["series"].map(SERIES_LABELS),
+            "Tage": resets["days"],
+            f"Resets {RULE_SYSTEM}": resets["rule_reset_days"],
+            f"Resets {LLM_SYSTEM}": resets["llm_reset_days"],
+            f"falsche Resets {LLM_SYSTEM}": resets["false_reset_days"],
+        }
+    )
+
+
+def build_outside_notification_table(alarms: FalseAlarms) -> pd.DataFrame:
+    notifications = alarms.notifications
+
+    return pd.DataFrame(
+        {
+            "System": notifications["config"].map(SYS_LABELS),
+            "Reihe": notifications["series"].map(SERIES_LABELS),
+            "Tage außerhalb der Ereignisse": notifications["days"],
+            "Meldungen": notifications["notification_days"],
         }
     )
 
@@ -527,6 +557,12 @@ def write_full_report(run_directory: Path) -> None:
     agreement = summarize_rule_agreement(
         series_days, rule_system=RULE_SYSTEM, llm_system=LLM_SYSTEM
     )
+    alarms = summarize_false_alarms(
+        series_days,
+        e2_config["event_series"],
+        rule_system=RULE_SYSTEM,
+        llm_system=LLM_SYSTEM,
+    )
     text_check_config = TextCheckConfig()
     llm_outputs = read_llm_outputs(raw_directory)
     checks = summarize_answer_checks(
@@ -545,6 +581,10 @@ def write_full_report(run_directory: Path) -> None:
             "Einordnung auf den Ereignisreihen: richtige Klasse am Bewertungstag",
             build_classification_table(summarize_classification_rates(classification)),
         ),
+        "result_false_resets": (
+            f"Falsche Resets von {LLM_SYSTEM}: Reset, den {RULE_SYSTEM} am selben Tag nicht macht, in Reihen ohne Dauerlast",
+            build_false_reset_table(alarms),
+        ),
         "result_classification_events": (
             "Einordnung je Ereignis",
             build_classification_event_table(classification),
@@ -553,9 +593,9 @@ def write_full_report(run_directory: Path) -> None:
             f"Ereignisreihen: Übereinstimmung von {LLM_SYSTEM} mit der Regel {RULE_SYSTEM}, auch ohne Ereignis",
             build_agreement_table(agreement),
         ),
-        "result_deviations": (
-            f"Ereignisreihen: Tage, an denen {LLM_SYSTEM} anders einordnet als {RULE_SYSTEM}",
-            build_deviation_table(agreement.deviations),
+        "result_outside_notifications": (
+            "Ereignisreihen: Meldungen außerhalb der Ereignisse",
+            build_outside_notification_table(alarms),
         ),
         "result_answer_checks": (
             "Belege und Text der LLM-Antworten",
@@ -563,10 +603,14 @@ def write_full_report(run_directory: Path) -> None:
         ),
     }
     appendix: dict[str, tuple[str, pd.DataFrame]] = {
+        "result_deviations": (
+            f"Ereignisreihen: Tage, an denen {LLM_SYSTEM} anders einordnet als {RULE_SYSTEM}",
+            build_deviation_table(agreement.deviations),
+        ),
         "result_answer_findings": (
             "Antworten mit fehlendem Beleg oder Verstoß im Text",
             build_answer_findings_table(checks),
-        )
+        ),
     }
     for event_id, summary in summaries.items():
         build_e2_plot(
@@ -608,6 +652,8 @@ def write_full_report(run_directory: Path) -> None:
             "gemittelt über die Tage. Bias = dasselbe mit Vorzeichen, negativ = Prognose zu niedrig. MAE = mittlerer Stundenfehler",
             f"Differenzen gegen {e2_config['reference_config']} bzw. gegen {e2_config['context_reference_config']} (Tabellen mit Kalender): gepaart am selben Prognosetag, negativ = besser",
             f"Prognosephase nach der Rückkehr: {e2_config['decision_time_margin_after_days']} Tage, so lange dauert es, bis die Urlaubstage aus dem Trainingsfenster von Prophet herausgerollt sind",
+            f"Falsche Resets: Reihen ohne Dauerlast sind Kontrolle, Spitzen und Festhänger, dort verlangt kein Ereignis einen Reset. Falsch = {LLM_SYSTEM} setzt an einem Tag zurück, an dem {RULE_SYSTEM} es nicht tut. Resets von {RULE_SYSTEM} stehen daneben, zählen aber nicht als falsch. SYS1 handelt nie. Summe über alle Cutover, ab dem ersten Unterschied sehen die Systeme verschiedene Zustände",
+            "Meldungen außerhalb der Ereignisse: Tage ohne Ereignis, bei Spitze und Festhänger ohne den ersten Einordnungstag, beim Sprung und der Rampe vor dem ersten Einordnungstag, in der Kontrolle alle. Meldung = peak, new_pattern oder measurement_error, Summe über alle Cutover",
             f"Ereignisreihen ohne Kalender, Kontrolle = unveränderte Daten ohne Ereignis, zählt nicht in die Quote. Tage mit anderer Klasse als {RULE_SYSTEM}: ab der ersten Abweichung sehen die Systeme verschiedene Zustände, spätere Unterschiede können Folgen sein",
             "Belege: Beleg fehlt = zur Klasse fehlt ein Pfad (peak und low die Richtung, new_pattern die Streaks der anhaltenden Skalen, measurement_error das Flag, absence ein Kalendereintrag, der im State steht). Verstoß im Text = Steuerung, Preis oder Tarif, Zahl oder Uhrzeit, die nicht im State steht",
             "Die Belegprüfung sagt nichts über die Wahrheit des Textes, Passung zur Klasse bewerten Personen (explanation_ratings_template.csv)",

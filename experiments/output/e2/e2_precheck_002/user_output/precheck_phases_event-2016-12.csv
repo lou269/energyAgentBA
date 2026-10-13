@@ -1,0 +1,7 @@
+System,Phase,Tage,Gate offen,davon Einzeltag,davon Drift,davon nur eine Skala,new_pattern,low,peak,absence,Resets,Meldungen,Ausfalltage
+SYS1,vor dem Urlaub,31,7,5,0,2,0,3,2,0,0,2,0
+SYS1,Urlaub,14,10,9,5,0,5,5,0,0,0,5,0
+SYS1,nach der Rückkehr,60,46,5,7,35,7,3,1,0,0,8,0
+SYS2,vor dem Urlaub,31,7,5,0,2,0,3,2,0,0,2,0
+SYS2,Urlaub,14,9,9,1,0,1,8,0,0,1,1,0
+SYS2,nach der Rückkehr,60,36,12,0,24,0,5,7,0,0,7,0

@@ -40,9 +40,17 @@ KIND_LABELS: dict[str, str] = {
         f"Rampe über {STANDARD_CONFIG.ramp_fast_days} Tage",
         STANDARD_CONFIG.scale_factor,
     ),
+    "ramp_28_strong": _change_label(
+        f"Rampe über {STANDARD_CONFIG.ramp_fast_days} Tage",
+        STANDARD_CONFIG.strong_scale_factor,
+    ),
     "ramp_28_down": _change_label(
         f"Rampe über {STANDARD_CONFIG.ramp_fast_days} Tage",
         STANDARD_CONFIG.scale_factor_down,
+    ),
+    "ramp_28_down_strong": _change_label(
+        f"Rampe über {STANDARD_CONFIG.ramp_fast_days} Tage",
+        STANDARD_CONFIG.strong_scale_factor_down,
     ),
     "ramp_56": _change_label(
         f"Rampe über {STANDARD_CONFIG.ramp_slow_days} Tage",

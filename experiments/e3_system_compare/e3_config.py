@@ -16,7 +16,7 @@ class E3Config:
     cutovers: dict[str, tuple[str, ...]] = field(
         default_factory=lambda: {
             "validation": ("CO2", "CO3"),
-            "test": ("CO6", "CO7"),
+            "test": ("CO6", "CO7", "CO8"),
         }
     )
 
@@ -29,7 +29,7 @@ class E3Config:
         default_factory=lambda: {
             "scaled": ((0, "scaled_strong"),),
             "scaled_down": ((0, "scaled_down_strong"),),
-            "ramp_28": ((0, "ramp_28"),),
-            "ramp_28_down": ((0, "ramp_28_down"),),
+            "ramp_28": ((0, "ramp_28_strong"),),
+            "ramp_28_down": ((0, "ramp_28_down_strong"),),
         }
     )

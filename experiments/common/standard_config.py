@@ -66,6 +66,7 @@ class StandardScenarioConfig:
             "test": {
                 "CO6": "2016-12-02",  # Winteranfang
                 "CO7": "2017-02-20",  # Winterende
+                "CO8": "2017-01-13",
             },
         }
     )
@@ -112,7 +113,9 @@ GOLDSTANDARD_EXPECTED: dict[str, str] = {
     "scaled_down": "new_pattern",
     "scaled_down_strong": "new_pattern",
     "ramp_28": "new_pattern",
+    "ramp_28_strong": "new_pattern",
     "ramp_28_down": "new_pattern",
+    "ramp_28_down_strong": "new_pattern",
     "ramp_56": "normal",
     "ramp_56_down": "normal",
     "peak": "peak",

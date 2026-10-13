@@ -20,7 +20,7 @@ class E4Config:
     cutovers: dict[str, tuple[str, ...]] = field(
         default_factory=lambda: {
             "validation": ("CO2", "CO3", "CO5"),
-            "test": ("CO6", "CO7"),
+            "test": ("CO6", "CO7", "CO8"),
         }
     )
     evaluation_days: int = 56

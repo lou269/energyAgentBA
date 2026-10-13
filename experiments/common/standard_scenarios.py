@@ -78,6 +78,11 @@ def build_kind_series(
         "ramp_56_down": (config.ramp_slow_days, config.scale_factor_down),
     }
 
+    ramp_28_strong = {
+        "ramp_28_strong": (config.ramp_fast_days, config.strong_scale_factor),
+        "ramp_28_down_strong": (config.ramp_fast_days, config.strong_scale_factor_down),
+    }
+
     if kind == "control":
         return history
     if kind == "scaled":
@@ -90,6 +95,9 @@ def build_kind_series(
         return scale_from(history, cutover_time, config.strong_scale_factor_down)
     if kind in ramps:
         days, factor = ramps[kind]
+        return add_linear_ramp(history, cutover_time, days=days, factor=factor)
+    if kind in ramp_28_strong:
+        days, factor = ramp_28_strong[kind]
         return add_linear_ramp(history, cutover_time, days=days, factor=factor)
     if kind == "peak":
         return add_single_day_peak(
