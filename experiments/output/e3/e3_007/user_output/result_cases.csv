@@ -1,13 +1,13 @@
-Cutover,Reihe,Reset SYS3 an Tag,Differenz Tagesfehler gegen SYS1 [W],belastbar,Differenz Meldungen je 30 Tage gegen SYS1,Resets im Kontrolllauf,SYS3 besser
-2016-12-02,Rampe hoch,17.0,-6.0,nein,-12.6,0,ja
-2016-12-02,Rampe runter,28.0,-3.8,nein,-6.6,0,ja
-2016-12-02,Sprung hoch,58.0,115.2,ja,0.0,0,nein
-2016-12-02,Sprung runter,18.0,-0.2,nein,-5.7,0,ja
-2017-01-13,Rampe hoch,16.0,1.9,nein,-9.5,0,ja
-2017-01-13,Rampe runter,38.0,-3.8,nein,-4.1,0,ja
-2017-01-13,Sprung hoch,14.0,-16.6,nein,-6.5,0,ja
-2017-01-13,Sprung runter,33.0,-2.9,nein,-4.4,0,ja
-2017-02-20,Rampe hoch,35.0,23.5,nein,-9.6,0,ja
-2017-02-20,Rampe runter,56.0,-34.3,nein,-22.5,0,ja
-2017-02-20,Sprung hoch,,,,,0,nein
-2017-02-20,Sprung runter,11.0,3.5,ja,-8.6,0,ja
+Stichtag,Szenario,Zurücksetzen an Tag,gepaarte Tage,Differenz Tagesfehler [W],belastbar,Differenz Meldungen je 30 Tage
+SF6,ramp_28_strong,17.0,44.0,-6.0,nein,-12.6
+SF6,ramp_28_down_strong,28.0,33.0,-3.8,nein,-6.6
+SF6,scaled_strong,58.0,3.0,115.2,ja,0.0
+SF6,scaled_down_strong,18.0,43.0,-0.2,nein,-5.7
+SF7,ramp_28_strong,16.0,45.0,1.9,nein,-9.5
+SF7,ramp_28_down_strong,38.0,23.0,-3.8,nein,-4.1
+SF7,scaled_strong,14.0,47.0,-16.6,nein,-6.5
+SF7,scaled_down_strong,33.0,28.0,-2.9,nein,-4.4
+SF8,ramp_28_strong,35.0,26.0,23.5,nein,-9.6
+SF8,ramp_28_down_strong,56.0,5.0,-34.3,nein,-22.5
+SF8,scaled_strong,,,,,
+SF8,scaled_down_strong,11.0,50.0,3.5,ja,-8.6

@@ -1,0 +1,5 @@
+Kriterium,Ziel,Ergebnis,erfüllt
+Tagesfehler bei 7 Tagen belastbar höher,0 Wochen,0 von 8,ja
+zusätzliches Zurücksetzen,0 Läufe,13 von 45,nein
+"Erkennungsrate, 7 bezogen auf 60 Tage",≥ 90 %,14 von 27 (52 %),nein
+"Tagesfehler, C3_60 minus C1, 7 Tage","< 0, belastbar","−676,5 W, 2 Standardfehler 177,9 W, belastbar",ja

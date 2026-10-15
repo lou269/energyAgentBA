@@ -1,0 +1,42 @@
+\section{K4 Teil 2: Jahressaisonalität}
+\label{app:report_k4_teil_2}
+\subsection*{Setup}
+\begin{itemize}
+\item \textbf{Lauf:} k4\_\allowbreak{}season\_\allowbreak{}001
+\item \textbf{Auswertung:} 365 Tage ab 2014-04-02 (validation), je Tag eine 24-h-Prognose, Historie ab Datenbeginn
+\item \textbf{Varianten:} C3\_\allowbreak{}60 rolling 60 Tage, C2 expanding, Y1 expanding + Jahressaison
+\item \textbf{Naive Referenz:} B2 naiv, Vortag
+\item \textbf{Commit:} 32b0600 (mit lokalen Änderungen)
+\end{itemize}
+
+\subsection*{Tagesfehler je Monat [W]}
+\begin{tablang}{W{0.73} V{0.89} V{1.13} V{1.45} V{0.81}}{Monat & C3\_\allowbreak{}60 rolling 60 Tage & C2 expanding & Y1 expanding + Jahressaison & B2 naiv, Vortag}
+2014-04 & 76,5 & 67,7 & 74,4 & 86,0 \\
+2014-05 & 57,3 & 65,4 & 58,2 & 62,4 \\
+2014-06 & 73,5 & 61,2 & 61,3 & 64,6 \\
+2014-07 & 65,3 & 67,2 & 61,7 & 77,3 \\
+2014-08 & 91,8 & 88,1 & 85,9 & 70,4 \\
+2014-09 & 53,7 & 53,1 & 51,6 & 76,9 \\
+2014-10 & 46,0 & 53,4 & 41,1 & 44,7 \\
+2014-11 & 76,1 & 64,4 & 71,9 & 85,1 \\
+2014-12 & 85,6 & 104,4 & 107,9 & 83,6 \\
+2015-01 & 96,6 & 92,9 & 84,5 & 70,0 \\
+2015-02 & 62,1 & 57,0 & 58,4 & 88,7 \\
+2015-03 & 75,9 & 69,3 & 69,7 & 90,4 \\
+2015-04 & 25,4 & 33,6 & 55,4 & 69,9 \\
+Jahr & 71,7 & 70,5 & 69,0 & 74,8 \\
+\end{tablang}
+
+\subsection*{Gepaarte Differenzen über das Jahr, je Prognosetag}
+\begin{tablang}{W{1.06} V{1.06} V{1.52} V{0.53} V{0.76} W{1.06}}{Vergleich & Differenz [W] & 2 Standardfehler [W] & Tage & Tage besser [\%] & belastbar}
+Y1 \textminus{} C2 & \textminus{}1,5 & 3,5 & 364 & 54,9 & nein \\
+C2 \textminus{} C3\_\allowbreak{}60 & \textminus{}1,2 & 5,9 & 364 & 53,6 & nein \\
+Y1 \textminus{} C3\_\allowbreak{}60 & \textminus{}2,7 & 4,8 & 364 & 54,1 & nein \\
+\end{tablang}
+
+\subsection*{Hinweise}
+\begin{itemize}
+\item Y1 \textminus{} C2 ist der Effekt der Jahressaisonalität allein, C2 \textminus{} C3\_\allowbreak{}60 der der längeren Historie
+\item Monat 2014-04 und 2015-04 sind je ein halber Monat
+\item belastbar: Betrag der Differenz größer als 2 Standardfehler der gepaarten Differenzen, grobe Faustregel
+\end{itemize}

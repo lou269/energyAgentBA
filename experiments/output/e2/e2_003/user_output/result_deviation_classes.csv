@@ -1,0 +1,9 @@
+Klasse SYS2,Klasse SYS3,Tage
+low,normal,31
+peak,normal,12
+normal,peak,10
+low,new_pattern,5
+new_pattern,normal,5
+normal,new_pattern,3
+normal,low,2
+low,peak,1

@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 
@@ -13,7 +14,7 @@ MODEL_COLORS = {
     "B1": "#B0B0B0",
     "B2": "#8C8C8C",
     "B3": "#4C78A8",
-    "C1": "#F2CF5B",
+    "C1": "#E39A1C",
     "C2": "#E45756",
     "C3_7": "#54A24B",
     "C3_30": "#3F7A38",
@@ -55,8 +56,14 @@ STRATEGY_COLORS = {
 }
 
 
+def style_axis(axis: Axes) -> None:
+    axis.spines[["top", "right"]].set_visible(False)
+    axis.grid(axis="y", alpha=0.3)
+    axis.set_axisbelow(True)
+
+
 def save_figure(figure: Figure, output_directory: Path, name: str) -> None:
-    # PNG für ergebnis.md, SVG für die Arbeit
     figure.savefig(str(output_directory / f"{name}.png"), dpi=300, bbox_inches="tight")
     figure.savefig(str(output_directory / f"{name}.svg"), bbox_inches="tight")
+    figure.savefig(str(output_directory / f"{name}.pdf"), bbox_inches="tight")
     plt.close(figure)

@@ -1,0 +1,85 @@
+\usepackage{booktabs,tabularx,xltabular,array,longtable,etoolbox}
+\usepackage[locale=DE, group-minimum-digits=4]{siunitx}
+\usepackage{caption}
+
+\captionsetup[table]{name=Tab., position=top, skip=6pt, font=small, labelfont=bf, labelsep=colon}
+
+\AtBeginEnvironment{table}{\small}
+\AtBeginEnvironment{longtable}{\small}
+\renewcommand{\arraystretch}{1.15}
+
+\newif\iftabkopf
+\newif\iftabersteGruppe
+\newif\iftabingruppe
+\let\tabOrigToprule\toprule
+\let\tabOrigMidrule\midrule
+\renewcommand{\toprule}{\noalign{\global\tabkopftrue\global\tabersteGruppetrue\global\tabingruppefalse}\tabOrigToprule}
+\renewcommand{\midrule}{\noalign{\global\tabkopffalse}\tabOrigMidrule}
+\newcommand{\tabcode}{\iftabkopf\else\ttfamily\fi}
+\newcommand{\tabeinzug}{\iftabingruppe\iftabkopf\else\hspace*{1em}\fi\fi}
+
+\newcolumntype{T}{l}
+\newcolumntype{L}{>{\raggedright\arraybackslash}X}
+\newcolumntype{G}{>{\tabeinzug}l}
+\newcolumntype{H}{>{\tabeinzug\raggedright\arraybackslash}X}
+\newcolumntype{R}{r}
+\newcolumntype{M}{c}
+\newcolumntype{Z}[1]{S[table-format=#1, table-number-alignment=right]}
+\newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{Q}[1]{>{\raggedleft\arraybackslash}p{#1}}
+\newcolumntype{K}[1]{>{\tabcode\raggedright\arraybackslash}p{#1}}
+\newcolumntype{C}{>{\tabcode}l}
+\newcolumntype{W}[1]{>{\hsize=#1\hsize\raggedright\arraybackslash}X}
+\newcolumntype{V}[1]{>{\hsize=#1\hsize\raggedleft\arraybackslash}X}
+
+\newcommand{\tabgruppe}[2]{%
+  \iftabersteGruppe\noalign{\global\tabersteGruppefalse}\else\midrule\fi
+  \noalign{\global\tabingruppetrue}%
+  \multicolumn{#1}{@{}l}{\textbf{#2}}\\}
+
+\newenvironment{tabtext}[1]
+  {\tabularx{\linewidth}{@{}#1@{}}\toprule}
+  {\bottomrule\endtabularx}
+
+\newenvironment{tabkompakt}[1]
+  {\tabular{@{}#1@{}}\toprule}
+  {\bottomrule\endtabular}
+
+\newenvironment{tabzahlen}[1]
+  {\csname tabular*\endcsname{\linewidth}{@{\extracolsep{\fill}}#1@{}}\toprule}
+  {\bottomrule\csname endtabular*\endcsname}
+
+\newenvironment{kriterien}
+  {\tabularx{\linewidth}{@{} L P{2.6cm} P{4.2cm} M @{}}
+   \toprule Kriterium & Ziel & Ergebnis & erfüllt \\ \midrule}
+  {\bottomrule\endtabularx}
+
+\newenvironment{konfig}[1]
+  {\longtable{@{} K{0.62\linewidth} K{\dimexpr0.38\linewidth-2\tabcolsep\relax} @{}}
+   \caption{Konfiguration \texttt{#1}}\label{tab:cfg-#1}\\
+   \toprule Parameter & Wert \\ \midrule
+   \endfirsthead
+   \multicolumn{2}{@{}l}{\normalfont\textit{Fortsetzung von Tab.~\thetable}}\\
+   \toprule Parameter & Wert \\ \midrule
+   \endhead
+   \bottomrule
+   \endlastfoot}
+  {\endlongtable}
+
+\newcommand{\tabkopflinie}{\noalign{\global\tabkopftrue}\tabOrigToprule}
+\newenvironment{tablang}[3][\small]
+  {#1\xltabular{\linewidth}{@{}#2@{}}\toprule #3 \\ \midrule \endfirsthead
+   \tabkopflinie #3 \\ \midrule \endhead}
+  {\bottomrule\endxltabular}
+
+\newenvironment{konfigvar}[4]
+  {\longtable{@{} K{0.30\linewidth} *{#3}{C} @{}}
+   \caption{#1}\label{#2}\\
+   \toprule #4 \\ \midrule
+   \endfirsthead
+   \multicolumn{\numexpr#3+1\relax}{@{}l}{\normalfont\textit{Fortsetzung von Tab.~\thetable}}\\
+   \toprule #4 \\ \midrule
+   \endhead
+   \bottomrule
+   \endlastfoot}
+  {\endlongtable}

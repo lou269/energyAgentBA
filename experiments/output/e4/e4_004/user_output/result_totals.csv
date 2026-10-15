@@ -1,0 +1,7 @@
+Kennzahl,7 Tage,60 Tage
+Tagesfehler C3_60 [W],92.8,95.5
+Tagesfehler C3_60 minus C1 [W],-676.5,-121.1
+Erkannte Einzelanomalien (erwartete Klasse am Tag nach dem Einbau),18 von 42,27 von 42
+"Tage im Kontrolllauf, an denen nur bei 7 Tagen gemeldet wird",7 von 168,
+"Tage im Kontrolllauf, an denen nur bei 60 Tagen gemeldet wird",10 von 168,
+Läufe mit Zurücksetzen nur bei 7 Tagen,13 von 45,

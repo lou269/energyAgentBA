@@ -1,96 +1,34 @@
-\begin{tabular}{llllrlll}
-\toprule
-Reihe & Ereignis & System & erwartet & bewertet an Tag & Klasse & Skala & richtig \\
+\begin{tabzahlen}{T T T T T T}
+Stichtag & Ereignis & erwartet & SYS1 & SYS2 & SYS3 \\
 \midrule
-Spitzen & 1: Spitze +1000 W über 6 h, Tag 0 & SYS1 ohne Adaption & peak & - & - & - & - \\
-Spitzen & 1: Spitze +1000 W über 6 h, Tag 0 & SYS1 ohne Adaption & peak & 1,0 & peak & weekday & ja \\
-Spitzen & 1: Spitze +1000 W über 6 h, Tag 0 & SYS1 ohne Adaption & peak & 1,0 & peak & weekday & ja \\
-Spitzen & 1: Spitze +1000 W über 6 h, Tag 0 & SYS2 Regel & peak & - & - & - & - \\
-Spitzen & 1: Spitze +1000 W über 6 h, Tag 0 & SYS2 Regel & peak & 1,0 & peak & weekday & ja \\
-Spitzen & 1: Spitze +1000 W über 6 h, Tag 0 & SYS2 Regel & peak & 1,0 & peak & weekday & ja \\
-Spitzen & 1: Spitze +1000 W über 6 h, Tag 0 & SYS3 LLM & peak & - & - & - & - \\
-Spitzen & 1: Spitze +1000 W über 6 h, Tag 0 & SYS3 LLM & peak & 1,0 & peak & weekday & ja \\
-Spitzen & 1: Spitze +1000 W über 6 h, Tag 0 & SYS3 LLM & peak & 1,0 & peak & weekday & ja \\
-Spitzen & 2: Spitze +1000 W über 6 h, Tag 10 & SYS1 ohne Adaption & peak & 11,0 & peak & weekday & ja \\
-Spitzen & 2: Spitze +1000 W über 6 h, Tag 10 & SYS1 ohne Adaption & peak & 11,0 & peak & weekday & ja \\
-Spitzen & 2: Spitze +1000 W über 6 h, Tag 10 & SYS1 ohne Adaption & peak & 11,0 & peak & weekday & ja \\
-Spitzen & 2: Spitze +1000 W über 6 h, Tag 10 & SYS2 Regel & peak & 11,0 & peak & weekday & ja \\
-Spitzen & 2: Spitze +1000 W über 6 h, Tag 10 & SYS2 Regel & peak & 11,0 & peak & weekday & ja \\
-Spitzen & 2: Spitze +1000 W über 6 h, Tag 10 & SYS2 Regel & peak & 11,0 & peak & weekday & ja \\
-Spitzen & 2: Spitze +1000 W über 6 h, Tag 10 & SYS3 LLM & peak & 11,0 & peak & weekday & ja \\
-Spitzen & 2: Spitze +1000 W über 6 h, Tag 10 & SYS3 LLM & peak & 11,0 & peak & weekday & ja \\
-Spitzen & 2: Spitze +1000 W über 6 h, Tag 10 & SYS3 LLM & peak & 11,0 & peak & weekday & ja \\
-Spitzen & 3: Spitze +1000 W über 6 h, Tag 20 & SYS1 ohne Adaption & peak & 21,0 & peak & weekday & ja \\
-Spitzen & 3: Spitze +1000 W über 6 h, Tag 20 & SYS1 ohne Adaption & peak & 21,0 & peak & weekday & ja \\
-Spitzen & 3: Spitze +1000 W über 6 h, Tag 20 & SYS1 ohne Adaption & peak & 21,0 & peak & weekday & ja \\
-Spitzen & 3: Spitze +1000 W über 6 h, Tag 20 & SYS2 Regel & peak & 21,0 & peak & weekday & ja \\
-Spitzen & 3: Spitze +1000 W über 6 h, Tag 20 & SYS2 Regel & peak & 21,0 & peak & weekday & ja \\
-Spitzen & 3: Spitze +1000 W über 6 h, Tag 20 & SYS2 Regel & peak & 21,0 & peak & daily & ja \\
-Spitzen & 3: Spitze +1000 W über 6 h, Tag 20 & SYS3 LLM & peak & 21,0 & peak & weekday & ja \\
-Spitzen & 3: Spitze +1000 W über 6 h, Tag 20 & SYS3 LLM & peak & 21,0 & peak & weekday & ja \\
-Spitzen & 3: Spitze +1000 W über 6 h, Tag 20 & SYS3 LLM & peak & - & - & - & - \\
-Rampe hoch & 1: Rampe über 28 Tage +30 \%, Tag 0 & SYS1 ohne Adaption & new\_pattern & 40,0 & new\_pattern & weekly+long\_term & ja \\
-Rampe hoch & 1: Rampe über 28 Tage +30 \%, Tag 0 & SYS1 ohne Adaption & new\_pattern & 35,0 & new\_pattern & weekly+long\_term & ja \\
-Rampe hoch & 1: Rampe über 28 Tage +30 \%, Tag 0 & SYS1 ohne Adaption & new\_pattern & 17,0 & new\_pattern & weekly+long\_term & ja \\
-Rampe hoch & 1: Rampe über 28 Tage +30 \%, Tag 0 & SYS2 Regel & new\_pattern & 40,0 & new\_pattern & weekly+long\_term & ja \\
-Rampe hoch & 1: Rampe über 28 Tage +30 \%, Tag 0 & SYS2 Regel & new\_pattern & 35,0 & new\_pattern & weekly+long\_term & ja \\
-Rampe hoch & 1: Rampe über 28 Tage +30 \%, Tag 0 & SYS2 Regel & new\_pattern & 17,0 & new\_pattern & weekly+long\_term & ja \\
-Rampe hoch & 1: Rampe über 28 Tage +30 \%, Tag 0 & SYS3 LLM & new\_pattern & 17,0 & new\_pattern & weekly & ja \\
-Rampe hoch & 1: Rampe über 28 Tage +30 \%, Tag 0 & SYS3 LLM & new\_pattern & 35,0 & new\_pattern & weekly+long\_term & ja \\
-Rampe hoch & 1: Rampe über 28 Tage +30 \%, Tag 0 & SYS3 LLM & new\_pattern & 16,0 & new\_pattern & weekly & ja \\
-Rampe runter & 1: Rampe über 28 Tage \textminus{}30 \%, Tag 0 & SYS1 ohne Adaption & new\_pattern & 28,0 & new\_pattern & weekly+long\_term & ja \\
-Rampe runter & 1: Rampe über 28 Tage \textminus{}30 \%, Tag 0 & SYS1 ohne Adaption & new\_pattern & 56,0 & new\_pattern & weekly+long\_term & ja \\
-Rampe runter & 1: Rampe über 28 Tage \textminus{}30 \%, Tag 0 & SYS1 ohne Adaption & new\_pattern & 38,0 & new\_pattern & weekly+long\_term & ja \\
-Rampe runter & 1: Rampe über 28 Tage \textminus{}30 \%, Tag 0 & SYS2 Regel & new\_pattern & 28,0 & new\_pattern & weekly+long\_term & ja \\
-Rampe runter & 1: Rampe über 28 Tage \textminus{}30 \%, Tag 0 & SYS2 Regel & new\_pattern & 56,0 & new\_pattern & weekly+long\_term & ja \\
-Rampe runter & 1: Rampe über 28 Tage \textminus{}30 \%, Tag 0 & SYS2 Regel & new\_pattern & 38,0 & new\_pattern & weekly+long\_term & ja \\
-Rampe runter & 1: Rampe über 28 Tage \textminus{}30 \%, Tag 0 & SYS3 LLM & new\_pattern & 28,0 & new\_pattern & weekly+long\_term & ja \\
-Rampe runter & 1: Rampe über 28 Tage \textminus{}30 \%, Tag 0 & SYS3 LLM & new\_pattern & 56,0 & new\_pattern & weekly+long\_term & ja \\
-Rampe runter & 1: Rampe über 28 Tage \textminus{}30 \%, Tag 0 & SYS3 LLM & new\_pattern & 38,0 & new\_pattern & weekly+long\_term & ja \\
-Sprung hoch & 1: Sprung +30 \%, Tag 0 & SYS1 ohne Adaption & new\_pattern & - & - & - & - \\
-Sprung hoch & 1: Sprung +30 \%, Tag 0 & SYS1 ohne Adaption & new\_pattern & - & - & - & - \\
-Sprung hoch & 1: Sprung +30 \%, Tag 0 & SYS1 ohne Adaption & new\_pattern & 14,0 & new\_pattern & weekly+long\_term & ja \\
-Sprung hoch & 1: Sprung +30 \%, Tag 0 & SYS2 Regel & new\_pattern & - & - & - & - \\
-Sprung hoch & 1: Sprung +30 \%, Tag 0 & SYS2 Regel & new\_pattern & - & - & - & - \\
-Sprung hoch & 1: Sprung +30 \%, Tag 0 & SYS2 Regel & new\_pattern & 14,0 & new\_pattern & weekly+long\_term & ja \\
-Sprung hoch & 1: Sprung +30 \%, Tag 0 & SYS3 LLM & new\_pattern & 58,0 & new\_pattern & weekly & ja \\
-Sprung hoch & 1: Sprung +30 \%, Tag 0 & SYS3 LLM & new\_pattern & - & - & - & - \\
-Sprung hoch & 1: Sprung +30 \%, Tag 0 & SYS3 LLM & new\_pattern & 14,0 & new\_pattern & weekly+long\_term & ja \\
-Sprung runter & 1: Sprung \textminus{}30 \%, Tag 0 & SYS1 ohne Adaption & new\_pattern & 18,0 & new\_pattern & weekly+long\_term & ja \\
-Sprung runter & 1: Sprung \textminus{}30 \%, Tag 0 & SYS1 ohne Adaption & new\_pattern & 12,0 & new\_pattern & weekly+long\_term & ja \\
-Sprung runter & 1: Sprung \textminus{}30 \%, Tag 0 & SYS1 ohne Adaption & new\_pattern & 35,0 & new\_pattern & weekly+long\_term & ja \\
-Sprung runter & 1: Sprung \textminus{}30 \%, Tag 0 & SYS2 Regel & new\_pattern & 18,0 & new\_pattern & weekly+long\_term & ja \\
-Sprung runter & 1: Sprung \textminus{}30 \%, Tag 0 & SYS2 Regel & new\_pattern & 12,0 & new\_pattern & weekly+long\_term & ja \\
-Sprung runter & 1: Sprung \textminus{}30 \%, Tag 0 & SYS2 Regel & new\_pattern & 35,0 & new\_pattern & weekly+long\_term & ja \\
-Sprung runter & 1: Sprung \textminus{}30 \%, Tag 0 & SYS3 LLM & new\_pattern & 18,0 & new\_pattern & weekly+long\_term & ja \\
-Sprung runter & 1: Sprung \textminus{}30 \%, Tag 0 & SYS3 LLM & new\_pattern & 11,0 & new\_pattern & long\_term & ja \\
-Sprung runter & 1: Sprung \textminus{}30 \%, Tag 0 & SYS3 LLM & new\_pattern & 33,0 & new\_pattern & long\_term & ja \\
-Festhänger & 1: Festhänger über 12 h, Tag 0 & SYS1 ohne Adaption & measurement\_error & 1,0 & measurement\_error & weekday & ja \\
-Festhänger & 1: Festhänger über 12 h, Tag 0 & SYS1 ohne Adaption & measurement\_error & 1,0 & measurement\_error & daily & ja \\
-Festhänger & 1: Festhänger über 12 h, Tag 0 & SYS1 ohne Adaption & measurement\_error & 1,0 & measurement\_error & weekday & ja \\
-Festhänger & 1: Festhänger über 12 h, Tag 0 & SYS2 Regel & measurement\_error & 1,0 & measurement\_error & weekday & ja \\
-Festhänger & 1: Festhänger über 12 h, Tag 0 & SYS2 Regel & measurement\_error & 1,0 & measurement\_error & daily & ja \\
-Festhänger & 1: Festhänger über 12 h, Tag 0 & SYS2 Regel & measurement\_error & 1,0 & measurement\_error & weekday & ja \\
-Festhänger & 1: Festhänger über 12 h, Tag 0 & SYS3 LLM & measurement\_error & 1,0 & measurement\_error & weekday & ja \\
-Festhänger & 1: Festhänger über 12 h, Tag 0 & SYS3 LLM & measurement\_error & 1,0 & measurement\_error & daily & ja \\
-Festhänger & 1: Festhänger über 12 h, Tag 0 & SYS3 LLM & measurement\_error & 1,0 & measurement\_error & weekday & ja \\
-Festhänger & 2: Festhänger über 12 h, Tag 10 & SYS1 ohne Adaption & measurement\_error & 11,0 & measurement\_error & weekday & ja \\
-Festhänger & 2: Festhänger über 12 h, Tag 10 & SYS1 ohne Adaption & measurement\_error & 11,0 & measurement\_error & weekday & ja \\
-Festhänger & 2: Festhänger über 12 h, Tag 10 & SYS1 ohne Adaption & measurement\_error & 11,0 & measurement\_error & weekday & ja \\
-Festhänger & 2: Festhänger über 12 h, Tag 10 & SYS2 Regel & measurement\_error & 11,0 & measurement\_error & weekday & ja \\
-Festhänger & 2: Festhänger über 12 h, Tag 10 & SYS2 Regel & measurement\_error & 11,0 & measurement\_error & weekday & ja \\
-Festhänger & 2: Festhänger über 12 h, Tag 10 & SYS2 Regel & measurement\_error & 11,0 & measurement\_error & weekday & ja \\
-Festhänger & 2: Festhänger über 12 h, Tag 10 & SYS3 LLM & measurement\_error & 11,0 & measurement\_error & weekday & ja \\
-Festhänger & 2: Festhänger über 12 h, Tag 10 & SYS3 LLM & measurement\_error & 11,0 & measurement\_error & weekday & ja \\
-Festhänger & 2: Festhänger über 12 h, Tag 10 & SYS3 LLM & measurement\_error & 11,0 & measurement\_error & weekday & ja \\
-Festhänger & 3: Festhänger über 12 h, Tag 17 & SYS1 ohne Adaption & measurement\_error & 18,0 & measurement\_error & daily & ja \\
-Festhänger & 3: Festhänger über 12 h, Tag 17 & SYS1 ohne Adaption & measurement\_error & 18,0 & measurement\_error & weekday & ja \\
-Festhänger & 3: Festhänger über 12 h, Tag 17 & SYS1 ohne Adaption & measurement\_error & 18,0 & measurement\_error & weekday & ja \\
-Festhänger & 3: Festhänger über 12 h, Tag 17 & SYS2 Regel & measurement\_error & 18,0 & measurement\_error & daily & ja \\
-Festhänger & 3: Festhänger über 12 h, Tag 17 & SYS2 Regel & measurement\_error & 18,0 & measurement\_error & weekday & ja \\
-Festhänger & 3: Festhänger über 12 h, Tag 17 & SYS2 Regel & measurement\_error & 18,0 & measurement\_error & weekday & ja \\
-Festhänger & 3: Festhänger über 12 h, Tag 17 & SYS3 LLM & measurement\_error & 18,0 & measurement\_error & daily & ja \\
-Festhänger & 3: Festhänger über 12 h, Tag 17 & SYS3 LLM & measurement\_error & 18,0 & measurement\_error & weekday & ja \\
-Festhänger & 3: Festhänger über 12 h, Tag 17 & SYS3 LLM & measurement\_error & 18,0 & measurement\_error & weekday & ja \\
-\bottomrule
-\end{tabular}
+SF6 & peak\_\allowbreak{}strong, Tag 0 & peak & - & - & - \\
+SF6 & peak\_\allowbreak{}strong, Tag 10 & peak & 11 (weekday) & 11 (weekday) & 11 (weekday) \\
+SF6 & peak\_\allowbreak{}strong, Tag 20 & peak & 21 (weekday) & 21 (weekday) & 21 (weekday) \\
+SF6 & ramp\_\allowbreak{}28\_\allowbreak{}strong, Tag 0 & new\_\allowbreak{}pattern & 40 (weekly+long\_\allowbreak{}term) & 40 (weekly+long\_\allowbreak{}term) & 17 (weekly) \\
+SF6 & ramp\_\allowbreak{}28\_\allowbreak{}down\_\allowbreak{}strong, Tag 0 & new\_\allowbreak{}pattern & 28 (weekly+long\_\allowbreak{}term) & 28 (weekly+long\_\allowbreak{}term) & 28 (weekly+long\_\allowbreak{}term) \\
+SF6 & scaled\_\allowbreak{}strong, Tag 0 & new\_\allowbreak{}pattern & - & - & 58 (weekly) \\
+SF6 & scaled\_\allowbreak{}down\_\allowbreak{}strong, Tag 0 & new\_\allowbreak{}pattern & 18 (weekly+long\_\allowbreak{}term) & 18 (weekly+long\_\allowbreak{}term) & 18 (weekly+long\_\allowbreak{}term) \\
+SF6 & stuck, Tag 0 & measurement\_\allowbreak{}error & 1 (weekday) & 1 (weekday) & 1 (weekday) \\
+SF6 & stuck, Tag 10 & measurement\_\allowbreak{}error & 11 (weekday) & 11 (weekday) & 11 (weekday) \\
+SF6 & stuck, Tag 17 & measurement\_\allowbreak{}error & 18 (daily) & 18 (daily) & 18 (daily) \\
+SF7 & peak\_\allowbreak{}strong, Tag 0 & peak & 1 (weekday) & 1 (weekday) & 1 (weekday) \\
+SF7 & peak\_\allowbreak{}strong, Tag 10 & peak & 11 (weekday) & 11 (weekday) & 11 (weekday) \\
+SF7 & peak\_\allowbreak{}strong, Tag 20 & peak & 21 (weekday) & 21 (daily) & - \\
+SF7 & ramp\_\allowbreak{}28\_\allowbreak{}strong, Tag 0 & new\_\allowbreak{}pattern & 17 (weekly+long\_\allowbreak{}term) & 17 (weekly+long\_\allowbreak{}term) & 16 (weekly) \\
+SF7 & ramp\_\allowbreak{}28\_\allowbreak{}down\_\allowbreak{}strong, Tag 0 & new\_\allowbreak{}pattern & 38 (weekly+long\_\allowbreak{}term) & 38 (weekly+long\_\allowbreak{}term) & 38 (weekly+long\_\allowbreak{}term) \\
+SF7 & scaled\_\allowbreak{}strong, Tag 0 & new\_\allowbreak{}pattern & 14 (weekly+long\_\allowbreak{}term) & 14 (weekly+long\_\allowbreak{}term) & 14 (weekly+long\_\allowbreak{}term) \\
+SF7 & scaled\_\allowbreak{}down\_\allowbreak{}strong, Tag 0 & new\_\allowbreak{}pattern & 35 (weekly+long\_\allowbreak{}term) & 35 (weekly+long\_\allowbreak{}term) & 33 (long\_\allowbreak{}term) \\
+SF7 & stuck, Tag 0 & measurement\_\allowbreak{}error & 1 (weekday) & 1 (weekday) & 1 (weekday) \\
+SF7 & stuck, Tag 10 & measurement\_\allowbreak{}error & 11 (weekday) & 11 (weekday) & 11 (weekday) \\
+SF7 & stuck, Tag 17 & measurement\_\allowbreak{}error & 18 (weekday) & 18 (weekday) & 18 (weekday) \\
+SF8 & peak\_\allowbreak{}strong, Tag 0 & peak & 1 (weekday) & 1 (weekday) & 1 (weekday) \\
+SF8 & peak\_\allowbreak{}strong, Tag 10 & peak & 11 (weekday) & 11 (weekday) & 11 (weekday) \\
+SF8 & peak\_\allowbreak{}strong, Tag 20 & peak & 21 (weekday) & 21 (weekday) & 21 (weekday) \\
+SF8 & ramp\_\allowbreak{}28\_\allowbreak{}strong, Tag 0 & new\_\allowbreak{}pattern & 35 (weekly+long\_\allowbreak{}term) & 35 (weekly+long\_\allowbreak{}term) & 35 (weekly+long\_\allowbreak{}term) \\
+SF8 & ramp\_\allowbreak{}28\_\allowbreak{}down\_\allowbreak{}strong, Tag 0 & new\_\allowbreak{}pattern & 56 (weekly+long\_\allowbreak{}term) & 56 (weekly+long\_\allowbreak{}term) & 56 (weekly+long\_\allowbreak{}term) \\
+SF8 & scaled\_\allowbreak{}strong, Tag 0 & new\_\allowbreak{}pattern & - & - & - \\
+SF8 & scaled\_\allowbreak{}down\_\allowbreak{}strong, Tag 0 & new\_\allowbreak{}pattern & 12 (weekly+long\_\allowbreak{}term) & 12 (weekly+long\_\allowbreak{}term) & 11 (long\_\allowbreak{}term) \\
+SF8 & stuck, Tag 0 & measurement\_\allowbreak{}error & 1 (daily) & 1 (daily) & 1 (daily) \\
+SF8 & stuck, Tag 10 & measurement\_\allowbreak{}error & 11 (weekday) & 11 (weekday) & 11 (weekday) \\
+SF8 & stuck, Tag 17 & measurement\_\allowbreak{}error & 18 (weekday) & 18 (weekday) & 18 (weekday) \\
+\end{tabzahlen}

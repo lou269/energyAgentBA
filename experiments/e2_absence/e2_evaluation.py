@@ -659,3 +659,306 @@ def summarize_gate_precheck(
         .sort_values(["config", "absence_day"])
         .reset_index(drop=True),
     )
+
+
+ABSENCE_PHASE = "absence"
+AFTER_RETURN_PHASE = "after_return"
+SINGLE_SCALES = ("weekly", "long_term")
+
+
+def summarize_absence_overview(
+    summaries: Mapping[str, E2Summary], configs: Collection[str]
+) -> pd.DataFrame:
+    tables = []
+    for event_id, summary in summaries.items():
+        in_absence = summary.phases.loc[
+            summary.phases["phase"].eq(ABSENCE_PHASE),
+            ["config", "reset_days", "low_days", "absence_classified_days"],
+        ]
+        tables.append(
+            summary.absence_classification.merge(
+                in_absence, on="config", how="left"
+            ).assign(event_id=event_id)
+        )
+    overview = pd.concat(tables, ignore_index=True)
+
+    return overview.loc[overview["config"].isin(configs)].reset_index(drop=True)
+
+
+def total_absence_by_variant(overview: pd.DataFrame) -> pd.DataFrame:
+    return (
+        overview.assign(absence_event=overview["absence_classified_days"].gt(0))
+        .groupby("config", as_index=False)
+        .agg(
+            absence_events=("absence_event", "sum"),
+            gate_open_days=("gate_open_days", "sum"),
+            absence_days=("absence_classified_days", "sum"),
+            unsupported_absence_days=("unsupported_absence_days", "sum"),
+            reset_days=("reset_days", "sum"),
+        )
+        .assign(events=overview["event_id"].nunique())
+    )
+
+
+def summarize_agreement_by_series(summary: pd.DataFrame) -> pd.DataFrame:
+    counts = [
+        "days",
+        "gate_open_days",
+        "deviation_days",
+        "rule_notification_days",
+        "llm_notification_days",
+    ]
+    by_series = summary.groupby("series", as_index=False, sort=False)[counts].sum()
+    total = by_series[counts].sum().to_frame().T.assign(series=ALL_EVENTS)
+
+    return pd.concat([by_series, total[by_series.columns]], ignore_index=True)
+
+
+def summarize_answer_overview(
+    answer_summary: pd.DataFrame, findings: pd.DataFrame
+) -> pd.DataFrame:
+    unsupported = findings.loc[findings["missing_evidence"].ne("")]
+    violations = findings["violations"]
+
+    return pd.DataFrame(
+        [
+            {
+                "answers": int(answer_summary["answers"].sum()),
+                "unsupported_answers": len(unsupported),
+                "unsupported_classes": ", ".join(
+                    sorted(unsupported["classification"].unique())
+                ),
+                "missing_paths": ", ".join(
+                    sorted(set(unsupported["missing_evidence"]))
+                ),
+                "violation_answers": int(violations.ne("").sum()),
+                "number_answers": int(violations.str.contains("number:").sum()),
+                "control_answers": int(violations.str.contains("control:").sum()),
+                "target_answers": int(answer_summary["target_answers"].sum()),
+                "target_supported_answers": int(
+                    answer_summary["target_supported_answers"].sum()
+                ),
+            }
+        ]
+    )
+
+
+def summarize_return_forecast(
+    summaries: Mapping[str, E2Summary], context_config: str
+) -> pd.DataFrame:
+    columns = ["mean_delta", "delta_standard_error", "exceeds_noise"]
+    rows = []
+    for event_id, summary in summaries.items():
+        row = {"event_id": event_id}
+        for prefix, table in (
+            ("reference", summary.forecast),
+            ("context", summary.context_forecast),
+        ):
+            found = table.loc[
+                table["config"].eq(context_config)
+                & table["phase"].eq(AFTER_RETURN_PHASE),
+                columns,
+            ].iloc[0]
+            row |= {f"{prefix}_{column}": found[column] for column in columns}
+        rows.append(row)
+
+    return pd.DataFrame(rows)
+
+
+def summarize_calendar_call_totals(
+    summaries: Mapping[str, E2Summary], tool_configs: Collection[str]
+) -> pd.DataFrame:
+    calls = pd.concat(
+        [
+            summary.calendar_calls.loc[
+                summary.calendar_calls["config"].isin(tool_configs)
+            ].assign(event_id=event_id)
+            for event_id, summary in summaries.items()
+        ],
+        ignore_index=True,
+    )
+    counts = ["useful", "superfluous", "missed", "saved"]
+    total = calls[counts].sum().to_frame().T.assign(event_id=ALL_EVENTS)
+
+    return pd.concat(
+        [calls[["event_id"] + counts], total[["event_id"] + counts]], ignore_index=True
+    )
+
+
+def summarize_classification_comparison(
+    events: pd.DataFrame, *, rule_system: str, llm_system: str
+) -> pd.DataFrame:
+    rates = summarize_classification_rates(events)
+    by_system = {
+        config: rates.loc[rates["config"].eq(config)].set_index("expected")
+        for config in (llm_system, rule_system)
+    }
+    llm_events = events.loc[events["config"].eq(llm_system)]
+    single_scale = llm_events.loc[
+        llm_events["classification"].eq(SUSTAINED_CLASSIFICATION)
+        & llm_events["trigger_scale"].isin(SINGLE_SCALES)
+    ]
+    llm_rates = by_system[llm_system]
+
+    return pd.DataFrame(
+        {
+            "expected": llm_rates.index,
+            "events": llm_rates["events"].to_numpy(),
+            "llm_detected": llm_rates["detected"].to_numpy(),
+            "llm_correct": llm_rates["correct"].to_numpy(),
+            "rule_detected": by_system[rule_system]
+            .loc[llm_rates.index, "detected"]
+            .to_numpy(),
+            "rule_correct": by_system[rule_system]
+            .loc[llm_rates.index, "correct"]
+            .to_numpy(),
+            "llm_single_scale": [
+                len(single_scale) if expected == SUSTAINED_CLASSIFICATION else pd.NA
+                for expected in llm_rates.index
+            ],
+        }
+    )
+
+
+def summarize_deviation_classes(deviations: pd.DataFrame) -> pd.DataFrame:
+    pairs = deviations.fillna({"classification_llm": "Ausfall"})
+
+    return (
+        pairs.groupby(["classification_rule", "classification_llm"], as_index=False)
+        .size()
+        .rename(columns={"size": "days"})
+        .sort_values("days", ascending=False, kind="stable")
+        .reset_index(drop=True)
+    )
+
+
+def _single_value(table: pd.DataFrame, key_column: str, key: str, column: str):
+    return table.loc[table[key_column].eq(key), column].to_numpy()[0]
+
+
+def summarize_tf2_criteria(
+    comparison: pd.DataFrame,
+    absence: pd.DataFrame,
+    answer_summary: pd.DataFrame,
+    *,
+    context_config: str,
+) -> pd.DataFrame:
+    correct = int(_single_value(comparison, "expected", ALL_EVENTS, "llm_correct"))
+    detected = int(_single_value(comparison, "expected", ALL_EVENTS, "llm_detected"))
+    correct_pct = 100 * correct / detected
+    hits = absence.loc[absence["config"].eq(context_config), "hit_days"]
+    unsupported_absence = int(absence["unsupported_absence_days"].sum())
+    unsupported_answers = int(answer_summary["unsupported_answers"].sum())
+    answers = int(answer_summary["answers"].sum())
+
+    return pd.DataFrame(
+        [
+            {
+                "criterion": "correct",
+                "value": correct,
+                "total": detected,
+                "share_pct": correct_pct,
+                "fulfilled": correct_pct >= 80,
+            },
+            {
+                "criterion": "hits",
+                "value": ", ".join(str(int(days)) for days in hits),
+                "fulfilled": bool(hits.gt(0).all()),
+            },
+            {
+                "criterion": "absence_without_entry",
+                "value": unsupported_absence,
+                "fulfilled": unsupported_absence == 0,
+            },
+            {
+                "criterion": "missing_evidence",
+                "value": unsupported_answers,
+                "total": answers,
+                "share_pct": 100 * unsupported_answers / answers,
+                "fulfilled": unsupported_answers == 0,
+            },
+        ]
+    )
+
+
+def summarize_phase_overview(
+    summaries: Mapping[str, E2Summary], configs: Collection[str]
+) -> pd.DataFrame:
+    rows = []
+    for event_id, summary in summaries.items():
+        phases = summary.phases.set_index(["config", "phase"])
+        forecast = summary.forecast.set_index(["config", "phase"])
+        for config in configs:
+            if (config, ABSENCE_PHASE) not in phases.index:
+                continue
+            during = phases.loc[(config, ABSENCE_PHASE), :]
+            after = phases.loc[(config, AFTER_RETURN_PHASE), :]
+            rows.append(
+                {
+                    "config": config,
+                    "event_id": event_id,
+                    "gate_open_days": during["gate_open_days"],
+                    "low_days": during["low_days"],
+                    "absence_days": during["absence_classified_days"],
+                    "reset_days": during["reset_days"],
+                    "reset_days_after": after["reset_days"],
+                    "notification_days": during["notification_days"],
+                    "notification_days_after": after["notification_days"],
+                    "day_error_before": forecast.at[
+                        (config, "before"), "mean_day_error_w"
+                    ],
+                    "day_error_absence": forecast.at[
+                        (config, ABSENCE_PHASE), "mean_day_error_w"
+                    ],
+                    "day_error_after_return": forecast.at[
+                        (config, AFTER_RETURN_PHASE), "mean_day_error_w"
+                    ],
+                    "bias_absence": forecast.at[
+                        (config, ABSENCE_PHASE), "mean_day_bias_w"
+                    ],
+                    "bias_after_return": forecast.at[
+                        (config, AFTER_RETURN_PHASE), "mean_day_bias_w"
+                    ],
+                }
+            )
+
+    return pd.DataFrame(rows)
+
+
+def count_failed_days(summaries: Mapping[str, E2Summary]) -> int:
+    return int(
+        sum(summary.phases["failed_days"].sum() for summary in summaries.values())
+    )
+
+
+def summarize_return_curve(
+    summaries: Mapping[str, E2Summary],
+    *,
+    config: str,
+    reference_config: str,
+    smoothing_days: int,
+) -> pd.DataFrame:
+    deltas = []
+    for event_id, summary in summaries.items():
+        after = summary.timeline.loc[
+            summary.timeline["phase"].eq(AFTER_RETURN_PHASE)
+            & summary.timeline["config"].isin([config, reference_config])
+        ]
+        errors = after.assign(day_error=(after["forecast_w"] - after["actual_w"]).abs())
+        wide = errors.pivot(
+            index="absence_day", columns="config", values="day_error"
+        ).dropna()
+        delta = wide[config] - wide[reference_config]
+        deltas.append(
+            (delta.set_axis(delta.index - delta.index.min())).rename(event_id)
+        )
+
+    curve = pd.concat(deltas, axis=1).mean(axis=1).sort_index()
+
+    return (
+        curve.rolling(smoothing_days, min_periods=1)
+        .mean()
+        .rename("delta")
+        .rename_axis("day_since_return")
+        .reset_index()
+    )

@@ -1,13 +1,11 @@
-Kennzahl,SYS1 ohne Adaption,SYS3 LLM
-Fälle mit Reset (Cutover × Reihe),0/12,11/12
-"Tagesfehler ab dem Reset [W], auf denselben Tagen",90.9,90.0
-Differenz gegen SYS1 [W],-,-0.9
-2 Standardfehler der Differenz [W],-,6.9
+Kennzahl,SYS1,SYS3
+Fälle mit Zurücksetzen,0 von 12,11 von 12
+Tagesfehler [W],90.9,90.0
+Differenz [W],-,-0.9
+2 Standardfehler [W],-,6.9
 gepaarte Tage,-,347
 Differenz belastbar,-,nein
-"Meldungstage, alle Fälle zusammen",113,24
-"unknown-Tage (blind), alle Fälle zusammen",0,0
-Meldungen je 30 Tage nach dem Reset,10.1,2.1
-Differenz gegen SYS1,-,-7.9
-Resets im Kontrolllauf (Fehlalarme),0,0
-SYS3 besser als SYS1 (Fälle mit Reset),-,10/11
+Meldungstage,113,24
+Meldungen je 30 Tage,10.1,2.1
+Differenz Meldungen,-,-7.9
+Zurücksetzen im Kontrolllauf,0,0

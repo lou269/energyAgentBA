@@ -1,33 +1,31 @@
-\begin{tabular}{lrrrrr}
-\toprule
-Reihe & Woche ab Reset & Fälle & Tagesfehler SYS3 LLM [W] & Tagesfehler SYS1 ohne Adaption [W] & Differenz SYS3 \textminus{} SYS1 [W] \\
+\begin{tabzahlen}{T R R R R R R R}
+Szenario & Woche & Fälle & Tagesfehler SYS3 [W] & Tagesfehler SYS1 [W] & Differenz [W] & Meldungstage SYS1 & Meldungstage SYS3 \\
 \midrule
-Rampe hoch & 1 & 3 & 134,8 & 86,5 & 48,3 \\
-Rampe hoch & 2 & 3 & 144,1 & 148,6 & $-$4,5 \\
-Rampe hoch & 3 & 3 & 157,3 & 188,8 & $-$31,5 \\
-Rampe hoch & 4 & 3 & 106,2 & 107,7 & $-$1,5 \\
-Rampe hoch & 5 & 2 & 97,6 & 86,8 & 10,8 \\
-Rampe hoch & 6 & 2 & 122,8 & 119,6 & 3,2 \\
-Rampe hoch & 7 & 2 & 59,8 & 58,6 & 1,2 \\
-Rampe runter & 1 & 3 & 72,4 & 94,1 & $-$21,7 \\
-Rampe runter & 2 & 2 & 53,2 & 52,6 & 0,6 \\
-Rampe runter & 3 & 2 & 50,4 & 51,0 & $-$0,6 \\
-Rampe runter & 4 & 2 & 41,3 & 37,3 & 4,0 \\
-Rampe runter & 5 & 1 & 69,0 & 70,3 & $-$1,4 \\
-Sprung hoch & 1 & 2 & 160,4 & 115,2 & 45,1 \\
-Sprung hoch & 2 & 1 & 57,1 & 62,0 & $-$5,0 \\
-Sprung hoch & 3 & 1 & 133,5 & 180,3 & $-$46,8 \\
-Sprung hoch & 4 & 1 & 127,7 & 207,1 & $-$79,5 \\
-Sprung hoch & 5 & 1 & 80,7 & 67,9 & 12,8 \\
-Sprung hoch & 6 & 1 & 144,7 & 131,2 & 13,4 \\
-Sprung hoch & 7 & 1 & 23,7 & 54,2 & $-$30,6 \\
-Sprung runter & 1 & 3 & 66,8 & 61,0 & 5,8 \\
-Sprung runter & 2 & 3 & 70,4 & 70,8 & $-$0,3 \\
-Sprung runter & 3 & 3 & 59,7 & 66,2 & $-$6,4 \\
-Sprung runter & 4 & 3 & 53,0 & 55,1 & $-$2,1 \\
-Sprung runter & 5 & 2 & 52,3 & 45,2 & 7,1 \\
-Sprung runter & 6 & 2 & 77,9 & 77,5 & 0,4 \\
-Sprung runter & 7 & 2 & 57,2 & 52,2 & 5,0 \\
-Sprung runter & 8 & 1 & 67,1 & 62,9 & 4,2 \\
-\bottomrule
-\end{tabular}
+ramp\_\allowbreak{}28\_\allowbreak{}strong & 1 & 3 & 134,8 & 86,5 & 48,3 & 11 & 0 \\
+ramp\_\allowbreak{}28\_\allowbreak{}strong & 2 & 3 & 144,1 & 148,6 & \textminus{}4,5 & 11 & 1 \\
+ramp\_\allowbreak{}28\_\allowbreak{}strong & 3 & 3 & 157,3 & 188,8 & \textminus{}31,5 & 5 & 1 \\
+ramp\_\allowbreak{}28\_\allowbreak{}strong & 4 & 3 & 106,2 & 107,7 & \textminus{}1,5 & 5 & 1 \\
+ramp\_\allowbreak{}28\_\allowbreak{}strong & 5 & 2 & 97,6 & 86,8 & 10,8 & 7 & 2 \\
+ramp\_\allowbreak{}28\_\allowbreak{}strong & 6 & 2 & 122,8 & 119,6 & 3,2 & 8 & 2 \\
+ramp\_\allowbreak{}28\_\allowbreak{}strong & 7 & 2 & 59,8 & 58,6 & 1,2 & 0 & 0 \\
+ramp\_\allowbreak{}28\_\allowbreak{}down\_\allowbreak{}strong & 1 & 3 & 72,4 & 94,1 & \textminus{}21,7 & 14 & 2 \\
+ramp\_\allowbreak{}28\_\allowbreak{}down\_\allowbreak{}strong & 2 & 2 & 53,2 & 52,6 & 0,6 & 2 & 0 \\
+ramp\_\allowbreak{}28\_\allowbreak{}down\_\allowbreak{}strong & 3 & 2 & 50,4 & 51,0 & \textminus{}0,6 & 0 & 0 \\
+ramp\_\allowbreak{}28\_\allowbreak{}down\_\allowbreak{}strong & 4 & 2 & 41,3 & 37,3 & 4,0 & 0 & 1 \\
+ramp\_\allowbreak{}28\_\allowbreak{}down\_\allowbreak{}strong & 5 & 1 & 69,0 & 70,3 & \textminus{}1,4 & 0 & 0 \\
+scaled\_\allowbreak{}strong & 1 & 2 & 160,4 & 115,2 & 45,1 & 6 & 0 \\
+scaled\_\allowbreak{}strong & 2 & 1 & 57,1 & 62,0 & \textminus{}5,0 & 7 & 0 \\
+scaled\_\allowbreak{}strong & 3 & 1 & 133,5 & 180,3 & \textminus{}46,8 & 3 & 0 \\
+scaled\_\allowbreak{}strong & 4 & 1 & 127,7 & 207,1 & \textminus{}79,5 & 0 & 6 \\
+scaled\_\allowbreak{}strong & 5 & 1 & 80,7 & 67,9 & 12,8 & 0 & 0 \\
+scaled\_\allowbreak{}strong & 6 & 1 & 144,7 & 131,2 & 13,4 & 0 & 0 \\
+scaled\_\allowbreak{}strong & 7 & 1 & 23,7 & 54,2 & \textminus{}30,6 & 0 & 0 \\
+scaled\_\allowbreak{}down\_\allowbreak{}strong & 1 & 3 & 66,8 & 61,0 & 5,8 & 14 & 4 \\
+scaled\_\allowbreak{}down\_\allowbreak{}strong & 2 & 3 & 70,4 & 70,8 & \textminus{}0,3 & 14 & 0 \\
+scaled\_\allowbreak{}down\_\allowbreak{}strong & 3 & 3 & 59,7 & 66,2 & \textminus{}6,4 & 6 & 0 \\
+scaled\_\allowbreak{}down\_\allowbreak{}strong & 4 & 3 & 53,0 & 55,1 & \textminus{}2,1 & 0 & 0 \\
+scaled\_\allowbreak{}down\_\allowbreak{}strong & 5 & 2 & 52,3 & 45,2 & 7,1 & 0 & 3 \\
+scaled\_\allowbreak{}down\_\allowbreak{}strong & 6 & 2 & 77,9 & 77,5 & 0,4 & 0 & 1 \\
+scaled\_\allowbreak{}down\_\allowbreak{}strong & 7 & 2 & 57,2 & 52,2 & 5,0 & 0 & 0 \\
+scaled\_\allowbreak{}down\_\allowbreak{}strong & 8 & 1 & 67,1 & 62,9 & 4,2 & 0 & 0 \\
+\end{tabzahlen}

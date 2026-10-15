@@ -1,66 +1,15 @@
-Lauf,System,Datum,Klasse,Verstoß im Text,fehlende Belege
-control_2017-01-13,SYS3,2017-02-12,low,,anomaly.direction
-control_2017-02-20,SYS3,2017-02-12,low,,anomaly.direction
-event-2016-11/ctx0,SYS3_CTX0,2016-12-03,low,,anomaly.direction
-event-2016-11/ctx0,SYS3_CTX0,2017-01-28,low,,anomaly.direction
-event-2016-11/ctx1,SYS3_CTX1,2016-12-01,absence,number: 45,
-event-2016-11/ctx2,SYS3_CTX2,2016-12-01,absence,number: 45,
-event-2016-12/ctx0,SYS3_CTX0,2016-12-29,low,,anomaly.direction
-event-2016-12/ctx1,SYS3_CTX1,2016-12-18,absence,number: 17,
-event-2016-12/ctx1,SYS3_CTX1,2016-12-19,absence,number: 17,
-event-2016-12/ctx1,SYS3_CTX1,2016-12-21,absence,number: 17,
-event-2016-12/ctx1,SYS3_CTX1,2016-12-25,absence,number: 17,
-event-2016-12/ctx1,SYS3_CTX1,2016-12-26,absence,number: 17,
-event-2016-12/ctx1,SYS3_CTX1,2016-12-28,absence,number: 17,
-event-2016-12/ctx1,SYS3_CTX1,2016-12-29,absence,number: 17,
-event-2016-12/ctx1,SYS3_CTX1,2016-12-30,absence,number: 17,
-event-2016-12/ctx1,SYS3_CTX1,2017-01-10,low,,anomaly.direction
-event-2016-12/ctx1,SYS3_CTX1,2017-02-22,new_pattern,number: 15,
-event-2016-12/ctx1_visit,SYS3_CTX1_VISIT,2016-12-20,low,,anomaly.direction
-event-2016-12/ctx1_visit,SYS3_CTX1_VISIT,2017-01-10,low,,anomaly.direction
-event-2016-12/ctx1_visit,SYS3_CTX1_VISIT,2017-02-22,new_pattern,number: 15,
-event-2016-12/ctx2,SYS3_CTX2,2016-12-18,absence,number: 17,
-event-2016-12/ctx2,SYS3_CTX2,2016-12-19,absence,number: 17,
-event-2016-12/ctx2,SYS3_CTX2,2016-12-21,absence,number: 17,
-event-2016-12/ctx2,SYS3_CTX2,2016-12-25,absence,number: 17,
-event-2016-12/ctx2,SYS3_CTX2,2016-12-26,absence,number: 17,
-event-2016-12/ctx2,SYS3_CTX2,2016-12-28,absence,number: 17,
-event-2016-12/ctx2,SYS3_CTX2,2016-12-29,absence,number: 17,
-event-2016-12/ctx2,SYS3_CTX2,2016-12-30,absence,number: 17,
-event-2016-12/ctx2,SYS3_CTX2,2017-02-10,low,,anomaly.direction
-event-2016-12/ctx2,SYS3_CTX2,2017-02-16,low,,anomaly.direction
-event-2016-12/ctx2,SYS3_CTX2,2017-02-22,new_pattern,number: 15,
-event-2017-02/ctx0,SYS3_CTX0,2017-02-13,low,,anomaly.direction
-event-2017-02/ctx0,SYS3_CTX0,2017-02-15,normal,control: tarif,
-event-2017-02/ctx1,SYS3_CTX1,2017-02-04,absence,number: 57,
-event-2017-02/ctx2,SYS3_CTX2,2017-02-04,absence,number: 57,
-peaks_2016-12-02,SYS3,2016-12-22,peak,number: 17,
-peaks_2017-01-13,SYS3,2017-02-11,low,,anomaly.direction
-peaks_2017-01-13,SYS3,2017-02-12,low,,anomaly.direction
-peaks_2017-01-13,SYS3,2017-02-13,low,,anomaly.direction
-peaks_2017-01-13,SYS3,2017-02-14,low,,anomaly.direction
-peaks_2017-02-20,SYS3,2017-02-12,low,,anomaly.direction
-ramp_28_2017-01-13,SYS3,2017-01-28,new_pattern,number: 25,
-ramp_28_2017-01-13,SYS3,2017-02-12,low,,anomaly.direction
-ramp_28_2017-01-13,SYS3,2017-02-13,low,,anomaly.direction
-ramp_28_2017-02-20,SYS3,2017-02-12,low,,anomaly.direction
-ramp_28_2017-02-20,SYS3,2017-03-25,normal,control: abschalt,
-ramp_28_2017-02-20,SYS3,2017-04-10,low,,anomaly.direction
-ramp_28_2017-02-20,SYS3,2017-04-13,low,,anomaly.direction
-ramp_28_down_2017-01-13,SYS3,2017-02-13,low,,anomaly.direction
-ramp_28_down_2017-01-13,SYS3,2017-02-14,low,,anomaly.direction
-ramp_28_down_2017-02-20,SYS3,2017-02-12,low,,anomaly.direction
-ramp_28_down_2017-02-20,SYS3,2017-03-25,low,,anomaly.direction
-ramp_28_down_2017-02-20,SYS3,2017-04-14,normal,number: 25,
-scaled_2016-12-02,SYS3,2016-12-22,peak,number: 65,
-scaled_2017-01-13,SYS3,2017-02-11,low,,anomaly.direction
-scaled_2017-01-13,SYS3,2017-02-12,low,,anomaly.direction
-scaled_2017-01-13,SYS3,2017-02-13,low,,anomaly.direction
-scaled_2017-01-13,SYS3,2017-02-14,low,,anomaly.direction
-scaled_2017-02-20,SYS3,2017-02-12,low,,anomaly.direction
-scaled_2017-02-20,SYS3,2017-03-11,normal,number: 25,
-scaled_down_2016-12-02,SYS3,2016-12-27,low,,anomaly.direction
-scaled_down_2017-02-20,SYS3,2017-02-12,low,,anomaly.direction
-scaled_down_2017-02-20,SYS3,2017-02-21,low,,anomaly.direction
-stucks_2016-12-02,SYS3,2017-01-21,low,,anomaly.direction
-stucks_2017-02-20,SYS3,2017-02-12,low,,anomaly.direction
+Lauf,System,Datum,Klasse,Verstoß
+event-2016-11/ctx1,SYS3 CTX1,2016-12-01,absence,number: 45
+event-2016-11/ctx2,SYS3 CTX2,2016-12-01,absence,number: 45
+event-2016-12/ctx1,SYS3 CTX1,2017-02-22,new_pattern,number: 15
+event-2016-12/ctx1_visit,Gegenfall CTX1,2017-02-22,new_pattern,number: 15
+event-2016-12/ctx2,SYS3 CTX2,2017-02-22,new_pattern,number: 15
+event-2017-02/ctx0,SYS3 CTX0,2017-02-15,normal,control: tarif
+event-2017-02/ctx1,SYS3 CTX1,2017-02-04,absence,number: 57
+event-2017-02/ctx2,SYS3 CTX2,2017-02-04,absence,number: 57
+peaks_2016-12-02,SYS3,2016-12-22,peak,number: 17
+ramp_28_2017-01-13,SYS3,2017-01-28,new_pattern,number: 25
+ramp_28_2017-02-20,SYS3,2017-03-25,normal,control: abschalt
+ramp_28_down_2017-02-20,SYS3,2017-04-14,normal,number: 25
+scaled_2016-12-02,SYS3,2016-12-22,peak,number: 65
+scaled_2017-02-20,SYS3,2017-03-11,normal,number: 25

@@ -6,16 +6,12 @@ from pathlib import Path
 
 import pandas as pd
 
-from docs.plots.plot_k4_forecast_model import build_forecast_model_plot
-from docs.plots.plot_k4_seasonality import build_seasonality_plot
 from src.common.target_series import read_preprocessed_daily_target
 from src.pipeline.io import read_split_bounds
 from src.config.config_forecasting import MODEL_LABELS as FORECAST_MODEL_LABELS
 from experiments.common.report import (
     NOISE_RULE_NOTE,
-    format_commit,
-    format_number,
-    key_figures_table,
+    build_setup,
     paired_difference_columns,
     write_result_report,
 )
@@ -72,16 +68,13 @@ def build_overall_table(
 ) -> pd.DataFrame:
     table = pd.DataFrame(
         {
-            "Tagesfehler MAE [W]": overall["daily_mae_w"],
-            "Tagesfehler MAPE [%]": overall["daily_mape_pct"],
-            f"Skill Tagesfehler ggü. {reference_model} [%]": overall["skill_pct"],
+            "Tagesfehler [W]": overall["daily_mae_w"],
+            f"Skill ggü. {reference_model} [%]": overall["skill_pct"],
             "Stunden-MAE [W]": overall["mae_w"],
-            "Stunden-RMSE [W]": overall["rmse_w"],
-            "Stunden-MAPE [%]": overall["mape_pct"],
-            f"Intervall-Abdeckung [%], Soll {nominal_interval_level * 100:.0f}": overall[
+            f"Abdeckung [%], Soll {nominal_interval_level * 100:.0f}": overall[
                 "coverage_pct"
             ],
-            "Refit-Zeit gesamt [s]": overall["refit_seconds"],
+            "Refit-Zeit [s]": overall["refit_seconds"],
         }
     )
 
@@ -98,33 +91,35 @@ def build_paired_table(paired: pd.DataFrame) -> pd.DataFrame:
     ).join(paired_difference_columns(paired, "Tage"))
 
 
-def build_setup(
-    config: dict, split: str, modes: list[ModeSummary], code_version: dict
+def build_study_setup(
+    run_name: str,
+    config: dict,
+    split: str,
+    modes: list[ModeSummary],
+    standard_config: dict,
+    code_version: dict,
 ) -> dict[str, str]:
     # beide Modi werten denselben Split aus, die Prognosetage sind gleich
     days = modes[0]
-
-    setup = {
-        "Split": (
+    details = {
+        "Zeitraum": (
             f"{split}, {days.first_forecast_day} bis {days.last_forecast_day}, "
             f"{days.forecast_day_count} Prognosetage (Ortszeit)"
         ),
     }
     for mode in modes:
-        setup[f"Modus {mode.mode}"] = MODE_DESCRIPTIONS[mode.mode].format(
+        details[f"Modus {mode.mode}"] = MODE_DESCRIPTIONS[mode.mode].format(
             coldstart_days=config["cycle_coldstart_days"]
         )
-
-    setup["Naive Referenz"] = ", ".join(
+    details["Naive Referenz"] = ", ".join(
         f"{mode.mode} {mode.reference_model}" for mode in modes
     )
-    setup["Prognose"] = (
+    details["Prognose"] = (
         f"{config['horizon_days']} Tag ab lokaler Mitternacht, Intervall {config['interval_width'] * 100:.0f} %"
     )
-    setup["Konfiguration"] = f"{config['config_version']}, Seed {config['seed']}"
-    setup["Commit"] = format_commit(code_version)
+    details["Konfiguration"] = f"{config['config_version']}, Seed {config['seed']}"
 
-    return setup
+    return build_setup(run_name, standard_config, None, code_version, details=details)
 
 
 def build_notes(modes: list[ModeSummary]) -> list[str]:
@@ -149,32 +144,6 @@ def build_notes(modes: list[ModeSummary]) -> list[str]:
     return notes
 
 
-def build_key_figures(modes: list[ModeSummary]) -> pd.DataFrame:
-    rows: list[tuple[str, object, str]] = []
-
-    for mode in modes:
-        name, reference = mode.mode, mode.reference_model
-        rows += [
-            (
-                f"{name}: Tagesfehler bestes Modell {MODEL_LABELS[mode.best_model]} [W]",
-                mode.best_daily_mae_w,
-                f"{reference} {format_number(mode.reference_daily_mae_w, STANDARD_CONFIG.decimals)} W",
-            ),
-            (
-                f"{name}: Skill der Prophet-Varianten im Tagesfehler ggü. {reference} [%]",
-                mode.skill_max_pct,
-                f"Spanne {format_number(mode.skill_min_pct, STANDARD_CONFIG.decimals)} bis {format_number(mode.skill_max_pct, STANDARD_CONFIG.decimals)} %",
-            ),
-            (
-                f"{name}: Varianten belastbar schlechter als das beste Modell",
-                mode.worse_than_best,
-                f"von {mode.compared_variants}",
-            ),
-        ]
-
-    return key_figures_table(rows)
-
-
 def report_retraining(run_directory: Path) -> Path:
     run_config = read_raw_json(run_directory, "run_config")
     config = run_config["k4_config"]
@@ -197,26 +166,16 @@ def report_retraining(run_directory: Path) -> Path:
     modes = summary.modes
 
     output_directory = user_output_directory(run_directory)
-    tables = {"key_figures": ("Kennzahlen", build_key_figures(modes))}
+    tables = {}
 
     for mode in modes:
         overall = summary.overall[mode.mode]
 
         tables[f"result_overall_{mode.mode}"] = (
-            f"Gesamtfehler {mode.mode}",
+            f"Gesamtfehler {mode.mode}, bestes Modell zuerst",
             build_overall_table(
                 overall, mode.reference_model, config["interval_width"]
             ),
-        )
-        build_forecast_model_plot(
-            overall,
-            summary.days[mode.mode],
-            output_directory / mode.mode,
-            split=split,
-            comparison_mode=mode.mode,
-            baseline_model_ids=tuple(config["baseline_model_ids"]),
-            variant_model_ids=variant_ids,
-            reference_baseline=mode.reference_model,
         )
 
     tables["result_paired"] = (
@@ -226,11 +185,18 @@ def report_retraining(run_directory: Path) -> Path:
 
     write_result_report(
         output_directory,
-        title=f"K4 Retraining-Vergleich, Lauf {run_directory.name}",
-        setup=build_setup(config, split, modes, run_config["code_version"]),
+        title="K4: Aktualisierung des Prognosemodells",
+        setup=build_study_setup(
+            run_directory.name,
+            config,
+            split,
+            modes,
+            run_config["standard_config"],
+            run_config["code_version"],
+        ),
         tables=tables,
         notes=build_notes(modes),
-        images=[f"{mode}/forecast_model_comparison.png" for mode in mode_directories],
+        images=[],
         decimals=STANDARD_CONFIG.decimals,
     )
 
@@ -264,24 +230,6 @@ def report_seasonality(run_directory: Path) -> Path:
     by_month = summary.by_month[["month"] + model_ids + [reference_model_id]]
 
     tables = {
-        "key_figures": (
-            "Kennzahlen",
-            key_figures_table(
-                [
-                    (
-                        f"{comparison}: Differenz im Tagesfehler über das Jahr [W]",
-                        delta,
-                        "negativ = Variante besser, belastbar "
-                        + ("ja" if exceeds_noise else "nein"),
-                    )
-                    for comparison, delta, exceeds_noise in zip(
-                        comparisons,
-                        summary.paired["mean_delta"],
-                        summary.paired["exceeds_noise"],
-                    )
-                ]
-            ),
-        ),
         "result_by_month": (
             "Tagesfehler je Monat [W]",
             by_month.rename(columns={"month": "Monat"} | MODEL_LABELS),
@@ -299,31 +247,31 @@ def report_seasonality(run_directory: Path) -> Path:
     }
 
     output_directory = user_output_directory(run_directory)
-    build_seasonality_plot(
-        summary.by_month,
-        output_directory,
-        model_ids=model_ids,
-        reference_model_id=reference_model_id,
-        model_labels=MODEL_LABELS,
-    )
 
     write_result_report(
         output_directory,
-        title=f"K4 Prognose mit und ohne Jahressaisonalität, Lauf {run_directory.name}",
-        setup={
-            "Auswertung": f"{config['seasonality_days']} Tage ab {seasonality_start} "
-            f"({split}), je Tag eine 24-h-Prognose, Historie ab Datenbeginn",
-            "Varianten": ", ".join(MODEL_LABELS[model_id] for model_id in model_ids),
-            "Naive Referenz": MODEL_LABELS[reference_model_id],
-            "Commit": format_commit(run_config["code_version"]),
-        },
+        title="K4 Teil 2: Jahressaisonalität",
+        setup=build_setup(
+            run_directory.name,
+            run_config["standard_config"],
+            None,
+            run_config["code_version"],
+            details={
+                "Auswertung": f"{config['seasonality_days']} Tage ab {seasonality_start} "
+                f"({split}), je Tag eine 24-h-Prognose, Historie ab Datenbeginn",
+                "Varianten": ", ".join(
+                    MODEL_LABELS[model_id] for model_id in model_ids
+                ),
+                "Naive Referenz": MODEL_LABELS[reference_model_id],
+            },
+        ),
         tables=tables,
         notes=[
             "Y1 − C2 ist der Effekt der Jahressaisonalität allein, C2 − C3_60 der der längeren Historie",
             "Monat 2014-04 und 2015-04 sind je ein halber Monat",
             NOISE_RULE_NOTE,
         ],
-        images=["k4_mae_by_month.png"],
+        images=[],
         decimals=STANDARD_CONFIG.decimals,
     )
 

@@ -24,6 +24,8 @@ class E3Config:
     llm_system: str = LLM_SYSTEM
 
     week_days: int = 7
+    smoothing_days: int = 7
+    min_curve_cases: int = 3
 
     event_series: dict[str, tuple[tuple[int, str], ...]] = field(
         default_factory=lambda: {

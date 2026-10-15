@@ -1,4 +1,0 @@
-Kennzahl,Wert,Bezug
-"Reset, Historie ab t_c, Aktion an Tag 8: Differenz zu keiner Aktion bei Sprung +20 % [W]",2.2,"1,1 % des Fehlers ohne Aktion, bei 2/5 Cutover besser"
-"Stufen-Regressor, Aktion an Tag 8: Differenz zu keiner Aktion bei Sprung +20 % [W]",-0.5,"-0,3 % des Fehlers ohne Aktion, bei 3/5 Cutover besser"
-Aktion an Tag 19: beste Differenz bei Sprung +20 % [W],-2.1,späte Erkennung

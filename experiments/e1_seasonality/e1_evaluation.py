@@ -30,10 +30,36 @@ PAIR_KEYS = ["config", "cutover_date", "days_since_cutover"]
 SIGNAL_FLAGS = ("alarm", "sustained_drift")
 
 
+SILENT = "silent"
+SUSTAINED_SCALES = "weekly + long_term"
+ONSET_COLUMNS = {
+    "weekly_sustained": "first_weekly_day",
+    "long_term_sustained": "first_long_term_day",
+    "sustained_drift": "first_both_day",
+}
+
+
 @dataclass(frozen=True)
 class DetectionSummary:
     cases: pd.DataFrame
     overview: pd.DataFrame
+    criteria: pd.DataFrame
+    sustained_mean_day: float
+
+
+def summarize_criteria(cases: pd.DataFrame) -> pd.DataFrame:
+    built_in = cases.loc[cases["expected"].ne(SILENT) & cases["evaluable"]]
+    slow = cases.loc[cases["expected"].eq(SILENT)]
+    rows = []
+    for criterion, group in (("built_in", built_in), ("slow_ramps", slow)):
+        detected = int(group["first_event_day"].notna().sum())
+        share = 100 * detected / len(group) if len(group) else float("nan")
+        fulfilled = share >= 90 if criterion == "built_in" else detected == 0
+        rows.append((criterion, detected, len(group), share, fulfilled))
+
+    return pd.DataFrame(
+        rows, columns=["criterion", "detected", "cases", "share_pct", "fulfilled"]
+    )
 
 
 def summarize_detection(results: pd.DataFrame) -> DetectionSummary:
@@ -79,12 +105,22 @@ def summarize_detection(results: pd.DataFrame) -> DetectionSummary:
         "expected",
         cases["kind"].map(GOLDSTANDARD_EXPECTED).map(EXPECTED_DETECTION),
     )
+    uses_alarm_kind = cases["kind"].map(DETECTION_SIGNAL).eq("alarm")
+    cases["evaluable"] = ~(uses_alarm_kind & cases["control_signal_days"].gt(0))
+    cases["detecting_scales"] = cases["trigger_scale"].where(
+        uses_alarm_kind | cases["first_event_day"].isna(), SUSTAINED_SCALES
+    )
 
     overview = cases.groupby(
         ["config", "kind", "expected"], as_index=False, sort=False
     ).agg(
         cases=("kind", "size"),
         detected=("first_event_day", "count"),
+        evaluable_cases=("evaluable", "sum"),
+        detected_evaluable=(
+            "first_event_day",
+            lambda days: days[cases.loc[days.index, "evaluable"]].count(),
+        ),
         mean_day=("first_event_day", "mean"),
         first_day=("first_event_day", "min"),
         last_day=("first_event_day", "max"),
@@ -94,6 +130,10 @@ def summarize_detection(results: pd.DataFrame) -> DetectionSummary:
             "trigger_scale",
             lambda scales: ", ".join(sorted(scales.dropna().unique())) or pd.NA,
         ),
+        detecting_scales=(
+            "detecting_scales",
+            lambda scales: ", ".join(sorted(scales.dropna().unique())) or pd.NA,
+        ),
     )
     day_columns = ["first_day", "last_day"]
     # eine Spitze zählt nur an Tag 1, Mittel und Spanne sagen dort nichts
@@ -101,8 +141,41 @@ def summarize_detection(results: pd.DataFrame) -> DetectionSummary:
         overview["kind"].map(DETECTION_SIGNAL).eq("alarm"), day_columns + ["mean_day"]
     ] = float("nan")
     overview[day_columns] = overview[day_columns].astype("Int64")
+    sustained = cases.loc[cases["expected"].eq("reset"), "first_event_day"]
 
     return DetectionSummary(
         cases=cases.assign(first_event_day=cases["first_event_day"].astype("Int64")),
         overview=overview,
+        criteria=summarize_criteria(cases),
+        sustained_mean_day=float(sustained.mean()),
+    )
+
+
+def summarize_scale_onsets(anomaly: pd.DataFrame) -> pd.DataFrame:
+    days = add_days_since_cutover(anomaly)
+    days = days.loc[days["days_since_cutover"].ge(FIRST_ANALYZED_DAY)].sort_values(
+        ["kind", "cutover_date", "days_since_cutover"]
+    )
+    rows = []
+    for (kind, cutover_date), case in days.groupby(
+        ["kind", "cutover_date"], sort=False
+    ):
+        onsets = {
+            column: case.loc[case[flag].eq(True), "days_since_cutover"].min()
+            for flag, column in ONSET_COLUMNS.items()
+        }
+        first_both = onsets["first_both_day"]
+        before = case
+        if not pd.isna(first_both):
+            before = case.loc[case["days_since_cutover"].lt(first_both)]
+        weekly = before["weekly_sustained"].eq(True)
+        ended = weekly.shift(fill_value=False) & weekly.eq(False)
+        rows.append(
+            {"kind": kind, "cutover_date": cutover_date}
+            | onsets
+            | {"weekly_breaks": int(ended.sum())}
+        )
+
+    return pd.DataFrame(rows).astype(
+        {column: "Int64" for column in ONSET_COLUMNS.values()}
     )

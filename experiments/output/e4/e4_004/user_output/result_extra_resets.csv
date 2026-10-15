@@ -1,0 +1,14 @@
+Starttermin,Szenario,Einbautag,Zurücksetzen am Tag,Skala
+SF7,peak,10.0,35,weekly
+SF7,peak,18.0,35,weekly
+SF7,peak,26.0,35,weekly
+SF7,level,18.0,36,weekly
+SF7,level,26.0,36,weekly
+SF7,Kontrolllauf,,37,weekly
+SF7,peak,35.0,37,weekly
+SF7,peak,43.0,37,weekly
+SF7,peak,51.0,37,weekly
+SF7,level,3.0,37,weekly
+SF7,level,35.0,37,weekly
+SF7,level,43.0,37,weekly
+SF7,level,51.0,37,weekly

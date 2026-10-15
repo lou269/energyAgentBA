@@ -1,4 +1,4 @@
-# K1 Schwellen der Erkennung, Lauf k1_007
+# K1: Schwellen der Erkennung
 
 ## Kurzfassung
 
@@ -8,16 +8,17 @@
 
 ## Setup
 
+- Lauf: k1_007
+- Systeme: Analyse, Streak, Einordnung nach Regel und Reset wie im Zyklus, ohne Prognose und ohne Sprachmodell
 - Zeitraum: 2014-04-02 bis 2016-03-19 (718 Tage, validation), durchgehend mit Reset, Historie davor aus train
 - Regel: weekly und long_term halten ohne Reset an gleich vielen Tagen an (6 von 7 Tagen über der Schwelle). Gewählt wird der größte Anteil mit höchstens 4 Resets
 - Einzeltag-Schwelle: ein Wert für daily und weekday: der größte Score des Tages schlägt an dem Anteil der 718 Tage an, der am nächsten bei 5 % liegt. Scores aus dem durchgehenden Lauf mit Reset und den gewählten Niveau-Schwellen
-- Kette: Analyse, Streak, Einordnung nach Regel und Reset wie im Zyklus, ohne Prognose und ohne LLM
-- Diagnose: Katalog-Arten an 11 Cutovern im Abstand von 60 Tagen, je 40 Tage davor und 60 danach. Nicht Teil der Wahl
+- Kontrolle: Szenarien an 11 Zeitpunkten im Abstand von 60 Tagen, je 40 Tage davor und 60 danach. Nicht Teil der Wahl
 - Commit: 978003e
 
 ## Schwellen je Anteil anhaltender Tage und Resets im durchgehenden Lauf
 
-| Anteil der Tage, an denen eine Skala anhält (ohne Reset) | Schwelle weekly | Schwelle long_term [%] | Resets auf validation | Resets je Jahr | gewählt |
+| Anteil anhaltender Tage | Schwelle weekly | Schwelle long_term [%] | Resets | Resets je Jahr | gewählt |
 |---:|---:|---:|---:|---:|---|
 | 0,0 | 2,5 | 25,5 | 0 | 0,0 |  |
 | 0,0 | 2,3 | 23,2 | 0 | 0,0 |  |
@@ -58,58 +59,29 @@
 | 13.12.2014 |
 | 02.08.2015 |
 
-## Einzeltag-Schwelle und Anteil der Tage mit Alarm im durchgehenden Lauf
+## Gewählte Einzeltag-Schwelle und Anteil der Tage mit Alarm im durchgehenden Lauf
 
-| Einzeltag-Schwelle (Score) | Tage mit Alarm [%] | gewählt |
-|---:|---:|---|
-| 2,0 | 7,7 |  |
-| 2,1 | 6,7 |  |
-| 2,2 | 5,4 |  |
-| 2,3 | 4,9 | ja |
-| 2,4 | 4,3 |  |
-| 2,5 | 3,5 |  |
-| 2,6 | 3,2 |  |
-| 2,7 | 3,1 |  |
-| 2,8 | 2,9 |  |
-| 2,9 | 2,9 |  |
-| 3,0 | 2,7 |  |
-| 3,1 | 2,7 |  |
-| 3,2 | 2,5 |  |
-| 3,3 | 2,1 |  |
-| 3,4 | 2,0 |  |
-| 3,5 | 1,5 |  |
-| 3,6 | 1,4 |  |
-| 3,7 | 1,4 |  |
-| 3,8 | 1,4 |  |
-| 3,9 | 1,4 |  |
-| 4,0 | 1,4 |  |
-| 4,1 | 1,4 |  |
-| 4,2 | 1,3 |  |
-| 4,3 | 1,3 |  |
-| 4,4 | 1,3 |  |
-| 4,5 | 1,3 |  |
-| 4,6 | 1,3 |  |
-| 4,7 | 1,1 |  |
-| 4,8 | 1,1 |  |
-| 4,9 | 1,1 |  |
-| 5,0 | 1,1 |  |
+| Schwelle | Tage mit Alarm [%] |
+|---:|---:|
+| 2,3 | 4,9 |
 
-## Was der Detektor mit eingebauten Ereignissen macht, an 11 Zeitpunkten in validation (Ansicht, nicht zur Wahl). Reset wegen des Ereignisses: so oft setzt das System zurück, und zwar früher als zur selben Zeit ohne Ereignis. Tage bis zum Reset: Median ab dem Ereignistag. Ereignistag gemeldet: der Tag selbst ist auffällig, nur für Spitze und ganzen Tag gedacht
+## Kontrolle mit eingebauten Szenarien an 11 Zeitpunkten (nicht Teil der Wahl)
 
-| eingebautes Ereignis | soll | neue Schwellen: Reset wegen des Ereignisses | neue Schwellen: Tage bis zum Reset | neue Schwellen: Ereignistag gemeldet | bisherige Schwellen: Reset wegen des Ereignisses | bisherige Schwellen: Tage bis zum Reset | bisherige Schwellen: Ereignistag gemeldet |
-|---|---|---|---:|---|---|---:|---|
-| keine Änderung | still bleiben | 0/11 | - | 0/11 | 0/11 | - | 0/11 |
-| Sprung +20 % | erkennen (Reset) | 6/11 | 18,5 | 3/11 | 6/11 | 18,5 | 3/11 |
-| Rampe über 28 Tage +20 % | erkennen (Reset) | 7/11 | 32,0 | 0/11 | 7/11 | 32,0 | 0/11 |
-| Rampe über 28 Tage −20 % | erkennen (Reset) | 7/11 | 31,0 | 0/11 | 7/11 | 31,0 | 0/11 |
-| Rampe über 56 Tage +20 % | still bleiben | 5/11 | 34,0 | 0/11 | 5/11 | 34,0 | 0/11 |
-| Rampe über 56 Tage −20 % | still bleiben | 5/11 | 35,0 | 0/11 | 5/11 | 35,0 | 0/11 |
-| Spitze +670 W über 6 h | Alarm am Ereignistag | 2/11 | 19,0 | 8/11 | 2/11 | 19,0 | 8/11 |
-| ganzer Tag +190 W | Alarm am Ereignistag | 2/11 | 19,0 | 8/11 | 2/11 | 19,0 | 8/11 |
+| Szenario | soll | Reset wegen des Szenarios | Tage bis zum Reset | Ereignistag gemeldet |
+|---|---|---|---:|---|
+| Kontrolllauf | still bleiben | 0/11 | - | 0/11 |
+| scaled | erkennen (Zurücksetzen) | 6/11 | 18,5 | 3/11 |
+| ramp_28 | erkennen (Zurücksetzen) | 7/11 | 32,0 | 0/11 |
+| ramp_28_down | erkennen (Zurücksetzen) | 7/11 | 31,0 | 0/11 |
+| ramp_56 | still bleiben | 5/11 | 34,0 | 0/11 |
+| ramp_56_down | still bleiben | 5/11 | 35,0 | 0/11 |
+| peak | Einzelanomalie am Ereignistag | 2/11 | 19,0 | 8/11 |
+| level | Einzelanomalie am Ereignistag | 2/11 | 19,0 | 8/11 |
 
 ## Hinweise
 
+- Kontrolle, Reset wegen des Szenarios: so oft setzt das System zurück, früher als zur selben Zeit ohne Szenario. Tage bis zum Reset: Median ab dem Ereignistag. Ereignistag gemeldet: der Tag selbst ist auffällig, nur für Spitze und ganzen Tag gedacht
 - Gezählt wird jeder Reset im durchgehenden Lauf, auch an echten Wechseln (Urlaub, Saison). Die Grenze ist eine Setzung über die Blindzeit nach einem Reset
 - Der Anteil anhaltender Tage legt nur das Verhältnis der beiden Schwellen fest. Er wird ohne Reset auf 718 Tagen bestimmt, gezählt wird mit Reset
-- Diagnose: Die Zeitpunkte liegen in den Kalibrierdaten, die Zahlen sind eine Ansicht, kein Beleg. Bei 11 Zeitpunkten verschiebt schon ein einzelner Fall die Anteile deutlich
+- Kontrolle: Die Zeitpunkte liegen in den Kalibrierdaten, die Zahlen sind eine Ansicht, kein Beleg. Bei 11 Zeitpunkten verschiebt schon ein einzelner Fall die Anteile deutlich
 - Die gewählten Schwellen (weekly_streak_threshold, long_term_streak_threshold_pct, unusual_threshold) sind in NumericalAnalysisConfig zu übernehmen, gerundet

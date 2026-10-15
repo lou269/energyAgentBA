@@ -47,17 +47,13 @@ LATEX_ESCAPES = str.maketrans(
     }
 )
 
-NAME_COLUMN = r">{\raggedright\arraybackslash}p{.5\linewidth}"
-VALUE_COLUMN = r">{\raggedright\arraybackslash}p{.46\linewidth}"
-
 
 def escape(text: str) -> str:
     return text.translate(LATEX_ESCAPES)
 
 
 def name_cell(name: str) -> str:
-    breakable = escape(name).replace(".", ".\\allowbreak{}")
-    return rf"\texttt{{{breakable}}}"
+    return escape(name).replace(".", ".\\allowbreak{}")
 
 
 def is_hidden(value: Any) -> bool:
@@ -70,13 +66,13 @@ def format_value(value: Any) -> str:
     if value is None or (isinstance(value, (tuple, list)) and not value):
         return "--"
     if isinstance(value, bool):
-        return r"\texttt{true}" if value else r"\texttt{false}"
+        return "true" if value else "false"
     if isinstance(value, float):
         return str(value).replace(".", "{,}")
     if isinstance(value, int):
         return str(value)
     if isinstance(value, str):
-        return rf"\texttt{{{escape(value)}}}"
+        return escape(value)
     if dataclasses.is_dataclass(value):
         return (
             "("
@@ -120,26 +116,10 @@ def flatten(config: Any, prefix: str = "") -> dict[str, Any]:
 
 
 def build_table(title: str, rows: Mapping[str, Any]) -> str:
-    label = title.lower().replace("_", "")
-    lines = [
-        r"\begingroup\footnotesize",
-        rf"\begin{{longtable}}{{@{{}}{NAME_COLUMN}{VALUE_COLUMN}@{{}}}}",
-        rf"\caption{{Konfiguration \texttt{{{escape(title)}}}}}\label{{tab:konfig_{label}}} \\",
-        r"\toprule",
-        r"Parameter & Wert \\",
-        r"\midrule",
-        r"\endfirsthead",
-        r"\toprule",
-        r"Parameter & Wert \\",
-        r"\midrule",
-        r"\endhead",
-        r"\bottomrule",
-        r"\endlastfoot",
-    ]
+    lines = [rf"\begin{{konfig}}{{{title}}}"]
     for name, value in rows.items():
         lines.append(rf"{name_cell(name)} & {format_value(value)} \\")
-    lines.append(r"\end{longtable}")
-    lines.append(r"\endgroup")
+    lines.append(r"\end{konfig}")
     return "\n".join(lines)
 
 
@@ -155,27 +135,18 @@ def build_variant_table(title: str, variants: Mapping[str, Any]) -> str:
         or len({str(flat[label][name]) for label in flat if name in flat[label]}) > 1
     ]
     label = title.lower().replace("_", "")
-    header = " & ".join(["Parameter", *(escape(variant) for variant in flat)]) + r" \\"
+    caption = (
+        rf"Systemvarianten (\texttt{{{escape(title)}}}), "
+        r"Schalter der \texttt{CycleConfig} und Unterschiede"
+    )
+    header = " & ".join(["Parameter", *(escape(variant) for variant in flat)])
     lines = [
-        r"\begingroup\footnotesize",
-        rf"\begin{{longtable}}{{@{{}}p{{.30\linewidth}}*{{{len(flat)}}}{{l}}@{{}}}}",
-        rf"\caption{{Systemvarianten (\texttt{{{escape(title)}}}), Schalter der \texttt{{CycleConfig}} und Unterschiede}}\label{{tab:konfig_{label}}} \\",
-        r"\toprule",
-        header,
-        r"\midrule",
-        r"\endfirsthead",
-        r"\toprule",
-        header,
-        r"\midrule",
-        r"\endhead",
-        r"\bottomrule",
-        r"\endlastfoot",
+        rf"\begin{{konfigvar}}{{{caption}}}{{tab:cfg-{label}}}{{{len(flat)}}}{{{header}}}"
     ]
     for name in names:
         cells = [format_value(flat[label].get(name)) for label in flat]
         lines.append(" & ".join([name_cell(name), *cells]) + r" \\")
-    lines.append(r"\end{longtable}")
-    lines.append(r"\endgroup")
+    lines.append(r"\end{konfigvar}")
     return "\n".join(lines)
 
 

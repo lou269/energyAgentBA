@@ -1,22 +1,22 @@
-Cutover,Ereignis,erkannt am Tag,Skala (Spitze),Kontrolle mit Signal [Tage]
-2016-12-02,Sprung +20 %,,,0
-2017-01-13,Sprung +20 %,15.0,,0
-2017-02-20,Sprung +20 %,,,0
-2016-12-02,Sprung −20 %,31.0,,0
-2017-01-13,Sprung −20 %,38.0,,0
-2017-02-20,Sprung −20 %,,,0
-2016-12-02,Rampe über 28 Tage +20 %,50.0,,0
-2017-01-13,Rampe über 28 Tage +20 %,17.0,,0
-2017-02-20,Rampe über 28 Tage +20 %,,,0
-2016-12-02,Rampe über 28 Tage −20 %,31.0,,0
-2017-01-13,Rampe über 28 Tage −20 %,41.0,,0
-2017-02-20,Rampe über 28 Tage −20 %,57.0,,0
-2016-12-02,Rampe über 56 Tage +20 %,57.0,,0
-2017-01-13,Rampe über 56 Tage +20 %,29.0,,0
-2017-02-20,Rampe über 56 Tage +20 %,,,0
-2016-12-02,Rampe über 56 Tage −20 %,,,0
-2017-01-13,Rampe über 56 Tage −20 %,,,0
-2017-02-20,Rampe über 56 Tage −20 %,57.0,,0
-2016-12-02,Spitze +670 W über 6 h,,,1
-2017-01-13,Spitze +670 W über 6 h,,,1
-2017-02-20,Spitze +670 W über 6 h,1.0,weekday,0
+Stichtag,Szenario,erkannt am Tag,auslösende Skala,Tage mit Kennwert im Kontrolllauf,auswertbar
+SF6,scaled,,,0,ja
+SF6,scaled_down,31.0,weekly + long_term,0,ja
+SF6,ramp_28,50.0,weekly + long_term,0,ja
+SF6,ramp_28_down,31.0,weekly + long_term,0,ja
+SF6,ramp_56,57.0,weekly + long_term,0,ja
+SF6,ramp_56_down,,,0,ja
+SF6,peak,,,1,nein
+SF7,scaled,15.0,weekly + long_term,0,ja
+SF7,scaled_down,38.0,weekly + long_term,0,ja
+SF7,ramp_28,17.0,weekly + long_term,0,ja
+SF7,ramp_28_down,41.0,weekly + long_term,0,ja
+SF7,ramp_56,29.0,weekly + long_term,0,ja
+SF7,ramp_56_down,,,0,ja
+SF7,peak,,,1,nein
+SF8,scaled,,,0,ja
+SF8,scaled_down,,,0,ja
+SF8,ramp_28,,,0,ja
+SF8,ramp_28_down,57.0,weekly + long_term,0,ja
+SF8,ramp_56,,,0,ja
+SF8,ramp_56_down,57.0,weekly + long_term,0,ja
+SF8,peak,1.0,weekday,0,ja

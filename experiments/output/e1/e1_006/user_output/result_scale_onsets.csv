@@ -1,0 +1,19 @@
+Stichtag,Szenario,weekly hält an ab Tag,long_term hält an ab Tag,beide halten an ab Tag (Erkennung),weekly davor abgerissen [mal]
+SF6,scaled,7,59,,4
+SF6,scaled_down,7,22,31.0,1
+SF6,ramp_28,7,50,50.0,2
+SF6,ramp_28_down,7,28,31.0,1
+SF6,ramp_56,7,57,57.0,2
+SF6,ramp_56_down,7,30,,2
+SF7,scaled,6,15,15.0,0
+SF7,scaled_down,35,38,38.0,0
+SF7,ramp_28,7,17,17.0,0
+SF7,ramp_28_down,8,41,41.0,2
+SF7,ramp_56,7,17,29.0,1
+SF7,ramp_56_down,8,18,,3
+SF8,scaled,1,28,,3
+SF8,scaled_down,1,8,,1
+SF8,ramp_28,1,13,,2
+SF8,ramp_28_down,1,9,57.0,1
+SF8,ramp_56,1,10,,1
+SF8,ramp_56_down,1,9,57.0,1

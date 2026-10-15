@@ -1,18 +1,16 @@
-\begin{tabular}{llrrlrrl}
-\toprule
-Cutover & Reihe & Reset SYS3 an Tag & Differenz Tagesfehler gegen SYS1 [W] & belastbar & Differenz Meldungen je 30 Tage gegen SYS1 & Resets im Kontrolllauf & SYS3 besser \\
+\begin{tabzahlen}{T T R R R T R}
+Stichtag & Szenario & Zurücksetzen an Tag & gepaarte Tage & Differenz Tagesfehler [W] & belastbar & Differenz Meldungen je 30 Tage \\
 \midrule
-2016-12-02 & Rampe hoch & 17 & $-$6,0 & nein & $-$12,6 & 0 & ja \\
-2016-12-02 & Rampe runter & 28 & $-$3,8 & nein & $-$6,6 & 0 & ja \\
-2016-12-02 & Sprung hoch & 58 & 115,2 & ja & 0,0 & 0 & nein \\
-2016-12-02 & Sprung runter & 18 & $-$0,2 & nein & $-$5,7 & 0 & ja \\
-2017-01-13 & Rampe hoch & 16 & 1,9 & nein & $-$9,5 & 0 & ja \\
-2017-01-13 & Rampe runter & 38 & $-$3,8 & nein & $-$4,1 & 0 & ja \\
-2017-01-13 & Sprung hoch & 14 & $-$16,6 & nein & $-$6,5 & 0 & ja \\
-2017-01-13 & Sprung runter & 33 & $-$2,9 & nein & $-$4,4 & 0 & ja \\
-2017-02-20 & Rampe hoch & 35 & 23,5 & nein & $-$9,6 & 0 & ja \\
-2017-02-20 & Rampe runter & 56 & $-$34,3 & nein & $-$22,5 & 0 & ja \\
-2017-02-20 & Sprung hoch & - & - & - & - & 0 & nein \\
-2017-02-20 & Sprung runter & 11 & 3,5 & ja & $-$8,6 & 0 & ja \\
-\bottomrule
-\end{tabular}
+SF6 & ramp\_\allowbreak{}28\_\allowbreak{}strong & 17 & 44 & \textminus{}6,0 & nein & \textminus{}12,6 \\
+SF6 & ramp\_\allowbreak{}28\_\allowbreak{}down\_\allowbreak{}strong & 28 & 33 & \textminus{}3,8 & nein & \textminus{}6,6 \\
+SF6 & scaled\_\allowbreak{}strong & 58 & 3 & 115,2 & ja & 0,0 \\
+SF6 & scaled\_\allowbreak{}down\_\allowbreak{}strong & 18 & 43 & \textminus{}0,2 & nein & \textminus{}5,7 \\
+SF7 & ramp\_\allowbreak{}28\_\allowbreak{}strong & 16 & 45 & 1,9 & nein & \textminus{}9,5 \\
+SF7 & ramp\_\allowbreak{}28\_\allowbreak{}down\_\allowbreak{}strong & 38 & 23 & \textminus{}3,8 & nein & \textminus{}4,1 \\
+SF7 & scaled\_\allowbreak{}strong & 14 & 47 & \textminus{}16,6 & nein & \textminus{}6,5 \\
+SF7 & scaled\_\allowbreak{}down\_\allowbreak{}strong & 33 & 28 & \textminus{}2,9 & nein & \textminus{}4,4 \\
+SF8 & ramp\_\allowbreak{}28\_\allowbreak{}strong & 35 & 26 & 23,5 & nein & \textminus{}9,6 \\
+SF8 & ramp\_\allowbreak{}28\_\allowbreak{}down\_\allowbreak{}strong & 56 & 5 & \textminus{}34,3 & nein & \textminus{}22,5 \\
+SF8 & scaled\_\allowbreak{}strong & - & - & - & - & - \\
+SF8 & scaled\_\allowbreak{}down\_\allowbreak{}strong & 11 & 50 & 3,5 & ja & \textminus{}8,6 \\
+\end{tabzahlen}

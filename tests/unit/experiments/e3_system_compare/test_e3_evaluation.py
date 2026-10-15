@@ -125,6 +125,8 @@ def _summarize(results: pd.DataFrame):
         reference_system="SYS1",
         llm_system="SYS3",
         week_days=7,
+        smoothing_days=7,
+        min_curve_cases=1,
     )
 
 

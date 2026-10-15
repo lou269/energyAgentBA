@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from docs.plots.plot_e2_absence import build_e2_plot
+from docs.plots.plot_e2_absence import build_e2_return_plot
 from experiments.common.harness import (
     read_anomaly_rows,
     read_calendar_availability,
@@ -16,12 +16,16 @@ from experiments.common.harness import (
 from experiments.common.evaluation import ALL_EVENTS
 from experiments.common.report import (
     KIND_LABELS,
+    NOISE_RULE_NOTE,
     YES_NO,
-    forecast_error_table,
+    criteria_table,
+    build_setup,
     format_commit,
-    format_cutovers,
-    key_figures_table,
-    write_explanation_rating_template,
+    format_count,
+    format_difference,
+    format_difference_range,
+    format_number,
+    stichtag_labels,
     write_result_report,
 )
 from experiments.common.standard_config import (
@@ -33,31 +37,40 @@ from experiments.common.standard_config import (
     STANDARD_CONFIG,
 )
 from experiments.e2_absence.e2_config import (
+    CHANNEL_RANKING_FILE,
     CLASSIFICATION_FILE,
     COMPARISON_FILE,
     PRECHECK_RUN_PREFIX,
     REDUCTION_FILE,
     RUN_PREFIX,
+    E2Config,
 )
 from experiments.e2_absence.e2_evaluation import (
-    AnswerChecks,
     E2Summary,
     GatePrecheckSummary,
-    FalseAlarms,
-    RuleAgreement,
+    count_failed_days,
+    summarize_absence_overview,
+    summarize_agreement_by_series,
     summarize_answer_checks,
+    summarize_answer_overview,
+    summarize_calendar_call_totals,
     summarize_classification,
-    summarize_classification_rates,
+    summarize_classification_comparison,
+    summarize_deviation_classes,
     summarize_e2,
-    summarize_false_alarms,
     summarize_gate_precheck,
+    summarize_phase_overview,
+    summarize_return_forecast,
+    summarize_return_curve,
     summarize_rule_agreement,
+    summarize_tf2_criteria,
+    total_absence_by_variant,
 )
 from experiments.e2_absence.e2_selection import (
     load_calendar_events,
     resolve_absence_window,
 )
-from src.config.config_forecasting import SYS_LABELS, TextCheckConfig
+from src.config.config_forecasting import TextCheckConfig
 from src.pipeline.io import (
     RAW_SUBDIR,
     read_raw_json,
@@ -66,30 +79,60 @@ from src.pipeline.io import (
 )
 
 CONFIG_LABELS = {
-    "SYS1": "SYS1 ohne Adaption",
-    "SYS2": "SYS2 Regel",
-    "SYS3_CTX0": "SYS3 ohne Kalender",
-    "SYS3_CTX1": "SYS3 mit Kalender",
-    "SYS3_CTX1_VISIT": "SYS3 mit Kalender, Gegenfall Besuch",
-    "SYS3_CTX2": "SYS3 Kalender per Tool",
+    "SYS1": "SYS1",
+    "SYS2": "SYS2",
+    "SYS3_CTX0": "SYS3 CTX0",
+    "SYS3_CTX1": "SYS3 CTX1",
+    "SYS3_CTX1_VISIT": "Gegenfall CTX1",
+    "SYS3_CTX2": "SYS3 CTX2",
 }
-
-SERIES_LABELS = {
-    ALL_EVENTS: "alle Reihen",
-    "control": "Kontrolle",
-    "scaled": "Sprung hoch",
-    "scaled_down": "Sprung runter",
-    "ramp_28": "Rampe hoch",
-    "ramp_28_down": "Rampe runter",
-    "peaks": "Spitzen",
-    "stucks": "Festhänger",
-}
+CONTEXT_CONFIG = "SYS3_CTX1"
+ABSENCE_CONFIGS = ("SYS2", "SYS3_CTX0", "SYS3_CTX1", "SYS3_CTX2", "SYS3_CTX1_VISIT")
+PHASE_CONFIGS = ("SYS1",) + ABSENCE_CONFIGS
 
 PHASE_LABELS = {
     "before": "vor dem Urlaub",
     "absence": "Urlaub",
     "after_return": "nach der Rückkehr",
 }
+
+EXAMPLE_ANSWERS = (
+    ("event-2016-11/ctx1", "absence", "2016-12-02"),
+    ("event-2016-12/ctx1_visit", "absence", None),
+    ("event-2016-11/ctx0", "low", None),
+    ("peaks_2017-02-20", "peak", "2017-02-20"),
+    ("scaled_2017-01-13", "new_pattern", None),
+    ("stucks_2016-12-02", "measurement_error", None),
+)
+
+
+def series_labels(event_series: dict[str, list]) -> dict[str, str]:
+    labels = {ALL_EVENTS: "alle", "control": KIND_LABELS["control"]}
+    for series, events in event_series.items():
+        if len(events) == 1:
+            labels[series] = KIND_LABELS[events[0][1]]
+        elif events:
+            labels[series] = series
+
+    return labels
+
+
+def absence_labels(
+    windows: dict[str, tuple[pd.Timestamp, pd.Timestamp]],
+) -> dict[str, str]:
+    labels = {ALL_EVENTS: "alle"}
+    for number, event_id in enumerate(
+        sorted(windows, key=lambda event: windows[event][0]), start=1
+    ):
+        labels[event_id] = f"Urlaub {number}"
+
+    return labels
+
+
+def format_window(window: tuple[pd.Timestamp, pd.Timestamp]) -> str:
+    start, end = window
+    last_day = end.tz_convert(LOCAL_TIMEZONE) - pd.Timedelta(days=1)
+    return f"{start.tz_convert(LOCAL_TIMEZONE):%d.%m.}–{last_day:%d.%m.%Y}"
 
 
 def read_ctx_anomaly(raw_directory: Path, ctx_systems: dict) -> pd.DataFrame:
@@ -99,344 +142,357 @@ def read_ctx_anomaly(raw_directory: Path, ctx_systems: dict) -> pd.DataFrame:
     )
 
 
-def build_absence_table(
-    absence_classification: pd.DataFrame, target_classification: str
+def build_tf2_criteria(criteria: pd.DataFrame) -> pd.DataFrame:
+    rows = {row["criterion"]: row for row in criteria.to_dict("records")}
+    correct = rows["correct"]
+    hits = rows["hits"]
+    without_entry = rows["absence_without_entry"]
+    evidence = rows["missing_evidence"]
+
+    return criteria_table(
+        [
+            (
+                "richtig eingeordnete Ereignisse",
+                "≥ 80 %",
+                format_count(correct["value"], correct["total"], correct["share_pct"]),
+                correct["fulfilled"],
+            ),
+            (
+                "Treffer je Abwesenheit",
+                "> 0 Urlaubstage",
+                f"{hits['value']} Urlaubstage",
+                hits["fulfilled"],
+            ),
+            (
+                "absence ohne passenden Eintrag",
+                "0 Tage",
+                f"{without_entry['value']} Tage",
+                without_entry["fulfilled"],
+            ),
+            (
+                "fehlende Belege",
+                "0 Antworten",
+                format_count(
+                    evidence["value"], evidence["total"], evidence["share_pct"]
+                ),
+                evidence["fulfilled"],
+            ),
+        ]
+    )
+
+
+def build_tf3_criterion(
+    return_forecast: pd.DataFrame, labels: dict[str, str], reference: str
 ) -> pd.DataFrame:
+    return criteria_table(
+        [
+            (
+                f"Tagesfehler {CONFIG_LABELS[CONTEXT_CONFIG]} minus {reference} nach der Rückkehr, {labels[row['event_id']]}",
+                "< 0, belastbar",
+                format_difference(
+                    row["reference_mean_delta"],
+                    2 * row["reference_delta_standard_error"],
+                    bool(row["reference_exceeds_noise"]),
+                    STANDARD_CONFIG.decimals,
+                ),
+                bool(row["reference_exceeds_noise"])
+                and row["reference_mean_delta"] < 0,
+            )
+            for row in return_forecast.to_dict("records")
+        ]
+    )
+
+
+def build_classification_table(comparison: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(
         {
-            "System": absence_classification["config"],
-            "Urlaubstage": absence_classification["absence_days"],
-            "Treffer": [
-                f"{hits} von {gate_open}"
-                for hits, gate_open in zip(
-                    absence_classification["hit_days"],
-                    absence_classification["gate_open_days"],
+            "erwartete Klasse": comparison["expected"].replace(ALL_EVENTS, "alle"),
+            "Ereignisse": comparison["events"],
+            f"{LLM_SYSTEM} richtig": [
+                f"{correct} von {detected}"
+                for correct, detected in zip(
+                    comparison["llm_correct"], comparison["llm_detected"]
                 )
             ],
-            "erster Treffer [Urlaubstag]": absence_classification["first_hit_day"],
-            f"{target_classification} ohne Beleg": absence_classification[
-                "unsupported_absence_days"
+            f"{RULE_SYSTEM} richtig": [
+                f"{correct} von {detected}"
+                for correct, detected in zip(
+                    comparison["rule_correct"], comparison["rule_detected"]
+                )
+            ],
+            f"new_pattern, eine Skala ({LLM_SYSTEM})": comparison[
+                "llm_single_scale"
+            ].astype("Int64"),
+        }
+    )
+
+
+def build_absence_table(totals: pd.DataFrame) -> pd.DataFrame:
+    rows = {row["config"]: row for row in totals.to_dict("records")}
+
+    return pd.DataFrame(
+        {
+            "Variante": [CONFIG_LABELS[config] for config in ABSENCE_CONFIGS],
+            "absence": [
+                format_count(rows[config]["absence_events"], rows[config]["events"])
+                for config in ABSENCE_CONFIGS
+            ],
+            "absence-Tage": [
+                format_count(
+                    rows[config]["absence_days"], rows[config]["gate_open_days"]
+                )
+                for config in ABSENCE_CONFIGS
+            ],
+            "absence ohne Eintrag": [
+                int(rows[config]["unsupported_absence_days"])
+                for config in ABSENCE_CONFIGS
+            ],
+            "Zurücksetzen im Urlaub": [
+                int(rows[config]["reset_days"]) for config in ABSENCE_CONFIGS
             ],
         }
     )
 
 
-def build_calendar_table(calendar_use: pd.DataFrame) -> pd.DataFrame:
+def build_return_table(
+    return_forecast: pd.DataFrame,
+    labels: dict[str, str],
+    reference: str,
+    context_reference: str,
+) -> pd.DataFrame:
+    decimals = STANDARD_CONFIG.decimals
+
+    def difference(mean: pd.Series, standard_error: pd.Series) -> list[str]:
+        return [
+            format_difference_range(value, 2 * error, decimals)
+            for value, error in zip(mean, standard_error)
+        ]
+
     return pd.DataFrame(
         {
-            "System": calendar_use["config"],
-            "Phase": calendar_use["phase"].map(PHASE_LABELS),
-            "eingeordnete Tage": calendar_use["classified_days"],
-            "davon Kalender im State": calendar_use["calendar_days"],
+            "Urlaub": return_forecast["event_id"].map(labels),
+            f"Differenz zu {reference} [W]": difference(
+                return_forecast["reference_mean_delta"],
+                return_forecast["reference_delta_standard_error"],
+            ),
+            f"belastbar zu {reference}": return_forecast["reference_exceeds_noise"].map(
+                YES_NO
+            ),
+            f"Differenz zu {CONFIG_LABELS[context_reference]} [W]": difference(
+                return_forecast["context_mean_delta"],
+                return_forecast["context_delta_standard_error"],
+            ),
+            f"belastbar zu {CONFIG_LABELS[context_reference]}": return_forecast[
+                "context_exceeds_noise"
+            ].map(YES_NO),
         }
     )
 
 
 def build_calendar_call_table(
-    calendar_calls: pd.DataFrame, tool_configs: list[str]
+    calls: pd.DataFrame, labels: dict[str, str]
 ) -> pd.DataFrame:
-    calls = calendar_calls.loc[calendar_calls["config"].isin(tool_configs)]
-
     return pd.DataFrame(
         {
-            "System": calls["config"],
-            "nützlich": calls["useful"],
-            "überflüssig": calls["superfluous"],
-            "verpasst": calls["missed"],
-            "zu Recht nicht abgerufen": calls["saved"],
+            "Urlaub": calls["event_id"].map(labels),
+            "abgerufen, Urlaubstag": calls["useful"].astype("Int64"),
+            "abgerufen, anderer Tag": calls["superfluous"].astype("Int64"),
+            "nicht abgerufen, Urlaubstag": calls["missed"].astype("Int64"),
+            "nicht abgerufen, anderer Tag": calls["saved"].astype("Int64"),
         }
     )
 
 
-def build_forecast_table(forecast: pd.DataFrame, reference: str) -> pd.DataFrame:
-    table = pd.DataFrame(
-        {
-            "System": forecast["config"],
-            "Phase": forecast["phase"].map(PHASE_LABELS),
-        }
-    ).join(forecast_error_table(forecast, "Tage", reference))
-    table.insert(3, "Bias [W]", forecast["mean_day_bias_w"])
+def build_answer_overview_table(
+    overview: pd.DataFrame, target_classification: str
+) -> pd.DataFrame:
+    row = overview.iloc[0]
 
-    return table
-
-
-def build_reduction_table(reduction: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(
         {
-            "Datum": reduction["date"],
-            "Mains [W]": reduction["mains_before_w"],
-            "ohne Kanäle [W]": reduction["mains_after_w"],
-            "Absenkung [W]": reduction["reduction_w"],
-        }
-    )
-
-
-def build_setup(
-    e2_config: dict,
-    standard_config: dict,
-    summaries: dict[str, E2Summary],
-    windows: dict[str, tuple[pd.Timestamp, pd.Timestamp]],
-    titles: dict[str, str],
-    code_version: dict,
-) -> dict[str, str]:
-    counter_ids = e2_config["counter_event_ids"]
-    setup = {
-        f"Urlaub {event_id}": (
-            f"{window_start.tz_convert(LOCAL_TIMEZONE):%Y-%m-%d} bis vor {window_end.tz_convert(LOCAL_TIMEZONE):%Y-%m-%d}, "
-            f"Beginn = Tag 0, analysierte Tage {summaries[event_id].first_analyzed_day} bis {summaries[event_id].last_analyzed_day}, "
-            + (
-                f"Eintrag „{titles[event_id]}“, Gegenfall „{titles[counter_ids[event_id]]}“"
-                if event_id in counter_ids
-                else f"Eintrag „{titles[event_id]}“, ohne Gegenfall"
-            )
-        )
-        for event_id, (window_start, window_end) in windows.items()
-    }
-    setup["Kanäle"] = (
-        f"je Urlaub im Fenster aus Mains herausgerechnet, Coverage ab {e2_config['min_coverage_share_for_subtraction'] * 100:.0f} %"
-    )
-    for ctx, systems in e2_config["ctx_systems"].items():
-        setup[f"Systeme {ctx}"] = ", ".join(systems)
-    setup["Ereignisreihen"] = (
-        f"{format_cutovers(standard_config, e2_config['event_cutovers'][standard_config['split']])}, ohne Kalender, Systeme {', '.join(e2_config['event_systems'])}: "
-        + "; ".join(
-            f"{SERIES_LABELS[series]} ("
-            + (
-                ", ".join(f"Tag {day}: {KIND_LABELS[kind]}" for day, kind in events)
-                or "ohne Ereignis"
-            )
-            + ")"
-            for series, events in e2_config["event_series"].items()
-        )
-    )
-    setup["Commit"] = format_commit(code_version)
-
-    return setup
-
-
-def build_key_figures(summary: E2Summary, target_classification: str) -> pd.DataFrame:
-    rows = [
-        (
-            f"{row['config']}: erster Treffer {target_classification} [Urlaubstag]",
-            row["first_hit_day"],
-            f"{row['hit_days']} von {row['gate_open_days']} Urlaubstagen mit offenem Gate, "
-            f"{row['unsupported_absence_days']} × {target_classification} ohne Beleg",
-        )
-        for row in summary.absence_classification.to_dict("records")
-    ]
-    rows.append(
-        (
-            "Absenkung durch das Herausrechnen im Mittel [W]",
-            summary.mean_reduction_w,
-            "je Tag im Urlaubsfenster",
-        )
-    )
-
-    return key_figures_table(rows)
-
-
-def build_classification_table(rates: pd.DataFrame) -> pd.DataFrame:
-    return pd.DataFrame(
-        {
-            "System": rates["config"].map(SYS_LABELS),
-            "erwartet": rates["expected"].replace(ALL_EVENTS, "alle Ereignisse"),
-            "Ereignisse": rates["events"],
-            "erkannt": rates["detected"],
-            "richtig eingeordnet": [
-                f"{correct}/{detected}"
-                for correct, detected in zip(rates["correct"], rates["detected"])
+            "Kennzahl": [
+                "Antworten",
+                "Beleg fehlt",
+                "Verstoß im Text",
+                "davon Zahl, die nicht im Zustand steht",
+                "davon Wort zu Steuerung, Preis oder Tarif",
+                f"{target_classification}-Antworten belegt",
             ],
-            "richtig [%]": rates["correct_pct"],
+            "Wert": [
+                str(row["answers"]),
+                f"{row['unsupported_answers']} (Klasse {row['unsupported_classes']}, fehlt {row['missing_paths']})",
+                str(row["violation_answers"]),
+                str(row["number_answers"]),
+                str(row["control_answers"]),
+                format_count(row["target_supported_answers"], row["target_answers"]),
+            ],
         }
     )
 
 
-def build_classification_event_table(events: pd.DataFrame) -> pd.DataFrame:
+def build_deviation_class_table(classes: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(
         {
-            "Reihe": events["series"].map(SERIES_LABELS),
-            "Ereignis": [
-                f"{number}: {KIND_LABELS[kind]}, Tag {day}"
-                for number, kind, day in zip(
-                    events["event"], events["kind"], events["start_day"]
+            f"Klasse {RULE_SYSTEM}": classes["classification_rule"],
+            f"Klasse {LLM_SYSTEM}": classes["classification_llm"],
+            "Tage": classes["days"],
+        }
+    )
+
+
+def build_phase_overview_table(
+    phases: pd.DataFrame, labels: dict[str, str]
+) -> pd.DataFrame:
+    return pd.DataFrame(
+        {
+            "Urlaub": phases["event_id"].map(labels),
+            "Variante": phases["config"].map(CONFIG_LABELS),
+            "Vorfilter offen": phases["gate_open_days"],
+            "low": phases["low_days"],
+            "absence": phases["absence_days"],
+            "Zurücksetzen U / R": [
+                f"{during} / {after}"
+                for during, after in zip(
+                    phases["reset_days"], phases["reset_days_after"]
                 )
             ],
-            "System": events["config"].map(SYS_LABELS),
-            "erwartet": events["expected"],
-            "bewertet an Tag": events["judged_day"],
-            "Klasse": events["classification"],
-            "Skala": events["trigger_scale"],
-            "richtig": events["correct"].map(YES_NO),
-        }
-    )
-
-
-def build_agreement_table(agreement: RuleAgreement) -> pd.DataFrame:
-    summary = agreement.summary
-
-    return pd.DataFrame(
-        {
-            "Cutover": summary["cutover_date"],
-            "Reihe": summary["series"].map(SERIES_LABELS),
-            "Tage": summary["days"],
-            "Gate offen": summary["gate_open_days"],
-            f"Tage mit anderer Klasse als {RULE_SYSTEM}": summary["deviation_days"],
-            f"Meldungen {RULE_SYSTEM}": summary["rule_notification_days"],
-            f"Meldungen {LLM_SYSTEM}": summary["llm_notification_days"],
-        }
-    )
-
-
-def build_false_reset_table(alarms: FalseAlarms) -> pd.DataFrame:
-    resets = alarms.resets
-
-    return pd.DataFrame(
-        {
-            "Reihe": resets["series"].map(SERIES_LABELS),
-            "Tage": resets["days"],
-            f"Resets {RULE_SYSTEM}": resets["rule_reset_days"],
-            f"Resets {LLM_SYSTEM}": resets["llm_reset_days"],
-            f"falsche Resets {LLM_SYSTEM}": resets["false_reset_days"],
-        }
-    )
-
-
-def build_outside_notification_table(alarms: FalseAlarms) -> pd.DataFrame:
-    notifications = alarms.notifications
-
-    return pd.DataFrame(
-        {
-            "System": notifications["config"].map(SYS_LABELS),
-            "Reihe": notifications["series"].map(SERIES_LABELS),
-            "Tage außerhalb der Ereignisse": notifications["days"],
-            "Meldungen": notifications["notification_days"],
-        }
-    )
-
-
-def build_deviation_table(deviations: pd.DataFrame) -> pd.DataFrame:
-    return pd.DataFrame(
-        {
-            "Cutover": deviations["cutover_date"],
-            "Reihe": deviations["series"].map(SERIES_LABELS),
-            "Tag": deviations["days_since_cutover"],
-            "Datum": deviations["analyzed_day"],
-            f"Klasse {RULE_SYSTEM}": deviations["classification_rule"],
-            f"Klasse {LLM_SYSTEM}": deviations["classification_llm"],
-            f"Aktion {RULE_SYSTEM}": deviations["adaption_action_rule"],
-            f"Aktion {LLM_SYSTEM}": deviations["adaption_action_llm"],
-            "LLM-Ausfall": deviations["llm_failed"].map(YES_NO),
-        }
-    )
-
-
-def build_event_deviation_table(deviations: pd.DataFrame) -> pd.DataFrame:
-    return pd.DataFrame(
-        {
-            "System": deviations["config"],
-            "Urlaubstag": deviations["days_since_cutover"],
-            "Datum": deviations["analyzed_day"],
-            f"Klasse {RULE_SYSTEM}": deviations["classification_rule"],
-            "Klasse System": deviations["classification_llm"],
-            f"Aktion {RULE_SYSTEM}": deviations["adaption_action_rule"],
-            "Aktion System": deviations["adaption_action_llm"],
-            "LLM-Ausfall": deviations["llm_failed"].map(YES_NO),
-        }
-    ).sort_values(["System", "Urlaubstag"])
-
-
-def build_answer_check_table(
-    checks: AnswerChecks, target_classification: str
-) -> pd.DataFrame:
-    summary = checks.summary
-
-    return pd.DataFrame(
-        {
-            "Lauf": summary["scenario"],
-            "System": summary["config"],
-            "Antworten": summary["answers"],
-            "Beleg fehlt": summary["unsupported_answers"],
-            "Verstoß im Text": summary["violation_answers"],
-            f"{target_classification}-Antworten": summary["target_answers"],
-            "davon belegt": [
-                f"{supported}/{answers}"
-                for supported, answers in zip(
-                    summary["target_supported_answers"], summary["target_answers"]
+            "Meldungstage U / R": [
+                f"{during} / {after}"
+                for during, after in zip(
+                    phases["notification_days"], phases["notification_days_after"]
                 )
             ],
+            "Tagesfehler U [W]": phases["day_error_absence"],
+            "Tagesfehler R [W]": phases["day_error_after_return"],
+            "Bias U [W]": phases["bias_absence"],
+            "Bias R [W]": phases["bias_after_return"],
         }
     )
 
 
-def build_answer_findings_table(checks: AnswerChecks) -> pd.DataFrame:
-    findings = checks.findings
+def read_subtracted_appliances(event_ids: list[str]) -> list[str]:
+    appliances: dict[str, None] = {}
+    for event_id in event_ids:
+        ranking = pd.read_csv(
+            PROJECT_CONFIG.e2_output_dir
+            / E2Config().channel_selection_subdir(event_id)
+            / f"{CHANNEL_RANKING_FILE}.csv"
+        )
+        appliances |= dict.fromkeys(ranking.loc[ranking["is_selected"], "appliance"])
 
-    return pd.DataFrame(
-        {
-            "Lauf": findings["scenario"],
-            "System": findings["config"],
-            "Datum": findings["analyzed_day"],
-            "Klasse": findings["classification"],
-            "Verstoß im Text": findings["violations"],
-            "fehlende Belege": findings["missing_evidence"],
-        }
-    )
-
-
-def build_precheck_first_days_table(summary: GatePrecheckSummary) -> pd.DataFrame:
-    return pd.DataFrame(
-        {
-            "System": summary.first_days["config"],
-            "Gate offen [Urlaubstag]": summary.first_days["first_gate_open_day"],
-            "Drift [Urlaubstag]": summary.first_days["first_drift_day"],
-            "Reset [Urlaubstag]": summary.first_days["first_reset_day"],
-        }
-    )
+    return list(appliances)
 
 
 def build_phase_table(phases: pd.DataFrame, target_classification: str) -> pd.DataFrame:
     return pd.DataFrame(
         {
-            "System": phases["config"],
+            "Systemvariante": phases["config"].map(CONFIG_LABELS),
             "Phase": phases["phase"].map(PHASE_LABELS),
             "Tage": phases["days"],
-            "Gate offen": phases["gate_open_days"],
-            "davon Einzeltag": phases["alarm_days"],
-            "davon Drift": phases["drift_gate_days"],
+            "Vorfilter offen": phases["gate_open_days"],
+            "davon Einzelanomalie": phases["alarm_days"],
+            "davon anhaltende Veränderung": phases["drift_gate_days"],
             "davon nur eine Skala": phases["single_scale_gate_days"],
             "new_pattern": phases["new_pattern_days"],
             "low": phases["low_days"],
             "peak": phases["peak_days"],
             target_classification: phases["absence_classified_days"],
-            "Resets": phases["reset_days"],
-            "Meldungen": phases["notification_days"],
+            "Zurücksetzen": phases["reset_days"],
+            "Meldungstage": phases["notification_days"],
             "Ausfalltage": phases["failed_days"],
         }
     )
 
 
-def build_precheck_days_table(summary: GatePrecheckSummary) -> pd.DataFrame:
-    days = summary.days_from_absence
+def format_event_cell(row: dict | None) -> str:
+    if row is None or pd.isna(row["judged_day"]):
+        return "-"
+    text = f"{int(row['judged_day'])} ({row['trigger_scale']})"
+    return text if row["correct"] else f"{text}, {row['classification']}"
+
+
+def build_classification_event_table(
+    events: pd.DataFrame, systems: list[str], stichtage: dict[str, str]
+) -> pd.DataFrame:
+    keys = ["cutover_date", "series", "start_day"]
+    cells = {
+        (*(row[key] for key in keys), row["config"]): row
+        for row in events.to_dict("records")
+    }
+    rows = (
+        events.drop_duplicates(keys).sort_values(keys, kind="stable").to_dict("records")
+    )
+
     return pd.DataFrame(
         {
-            "System": days["config"],
-            "Urlaubstag": days["absence_day"],
-            "Datum": days["analyzed_day"],
-            "Phase": days["phase"].map(PHASE_LABELS),
-            "Tagesmittel [W]": days["today_mean"],
-            "erwartet Wochentag [W]": days["weekday_expected"],
-            "z daily": days["daily_score"],
-            "z weekday": days["weekday_score"],
-            "z weekly": days["weekly_score"],
-            "long_term [%]": days["long_term_deviation_pct"],
-            "Streak weekly": days["weekly_anomaly_streak_days"],
-            "Streak long_term": days["long_term_anomaly_streak_days"],
-            "Level": days["anomaly_level"],
-            "Drift": days["sustained_drift"],
-            "Einordnung": days["classification"],
-            "Adaption": days["adaption_action"],
+            "Stichtag": [stichtage[row["cutover_date"]] for row in rows],
+            "Ereignis": [
+                f"{KIND_LABELS[row['kind']]}, Tag {row['start_day']}" for row in rows
+            ],
+            "erwartet": [row["expected"] for row in rows],
+        }
+        | {
+            system: [
+                format_event_cell(cells.get((*(row[key] for key in keys), system)))
+                for row in rows
+            ]
+            for system in systems
         }
     )
+
+
+def build_agreement_table(
+    agreement: pd.DataFrame, labels: dict[str, str]
+) -> pd.DataFrame:
+    return pd.DataFrame(
+        {
+            "Reihe": agreement["series"].map(labels),
+            "Tage": agreement["days"],
+            "Vorfilter offen": agreement["gate_open_days"],
+            "andere Klasse": agreement["deviation_days"],
+            f"Meldungstage {RULE_SYSTEM}": agreement["rule_notification_days"],
+            f"Meldungstage {LLM_SYSTEM}": agreement["llm_notification_days"],
+        }
+    )
+
+
+def build_violation_table(findings: pd.DataFrame) -> pd.DataFrame:
+    violations = findings.loc[findings["violations"].ne("")]
+
+    return pd.DataFrame(
+        {
+            "Lauf": violations["scenario"],
+            "System": violations["config"].replace(CONFIG_LABELS),
+            "Datum": violations["analyzed_day"],
+            "Klasse": violations["classification"],
+            "Verstoß": violations["violations"],
+        }
+    )
+
+
+def example_answer_lines(llm_outputs: pd.DataFrame) -> list[str]:
+    lines: list[str] = []
+    for scenario, classification, analyzed_day in EXAMPLE_ANSWERS:
+        candidates = llm_outputs.loc[
+            llm_outputs["scenario"].eq(scenario)
+            & llm_outputs["classification"].eq(classification)
+        ].sort_values("analyzed_day")
+        if analyzed_day is not None:
+            candidates = candidates.loc[candidates["analyzed_day"].eq(analyzed_day)]
+        if candidates.empty:
+            continue
+        answer = candidates.iloc[0]
+        lines += [
+            f"**{answer['scenario']}, eingeordneter Tag {answer['analyzed_day']}, Klasse {answer['classification']}**",
+            "",
+            f"- Erklärung: {answer['explanation']}",
+            f"- Empfehlung: {answer['user_recommendation']}",
+            f"- Unsicherheit: {answer['uncertainty']}",
+            f"- Belege: {str(answer['evidence_paths']).replace(';', ', ')}",
+            "",
+        ]
+
+    return lines
 
 
 def summarize_event(
@@ -471,72 +527,101 @@ def summarize_event(
     )
 
 
-def build_event_tables(
-    summary: E2Summary, e2_config: dict, event_id: str
-) -> dict[str, tuple[str, pd.DataFrame]]:
-    target_classification = e2_config["target_classification"]
-    context_reference = e2_config["context_reference_config"]
-    # die Varianten mit Kalender, ctx0 ist die Referenz
-    context_configs = [
-        config
-        for ctx, systems in e2_config["ctx_systems"].items()
-        if ctx != "ctx0"
-        for config in systems
-    ]
+def describe_series(series: str, events: list, labels: dict[str, str]) -> str:
+    if not events:
+        return labels[series]
+    days = ", ".join(str(day) for day, _ in events)
+    text = f"{events[0][1]} an Tag {days}"
+    return text if labels[series] == events[0][1] else f"{series} = {text}"
 
-    return {
-        f"key_figures_{event_id}": (
-            f"{event_id}: Kennzahlen",
-            build_key_figures(summary, target_classification),
+
+def build_study_setup(
+    e2_config: dict,
+    standard_config: dict,
+    windows: dict[str, tuple[pd.Timestamp, pd.Timestamp]],
+    labels: dict[str, str],
+    titles: dict[str, str],
+    events_labels: dict[str, str],
+    mean_reductions: dict[str, float],
+    errors_before: dict[str, float],
+    appliances: list[str],
+    run_name: str,
+    code_version: dict,
+) -> dict[str, str]:
+    counter_ids = e2_config["counter_event_ids"]
+    decimals = STANDARD_CONFIG.decimals
+    details = {}
+    for event_id in sorted(windows, key=lambda event: windows[event][0]):
+        details[labels[event_id]] = (
+            f"{format_window(windows[event_id])}, Eintrag „{titles[event_id]}“"
+            + (
+                f", Gegenfall „{titles[counter_ids[event_id]]}“"
+                if event_id in counter_ids
+                else ""
+            )
+            + f", Absenkung im Mittel {format_number(mean_reductions[event_id], decimals)} W"
+            + f", Tagesfehler vor dem Urlaub {format_number(errors_before[event_id], decimals)} W"
+        )
+    details["Prognosefenster"] = (
+        f"{e2_config['decision_time_margin_before_days']} Tage vor und {e2_config['decision_time_margin_after_days']} Tage nach jedem Urlaub"
+    )
+    details["Abgezogene Gerätekanäle"] = (
+        f"Abdeckung ab {e2_config['min_coverage_share_for_subtraction'] * 100:.0f} %, "
+        + "; ".join(appliances)
+    )
+
+    return build_setup(
+        run_name,
+        standard_config,
+        e2_config["event_cutovers"][standard_config["split"]],
+        code_version,
+        scenarios="Ereignisreihen ohne Kalender: "
+        + "; ".join(
+            describe_series(series, events, events_labels)
+            for series, events in e2_config["event_series"].items()
+        )
+        + ", dazu die Urlaube",
+        systems="Ereignisreihen "
+        + ", ".join(e2_config["event_systems"])
+        + "; Urlaube "
+        + ", ".join(
+            CONFIG_LABELS[config]
+            for systems in e2_config["ctx_systems"].values()
+            for config in systems
         ),
-        f"result_phases_{event_id}": (
-            f"{event_id}: Einordnung je Phase",
-            build_phase_table(summary.phases, target_classification),
-        ),
-        f"result_absence_{event_id}": (
-            f"{event_id}: Einordnung im Urlaub",
-            build_absence_table(summary.absence_classification, target_classification),
-        ),
-        f"result_calendar_{event_id}": (
-            f"{event_id}: Kalender im State",
-            build_calendar_table(summary.calendar_use),
-        ),
-        f"result_calendar_calls_{event_id}": (
-            f"{event_id}: Kalenderabruf per Tool, an Tagen mit Einordnung",
-            build_calendar_call_table(
-                summary.calendar_calls, list(e2_config["ctx_systems"]["ctx2"])
-            ),
-        ),
-        f"result_forecast_{event_id}": (
-            f"{event_id}: Prognose je Phase, gepaart gegen {e2_config['reference_config']}",
-            build_forecast_table(summary.forecast, e2_config["reference_config"]),
-        ),
-        f"result_forecast_context_{event_id}": (
-            f"{event_id}: Prognose je Phase der Varianten mit Kalender, gepaart gegen {context_reference}",
-            build_forecast_table(
-                summary.context_forecast.loc[
-                    summary.context_forecast["config"].isin(context_configs)
-                ],
-                context_reference,
-            ),
-        ),
-        f"result_deviations_{event_id}": (
-            f"{event_id}: Tage mit anderer Klasse als {RULE_SYSTEM}",
-            build_event_deviation_table(summary.deviations),
-        ),
-    }
+        details=details,
+    )
+
+
+NOTES = [
+    "Ereignisreihen: richtig = die erwartete Klasse am Bewertungstag. Bewertet wird bei peak und stuck am Tag nach dem Ereignis (Vorfilter offen), bei Dauerlast und Rampe am ersten Tag mit anhaltender Veränderung oder new_pattern. Ohne Bewertungstag zählt das Ereignis nicht in die Quote",
+    "new_pattern, eine Skala: new_pattern, obwohl laut Zustand nur weekly oder long_term anhält. Am Goldstandard zählt es als richtig",
+    "absence = Urlaube, in denen absence eingeordnet wurde, absence-Tage von den Urlaubstagen mit offenem Vorfilter. Ein Treffer ist absence mit passendem Kalendereintrag. absence ohne passenden Eintrag (ohne Kalender, im Gegenfall, nach der Rückkehr) zählt als Fehlklassifikation, im Gegenfall meint der Eintrag keine Abwesenheit",
+    "Urlaubstage mit offenem Vorfilter unterscheiden sich je Variante, nach einem Zurücksetzen im Urlaub fehlen Skalen und der Vorfilter bleibt zu",
+    "Kalenderabruf (CTX2): nützlich = abgerufen an Urlaubstagen, überflüssig = an anderen Tagen. CTX1 hat den Kalender immer im Zustand",
+    "Tagesfehler = mittlerer Betrag von Prognose- minus gemessenem Tagesmittel, Bias dasselbe mit Vorzeichen (negativ = Prognose zu niedrig). Differenzen gepaart am Prognosetag, negativ = besser. Nach der Rückkehr dauert, bis die Urlaubstage aus dem Trainingsfenster gerollt sind",
+    NOISE_RULE_NOTE,
+    "fehlende Belege: zur vergebenen Klasse fehlt ein Pfad im Zustand (peak und low die Richtung, new_pattern die anhaltenden Skalen, measurement_error die Plausibilität, absence ein Kalendereintrag). Verstoß im Text: eine Zahl oder ein Wort zu Steuerung, Preis oder Tarif, das nicht im Zustand steht. Die Prüfung sagt nichts darüber, ob der Text stimmt",
+    "Ab der ersten abweichenden Aktion sehen die Varianten verschiedene Zustände, spätere Unterschiede können Folgen davon sein",
+]
 
 
 def write_full_report(run_directory: Path) -> None:
     run_config = read_raw_json(run_directory, "run_config")
     e2_config = run_config["e2_config"]
+    standard_config = run_config["standard_config"]
     target_classification = e2_config["target_classification"]
+    reference = e2_config["reference_config"]
+    context_reference = e2_config["context_reference_config"]
+    stichtage = stichtag_labels(standard_config)
+    events_labels = series_labels(e2_config["event_series"])
 
-    calendar_events = load_calendar_events(Path(e2_config["calendar_events_file"]))
+    calendar_events = load_calendar_events(E2Config().calendar_events_file)
     windows = {
         event_id: resolve_absence_window(calendar_events, event_id)
         for event_id in e2_config["absence_event_ids"]
     }
+    labels = absence_labels(windows)
 
     raw_directory = run_directory / RAW_SUBDIR
     comparison = pd.read_csv(
@@ -547,21 +632,18 @@ def write_full_report(run_directory: Path) -> None:
         event_id: summarize_event(
             raw_directory, comparison, reduction, e2_config, event_id, window
         )
-        for event_id, window in windows.items()
+        for event_id, window in sorted(windows.items(), key=lambda item: item[1][0])
     }
 
     series_days = pd.read_csv(
         raw_directory / f"{CLASSIFICATION_FILE}.csv", dtype={"cutover_date": str}
     )
     classification = summarize_classification(series_days, e2_config["event_series"])
+    classification_comparison = summarize_classification_comparison(
+        classification, rule_system=RULE_SYSTEM, llm_system=LLM_SYSTEM
+    )
     agreement = summarize_rule_agreement(
         series_days, rule_system=RULE_SYSTEM, llm_system=LLM_SYSTEM
-    )
-    alarms = summarize_false_alarms(
-        series_days,
-        e2_config["event_series"],
-        rule_system=RULE_SYSTEM,
-        llm_system=LLM_SYSTEM,
     )
     text_check_config = TextCheckConfig()
     llm_outputs = read_llm_outputs(raw_directory)
@@ -574,103 +656,166 @@ def write_full_report(run_directory: Path) -> None:
         rounding_step=text_check_config.rounding_step,
         prompt_numbers=PROMPT_WINDOW_NUMBERS,
     )
+    phases = summarize_phase_overview(summaries, PHASE_CONFIGS)
+    absence = summarize_absence_overview(summaries, ABSENCE_CONFIGS)
+    return_forecast = summarize_return_forecast(summaries, CONTEXT_CONFIG)
+    failed_days = count_failed_days(summaries)
 
     output_directory = user_output_directory(run_directory)
     tables: dict[str, tuple[str, pd.DataFrame]] = {
+        "result_criteria": (
+            "Kriterien der Teilfrage 2",
+            build_tf2_criteria(
+                summarize_tf2_criteria(
+                    classification_comparison,
+                    absence,
+                    checks.summary,
+                    context_config=CONTEXT_CONFIG,
+                )
+            ),
+        ),
+        "result_criteria_tf3": (
+            "Kriterium der Teilfrage 3 aus E2: Tagesfehler nach der Rückkehr",
+            build_tf3_criterion(return_forecast, labels, reference),
+        ),
         "result_classification": (
-            "Einordnung auf den Ereignisreihen: richtige Klasse am Bewertungstag",
-            build_classification_table(summarize_classification_rates(classification)),
+            "Richtig eingeordnete Ereignisse je erwarteter Klasse, ohne Kalender",
+            build_classification_table(classification_comparison),
         ),
-        "result_false_resets": (
-            f"Falsche Resets von {LLM_SYSTEM}: Reset, den {RULE_SYSTEM} am selben Tag nicht macht, in Reihen ohne Dauerlast",
-            build_false_reset_table(alarms),
+        "result_absence": (
+            "Einordnung als absence je Variante",
+            build_absence_table(total_absence_by_variant(absence)),
         ),
-        "result_classification_events": (
-            "Einordnung je Ereignis",
-            build_classification_event_table(classification),
+        "result_return_forecast": (
+            f"Tagesfehler nach der Rückkehr, {CONFIG_LABELS[CONTEXT_CONFIG]} gegen {reference} und gegen {CONFIG_LABELS[context_reference]}",
+            build_return_table(return_forecast, labels, reference, context_reference),
         ),
-        "result_agreement": (
-            f"Ereignisreihen: Übereinstimmung von {LLM_SYSTEM} mit der Regel {RULE_SYSTEM}, auch ohne Ereignis",
-            build_agreement_table(agreement),
+        "result_calendar_calls": (
+            f"Kalenderabruf bei {CONFIG_LABELS['SYS3_CTX2']}, an Tagen mit Einordnung",
+            build_calendar_call_table(
+                summarize_calendar_call_totals(
+                    summaries, list(e2_config["ctx_systems"]["ctx2"])
+                ),
+                labels,
+            ),
         ),
-        "result_outside_notifications": (
-            "Ereignisreihen: Meldungen außerhalb der Ereignisse",
-            build_outside_notification_table(alarms),
+        "result_answer_overview": (
+            "Belegprüfung der Antworten",
+            build_answer_overview_table(
+                summarize_answer_overview(checks.summary, checks.findings),
+                target_classification,
+            ),
         ),
-        "result_answer_checks": (
-            "Belege und Text der LLM-Antworten",
-            build_answer_check_table(checks, target_classification),
+        "result_deviation_classes": (
+            f"Tage, an denen {LLM_SYSTEM} anders einordnet als {RULE_SYSTEM}",
+            build_deviation_class_table(
+                summarize_deviation_classes(agreement.deviations)
+            ),
         ),
     }
     appendix: dict[str, tuple[str, pd.DataFrame]] = {
-        "result_deviations": (
-            f"Ereignisreihen: Tage, an denen {LLM_SYSTEM} anders einordnet als {RULE_SYSTEM}",
-            build_deviation_table(agreement.deviations),
+        "result_classification_events": (
+            "Ereignisreihen: Bewertungstag (auslösende Skala) je Ereignis",
+            build_classification_event_table(
+                classification, list(e2_config["event_systems"]), stichtage
+            ),
+        ),
+        "result_agreement": (
+            f"Ereignisreihen: Übereinstimmung von {LLM_SYSTEM} mit {RULE_SYSTEM}",
+            build_agreement_table(
+                summarize_agreement_by_series(agreement.summary), events_labels
+            ),
         ),
         "result_answer_findings": (
-            "Antworten mit fehlendem Beleg oder Verstoß im Text",
-            build_answer_findings_table(checks),
+            "Antworten mit Verstoß im Text",
+            build_violation_table(checks.findings),
+        ),
+        "result_phases": (
+            "Urlaube: Einordnung, Zurücksetzen, Meldungen und Prognose (U = im Urlaub, R = nach der Rückkehr)",
+            build_phase_overview_table(phases, labels),
         ),
     }
-    for event_id, summary in summaries.items():
-        build_e2_plot(
-            summary.timeline,
-            output_directory,
-            configs=tuple(e2_config["plot_configs"]),
-            config_labels=CONFIG_LABELS,
-            name=f"e2_timeline_{event_id}",
-        )
-        tables.update(build_event_tables(summary, e2_config, event_id))
-        appendix[f"result_reduction_{event_id}"] = (
-            f"{event_id}: Absenkung je Tag im Urlaubsfenster",
-            build_reduction_table(summary.reduction),
-        )
+    build_e2_return_plot(
+        summarize_return_curve(
+            summaries,
+            config=CONTEXT_CONFIG,
+            reference_config=reference,
+            smoothing_days=E2Config().smoothing_days,
+        ),
+        output_directory,
+        context_label=CONFIG_LABELS[CONTEXT_CONFIG],
+        reference_label=CONFIG_LABELS[reference],
+    )
 
     write_result_report(
         output_directory,
-        title=f"E2 Abwesenheit, Lauf {run_directory.name}",
-        setup=build_setup(
+        title="E2: Einordnung durch das Sprachmodell",
+        setup=build_study_setup(
             e2_config,
-            run_config["standard_config"],
-            summaries,
+            standard_config,
             windows,
+            labels,
             {str(event["event_id"]): str(event["title"]) for event in calendar_events},
+            events_labels,
+            {
+                event_id: summary.mean_reduction_w
+                for event_id, summary in summaries.items()
+            },
+            {
+                row["event_id"]: row["day_error_before"]
+                for row in phases.drop_duplicates("event_id").to_dict("records")
+            },
+            read_subtracted_appliances(list(summaries)),
+            run_directory.name,
             run_config["code_version"],
         ),
         tables=tables,
-        notes=[
-            "Urlaubstag = analysierter Tag seit Beginn der Abwesenheit, 0 = erster Urlaubstag",
-            "Ereignisreihen: richtig = die Klasse am Bewertungstag ist die erwartete (peak, new_pattern, measurement_error). Bewertet wird bei Spitze und Festhänger am Tag nach dem Ereignis, wenn das Gate offen ist, beim Sprung am ersten Tag mit anhaltender Abweichung oder new_pattern. Kein Bewertungstag = nicht erkannt",
-            "richtig [%]: Anteil unter den erkannten Ereignissen. Die Regel (SYS2) und SYS1 sind der Maßstab für das LLM (SYS3), SYS1 handelt nie",
-            "Nach dem ersten Festhänger schließen SYS2 und SYS3 den Tag aus der Referenz aus, SYS1 nicht. Festhänger 2 und 3 werden daher mit verschiedenem Zustand eingeordnet. Bei den Spitzen gibt es keine Handlung, dort laufen alle Systeme gleich",
-            f"Treffer = {target_classification} mit passendem Kalendereintrag. {target_classification} ohne Beleg (ohne Kalender, "
-            "Kalender nicht abgerufen oder nach der Rückkehr) zählt als Fehlklassifikation, über alle Phasen",
-            "Treffer: von den Urlaubstagen mit offenem Gate, an den übrigen wird nicht eingeordnet. Wenige Tage, deshalb als Anzahl",
-            f"Einordnung je Phase: {target_classification} ist keine Meldung, im Urlaub ist jede Meldung ein Fehlalarm. Ausfalltage = LLM ohne gültige Antwort",
-            "Gate offen: Einzeltag, Drift (weekly und long_term halten an) oder nur eine anhaltende Skala",
-            "Prognose je Phase: Phase und Fehler nach dem Prognosetag. Tagesfehler (Hauptmaß) = Betrag von Prognose-Tagesmittel minus Ist-Tagesmittel, "
-            "gemittelt über die Tage. Bias = dasselbe mit Vorzeichen, negativ = Prognose zu niedrig. MAE = mittlerer Stundenfehler",
-            f"Differenzen gegen {e2_config['reference_config']} bzw. gegen {e2_config['context_reference_config']} (Tabellen mit Kalender): gepaart am selben Prognosetag, negativ = besser",
-            f"Prognosephase nach der Rückkehr: {e2_config['decision_time_margin_after_days']} Tage, so lange dauert es, bis die Urlaubstage aus dem Trainingsfenster von Prophet herausgerollt sind",
-            f"Falsche Resets: Reihen ohne Dauerlast sind Kontrolle, Spitzen und Festhänger, dort verlangt kein Ereignis einen Reset. Falsch = {LLM_SYSTEM} setzt an einem Tag zurück, an dem {RULE_SYSTEM} es nicht tut. Resets von {RULE_SYSTEM} stehen daneben, zählen aber nicht als falsch. SYS1 handelt nie. Summe über alle Cutover, ab dem ersten Unterschied sehen die Systeme verschiedene Zustände",
-            "Meldungen außerhalb der Ereignisse: Tage ohne Ereignis, bei Spitze und Festhänger ohne den ersten Einordnungstag, beim Sprung und der Rampe vor dem ersten Einordnungstag, in der Kontrolle alle. Meldung = peak, new_pattern oder measurement_error, Summe über alle Cutover",
-            f"Ereignisreihen ohne Kalender, Kontrolle = unveränderte Daten ohne Ereignis, zählt nicht in die Quote. Tage mit anderer Klasse als {RULE_SYSTEM}: ab der ersten Abweichung sehen die Systeme verschiedene Zustände, spätere Unterschiede können Folgen sein",
-            "Belege: Beleg fehlt = zur Klasse fehlt ein Pfad (peak und low die Richtung, new_pattern die Streaks der anhaltenden Skalen, measurement_error das Flag, absence ein Kalendereintrag, der im State steht). Verstoß im Text = Steuerung, Preis oder Tarif, Zahl oder Uhrzeit, die nicht im State steht",
-            "Die Belegprüfung sagt nichts über die Wahrheit des Textes, Passung zur Klasse bewerten Personen (explanation_ratings_template.csv)",
-            "ctx0 ohne, ctx1 mit Kalender im State, ctx2 Kalender per Tool. SYS1 und SYS2 lesen keinen Kalender und laufen nur in ctx0",
-            f"Kalendereinträge als Freitext aus calendar_events.json, im Gegenfall {e2_config['counter_ctx']} steht zu denselben Zeiten nur "
-            f"ein Eintrag, der keine Abwesenheit meint. Dort ist jedes {target_classification} falsch und zählt als {target_classification} ohne Beleg",
-            "Kalender im State: bei ctx2 hat das LLM an diesen Tagen nachgeschaut, jeder ctx2-Tag mit LLM kostet einen zusätzlichen Aufruf für die Tool-Entscheidung",
-            "Kalenderabruf: nützlich = abgerufen an einem Urlaubstag (ein Eintrag deckt den Tag), überflüssig = abgerufen ohne deckenden Eintrag, "
-            "verpasst = nicht abgerufen an einem Urlaubstag. Vergleich: ctx1 schaut immer nach",
-        ],
-        images=[f"e2_timeline_{event_id}.png" for event_id in summaries],
+        notes=NOTES
+        + [f"Ausfälle des Sprachmodells in den Urlaubsläufen: {failed_days} Tage"],
+        images=["e2_return.png"],
         decimals=STANDARD_CONFIG.decimals,
         appendix=appendix,
+        appendix_text=[
+            ("Beispielantworten des Sprachmodells", example_answer_lines(llm_outputs)),
+        ],
     )
-    write_explanation_rating_template(llm_outputs, output_directory)
 
     print(f"Result written to {output_directory / 'ergebnis.md'}")
+
+
+def build_precheck_first_days_table(summary: GatePrecheckSummary) -> pd.DataFrame:
+    return pd.DataFrame(
+        {
+            "System": summary.first_days["config"],
+            "Gate offen [Urlaubstag]": summary.first_days["first_gate_open_day"],
+            "Drift [Urlaubstag]": summary.first_days["first_drift_day"],
+            "Reset [Urlaubstag]": summary.first_days["first_reset_day"],
+        }
+    )
+
+
+def build_precheck_days_table(summary: GatePrecheckSummary) -> pd.DataFrame:
+    days = summary.days_from_absence
+    return pd.DataFrame(
+        {
+            "System": days["config"],
+            "Urlaubstag": days["absence_day"],
+            "Datum": days["analyzed_day"],
+            "Phase": days["phase"].map(PHASE_LABELS),
+            "Tagesmittel [W]": days["today_mean"],
+            "erwartet Wochentag [W]": days["weekday_expected"],
+            "z daily": days["daily_score"],
+            "z weekday": days["weekday_score"],
+            "z weekly": days["weekly_score"],
+            "long_term [%]": days["long_term_deviation_pct"],
+            "Streak weekly": days["weekly_anomaly_streak_days"],
+            "Streak long_term": days["long_term_anomaly_streak_days"],
+            "Level": days["anomaly_level"],
+            "Drift": days["sustained_drift"],
+            "Einordnung": days["classification"],
+            "Adaption": days["adaption_action"],
+        }
+    )
 
 
 def write_precheck_report(run_directory: Path) -> None:
@@ -678,7 +823,7 @@ def write_precheck_report(run_directory: Path) -> None:
     e2_config = run_config["e2_config"]
     target_classification = e2_config["target_classification"]
 
-    calendar_events = load_calendar_events(Path(e2_config["calendar_events_file"]))
+    calendar_events = load_calendar_events(E2Config().calendar_events_file)
     raw_directory = run_directory / RAW_SUBDIR
     comparison = pd.read_csv(raw_directory / f"{COMPARISON_FILE}.csv")
 

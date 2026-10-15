@@ -9,6 +9,7 @@ from experiments.common.evaluation import (
     add_weeks,
     days_since_date,
     merge_cycle_days,
+    streak_scale_names,
     summarize_forecast_errors,
     summarize_paired_differences,
 )
@@ -131,6 +132,7 @@ class ForecastSummary:
     gap_total: pd.DataFrame
     # geglätteter Tagesfehler je Tag seit Start, nur für den Plot
     curve: pd.DataFrame
+    gap_curve: pd.DataFrame
 
 
 def summarize_forecast(
@@ -173,20 +175,30 @@ def summarize_forecast(
     )
 
     def against(reference_id: str, keys: list[str]) -> pd.DataFrame:
-        table = summarize_forecast_errors(paired, keys, reference_id)
+        table = summarize_forecast_errors(
+            paired, keys, reference_id, pair_keys=("start_date", "decision_time")
+        )
         return table.loc[table["config"].eq(adaptive_model_id)].set_index(keys)
 
     overall_keys = ["coldstart_days"]
     week_keys = ["coldstart_days", "week"]
     overall = (
         against(static_model_id, overall_keys)[
-            ["mean_day_error_w", "mean_mape_pct", "mean_delta"]
+            [
+                "mean_day_error_w",
+                "mean_mape_pct",
+                "mean_delta",
+                "delta_standard_error",
+                "exceeds_noise",
+            ]
         ]
         .rename(
             columns={
                 "mean_day_error_w": "adaptive",
                 "mean_mape_pct": "mape_pct",
                 "mean_delta": "minus_static",
+                "delta_standard_error": "minus_static_standard_error",
+                "exceeds_noise": "minus_static_reliable",
             }
         )
         .join(
@@ -225,12 +237,22 @@ def summarize_forecast(
         .reset_index()
     )
 
+    adaptive_curve = curve.pivot(
+        index="day_since_start", columns="coldstart_days", values="adaptive"
+    )
+    gap_curve = (
+        (adaptive_curve[adaptive_curve.columns.min()] - adaptive_curve[longest])
+        .rename("delta")
+        .reset_index()
+    )
+
     return ForecastSummary(
         overall=overall.reset_index(),
         weeks=weeks.reset_index(),
         gap=gap,
         gap_total=gap_total,
         curve=curve,
+        gap_curve=gap_curve,
     )
 
 
@@ -300,19 +322,28 @@ def compare_clean_notifications(
 def find_extra_resets(
     days: pd.DataFrame, *, shortest: int, longest: int, week_days: int
 ) -> pd.DataFrame:
-    """Je Lauf der erste Tag mit new_pattern beim kurzen Kaltstart, an dem der lange keins hat"""
+    """Je Lauf der erste Tag mit new_pattern beim kurzen Kaltstart, an dem der lange keins hat, dazu die Skalen, die bei dem kurzen anhalten"""
     run_keys = ["start_date", "scenario", "injection_day"]
     flags = days.assign(reset=days["classification"].eq(RESET_CLASSIFICATION))
     keys = run_keys + ["day_since_start"]
-    paired = flags.loc[flags["coldstart_days"].eq(shortest), keys + ["reset"]].merge(
+    paired = flags.loc[
+        flags["coldstart_days"].eq(shortest),
+        keys + ["reset"] + SCALE_SUSTAINED_COLUMNS,
+    ].merge(
         flags.loc[flags["coldstart_days"].eq(longest), keys + ["reset"]],
         on=keys,
         suffixes=("", "_longest"),
     )
     extra = paired.loc[paired["reset"] & ~paired["reset_longest"]]
-    first_days = extra.sort_values("day_since_start").groupby(run_keys, dropna=False)
+    first_days = (
+        extra.sort_values("day_since_start")
+        .groupby(run_keys, dropna=False)
+        .head(1)
+        .reset_index(drop=True)
+    )
+    first_days["trigger_scale"] = streak_scale_names(first_days)
 
-    return add_weeks(first_days.head(1)[keys].reset_index(drop=True), week_days)
+    return add_weeks(first_days[keys + ["trigger_scale"]], week_days)
 
 
 def judge_injections(days: pd.DataFrame) -> pd.DataFrame:
@@ -549,46 +580,62 @@ def summarize_totals(forecast: ForecastSummary, system: SystemSummary) -> pd.Dat
 
 
 def evaluate_criteria(forecast: ForecastSummary, system: SystemSummary) -> pd.DataFrame:
-    """Die drei Bedingungen für funktioniert mit dem kurzen Kaltstart, alle gegenüber dem langen"""
+    """Die vier Kriterien der Teilfrage 4 wie in Tabelle 5.5 der Arbeit, kurze Starthistorie gegen lange und gegen das statische Modell"""
     shortest = system.scale_days["coldstart_days"].min()
-    short_scales = system.scale_days.loc[
-        system.scale_days["coldstart_days"].eq(shortest)
-    ].set_index("scale")["latest_day"]
 
     gap = forecast.gap.loc[forecast.gap["coldstart_days"].eq(shortest)]
-    weeks_worse = (gap["exceeds_noise"] & gap["mean_delta"].gt(0)).sum()
-    first_week_vs_reference = forecast.weeks[f"minus_reference_{shortest}"].iloc[0]
+    weeks_worse = int((gap["exceeds_noise"] & gap["mean_delta"].gt(0)).sum())
 
-    # ab dem Entscheidungstag, an dem weekday da ist, soll erkannt werden, was der lange erkennt
     pairs = system.injection_pairs
-    after_weekday = (
-        pairs["injection_day"] + FIRST_ANALYZED_DAY >= short_scales[WEEKDAY_SCALE]
-    )
-    missed_after_weekday = pairs.loc[after_weekday, "missed"].sum()
+    detected_longest = pairs.loc[pairs["detected_longest"].astype(bool)]
+    detected_both = int(detected_longest["detected_shortest"].astype(bool).sum())
+    detected_share = 100 * detected_both / len(detected_longest)
+
+    static = forecast.overall.set_index("coldstart_days").loc[shortest]
+    minus_static = static["minus_static"]
+    static_reliable = bool(static["minus_static_reliable"])
 
     rows = [
-        ("forecast", "weeks_worse_than_longest", weeks_worse == 0, weeks_worse),
-        (
-            "forecast",
-            "first_week_minus_reference_w",
-            first_week_vs_reference <= 0,
-            first_week_vs_reference,
-        ),
-        (
-            "no_malfunction",
-            "extra_resets",
-            len(system.extra_resets) == 0,
-            len(system.extra_resets),
-        ),
-        (
-            "detection",
-            "missed_after_weekday",
-            missed_after_weekday == 0,
-            missed_after_weekday,
-        ),
+        {
+            "check": "weeks_worse_than_longest",
+            "fulfilled": weeks_worse == 0,
+            "value": weeks_worse,
+            "total": len(gap),
+        },
+        {
+            "check": "extra_resets",
+            "fulfilled": len(system.extra_resets) == 0,
+            "value": len(system.extra_resets),
+            "total": system.runs,
+        },
+        {
+            "check": "detected_share",
+            "fulfilled": detected_share >= 90,
+            "value": detected_both,
+            "total": len(detected_longest),
+            "share_pct": detected_share,
+        },
+        {
+            "check": "minus_static",
+            "fulfilled": static_reliable and minus_static < 0,
+            "value": minus_static,
+            "two_se": 2 * static["minus_static_standard_error"],
+            "reliable": static_reliable,
+        },
     ]
 
-    return pd.DataFrame(rows, columns=["criterion", "check", "fulfilled", "value"])
+    return pd.DataFrame(
+        rows,
+        columns=[
+            "check",
+            "fulfilled",
+            "value",
+            "total",
+            "share_pct",
+            "two_se",
+            "reliable",
+        ],
+    )
 
 
 @dataclass(frozen=True)
@@ -602,7 +649,6 @@ class E4Summary:
     settling: pd.DataFrame
     totals: pd.DataFrame
     criteria: pd.DataFrame
-    # funktioniert mit dem kurzen Kaltstart: alle Bedingungen erfüllt
     works: bool
 
 

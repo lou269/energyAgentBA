@@ -35,9 +35,9 @@ ANALYZED_DAY = "2015-12-15"
 _ABSENCE_EVENT = {
     "end": "2015-12-22T00:00:00+00:00",
     "event_id": "vacation-2015-12",
-    "event_type": "absence",
     "known_at": "2015-11-15T00:00:00+00:00",
     "start": "2015-12-08T00:00:00+00:00",
+    "title": "Urlaub",
 }
 
 
@@ -386,7 +386,7 @@ EXPECTED_EVIDENCE_PATHS: dict[str, frozenset[str]] = {
     "absence_drift_down": frozenset(
         {
             "anomaly.level",
-            "context.events.0.event_type",
+            "context.events.0.title",
         }
     ),
 }

@@ -1,19 +1,12 @@
-# K4 Prognose mit und ohne Jahressaisonalität, Lauf k4_season_001
+# K4 Teil 2: Jahressaisonalität
 
 ## Setup
 
+- Lauf: k4_season_001
 - Auswertung: 365 Tage ab 2014-04-02 (validation), je Tag eine 24-h-Prognose, Historie ab Datenbeginn
 - Varianten: C3_60 rolling 60 Tage, C2 expanding, Y1 expanding + Jahressaison
 - Naive Referenz: B2 naiv, Vortag
 - Commit: 32b0600 (mit lokalen Änderungen)
-
-## Kennzahlen
-
-| Kennzahl | Wert | Bezug |
-|---|---|---|
-| Y1 − C2: Differenz im Tagesfehler über das Jahr [W] | -1,5 | negativ = Variante besser, belastbar nein |
-| C2 − C3_60: Differenz im Tagesfehler über das Jahr [W] | -1,2 | negativ = Variante besser, belastbar nein |
-| Y1 − C3_60: Differenz im Tagesfehler über das Jahr [W] | -2,7 | negativ = Variante besser, belastbar nein |
 
 ## Tagesfehler je Monat [W]
 
@@ -38,14 +31,12 @@
 
 | Vergleich | Differenz [W] | 2 Standardfehler [W] | Tage | Tage besser [%] | belastbar |
 |---|---:|---:|---:|---:|---|
-| Y1 − C2 | -1,5 | 3,5 | 364 | 54,9 | nein |
-| C2 − C3_60 | -1,2 | 5,9 | 364 | 53,6 | nein |
-| Y1 − C3_60 | -2,7 | 4,8 | 364 | 54,1 | nein |
+| Y1 − C2 | −1,5 | 3,5 | 364 | 54,9 | nein |
+| C2 − C3_60 | −1,2 | 5,9 | 364 | 53,6 | nein |
+| Y1 − C3_60 | −2,7 | 4,8 | 364 | 54,1 | nein |
 
 ## Hinweise
 
 - Y1 − C2 ist der Effekt der Jahressaisonalität allein, C2 − C3_60 der der längeren Historie
 - Monat 2014-04 und 2015-04 sind je ein halber Monat
 - belastbar: Betrag der Differenz größer als 2 Standardfehler der gepaarten Differenzen, grobe Faustregel
-
-![k4_mae_by_month.png](k4_mae_by_month.png)

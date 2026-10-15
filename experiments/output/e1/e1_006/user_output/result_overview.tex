@@ -1,13 +1,11 @@
-\begin{tabular}{lllrlll}
-\toprule
-Ereignis & erwartet & erkannt & Ø Tag & Tag min–max & Skala (Spitze) & Kontrolle mit Signal [Tage] \\
+\begin{tabzahlen}{T T T T T}
+Szenario & erwartet & erkannt & Erkennungstag, Mittel (Spanne) & auslösende Skala \\
 \midrule
-Sprung +20 \% & auffällig & 1/3 & 15,0 & 15 & - & 0 \\
-Sprung \textminus{}20 \% & auffällig & 2/3 & 34,5 & 31–38 & - & 0 \\
-Rampe über 28 Tage +20 \% & auffällig & 2/3 & 33,5 & 17–50 & - & 0 \\
-Rampe über 28 Tage \textminus{}20 \% & auffällig & 3/3 & 43,0 & 31–57 & - & 0 \\
-Rampe über 56 Tage +20 \% & unauffällig & 2/3 & 43,0 & 29–57 & - & 0 \\
-Rampe über 56 Tage \textminus{}20 \% & unauffällig & 1/3 & 57,0 & 57 & - & 0 \\
-Spitze +670 W über 6 h & auffällig & 1/3 & - & - & weekday & 0–1 \\
-\bottomrule
-\end{tabular}
+scaled & erkannt & 1 von 3 & 15,0 (15) & weekly + long\_\allowbreak{}term \\
+scaled\_\allowbreak{}down & erkannt & 2 von 3 & 34,5 (31–38) & weekly + long\_\allowbreak{}term \\
+ramp\_\allowbreak{}28 & erkannt & 2 von 3 & 33,5 (17–50) & weekly + long\_\allowbreak{}term \\
+ramp\_\allowbreak{}28\_\allowbreak{}down & erkannt & 3 von 3 & 43,0 (31–57) & weekly + long\_\allowbreak{}term \\
+ramp\_\allowbreak{}56 & nicht erkannt & 2 von 3 & 43,0 (29–57) & weekly + long\_\allowbreak{}term \\
+ramp\_\allowbreak{}56\_\allowbreak{}down & nicht erkannt & 1 von 3 & 57,0 (57) & weekly + long\_\allowbreak{}term \\
+peak & erkannt & 1 von 1 & - & weekday \\
+\end{tabzahlen}

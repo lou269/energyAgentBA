@@ -311,7 +311,7 @@ SYS_VARIANTS: dict[str, CycleConfig] = {
 SYS_LABELS: dict[str, str] = {
     "SYS0": "SYS0 statisch, ohne Adaption",
     "SYS1": "SYS1 ohne Adaption",
-    "SYS2": "SYS2 Regel",
-    "SYS3": "SYS3 LLM",
-    "SYS3_TOOL": "SYS3 LLM, Kalender per Tool",
+    "SYS2": "SYS2 regelbasiert",
+    "SYS3": "SYS3",
+    "SYS3_TOOL": "SYS3 (CTX2)",
 }

@@ -1,20 +1,29 @@
 # conda activate forecasting-env
 # python -m experiments.e1_seasonality.e1_report [run_directory]
 
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 
 import pandas as pd
 
+from experiments.common.harness import read_anomaly_rows
 from experiments.common.report import (
     KIND_LABELS,
-    format_commit,
-    format_cutovers,
+    YES_NO,
+    build_setup,
+    criteria_table,
+    format_count,
+    format_number,
+    split_cutover_dates,
+    stichtag_labels,
     write_result_report,
 )
 from experiments.common.standard_config import PROJECT_CONFIG, STANDARD_CONFIG
 from experiments.e1_seasonality.e1_config import RESULTS_FILE, RUN_PREFIX
-from experiments.e1_seasonality.e1_evaluation import summarize_detection
-from src.config.config_forecasting import SYS_LABELS
+from experiments.e1_seasonality.e1_evaluation import (
+    summarize_detection,
+    summarize_scale_onsets,
+)
 from src.pipeline.io import (
     RAW_SUBDIR,
     read_raw_json,
@@ -22,13 +31,47 @@ from src.pipeline.io import (
     user_output_directory,
 )
 
-EXPECTED_LABELS = {"reset": "auffällig", "alarm": "auffällig", "silent": "unauffällig"}
+EXPECTED_LABELS = {"reset": "erkannt", "alarm": "erkannt", "silent": "nicht erkannt"}
+CRITERION_LABELS = {
+    "built_in": ("Erkennungsrate eingebauter Anomalien", "≥ 90 %"),
+    "slow_ramps": ("Erkennungsrate langsamer Rampen", "0 %"),
+}
 
 
-def format_range(first: float, last: float) -> str:
-    if pd.isna(first):
+def format_day_range(mean: float, first: float, last: float, decimals: int) -> str:
+    if pd.isna(mean):
         return "-"
-    return str(first) if first == last else f"{first}–{last}"
+    span = str(first) if first == last else f"{first}–{last}"
+    return f"{format_number(float(mean), decimals)} ({span})"
+
+
+def read_level_cases(
+    raw_directory: Path,
+    kinds_by_cutover: Mapping[str, Sequence[str]],
+    cutover_dates: Mapping[str, str],
+) -> pd.DataFrame:
+    frames = [
+        read_anomaly_rows(raw_directory / f"{kind}_{cutover_dates[cutover]}").assign(
+            kind=kind, cutover_date=cutover_dates[cutover]
+        )
+        for cutover, kinds in kinds_by_cutover.items()
+        for kind in kinds
+        if kind not in ("control", "peak")
+    ]
+    return pd.concat(frames, ignore_index=True)
+
+
+def build_criteria(criteria: pd.DataFrame) -> pd.DataFrame:
+    return criteria_table(
+        [
+            (
+                *CRITERION_LABELS[row["criterion"]],
+                format_count(row["detected"], row["cases"], row["share_pct"]),
+                row["fulfilled"],
+            )
+            for row in criteria.to_dict("records")
+        ]
+    )
 
 
 def write_report(run_directory: Path) -> Path:
@@ -37,6 +80,8 @@ def write_report(run_directory: Path) -> Path:
     standard_config = run_config["standard_config"]
     system = e1_config["system"]
     kinds_by_cutover = e1_config["kinds_by_cutover"][standard_config["split"]]
+    stichtage = stichtag_labels(standard_config)
+    decimals = STANDARD_CONFIG.decimals
 
     results = pd.read_csv(
         run_directory / RAW_SUBDIR / f"{RESULTS_FILE}.csv",
@@ -45,73 +90,111 @@ def write_report(run_directory: Path) -> Path:
     summary = summarize_detection(results)
     kinds = [kind for kind in KIND_LABELS if kind in summary.overview["kind"].values]
     overview = summary.overview.set_index("kind").loc[kinds].reset_index()
-    cases = summary.cases.set_index("kind").loc[kinds].reset_index()
+    cases = (
+        summary.cases.set_index("kind")
+        .loc[kinds]
+        .reset_index()
+        .sort_values(["cutover_date"], kind="stable")
+    )
 
     tables = {
+        "result_criteria": (
+            "Kriterien der Teilfrage 1",
+            build_criteria(summary.criteria),
+        ),
         "result_overview": (
-            "Erkennung je Ereignis über alle Cutover",
+            "Erkennung je Szenario über die Stichtage",
             pd.DataFrame(
                 {
-                    "Ereignis": overview["kind"].map(KIND_LABELS),
+                    "Szenario": overview["kind"].map(KIND_LABELS),
                     "erwartet": overview["expected"].map(EXPECTED_LABELS),
-                    "erkannt": overview["detected"].astype(str)
-                    + "/"
-                    + overview["cases"].astype(str),
-                    "Ø Tag": overview["mean_day"],
-                    "Tag min–max": [
-                        format_range(first, last)
-                        for first, last in zip(
-                            overview["first_day"], overview["last_day"]
+                    "erkannt": [
+                        f"{detected} von {evaluable}"
+                        for detected, evaluable in zip(
+                            overview["detected_evaluable"], overview["evaluable_cases"]
                         )
                     ],
-                    "Skala (Spitze)": overview["trigger_scale"],
-                    "Kontrolle mit Signal [Tage]": [
-                        format_range(first, last)
-                        for first, last in zip(
-                            overview["control_days_min"],
-                            overview["control_days_max"],
+                    "Erkennungstag, Mittel (Spanne)": [
+                        format_day_range(mean, first, last, decimals)
+                        for mean, first, last in zip(
+                            overview["mean_day"],
+                            overview["first_day"],
+                            overview["last_day"],
                         )
                     ],
+                    "auslösende Skala": overview["detecting_scales"],
                 }
             ),
         ),
     }
     appendix = {
         "result_cases": (
-            "Erkennung je Cutover und Ereignis",
+            "Erkennung je Stichtag und Szenario",
             pd.DataFrame(
                 {
-                    "Cutover": cases["cutover_date"],
-                    "Ereignis": cases["kind"].map(KIND_LABELS),
+                    "Stichtag": cases["cutover_date"].map(stichtage),
+                    "Szenario": cases["kind"].map(KIND_LABELS),
                     "erkannt am Tag": cases["first_event_day"],
-                    "Skala (Spitze)": cases["trigger_scale"],
-                    "Kontrolle mit Signal [Tage]": cases["control_signal_days"],
+                    "auslösende Skala": cases["detecting_scales"],
+                    "Tage mit Kennwert im Kontrolllauf": cases["control_signal_days"],
+                    "auswertbar": cases["evaluable"].map(YES_NO),
                 }
             ),
         ),
     }
 
+    onsets = summarize_scale_onsets(
+        read_level_cases(
+            run_directory / RAW_SUBDIR,
+            kinds_by_cutover,
+            split_cutover_dates(standard_config),
+        )
+    )
+    onsets = (
+        onsets.set_index("kind")
+        .loc[[kind for kind in kinds if kind in onsets["kind"].values]]
+        .reset_index()
+        .sort_values(["cutover_date"], kind="stable")
+    )
+    appendix["result_scale_onsets"] = (
+        "Niveauänderungen: erster Tag, an dem die Skalen anhalten",
+        pd.DataFrame(
+            {
+                "Stichtag": onsets["cutover_date"].map(stichtage),
+                "Szenario": onsets["kind"].map(KIND_LABELS),
+                "weekly hält an ab Tag": onsets["first_weekly_day"],
+                "long_term hält an ab Tag": onsets["first_long_term_day"],
+                "beide halten an ab Tag (Erkennung)": onsets["first_both_day"],
+                "weekly davor abgerissen [mal]": onsets["weekly_breaks"],
+            }
+        ),
+    )
+
     output_directory = user_output_directory(run_directory)
     write_result_report(
         output_directory,
-        title=f"E1 Erkennung, Lauf {run_directory.name}",
-        setup={
-            "Cutover": format_cutovers(standard_config, list(kinds_by_cutover)),
-            "System": f"{SYS_LABELS[system]}, die Regel ordnet ein, keine Adaption, kein LLM",
-            "Commit": format_commit(run_config["code_version"]),
-        },
+        title="E1: Erkennung der Verbrauchsänderungen",
+        setup=build_setup(
+            run_directory.name,
+            standard_config,
+            list(kinds_by_cutover),
+            run_config["code_version"],
+            scenarios=", ".join(kinds),
+            systems=f"{system}, die Regel ordnet ein, keine Adaption, kein Sprachmodell",
+        ),
         tables=tables,
         appendix=appendix,
         notes=[
-            "Tag = Entscheidungstag seit Cutover, an Tag 1 wird der Cutover-Tag eingeordnet",
-            "erkannt: Spitze = Einzeltag-Alarm (daily oder weekday) an Tag 1, dem Tag ihres Einbaus, Niveauänderung und Rampe = Streak auf mehreren Skalen gleichzeitig (weekly und long_term). Gezählt wird der erste Tag, an dem das Ereignis den Kennwert hat und der Kontrolllauf desselben Cutovers nicht",
-            "erwartet: auffällig = der Vorfilter soll das Ereignis melden, unauffällig = still bleiben (Rampe über 56 Tage gilt nicht als Ereignis). Kein Maß für die Einordnung",
-            "Ø Tag und Tag min–max nur über die erkannten Fälle, nicht erkannt = nie innerhalb des Fensters. Bei der Spitze entfallen sie, sie zählt nur an Tag 1",
-            "Skala (Spitze): dominante Einzeltag-Skala am Erkennungstag, bei Niveau und Rampen gilt immer der Streak auf weekly und long_term",
-            "Kontrolle mit Signal: Tage ab Cutover (Spitze: Tag 1), an denen der Kontrolllauf denselben Kennwert hat (echte Saison, Rauschen), min–max über die Cutover.",
+            "Tag = Entscheidungstag seit dem Stichtag, an Tag 1 wird der Stichtag selbst eingeordnet",
+            "erkannt: Lastspitze = Einzelanomalie (Skala daily oder weekday) an Tag 1, Dauerlast und Rampe = anhaltende Veränderung (weekly und long_term an 6 von 7 Tagen). Gezählt wird der erste Tag, an dem der Szenariolauf den Kennwert hat und der Kontrolllauf desselben Stichtags nicht",
+            "auswertbar: zeigt der Kontrolllauf am Einbautag der Lastspitze schon eine Einzelanomalie, geht der Fall nicht in die Zählung ein",
+            "erwartet: die Rampe über 56 Tage soll nicht als anhaltende Veränderung erkannt werden",
+            f"Anhaltende Veränderungen werden im Mittel an Tag {format_number(summary.sustained_mean_day, decimals)} erkannt (Dauerlast und Rampe über 28 Tage)",
+            "Erkennungstag, Mittel (Spanne): nur über die erkannten Fälle, bei der Lastspitze entfällt er, sie zählt nur an Tag 1",
+            "Skalen anhaltend: weekly bzw. long_term liegt an 6 der letzten 7 Tage über der Schwelle, eine anhaltende Veränderung gilt erst, wenn beide gleichzeitig anhalten. Abgerissen zählt, wie oft weekly vor diesem Tag wieder unter 6 von 7 Tagen fiel",
         ],
         images=[],
-        decimals=STANDARD_CONFIG.decimals,
+        decimals=decimals,
     )
 
     return output_directory

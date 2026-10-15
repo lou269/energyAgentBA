@@ -5,14 +5,11 @@ from pathlib import Path
 
 import pandas as pd
 
-from docs.plots.plot_k2_llm_model import build_k2_plot
 from experiments.common.report import (
     KIND_LABELS,
+    build_setup,
     format_commit,
-    format_cutovers,
     format_number,
-    key_figures_table,
-    markdown_table,
     relabel,
     write_result_report,
 )
@@ -59,43 +56,27 @@ SINGLE_CASE_HEADERS = {
     "invalid": "ungültig",
     "mean_attempt_count": "Ø Versuche",
     "mean_grounding_coverage": "Grounding",
-    "mean_generation_seconds": "Ø s je Aufruf",
-    "p95_generation_seconds": "p95 s",
+    "mean_generation_seconds": "Ø Zeit [s]",
+    "p95_generation_seconds": "p95 Zeit [s]",
 }
 SEQUENCE_HEADERS = {
     "model_id": "Modell",
-    "detected_kinds": "Ereignis-Arten erkannt",
-    "rule_deviation_days": "Tage anders als die Regel",
-    "gate_open_days": "Gate-Tage",
+    "detected_kinds": "Szenarien erkannt",
+    "rule_deviation_days": "Abweichungstage",
+    "gate_open_days": "Vorfilter offen",
     "failed_days": "Ausfalltage",
-    "control_notification_days": "Meldungen Kontrolle",
-    "control_unknown_days": "unknown Kontrolle",
-    "control_resets": "Resets Kontrolle",
-}
-EVENT_HEADERS = {
-    "model_id": "Modell",
-    "kind": "Ereignis",
-    "expected_classification": "erwartet",
-    "event_gate_open_days": "Gate-Tage durch das Ereignis",
-    "correct_days": "davon richtig",
-    "first_correct_day": "erster richtiger Tag",
-    "resets": "Resets",
-}
-DEVIATION_HEADERS = {
-    "model_id": "Modell",
-    "analyzed_day": "analysierter Tag",
-    "classification_rule": "Regel",
-    "classification": "Modell sagt",
-    "kinds": "in Arten",
+    "control_notification_days": "Meldungen Kontrolllauf",
+    "control_unknown_days": "unknown Kontrolllauf",
+    "control_resets": "Zurücksetzen Kontrolllauf",
 }
 TEXT_CHECK_HEADERS = {
     "model_id": "Modell",
     "single_answers": "E1 Antworten",
-    "single_violations": "E1 mit Verstoß",
-    "single_missing_evidence": "E1 Belege fehlen",
+    "single_violations": "E1 Verstoß",
+    "single_missing_evidence": "E1 Beleg fehlt",
     "sequence_answers": "E2 Antworten",
-    "sequence_violations": "E2 mit Verstoß",
-    "sequence_missing_evidence": "E2 Belege fehlen",
+    "sequence_violations": "E2 Verstoß",
+    "sequence_missing_evidence": "E2 Beleg fehlt",
 }
 FINDING_HEADERS = {
     "level": "Ebene",
@@ -106,47 +87,49 @@ FINDING_HEADERS = {
 }
 LEVEL_LABELS = {"single": "Ebene 1", "sequence": "Ebene 2"}
 CASE_HEADERS = {"case_id": "Fall", "expected_classification": "erwartet"}
-CLASS_HEADERS = {
-    "model_id": "Modell",
-    "classification": "Klasse",
-    "precision": "Precision",
-    "recall": "Recall",
-    "f1": "F1",
-}
 
 
-def build_setup(
+def build_study_setup(
     run_config: dict,
     sequence_run_config: dict,
     case_count: int,
     production_model: str,
     run_names: str,
+    text_check: str,
 ) -> dict[str, str]:
     k2_config = run_config["k2_config"]
     llm_config = k2_config["base_llm_config"]
     sequence_config = sequence_run_config["k2_config"]
     standard_config = sequence_run_config["standard_config"]
+    prompts = (
+        llm_config["prompt_version"],
+        sequence_config["base_llm_config"]["prompt_version"],
+    )
 
-    return {
-        "Läufe (Ebene 1 / Ebene 2)": run_names,
-        "Prompt (Ebene 1 / Ebene 2)": f"{llm_config['prompt_version']} / {sequence_config['base_llm_config']['prompt_version']}",
-        "Modelle": ", ".join(
-            f"{variant['model_id']} {variant['model']}"
-            for variant in k2_config["model_variants"]
+    setup = build_setup(
+        run_names,
+        standard_config,
+        [sequence_config["sequence_cutover"][standard_config["split"]]],
+        run_config["code_version"],
+        scenarios=", ".join(
+            KIND_LABELS[kind] for kind in sequence_config["sequence_kinds"]
         ),
-        "LLM": f"temperature {format_number(llm_config['temperature'], 1)}, höchstens {llm_config['max_attempts']} Versuche je Aufruf",
-        "Ebene 1": f"{case_count} synthetische Fälle, je Modell {k2_config['repetitions']} Aufruf je Fall, Regel ({BASELINE_ID}) läuft mit",
-        "Ebene 2": (
-            f"Standard-Szenarien, Cutover {format_cutovers(standard_config, (sequence_config['sequence_cutover'][standard_config['split']],))}, "
-            f"{standard_config['monitoring_before_cutover_days']} Tage davor, {standard_config['margin_after_days']} danach, "
-            "jedes Modell als eigener Kreislauf wie SYS3 mit Adaption"
-        ),
-        "Ereignisse Ebene 2": ", ".join(
-            f"{kind} = {KIND_LABELS[kind]}"
-            for kind in sequence_config["sequence_kinds"]
-        ),
-        "Produktivmodell SYS3": production_model,
-        "Commit (Ebene 1 / Ebene 2)": f"{format_commit(run_config['code_version'])} / {format_commit(sequence_run_config['code_version'])}",
+        systems=f"{LLM_SYSTEM} mit Adaption, jedes Modell als eigener Kreislauf",
+        llm=f"Prompt {' und '.join(dict.fromkeys(prompts))}, temperature {format_number(llm_config['temperature'], 1)}, höchstens {llm_config['max_attempts']} Versuche je Aufruf, ohne Kalender",
+        details={
+            "Modelle": ", ".join(
+                f"{variant['model_id']} {variant['model']}"
+                for variant in k2_config["model_variants"]
+            ),
+            "Ebene 1": f"{case_count} synthetische Fälle, je Modell {k2_config['repetitions']} Aufruf je Fall, Regel ({BASELINE_ID}) läuft mit",
+            "Ebene 2": f"{standard_config['monitoring_before_cutover_days']} Tage vor und {standard_config['margin_after_days']} Tage nach dem Stichtag",
+            "Produktivmodell": production_model,
+            "Textprüfung": text_check,
+        },
+    )
+
+    return setup | {
+        "Commit": f"{format_commit(run_config['code_version'])} (Ebene 1), {format_commit(sequence_run_config['code_version'])} (Ebene 2)"
     }
 
 
@@ -165,154 +148,8 @@ def read_single_answers(run_directory: Path) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def _text_lines(row: pd.Series) -> list[str]:
-    return [
-        f"  - Erklärung: {row['explanation']}",
-        f"  - Empfehlung: {row['user_recommendation']}",
-        f"  - Unsicherheit: {row['uncertainty']}",
-    ]
-
-
-def single_answer_lines(
-    single: pd.DataFrame, model_labels: dict[str, str]
-) -> list[str]:
-    lines: list[str] = []
-    for case_id, answers in single.groupby("case_id", observed=True):
-        lines += [
-            f"**{case_id}** (erwartet: {answers['expected_classification'].iloc[0]})",
-            "",
-        ]
-        for _, row in answers.iterrows():
-            if pd.isna(row["classification"]):
-                lines.append(
-                    f"- {model_labels[row['model_id']]}: ungültig ({row['error']})"
-                )
-                continue
-            mark = f" {CORRECT_ANSWER_LABEL}" if row["correct"] else ""
-            lines.append(
-                f"- {model_labels[row['model_id']]}: {row['classification']}{mark}"
-            )
-            lines += _text_lines(row)
-        lines.append("")
-
-    return lines
-
-
-def sequence_answer_lines(sequence: pd.DataFrame) -> list[str]:
-    lines: list[str] = []
-    for _, row in sequence.iterrows():
-        lines += [
-            f"- {row['analyzed_day']}: {row['classification']} (Arten: {row['kinds']})"
-        ]
-        lines += _text_lines(row)
-
-    return lines
-
-
-def sequence_answer_sections(
-    single_answers: pd.DataFrame,
-    results: pd.DataFrame,
-    sequence_outputs: pd.DataFrame,
-    model_labels: dict[str, str],
-    *,
-    model_order: list[str],
-) -> list[tuple[str, list[str]]]:
-    sections = []
-    for model_id in model_order:
-        if model_id == BASELINE_ID:
-            continue
-        sequence = collect_answer_texts(
-            single_answers,
-            results,
-            sequence_outputs,
-            model_order=model_order,
-            sequence_model_id=model_id,
-        ).sequence
-        if not sequence.empty:
-            sections.append(
-                (
-                    f"Ebene 2: Antworten von {model_labels[model_id]}, ein Tag mit allen Arten, in denen derselbe Text kam",
-                    sequence_answer_lines(sequence),
-                )
-            )
-
-    return sections
-
-
 def _count_of(counts: pd.Series, totals: pd.Series) -> pd.Series:
     return counts.astype(str) + "/" + totals.astype(str)
-
-
-def build_key_figures(
-    models: pd.DataFrame,
-    rule_deviations: pd.DataFrame,
-    production_model: str,
-    checks: pd.DataFrame,
-) -> pd.DataFrame:
-    production = models.loc[models["model"].eq(production_model)].iloc[0]
-    rule = models.loc[models["model_id"].eq(BASELINE_ID)].iloc[0]
-    best = models.loc[models["model_id"].ne(BASELINE_ID)].iloc[0]
-    deviations = rule_deviations.loc[
-        rule_deviations["model_id"].eq(production["model_id"])
-    ]
-    name = production["model"]
-    checked = checks.loc[checks["model_id"].eq(production["model_id"])].iloc[0]
-
-    return key_figures_table(
-        [
-            (
-                "Ebene 1: bestes Modell nach Macro-F1",
-                best["model"],
-                f"Macro-F1 {format_number(best['macro_f1'], 2)}, Regel {format_number(rule['macro_f1'], 2)}",
-            ),
-            (
-                f"{name}: Ebene 1 richtig",
-                production["correct"],
-                f"Regel {rule['correct']}",
-            ),
-            (
-                f"{name}: Antwortzeit je Aufruf im Mittel [s]",
-                production["mean_generation_seconds"],
-                f"p95 {format_number(production['p95_generation_seconds'], STANDARD_CONFIG.decimals)} s, "
-                f"Regel {format_number(rule['mean_generation_seconds'], STANDARD_CONFIG.decimals)} s",
-            ),
-            (
-                f"{name}: Ebene 2 Ereignis-Arten erkannt",
-                production["detected_kinds"],
-                f"Regel {rule['detected_kinds']}",
-            ),
-            (
-                f"{name}: Ebene 2 Tage mit anderer Klasse als die Regel",
-                production["rule_deviation_days"],
-                "; ".join(
-                    f"{day} {model_class} statt {rule_class}"
-                    for day, model_class, rule_class in zip(
-                        deviations["analyzed_day"],
-                        deviations["classification"],
-                        deviations["classification_rule"],
-                    )
-                )
-                or "-",
-            ),
-            (
-                f"{name}: ungültige Antworten Ebene 1",
-                production["invalid"],
-                f"Ausfalltage Ebene 2: {production['failed_days']}",
-            ),
-            (
-                f"{name}: Antworten mit Textverstoß (Ebene 1 / Ebene 2)",
-                f"{checked['single_violations']}/{checked['single_answers']} / "
-                f"{checked['sequence_violations']}/{checked['sequence_answers']}",
-                "Steuerung oder Zahl, Datum, Uhrzeit nicht im State",
-            ),
-            (
-                f"{name}: Antworten mit fehlenden Belegen (Ebene 1 / Ebene 2)",
-                f"{checked['single_missing_evidence']}/{checked['single_answers']} / "
-                f"{checked['sequence_missing_evidence']}/{checked['sequence_answers']}",
-                "zitierte Belege passen nicht zur eigenen Klasse",
-            ),
-        ]
-    )
 
 
 def main() -> None:
@@ -338,13 +175,12 @@ def main() -> None:
     model_labels = dict(zip(models["model_id"], models["model"])) | {
         BASELINE_ID: RULE_LABEL
     }
-    # Zählungen als "richtig/gesamt", so auch in den Kennzahlen
     counted = models.assign(
         correct=_count_of(models["correct"], models["n_attempts"]),
         detected_kinds=_count_of(models["detected_kinds"], models["event_kinds"]),
         model=models["model_id"].map(model_labels),
     )
-    run_names = f"{run_directory.name} / {sequence_run_directory.name}"
+    run_names = f"{run_directory.name} und {sequence_run_directory.name}"
     production_id = models.loc[models["model"].eq(production_model), "model_id"].iloc[0]
     single_answers = read_single_answers(run_directory)
     sequence_raw_directory = sequence_run_directory / RAW_SUBDIR
@@ -378,12 +214,6 @@ def main() -> None:
     )
 
     tables = {
-        "key_figures": (
-            "Kennzahlen",
-            build_key_figures(
-                counted, summary.rule_deviations, production_model, checks.models
-            ),
-        ),
         "result_single_case": (
             "Ebene 1: Modellvergleich auf den Einzelfällen",
             counted[list(SINGLE_CASE_HEADERS)].rename(columns=SINGLE_CASE_HEADERS),
@@ -394,42 +224,22 @@ def main() -> None:
                 columns=CASE_HEADERS | model_labels
             ),
         ),
-        "result_text_checks": (
-            "Automatische Textprüfung je Modell (Antworten mit Verstoß oder fehlenden Belegen)",
-            relabel(
-                checks.models[list(TEXT_CHECK_HEADERS)],
-                TEXT_CHECK_HEADERS,
-                {"model_id": model_labels},
-            ),
-        ),
         "result_sequence": (
-            "Ebene 2: je Modell über alle Ereignis-Arten",
+            "Ebene 2: je Modell über alle Szenarien",
             relabel(
                 counted[list(SEQUENCE_HEADERS)],
                 SEQUENCE_HEADERS,
                 {"model_id": model_labels},
             ),
         ),
-        "result_sequence_events": (
-            "Ebene 2: Erkennung je Ereignis, Tag seit Cutover",
+        "result_text_checks": (
+            "Textprüfung je Modell, Antworten mit Verstoß oder fehlendem Beleg",
             relabel(
-                summary.events,
-                EVENT_HEADERS,
-                {"model_id": model_labels, "kind": KIND_LABELS},
+                checks.models[list(TEXT_CHECK_HEADERS)],
+                TEXT_CHECK_HEADERS,
+                {"model_id": model_labels},
             ),
         ),
-        "result_rule_deviations": (
-            "Ebene 2: Tage, an denen ein Modell anders einordnet als die Regel",
-            relabel(
-                summary.rule_deviations, DEVIATION_HEADERS, {"model_id": model_labels}
-            ),
-        ),
-    }
-    appendix = {
-        "result_classes": (
-            "Ebene 1: Precision, Recall und F1 je Klasse",
-            relabel(summary.classes, CLASS_HEADERS, {"model_id": model_labels}),
-        )
     }
     findings = relabel(
         checks.findings,
@@ -438,51 +248,26 @@ def main() -> None:
     )
     notes = [
         "Ebene 1 prüft, ob ein Modell die Regeln aus dem Prompt nachvollzieht. Der Prompt wurde auf denselben Fällen verbessert, "
-        "die Quoten begründen deshalb nur die Modellwahl und belegen nicht das Ziel von 80 % richtiger Klassen (dafür E3)",
+        "die Quoten begründen deshalb nur die Modellwahl und belegen nicht das Ziel von 80 % richtiger Klassen (dafür E2)",
         "wenige Fälle: ein Fall sind mehrere Prozentpunkte, eine Klasse hängt teils an einem einzigen Fall",
         "Macro-F1: Mittel der F1-Werte über die Klassen, die als erwartete Klasse vorkommen",
         "Grounding: Anteil der für den Fall erwarteten Felder, die das Modell als Beleg zitiert. Die Regel zitiert keine",
-        "Tag seit Cutover = Entscheidungstag: an Tag n meldet das System, eingeordnet ist dabei Tag n-1. Ab Cutover zählt deshalb erst ab Tag 1",
-        "Ebene 2, erkannt: erwartete Klasse an einem Tag, an dem nur das Ereignis das Gate öffnet (gepaart mit dem Kontrolllauf desselben Modells)",
-        "Ebene 2, anders als die Regel: gleiche Art und gleicher analysierter Tag, Regel gegen Modell. Nach einem Reset an verschiedenen Tagen "
+        "Ebene 2, erkannt: erwartete Klasse an einem Tag, an dem nur das Szenario den Vorfilter öffnet (gepaart mit dem Kontrolllauf desselben Modells)",
+        "Ebene 2, Abweichungstage: gleiche Art und gleicher analysierter Tag, Regel gegen Modell. Nach einem Zurücksetzen an verschiedenen Tagen "
         "laufen die Reihen auseinander, spätere Abweichungen können daraus folgen",
-        "Antwortzeit: gemessen auf dem Rechner des Laufs, nur zum Vergleich der Modelle untereinander",
+        "Zeit: gemessen auf dem Rechner des Laufs, nur zum Vergleich der Modelle untereinander",
         "Textprüfung: Verstoß heißt, ein Steuerungswort oder eine Zahl, ein Datum oder eine Uhrzeit steht im Text, aber nicht im State des Falls. "
         "Zahlwörter („sechs Wochen“) findet sie nicht. Die Fensterlängen "
         f"{' und '.join(format_number(n, 0) for n in window_numbers)} aus der Skalenbeschreibung im Prompt gelten als erlaubt",
-        "Fehlende Belege: der Prompt verlangt je Klasse bestimmte Pfade (new_pattern: sustained_drift, Streaks, peak/low: level, direction, absence: level, Kalendereintrag, measurement_error: Flag). Geprüft wird gegen die eigene Klasse des Modells, nicht gegen die erwartete. Ebene 1 wird nur für Läufe geprüft, die den State der Fälle in der Antwortdatei speichern, ältere Läufe haben in der Tabelle 0 Antworten",
-        "Antworttexte und Auffälligkeiten der Textprüfung im Anhang, Antworten für alle Modelle in Ebene 1 und Ebene 2. "
-        "Als CSV: answers_single.csv für Ebene 1, answers_sequence.csv für Ebene 2 nur vom Produktivmodell, result_text_findings.csv für die Auffälligkeiten",
+        "Beleg fehlt: der Prompt verlangt je Klasse bestimmte Pfade (new_pattern: sustained_drift, Streaks, peak und low: level, direction, absence: level, Kalendereintrag, measurement_error: Flag). Geprüft wird gegen die eigene Klasse des Modells, nicht gegen die erwartete. Ebene 1 wird nur für Läufe geprüft, die den State der Fälle in der Antwortdatei speichern, ältere Läufe haben in der Tabelle 0 Antworten",
+        "Antworttexte, Abweichungstage, Erkennung je Szenario und Auffälligkeiten der Textprüfung stehen als CSV im Ordner des Laufs (answers_single, answers_sequence nur vom Produktivmodell, result_text_findings, sequence_events)",
     ]
 
-    # die Auffälligkeiten stehen ganz unten im Anhang
-    appendix_text = (
-        [
-            (
-                "Ebene 1: Antworten der Modelle je Fall",
-                single_answer_lines(answers.single, model_labels),
-            )
-        ]
-        + sequence_answer_sections(
-            single_answers,
-            results,
-            sequence_outputs,
-            model_labels,
-            model_order=models["model_id"].tolist(),
-        )
-        + [
-            (
-                "Auffälligkeiten der Textprüfung",
-                markdown_table(findings, STANDARD_CONFIG.decimals).splitlines(),
-            )
-        ]
-    )
-
     output_directory = user_output_directory(run_directory)
-    # die bisherigen CSVs mit Rohspalten, model_comparison enthält jetzt beide Ebenen
     df_to_csv(models, output_directory, "model_comparison")
     df_to_csv(summary.cases, output_directory, "case_breakdown")
     df_to_csv(summary.classes, output_directory, "class_breakdown")
+    df_to_csv(summary.rule_deviations, output_directory, "rule_deviations")
     df_to_csv(answers.single, output_directory, "answers_single")
     df_to_csv(answers.sequence, output_directory, "answers_sequence")
     df_to_csv(findings, output_directory, "result_text_findings")
@@ -490,30 +275,24 @@ def main() -> None:
     df_to_csv(summary.events, sequence_output_directory, "sequence_events")
     df_to_csv(summary.sequence_models, sequence_output_directory, "sequence_models")
 
-    build_k2_plot(models, output_directory, production_model=production_model)
-
     write_result_report(
         output_directory,
-        title=f"K2 LLM-Klassifikation und Modellwahl, Läufe {run_names}",
-        setup=build_setup(
+        title="K2: Sprachmodell",
+        setup=build_study_setup(
             read_raw_json(run_directory, "run_config"),
             read_raw_json(sequence_run_directory, "run_config"),
             len(summary.case_answers),
             production_model,
             run_names,
-        )
-        | {
-            "Textprüfung": f"{len(text_check_config.control_words)} Steuerungswörter, "
+            f"{len(text_check_config.control_words)} Steuerungswörter, "
             f"Zahlentoleranz {format_number(text_check_config.number_tolerance, 1)}, "
             f"gerundet auf {format_number(text_check_config.rounding_step, 0)} erlaubt, "
-            f"Fensterzahlen aus dem Prompt {', '.join(format_number(n, 0) for n in window_numbers)}"
-        },
+            f"Fensterzahlen aus dem Prompt {', '.join(format_number(n, 0) for n in window_numbers)}",
+        ),
         tables=tables,
         notes=notes,
-        images=["k2_quality_vs_time.png"],
+        images=[],
         decimals=STANDARD_CONFIG.decimals,
-        appendix=appendix,
-        appendix_text=appendix_text,
     )
 
     print(f"Result written to {output_directory / 'ergebnis.md'}")

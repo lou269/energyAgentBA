@@ -1,5 +1,5 @@
-Modell,E1 Antworten,E1 mit Verstoß,E1 Belege fehlen,E2 Antworten,E2 mit Verstoß,E2 Belege fehlen
-qwen3.5:9b,10,2,1,74,0,0
+Modell,E1 Antworten,E1 Verstoß,E1 Beleg fehlt,E2 Antworten,E2 Verstoß,E2 Beleg fehlt
+qwen3.5:9b,10,0,1,74,0,0
 ministral-3:8b,10,1,1,105,0,0
 qwen3:4b,10,0,4,110,4,43
 qwen3:8b,10,0,0,110,2,0

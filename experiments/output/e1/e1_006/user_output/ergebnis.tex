@@ -1,0 +1,87 @@
+\section{E1: Erkennung der Verbrauchsänderungen}
+\label{app:report_e1}
+\subsection*{Setup}
+\begin{itemize}
+\item \textbf{Lauf:} e1\_\allowbreak{}006
+\item \textbf{Stichtage:} SF6: 02.12.2016, SF7: 13.01.2017, SF8: 20.02.2017
+\item \textbf{Szenarien:} scaled, scaled\_\allowbreak{}down, ramp\_\allowbreak{}28, ramp\_\allowbreak{}28\_\allowbreak{}down, ramp\_\allowbreak{}56, ramp\_\allowbreak{}56\_\allowbreak{}down, peak
+\item \textbf{Systeme:} SYS1, die Regel ordnet ein, keine Adaption, kein Sprachmodell
+\item \textbf{Commit:} f647560
+\end{itemize}
+
+\subsection*{Kriterien der Teilfrage 1}
+\begin{tablang}{W{2.05} W{0.43} W{0.92} W{0.59}}{Kriterium & Ziel & Ergebnis & erfüllt}
+Erkennungsrate eingebauter Anomalien & $\geq$ 90 \% & 9 von 13 (69 \%) & nein \\
+Erkennungsrate langsamer Rampen & 0 \% & 3 von 6 (50 \%) & nein \\
+\end{tablang}
+
+\subsection*{Erkennung je Szenario über die Stichtage}
+\begin{tablang}{W{0.88} W{0.94} W{0.69} W{1.25} W{1.25}}{Szenario & erwartet & erkannt & Erkennungstag, Mittel (Spanne) & auslösende Skala}
+scaled & erkannt & 1 von 3 & 15,0 (15) & weekly + long\_\allowbreak{}term \\
+scaled\_\allowbreak{}down & erkannt & 2 von 3 & 34,5 (31–38) & weekly + long\_\allowbreak{}term \\
+ramp\_\allowbreak{}28 & erkannt & 2 von 3 & 33,5 (17–50) & weekly + long\_\allowbreak{}term \\
+ramp\_\allowbreak{}28\_\allowbreak{}down & erkannt & 3 von 3 & 43,0 (31–57) & weekly + long\_\allowbreak{}term \\
+ramp\_\allowbreak{}56 & nicht erkannt & 2 von 3 & 43,0 (29–57) & weekly + long\_\allowbreak{}term \\
+ramp\_\allowbreak{}56\_\allowbreak{}down & nicht erkannt & 1 von 3 & 57,0 (57) & weekly + long\_\allowbreak{}term \\
+peak & erkannt & 1 von 1 & - & weekday \\
+\end{tablang}
+
+\subsection*{Hinweise}
+\begin{itemize}
+\item Tag = Entscheidungstag seit dem Stichtag, an Tag 1 wird der Stichtag selbst eingeordnet
+\item erkannt: Lastspitze = Einzelanomalie (Skala daily oder weekday) an Tag 1, Dauerlast und Rampe = anhaltende Veränderung (weekly und long\_\allowbreak{}term an 6 von 7 Tagen). Gezählt wird der erste Tag, an dem der Szenariolauf den Kennwert hat und der Kontrolllauf desselben Stichtags nicht
+\item auswertbar: zeigt der Kontrolllauf am Einbautag der Lastspitze schon eine Einzelanomalie, geht der Fall nicht in die Zählung ein
+\item erwartet: die Rampe über 56 Tage soll nicht als anhaltende Veränderung erkannt werden
+\item Anhaltende Veränderungen werden im Mittel an Tag 35,0 erkannt (Dauerlast und Rampe über 28 Tage)
+\item Erkennungstag, Mittel (Spanne): nur über die erkannten Fälle, bei der Lastspitze entfällt er, sie zählt nur an Tag 1
+\item Skalen anhaltend: weekly bzw. long\_\allowbreak{}term liegt an 6 der letzten 7 Tage über der Schwelle, eine anhaltende Veränderung gilt erst, wenn beide gleichzeitig anhalten. Abgerissen zählt, wie oft weekly vor diesem Tag wieder unter 6 von 7 Tagen fiel
+\end{itemize}
+
+\subsection*{Weitere Tabellen}
+
+\subsubsection*{Erkennung je Stichtag und Szenario}
+\begin{tablang}{W{0.80} W{0.93} V{0.73} W{1.33} V{1.20} W{1.00}}{Stichtag & Szenario & erkannt am Tag & auslösende Skala & Tage mit Kennwert im Kontrolllauf & auswertbar}
+SF6 & scaled & - & - & 0 & ja \\
+SF6 & scaled\_\allowbreak{}down & 31 & weekly + long\_\allowbreak{}term & 0 & ja \\
+SF6 & ramp\_\allowbreak{}28 & 50 & weekly + long\_\allowbreak{}term & 0 & ja \\
+SF6 & ramp\_\allowbreak{}28\_\allowbreak{}down & 31 & weekly + long\_\allowbreak{}term & 0 & ja \\
+SF6 & ramp\_\allowbreak{}56 & 57 & weekly + long\_\allowbreak{}term & 0 & ja \\
+SF6 & ramp\_\allowbreak{}56\_\allowbreak{}down & - & - & 0 & ja \\
+SF6 & peak & - & - & 1 & nein \\
+SF7 & scaled & 15 & weekly + long\_\allowbreak{}term & 0 & ja \\
+SF7 & scaled\_\allowbreak{}down & 38 & weekly + long\_\allowbreak{}term & 0 & ja \\
+SF7 & ramp\_\allowbreak{}28 & 17 & weekly + long\_\allowbreak{}term & 0 & ja \\
+SF7 & ramp\_\allowbreak{}28\_\allowbreak{}down & 41 & weekly + long\_\allowbreak{}term & 0 & ja \\
+SF7 & ramp\_\allowbreak{}56 & 29 & weekly + long\_\allowbreak{}term & 0 & ja \\
+SF7 & ramp\_\allowbreak{}56\_\allowbreak{}down & - & - & 0 & ja \\
+SF7 & peak & - & - & 1 & nein \\
+SF8 & scaled & - & - & 0 & ja \\
+SF8 & scaled\_\allowbreak{}down & - & - & 0 & ja \\
+SF8 & ramp\_\allowbreak{}28 & - & - & 0 & ja \\
+SF8 & ramp\_\allowbreak{}28\_\allowbreak{}down & 57 & weekly + long\_\allowbreak{}term & 0 & ja \\
+SF8 & ramp\_\allowbreak{}56 & - & - & 0 & ja \\
+SF8 & ramp\_\allowbreak{}56\_\allowbreak{}down & 57 & weekly + long\_\allowbreak{}term & 0 & ja \\
+SF8 & peak & 1 & weekday & 0 & ja \\
+\end{tablang}
+
+\subsubsection*{Niveauänderungen: erster Tag, an dem die Skalen anhalten}
+\begin{tablang}{W{0.89} W{1.04} V{0.74} V{1.04} V{1.19} V{1.11}}{Stichtag & Szenario & weekly hält an ab Tag & long\_\allowbreak{}term hält an ab Tag & beide halten an ab Tag (Erkennung) & weekly davor abgerissen [mal]}
+SF6 & scaled & 7 & 59 & - & 4 \\
+SF6 & scaled\_\allowbreak{}down & 7 & 22 & 31 & 1 \\
+SF6 & ramp\_\allowbreak{}28 & 7 & 50 & 50 & 2 \\
+SF6 & ramp\_\allowbreak{}28\_\allowbreak{}down & 7 & 28 & 31 & 1 \\
+SF6 & ramp\_\allowbreak{}56 & 7 & 57 & 57 & 2 \\
+SF6 & ramp\_\allowbreak{}56\_\allowbreak{}down & 7 & 30 & - & 2 \\
+SF7 & scaled & 6 & 15 & 15 & 0 \\
+SF7 & scaled\_\allowbreak{}down & 35 & 38 & 38 & 0 \\
+SF7 & ramp\_\allowbreak{}28 & 7 & 17 & 17 & 0 \\
+SF7 & ramp\_\allowbreak{}28\_\allowbreak{}down & 8 & 41 & 41 & 2 \\
+SF7 & ramp\_\allowbreak{}56 & 7 & 17 & 29 & 1 \\
+SF7 & ramp\_\allowbreak{}56\_\allowbreak{}down & 8 & 18 & - & 3 \\
+SF8 & scaled & 1 & 28 & - & 3 \\
+SF8 & scaled\_\allowbreak{}down & 1 & 8 & - & 1 \\
+SF8 & ramp\_\allowbreak{}28 & 1 & 13 & - & 2 \\
+SF8 & ramp\_\allowbreak{}28\_\allowbreak{}down & 1 & 9 & 57 & 1 \\
+SF8 & ramp\_\allowbreak{}56 & 1 & 10 & - & 1 \\
+SF8 & ramp\_\allowbreak{}56\_\allowbreak{}down & 1 & 9 & 57 & 1 \\
+\end{tablang}

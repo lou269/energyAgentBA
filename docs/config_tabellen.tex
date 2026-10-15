@@ -1,0 +1,279 @@
+\begin{konfig}{ProjectConfig}
+timezone & Europe/London \\
+dataset\_release & UK-DALE April 2017 \\
+dataset\_doi & 10.5286/UKERC.EDC.000004 \\
+dataset\_filename & ukdale.h5 \\
+\end{konfig}
+
+\begin{konfig}{SplitDefinition}
+train & (window development, days 365) \\
+validation & (window development, days --) \\
+test & (window test, days --) \\
+\end{konfig}
+
+\begin{konfig}{PreprocessingConfig}
+gap\_treatment\_method & ffill \\
+max\_imputation\_gap\_hourly & 3 \\
+stuck\_value\_min\_hours & 6{,}0 \\
+max\_daily\_missing\_share & 0{,}1 \\
+\end{konfig}
+
+\begin{konfig}{NumericalAnalysisConfig}
+sample\_period\_hours\_hourly & 1{,}0 \\
+min\_daily\_reference\_samples & 7 \\
+min\_weekday\_reference\_samples & 4 \\
+min\_reference\_power\_w & 10{,}0 \\
+min\_residual\_std\_w & 1{,}0 \\
+single\_day\_scales & daily, weekday \\
+unusual\_threshold & 2{,}3 \\
+weekly\_streak\_threshold & 1{,}02 \\
+long\_term\_streak\_threshold\_pct & 14{,}2 \\
+level\_shift\_scales & weekly, long\_term \\
+min\_sustained\_scales & 2 \\
+long\_term\_window\_days & 28 \\
+weekly\_window\_days & 7 \\
+rolling\_window\_min\_coverage & 0{,}8 \\
+long\_term\_reference\_days & 28 \\
+reference\_window\_rolling\_days & 60 \\
+min\_weekly\_reference\_samples & 1 \\
+min\_longterm\_reference\_samples & 14 \\
+streak\_tolerance\_window\_days & 7 \\
+sustained\_anomaly\_streak\_days & 6 \\
+\end{konfig}
+
+\begin{konfig}{ForecastingConfig}
+config\_version & 0.5 \\
+selected\_prophet\_variant.\allowbreak{}model\_id & C3\_60 \\
+selected\_prophet\_variant.\allowbreak{}history\_mode & rolling \\
+selected\_prophet\_variant.\allowbreak{}rolling\_window\_days & 60 \\
+selected\_prophet\_variant.\allowbreak{}retraining\_interval\_days & 1 \\
+selected\_prophet\_variant.\allowbreak{}weekly\_seasonality & false \\
+selected\_prophet\_variant.\allowbreak{}yearly\_seasonality & false \\
+experiment\_id & forecasting \\
+frequency & 1h \\
+horizon\_days & 1 \\
+forecast\_origin\_step\_days & 1 \\
+cycle\_coldstart\_days & 60 \\
+baseline\_model\_ids & B1, B2, B3 \\
+growth & linear \\
+daily\_seasonality & true \\
+country\_holidays & UK \\
+weekly\_seasonality & false \\
+log\_transform & false \\
+interval\_width & 0{,}8 \\
+uncertainty\_samples & 1000 \\
+seed & 42 \\
+primary\_naive\_reference & B2 \\
+clip\_negative\_forecasts & true \\
+mape\_min\_eligible\_watts & 10{,}0 \\
+\end{konfig}
+
+\begin{konfig}{LLMConfig}
+model & ministral-3:8b \\
+prompt\_version & v30 \\
+temperature & 0{,}0 \\
+presence\_penalty & 1{,}5 \\
+seed & 42 \\
+max\_attempts & 2 \\
+request\_timeout\_seconds & 120{,}0 \\
+num\_predict & 1024 \\
+num\_ctx & 8192 \\
+think & false \\
+keep\_alive & 5m \\
+calendar\_tool & false \\
+calendar\_tool\_prompt\_version & tool\_v30 \\
+\end{konfig}
+
+\begin{konfig}{TextCheckConfig}
+control\_words & schalte, ausschalt, abschalt, ausstecken, abstecken, verschieb, sparen, einspar, tarif, preis, strompreis, kosten, kostet, euro, cent \\
+number\_tolerance & 0{,}5 \\
+rounding\_step & 10{,}0 \\
+\end{konfig}
+
+\begin{konfig}{ComparisonConfig}
+max\_consecutive\_llm\_failures & 5 \\
+max\_total\_llm\_failures & 15 \\
+calendar\_lookback\_days & 1 \\
+calendar\_lookahead\_days & 1 \\
+\end{konfig}
+
+\begin{konfig}{DiagnosticsConfig}
+canonical\_ac\_type & active \\
+channel\_quality\_chunksize & 1000000 \\
+min\_auxiliary\_window\_coverage\_share & 0{,}8 \\
+\end{konfig}
+
+\begin{konfig}{DataPreparationConfig}
+selected\_house\_ids & 1 \\
+canonical\_ac\_type & active \\
+min\_coverage\_share & 0{,}8 \\
+max\_availability\_gap\_hours & 24 \\
+min\_mains\_coverage\_share & 0{,}95 \\
+min\_mains\_valid\_duration\_days & 45{,}0 \\
+\end{konfig}
+
+\begin{konfig}{StandardScenarioConfig}
+decimals & 1 \\
+split & test \\
+cutover\_dates & validation: [CO1: 2014-07-31; CO2: 2015-02-12; CO3: 2015-05-24; CO4: 2015-09-26; CO5: 2016-01-12]; test: [CO6: 2016-12-02; CO7: 2017-02-20; CO8: 2017-01-13] \\
+monitoring\_before\_cutover\_days & 40 \\
+margin\_after\_days & 60 \\
+scale\_factor & 1{,}2 \\
+scale\_factor\_down & 0{,}8 \\
+ramp\_fast\_days & 28 \\
+ramp\_slow\_days & 56 \\
+peak\_extra\_w & 670{,}0 \\
+peak\_start\_hour & 17 \\
+peak\_hours & 6 \\
+level\_extra\_w & 190{,}0 \\
+strong\_scale\_factor & 1{,}3 \\
+strong\_scale\_factor\_down & 0{,}7 \\
+strong\_peak\_extra\_w & 1000{,}0 \\
+stuck\_hours & 12 \\
+\end{konfig}
+
+\begin{konfig}{CcConfig}
+step\_days & 1 \\
+\end{konfig}
+
+\begin{konfig}{E1Config}
+kinds\_by\_cutover & validation: [CO1: control, scaled, scaled\_down, peak, ramp\_28, ramp\_56, ramp\_28\_down, ramp\_56\_down; CO2: control, scaled, scaled\_down, peak, ramp\_28, ramp\_56, ramp\_28\_down, ramp\_56\_down; CO3: control, scaled, scaled\_down, peak, ramp\_28, ramp\_56, ramp\_28\_down, ramp\_56\_down; CO4: control, scaled, scaled\_down, peak, ramp\_28, ramp\_56, ramp\_28\_down, ramp\_56\_down; CO5: control, scaled, scaled\_down, peak, ramp\_28, ramp\_56, ramp\_28\_down, ramp\_56\_down]; test: [CO6: control, scaled, scaled\_down, peak, ramp\_28, ramp\_56, ramp\_28\_down, ramp\_56\_down; CO7: control, scaled, scaled\_down, peak, ramp\_28, ramp\_56, ramp\_28\_down, ramp\_56\_down; CO8: control, scaled, scaled\_down, peak, ramp\_28, ramp\_56, ramp\_28\_down, ramp\_56\_down] \\
+system & SYS1 \\
+\end{konfig}
+
+\begin{konfig}{E2Config}
+smoothing\_days & 7 \\
+absence\_event\_ids & event-2016-11, event-2016-12, event-2017-02 \\
+counter\_event\_ids & event-2016-12: event-2016-12-visit \\
+counter\_ctx & ctx1\_visit \\
+decision\_time\_margin\_before\_days & 30 \\
+decision\_time\_margin\_after\_days & 60 \\
+min\_coverage\_share\_for\_subtraction & 0{,}9 \\
+target\_classification & absence \\
+reference\_config & SYS1 \\
+plot\_configs & SYS1, SYS3\_CTX0, SYS3\_CTX1 \\
+context\_reference\_config & SYS3\_CTX0 \\
+ctx\_systems & ctx0: [SYS1: SYS1; SYS2: SYS2; SYS3\_CTX0: SYS3]; ctx1: [SYS3\_CTX1: SYS3]; ctx1\_visit: [SYS3\_CTX1\_VISIT: SYS3]; ctx2: [SYS3\_CTX2: SYS3\_TOOL] \\
+event\_cutovers & validation: CO3; test: CO6, CO7, CO8 \\
+event\_series & control: --; scaled: (0, scaled\_strong); scaled\_down: (0, scaled\_down\_strong); ramp\_28: (0, ramp\_28\_strong); ramp\_28\_down: (0, ramp\_28\_down\_strong); peaks: (0, peak\_strong), (10, peak\_strong), (20, peak\_strong); stucks: (0, stuck), (10, stuck), (17, stuck) \\
+event\_systems & SYS1, SYS2, SYS3 \\
+precheck\_ctx\_systems & ctx0: [SYS1: SYS1; SYS2: SYS2] \\
+\end{konfig}
+
+\begin{konfig}{E3Config}
+cutovers & validation: CO2, CO3; test: CO6, CO7, CO8 \\
+reference\_system & SYS1 \\
+llm\_system & SYS3 \\
+week\_days & 7 \\
+smoothing\_days & 7 \\
+min\_curve\_cases & 3 \\
+event\_series & scaled: (0, scaled\_strong); scaled\_down: (0, scaled\_down\_strong); ramp\_28: (0, ramp\_28\_strong); ramp\_28\_down: (0, ramp\_28\_down\_strong) \\
+\end{konfig}
+
+\begin{konfig}{E4Config}
+experiment\_id & E4 \\
+cutovers & validation: CO2, CO3, CO5; test: CO6, CO7, CO8 \\
+evaluation\_days & 56 \\
+coldstart\_days & 7, 60 \\
+static\_variant.\allowbreak{}model\_id & C1 \\
+static\_variant.\allowbreak{}history\_mode & fixed\_train \\
+static\_variant.\allowbreak{}rolling\_window\_days & -- \\
+static\_variant.\allowbreak{}retraining\_interval\_days & -- \\
+static\_variant.\allowbreak{}weekly\_seasonality & false \\
+static\_variant.\allowbreak{}yearly\_seasonality & false \\
+system & SYS3 \\
+injection\_kinds & peak, level \\
+injection\_days & 3, 10, 18, 26, 35, 43, 51 \\
+smoothing\_days & 7 \\
+week\_days & 7 \\
+\end{konfig}
+
+\begin{konfig}{K1Config}
+sustained\_shares & 0{,}02, 0{,}03, 0{,}04, 0{,}05, 0{,}06, 0{,}07, 0{,}08, 0{,}09, 0{,}1, 0{,}11, 0{,}12, 0{,}13, 0{,}14, 0{,}15, 0{,}16, 0{,}17, 0{,}18, 0{,}19, 0{,}2, 0{,}21, 0{,}22, 0{,}23, 0{,}24, 0{,}25, 0{,}26, 0{,}27, 0{,}28, 0{,}29, 0{,}3 \\
+max\_resets & 4 \\
+single\_day\_target\_share & 0{,}05 \\
+single\_day\_thresholds & 2{,}0, 2{,}1, 2{,}2, 2{,}3, 2{,}4, 2{,}5, 2{,}6, 2{,}7, 2{,}8, 2{,}9, 3{,}0, 3{,}1, 3{,}2, 3{,}3, 3{,}4, 3{,}5, 3{,}6, 3{,}7, 3{,}8, 3{,}9, 4{,}0, 4{,}1, 4{,}2, 4{,}3, 4{,}4, 4{,}5, 4{,}6, 4{,}7, 4{,}8, 4{,}9, 5{,}0 \\
+diagnosis\_kinds & control, scaled, ramp\_28, ramp\_28\_down, ramp\_56, ramp\_56\_down, peak, level \\
+\end{konfig}
+
+\begin{konfig}{K2Config}
+experiment\_id & K2\_1\_llm\_model \\
+config\_version & llm-model-0.7 \\
+base\_llm\_config.\allowbreak{}model &  \\
+base\_llm\_config.\allowbreak{}prompt\_version & v30 \\
+base\_llm\_config.\allowbreak{}temperature & 0{,}0 \\
+base\_llm\_config.\allowbreak{}presence\_penalty & 1{,}5 \\
+base\_llm\_config.\allowbreak{}seed & 42 \\
+base\_llm\_config.\allowbreak{}max\_attempts & 2 \\
+base\_llm\_config.\allowbreak{}request\_timeout\_seconds & 120{,}0 \\
+base\_llm\_config.\allowbreak{}num\_predict & 1024 \\
+base\_llm\_config.\allowbreak{}num\_ctx & 8192 \\
+base\_llm\_config.\allowbreak{}think & false \\
+base\_llm\_config.\allowbreak{}keep\_alive & -1 \\
+base\_llm\_config.\allowbreak{}calendar\_tool & false \\
+base\_llm\_config.\allowbreak{}calendar\_tool\_prompt\_version & tool\_v30 \\
+repetitions & 1 \\
+model\_variants & (model\_id MDL0, model qwen3:4b), (model\_id MDL1, model qwen3:8b), (model\_id MDL2, model qwen3.5:9b), (model\_id MDL3, model gemma4:e4b), (model\_id MDL4, model gemma4:e4b-mlx), (model\_id MDL5, model ministral-3:8b) \\
+include\_rule\_based\_baseline & true \\
+sequence\_cutover & validation: CO2 \\
+sequence\_kinds & control, scaled\_strong, peak\_strong \\
+\end{konfig}
+
+\begin{konfig}{K3Config}
+cycle\_system & SYS1 \\
+cutovers & validation: CO1, CO2, CO3, CO4, CO5 \\
+trigger\_days & 8, 19 \\
+evaluation\_days & 53 \\
+error\_metrics & mae\_w, day\_error\_w \\
+bias\_first\_day & -3 \\
+bias\_last\_day & 10 \\
+kinds & scaled \\
+strategies & cut, step\_regressor \\
+key\_figure\_kind & scaled \\
+masking\_events & (0, peak), (8, peak), (17, peak) \\
+\end{konfig}
+
+\begin{konfig}{K4Config}
+config\_version & forecast-model-0.1 \\
+selected\_prophet\_variant.\allowbreak{}model\_id & C3\_60 \\
+selected\_prophet\_variant.\allowbreak{}history\_mode & rolling \\
+selected\_prophet\_variant.\allowbreak{}rolling\_window\_days & 60 \\
+selected\_prophet\_variant.\allowbreak{}retraining\_interval\_days & 1 \\
+selected\_prophet\_variant.\allowbreak{}weekly\_seasonality & false \\
+selected\_prophet\_variant.\allowbreak{}yearly\_seasonality & false \\
+experiment\_id & K4\_forecast\_model \\
+frequency & 1h \\
+horizon\_days & 1 \\
+forecast\_origin\_step\_days & 1 \\
+cycle\_coldstart\_days & 60 \\
+baseline\_model\_ids & B1, B2, B3 \\
+growth & linear \\
+daily\_seasonality & true \\
+country\_holidays & UK \\
+weekly\_seasonality & false \\
+log\_transform & false \\
+interval\_width & 0{,}8 \\
+uncertainty\_samples & 1000 \\
+seed & 42 \\
+primary\_naive\_reference & B2 \\
+clip\_negative\_forecasts & true \\
+mape\_min\_eligible\_watts & 10{,}0 \\
+comparison\_modes & rolling, macro \\
+mode\_history\_days & rolling: 60; macro: -- \\
+prophet\_variants & (model\_id C1, history\_mode fixed\_train, rolling\_window\_days --, retraining\_interval\_days --, weekly\_seasonality false, yearly\_seasonality false), (model\_id C2, history\_mode expanding, rolling\_window\_days --, retraining\_interval\_days 1, weekly\_seasonality false, yearly\_seasonality false), (model\_id C3\_7, history\_mode rolling, rolling\_window\_days 7, retraining\_interval\_days 1, weekly\_seasonality false, yearly\_seasonality false), (model\_id C3\_30, history\_mode rolling, rolling\_window\_days 30, retraining\_interval\_days 1, weekly\_seasonality false, yearly\_seasonality false), (model\_id C3\_60, history\_mode rolling, rolling\_window\_days 60, retraining\_interval\_days 1, weekly\_seasonality false, yearly\_seasonality false) \\
+reference\_model\_ids & B1, B2, B3, C1 \\
+seasonality\_days & 365 \\
+seasonality\_variants & (model\_id C3\_60, history\_mode rolling, rolling\_window\_days 60, retraining\_interval\_days 1, weekly\_seasonality false, yearly\_seasonality false), (model\_id C2, history\_mode expanding, rolling\_window\_days --, retraining\_interval\_days 1, weekly\_seasonality false, yearly\_seasonality false), (model\_id Y1, history\_mode expanding, rolling\_window\_days --, retraining\_interval\_days 1, weekly\_seasonality false, yearly\_seasonality true) \\
+seasonality\_comparisons & (Y1, C2), (C2, C3\_60), (Y1, C3\_60) \\
+\end{konfig}
+
+\begin{konfigvar}{Systemvarianten (\texttt{SYS\_VARIANTS}), Schalter der \texttt{CycleConfig} und Unterschiede}{tab:cfg-sysvariants}{5}{Parameter & SYS0 & SYS1 & SYS2 & SYS3 & SYS3\_TOOL}
+forecasting\_config.\allowbreak{}selected\_prophet\_variant.\allowbreak{}model\_id & C1 & C3\_60 & C3\_60 & C3\_60 & C3\_60 \\
+forecasting\_config.\allowbreak{}selected\_prophet\_variant.\allowbreak{}history\_mode & fixed\_train & rolling & rolling & rolling & rolling \\
+forecasting\_config.\allowbreak{}selected\_prophet\_variant.\allowbreak{}rolling\_window\_days & -- & 60 & 60 & 60 & 60 \\
+forecasting\_config.\allowbreak{}selected\_prophet\_variant.\allowbreak{}retraining\_interval\_days & -- & 1 & 1 & 1 & 1 \\
+event\_adaptation & false & false & true & true & true \\
+llm\_mode & off & rule & rule & real & real \\
+window\_exclusion & true & true & true & true & true \\
+llm\_config.\allowbreak{}calendar\_tool & -- & -- & -- & false & true \\
+\end{konfigvar}

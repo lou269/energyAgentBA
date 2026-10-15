@@ -1,0 +1,82 @@
+\section{K2: Sprachmodell}
+\label{app:report_k2}
+\subsection*{Setup}
+\begin{itemize}
+\item \textbf{Lauf:} k2\_\allowbreak{}003 und k2\_\allowbreak{}seq\_\allowbreak{}003
+\item \textbf{Stichtage:} SF2: 12.02.2015
+\item \textbf{Szenarien:} Kontrolllauf, scaled\_\allowbreak{}strong, peak\_\allowbreak{}strong
+\item \textbf{Systeme:} SYS3 mit Adaption, jedes Modell als eigener Kreislauf
+\item \textbf{Sprachmodell:} Prompt v30, temperature 0,0, höchstens 2 Versuche je Aufruf, ohne Kalender
+\item \textbf{Modelle:} MDL0 qwen3:4b, MDL1 qwen3:8b, MDL2 qwen3.5:9b, MDL3 gemma4:e4b, MDL4 gemma4:e4b-mlx, MDL5 ministral-3:8b
+\item \textbf{Ebene 1:} 10 synthetische Fälle, je Modell 1 Aufruf je Fall, Regel (BASELINE) läuft mit
+\item \textbf{Ebene 2:} 40 Tage vor und 60 Tage nach dem Stichtag
+\item \textbf{Produktivmodell:} ministral-3:8b
+\item \textbf{Textprüfung:} 15 Steuerungswörter, Zahlentoleranz 0,5, gerundet auf 10 erlaubt, Fensterzahlen aus dem Prompt 7, 28
+\item \textbf{Commit:} a46b8ad (Ebene 1), 9c0e1d6 (Ebene 2)
+\end{itemize}
+
+\begin{landscape}
+\subsection*{Ebene 1: Modellvergleich auf den Einzelfällen}
+\begin{tablang}[\footnotesize\setlength{\tabcolsep}{3pt}]{W{0.89} W{1.43} W{0.98} V{1.07} V{1.07} V{1.07} V{1.25} V{0.62} V{0.62}}{ID & Modell & richtig & Macro-F1 & ungültig & Ø Versuche & Grounding & Ø Zeit [s] & p95 Zeit [s]}
+MDL2 & qwen3.5:9b & 10/10 & 1,0 & 0 & 1,0 & 0,8 & 9,8 & 17,3 \\
+MDL5 & ministral-3:8b & 10/10 & 1,0 & 0 & 1,0 & 0,9 & 10,5 & 18,7 \\
+BASELINE & Regel & 9/10 & 0,8 & 0 & 1,0 & - & 0,0 & 0,0 \\
+MDL0 & qwen3:4b & 9/10 & 0,8 & 0 & 1,0 & 0,8 & 5,3 & 9,4 \\
+MDL1 & qwen3:8b & 9/10 & 0,8 & 0 & 1,0 & 0,9 & 10,5 & 17,8 \\
+MDL3 & gemma4:e4b & 0/10 & 0,0 & 10 & 2,0 & - & 0,0 & 0,0 \\
+MDL4 & gemma4:e4b-mlx & 0/10 & 0,0 & 10 & 2,0 & - & 0,0 & 0,0 \\
+\end{tablang}
+\end{landscape}
+
+\begin{landscape}
+\subsection*{Ebene 1: Antwort je Fall ($\checkmark$ = richtig, sonst die Antwort, - = ungültig)}
+\begin{tablang}[\footnotesize\setlength{\tabcolsep}{3pt}]{W{1.98} W{1.04} W{0.82} W{1.10} W{0.71} W{0.71} W{0.71} W{0.82} W{1.10}}{Fall & erwartet & qwen3.5:9b & ministral-3:8b & Regel & qwen3:4b & qwen3:8b & gemma4:e4b & gemma4:e4b-mlx}
+absence\_\allowbreak{}drift\_\allowbreak{}down & absence & $\checkmark$ & $\checkmark$ & new\_\allowbreak{}pattern & new\_\allowbreak{}pattern & new\_\allowbreak{}pattern & - & - \\
+low\_\allowbreak{}single\_\allowbreak{}scale & low & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$ & - & - \\
+measurement\_\allowbreak{}error\_\allowbreak{}missing\_\allowbreak{}day & measurement\_\allowbreak{}error & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$ & - & - \\
+new\_\allowbreak{}pattern & new\_\allowbreak{}pattern & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$ & - & - \\
+new\_\allowbreak{}pattern\_\allowbreak{}at\_\allowbreak{}min\_\allowbreak{}scales\_\allowbreak{}boundary & new\_\allowbreak{}pattern & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$ & - & - \\
+new\_\allowbreak{}pattern\_\allowbreak{}drift\_\allowbreak{}down & new\_\allowbreak{}pattern & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$ & - & - \\
+normal\_\allowbreak{}single\_\allowbreak{}sustained\_\allowbreak{}scale & normal & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$ & - & - \\
+normal\_\allowbreak{}weekly\_\allowbreak{}after\_\allowbreak{}reset & normal & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$ & - & - \\
+peak & peak & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$ & - & - \\
+peak\_\allowbreak{}single\_\allowbreak{}sustained\_\allowbreak{}scale & peak & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$ & - & - \\
+\end{tablang}
+\end{landscape}
+
+\begin{landscape}
+\subsection*{Ebene 2: je Modell über alle Szenarien}
+\begin{tablang}[\footnotesize\setlength{\tabcolsep}{3pt}]{W{0.94} W{0.82} V{1.29} V{0.82} V{0.94} V{1.06} V{1.06} V{1.06}}{Modell & Szenarien erkannt & Abweichungstage & Vorfilter offen & Ausfalltage & Meldungen Kontrolllauf & unknown Kontrolllauf & Zurücksetzen Kontrolllauf}
+qwen3.5:9b & 2/2 & 15 & 74 & 0 & 11 & 0 & 5 \\
+ministral-3:8b & 1/2 & 4 & 105 & 0 & 3 & 0 & 1 \\
+Regel & 1/2 & 0 & 110 & 0 & 0 & 0 & 0 \\
+qwen3:4b & 1/2 & 6 & 110 & 0 & 0 & 0 & 0 \\
+qwen3:8b & 1/2 & 13 & 110 & 0 & 0 & 0 & 0 \\
+gemma4:e4b & 1/2 & 5 & 110 & 0 & 0 & 0 & 0 \\
+gemma4:e4b-mlx & 1/2 & 13 & 115 & 0 & 1 & 0 & 1 \\
+\end{tablang}
+\end{landscape}
+
+\subsection*{Textprüfung je Modell, Antworten mit Verstoß oder fehlendem Beleg}
+\begin{tablang}{W{1.37} V{1.20} V{0.94} V{0.68} V{1.20} V{0.94} V{0.68}}{Modell & E1 Antworten & E1 Verstoß & E1 Beleg fehlt & E2 Antworten & E2 Verstoß & E2 Beleg fehlt}
+qwen3.5:9b & 10 & 0 & 1 & 74 & 0 & 0 \\
+ministral-3:8b & 10 & 1 & 1 & 105 & 0 & 0 \\
+qwen3:4b & 10 & 0 & 4 & 110 & 4 & 43 \\
+qwen3:8b & 10 & 0 & 0 & 110 & 2 & 0 \\
+gemma4:e4b & 0 & 0 & 0 & 110 & 2 & 0 \\
+gemma4:e4b-mlx & 0 & 0 & 0 & 115 & 3 & 4 \\
+\end{tablang}
+
+\subsection*{Hinweise}
+\begin{itemize}
+\item Ebene 1 prüft, ob ein Modell die Regeln aus dem Prompt nachvollzieht. Der Prompt wurde auf denselben Fällen verbessert, die Quoten begründen deshalb nur die Modellwahl und belegen nicht das Ziel von 80 \% richtiger Klassen (dafür E2)
+\item wenige Fälle: ein Fall sind mehrere Prozentpunkte, eine Klasse hängt teils an einem einzigen Fall
+\item Macro-F1: Mittel der F1-Werte über die Klassen, die als erwartete Klasse vorkommen
+\item Grounding: Anteil der für den Fall erwarteten Felder, die das Modell als Beleg zitiert. Die Regel zitiert keine
+\item Ebene 2, erkannt: erwartete Klasse an einem Tag, an dem nur das Szenario den Vorfilter öffnet (gepaart mit dem Kontrolllauf desselben Modells)
+\item Ebene 2, Abweichungstage: gleiche Art und gleicher analysierter Tag, Regel gegen Modell. Nach einem Zurücksetzen an verschiedenen Tagen laufen die Reihen auseinander, spätere Abweichungen können daraus folgen
+\item Zeit: gemessen auf dem Rechner des Laufs, nur zum Vergleich der Modelle untereinander
+\item Textprüfung: Verstoß heißt, ein Steuerungswort oder eine Zahl, ein Datum oder eine Uhrzeit steht im Text, aber nicht im State des Falls. Zahlwörter („sechs Wochen“) findet sie nicht. Die Fensterlängen 7 und 28 aus der Skalenbeschreibung im Prompt gelten als erlaubt
+\item Beleg fehlt: der Prompt verlangt je Klasse bestimmte Pfade (new\_\allowbreak{}pattern: sustained\_\allowbreak{}drift, Streaks, peak und low: level, direction, absence: level, Kalendereintrag, measurement\_\allowbreak{}error: Flag). Geprüft wird gegen die eigene Klasse des Modells, nicht gegen die erwartete. Ebene 1 wird nur für Läufe geprüft, die den State der Fälle in der Antwortdatei speichern, ältere Läufe haben in der Tabelle 0 Antworten
+\item Antworttexte, Abweichungstage, Erkennung je Szenario und Auffälligkeiten der Textprüfung stehen als CSV im Ordner des Laufs (answers\_\allowbreak{}single, answers\_\allowbreak{}sequence nur vom Produktivmodell, result\_\allowbreak{}text\_\allowbreak{}findings, sequence\_\allowbreak{}events)
+\end{itemize}

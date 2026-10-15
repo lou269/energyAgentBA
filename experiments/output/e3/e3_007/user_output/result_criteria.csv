@@ -1,0 +1,3 @@
+Kriterium,Ziel,Ergebnis,erfüllt
+Tagesfehler SYS3 minus SYS1,"< 0, belastbar","−0,9 W, 2 Standardfehler 6,9 W, nicht belastbar",nein
+Meldungen SYS3 minus SYS1,< 0 je 30 Tage,"−7,9",ja

@@ -31,8 +31,7 @@ def build_e1_plot(
             scenario = days.loc[days["cutover_date"].eq(cutover_date)]
 
             control = scenario.loc[
-                scenario["kind"].eq("control")
-                & scenario["config"].eq(reference_config)
+                scenario["kind"].eq("control") & scenario["config"].eq(reference_config)
             ]
             axis.plot(
                 control["days_since_cutover"],

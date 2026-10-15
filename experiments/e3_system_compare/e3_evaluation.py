@@ -300,6 +300,32 @@ def _forecast_weeks(
     )
 
 
+def _forecast_curve(
+    window: pd.DataFrame,
+    reference_system: str,
+    llm_system: str,
+    smoothing_days: int,
+    min_cases: int,
+) -> pd.DataFrame:
+    errors = _forecast_errors(
+        window.assign(pool="alle"),
+        ["pool", "day_since_reset"],
+        reference_system,
+        POOL_PAIR_KEYS,
+    )
+    llm_rows = errors.loc[errors["config"].eq(llm_system)].set_index("day_since_reset")
+    curve = (
+        pd.DataFrame(
+            {"delta": llm_rows["mean_delta"], "cases": llm_rows["paired_count"]}
+        )
+        .sort_index()
+        .loc[lambda days: days["cases"].ge(min_cases)]
+    )
+    curve["delta"] = curve["delta"].rolling(smoothing_days, min_periods=1).mean()
+
+    return curve.reset_index()
+
+
 def _count_notifications(days: pd.DataFrame, keys: list[str]) -> pd.DataFrame:
     """Je keys Tage, Meldungstage insgesamt und je Klasse, unknown-Tage und Meldungen je Zeitraum"""
     counts = count_notifications(
@@ -340,11 +366,12 @@ def _judge_cases(
     """Je Fall: LLM-System besser als Referenz = Tagesfehler belastbar kleiner oder weniger Meldungen, dazu die Resets im Kontrolllauf des Cutovers zur Ansicht"""
     forecast_delta = forecast.loc[
         forecast["config"].eq(llm_system),
-        SERIES_KEYS + ["mean_delta", "exceeds_noise"],
+        SERIES_KEYS + ["mean_delta", "exceeds_noise", "paired_count"],
     ].rename(
         columns={
             "mean_delta": "day_error_delta_w",
             "exceeds_noise": "day_error_reliable",
+            "paired_count": "paired_days",
         }
     )
     rates = notifications.pivot(
@@ -462,6 +489,7 @@ class E3Summary:
     control: pd.DataFrame
     forecast: pd.DataFrame
     forecast_weeks: pd.DataFrame
+    forecast_curve: pd.DataFrame
     forecast_weeks_by_series: pd.DataFrame
     forecast_weeks_by_case: pd.DataFrame
     notifications: pd.DataFrame
@@ -469,8 +497,41 @@ class E3Summary:
     notifications_weeks_pooled: pd.DataFrame
     notifications_weeks_by_series: pd.DataFrame
     latency: pd.DataFrame
+    latency_total: pd.DataFrame
+    criteria: pd.DataFrame
     answers: pd.DataFrame
     interrupted: bool
+
+
+def summarize_latency_total(latency: pd.DataFrame) -> pd.DataFrame:
+    calls = latency["llm_calls"].sum()
+    extra = latency["extra_seconds"].sum()
+
+    return pd.DataFrame(
+        {
+            "llm_calls": [calls],
+            "failed_days": [latency["failed_days"].sum()],
+            "extra_seconds": [extra],
+            "extra_seconds_per_call": [extra / calls if calls else float("nan")],
+        }
+    )
+
+
+def summarize_criteria(overall: pd.DataFrame, llm_system: str) -> pd.DataFrame:
+    llm = overall.set_index("config").loc[llm_system]
+
+    return pd.DataFrame(
+        {
+            "criterion": ["day_error", "notifications"],
+            "value": [llm["day_error_delta_w"], llm["notification_delta"]],
+            "two_se": [llm["day_error_delta_two_se_w"], float("nan")],
+            "reliable": [bool(llm["day_error_reliable"]), pd.NA],
+            "fulfilled": [
+                bool(llm["day_error_reliable"]) and llm["day_error_delta_w"] < 0,
+                llm["notification_delta"] < 0,
+            ],
+        }
+    )
 
 
 def summarize_e3(
@@ -482,6 +543,8 @@ def summarize_e3(
     reference_system: str,
     llm_system: str,
     week_days: int,
+    smoothing_days: int,
+    min_curve_cases: int,
 ) -> E3Summary:
     """Alles, was der E3-Report zeigt"""
     event_list = list_event_series(event_series)
@@ -509,23 +572,31 @@ def summarize_e3(
         llm_system=llm_system,
     )
 
+    overall = _summarize_overall(
+        cases,
+        events_table,
+        _pool_forecasts(window, reference_system),
+        notifications,
+        control,
+        reference_system=reference_system,
+        llm_system=llm_system,
+    )
+    latency = summarize_latency(
+        results, runtimes, rule_system=reference_system, llm_system=llm_system
+    ).merge(results[["scenario"] + SERIES_KEYS].drop_duplicates(), on="scenario")
+
     return E3Summary(
         events=events_table,
         cases=cases,
-        overall=_summarize_overall(
-            cases,
-            events_table,
-            _pool_forecasts(window, reference_system),
-            notifications,
-            control,
-            reference_system=reference_system,
-            llm_system=llm_system,
-        ),
+        overall=overall,
         separations=separations,
         control=control,
         forecast=forecast,
         forecast_weeks=_forecast_weeks(
             window, reference_system, llm_system, week_days, ["pool"]
+        ),
+        forecast_curve=_forecast_curve(
+            window, reference_system, llm_system, smoothing_days, min_curve_cases
         ),
         forecast_weeks_by_series=_forecast_weeks(
             window, reference_system, llm_system, week_days, ["series"]
@@ -543,9 +614,9 @@ def summarize_e3(
         notifications_weeks_by_series=_count_notifications(
             after_weeks, ["series", "config", "week"]
         ),
-        latency=summarize_latency(
-            results, runtimes, rule_system=reference_system, llm_system=llm_system
-        ).merge(results[["scenario"] + SERIES_KEYS].drop_duplicates(), on="scenario"),
+        latency=latency,
+        latency_total=summarize_latency_total(latency),
+        criteria=summarize_criteria(overall, llm_system),
         answers=_list_llm_answers(results, llm_outputs),
         interrupted=bool(runtimes["interrupted"].any()),
     )

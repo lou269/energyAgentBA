@@ -26,6 +26,7 @@ class E2Config:
     calendar_events_file: Path = (
         Path(__file__).resolve().parent / "calendar_events.json"
     )
+    smoothing_days: int = 7
 
     # je Urlaub ein eigenes Szenario, 14 und 21 Tage
     # absence_event_ids: tuple[str, ...] = ("event-2014-08", "event-2015-10")

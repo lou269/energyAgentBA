@@ -1,0 +1,60 @@
+model_id,analyzed_day,classification_rule,classification,kinds
+MDL0,2015-01-21,normal,low,"control, scaled_strong, peak_strong"
+MDL0,2015-01-22,normal,low,"control, scaled_strong, peak_strong"
+MDL0,2015-01-26,normal,low,"control, scaled_strong, peak_strong"
+MDL0,2015-01-27,normal,low,"control, scaled_strong, peak_strong"
+MDL0,2015-02-20,normal,low,"control, peak_strong"
+MDL0,2015-04-09,normal,low,peak_strong
+MDL1,2015-01-19,normal,low,"control, scaled_strong, peak_strong"
+MDL1,2015-01-21,normal,low,"control, scaled_strong, peak_strong"
+MDL1,2015-01-22,normal,low,"control, scaled_strong, peak_strong"
+MDL1,2015-01-26,normal,low,"control, scaled_strong, peak_strong"
+MDL1,2015-01-27,normal,low,"control, scaled_strong, peak_strong"
+MDL1,2015-02-20,normal,low,"control, peak_strong"
+MDL1,2015-02-25,normal,low,"control, peak_strong"
+MDL1,2015-03-19,normal,low,scaled_strong
+MDL1,2015-03-20,normal,low,scaled_strong
+MDL1,2015-04-07,normal,low,"control, peak_strong"
+MDL1,2015-04-08,normal,low,scaled_strong
+MDL1,2015-04-09,normal,low,"control, scaled_strong, peak_strong"
+MDL1,2015-04-12,normal,low,"control, scaled_strong"
+MDL2,2015-01-07,normal,peak,"control, scaled_strong, peak_strong"
+MDL2,2015-01-08,normal,peak,"control, scaled_strong, peak_strong"
+MDL2,2015-01-21,normal,new_pattern,"control, scaled_strong, peak_strong"
+MDL2,2015-02-03,normal,new_pattern,"control, scaled_strong, peak_strong"
+MDL2,2015-02-05,normal,low,"control, scaled_strong, peak_strong"
+MDL2,2015-02-12,peak,normal,scaled_strong
+MDL2,2015-02-17,normal,new_pattern,scaled_strong
+MDL2,2015-02-20,normal,new_pattern,control
+MDL2,2015-02-20,new_pattern,normal,scaled_strong
+MDL2,2015-03-17,normal,peak,control
+MDL2,2015-03-17,peak,normal,scaled_strong
+MDL2,2015-03-19,normal,new_pattern,"control, scaled_strong, peak_strong"
+MDL2,2015-04-06,low,normal,"control, scaled_strong, peak_strong"
+MDL2,2015-04-08,normal,new_pattern,"control, scaled_strong, peak_strong"
+MDL2,2015-04-09,normal,peak,"control, scaled_strong, peak_strong"
+MDL2,2015-04-10,normal,peak,"control, scaled_strong, peak_strong"
+MDL2,2015-04-11,normal,peak,"control, scaled_strong, peak_strong"
+MDL3,2015-01-22,normal,low,"control, scaled_strong, peak_strong"
+MDL3,2015-02-19,normal,peak,scaled_strong
+MDL3,2015-03-21,normal,peak,scaled_strong
+MDL3,2015-04-07,normal,low,"control, peak_strong"
+MDL3,2015-04-09,normal,low,"control, scaled_strong, peak_strong"
+MDL4,2015-01-21,normal,low,"control, scaled_strong, peak_strong"
+MDL4,2015-01-22,normal,low,"control, scaled_strong, peak_strong"
+MDL4,2015-01-26,normal,low,"control, scaled_strong, peak_strong"
+MDL4,2015-01-27,normal,low,"control, scaled_strong, peak_strong"
+MDL4,2015-02-20,normal,low,"control, peak_strong"
+MDL4,2015-02-23,normal,new_pattern,control
+MDL4,2015-03-19,normal,low,control
+MDL4,2015-03-20,normal,low,control
+MDL4,2015-03-30,normal,low,control
+MDL4,2015-04-07,normal,low,peak_strong
+MDL4,2015-04-08,normal,low,"control, scaled_strong"
+MDL4,2015-04-09,normal,low,"control, scaled_strong, peak_strong"
+MDL4,2015-04-12,normal,low,"control, scaled_strong, peak_strong"
+MDL5,2015-04-07,normal,new_pattern,control
+MDL5,2015-04-08,normal,peak,control
+MDL5,2015-04-09,normal,peak,control
+MDL5,2015-04-09,normal,new_pattern,scaled_strong
+MDL5,2015-04-10,normal,peak,scaled_strong

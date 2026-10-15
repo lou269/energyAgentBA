@@ -1,4 +1,4 @@
-Modell,Ereignis-Arten erkannt,Tage anders als die Regel,Gate-Tage,Ausfalltage,Meldungen Kontrolle,unknown Kontrolle,Resets Kontrolle
+Modell,Szenarien erkannt,Abweichungstage,Vorfilter offen,Ausfalltage,Meldungen Kontrolllauf,unknown Kontrolllauf,Zurücksetzen Kontrolllauf
 qwen3.5:9b,2/2,15,74,0,11,0,5
 ministral-3:8b,1/2,4,105,0,3,0,1
 Regel,1/2,0,110,0,0,0,0

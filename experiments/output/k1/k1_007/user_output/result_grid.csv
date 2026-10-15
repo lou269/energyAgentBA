@@ -1,4 +1,4 @@
-"Anteil der Tage, an denen eine Skala anhält (ohne Reset)",Schwelle weekly,Schwelle long_term [%],Resets auf validation,Resets je Jahr,gewählt
+Anteil anhaltender Tage,Schwelle weekly,Schwelle long_term [%],Resets,Resets je Jahr,gewählt
 0.0,2.5,25.5,0,0.0,
 0.0,2.3,23.2,0,0.0,
 0.0,2.1,22.4,0,0.0,

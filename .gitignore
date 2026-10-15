@@ -26,8 +26,6 @@ data_2017/
 *.log
 
 old/
-tests/integration/
-tests/unit/experiments/e5_system_compare/
 
 .history/ 
 

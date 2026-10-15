@@ -1,27 +1,25 @@
-\begin{tabular}{llrlr}
-\toprule
-Cutover & Ereignis & erkannt am Tag & Skala (Spitze) & Kontrolle mit Signal [Tage] \\
+\begin{tabzahlen}{T T R T R T}
+Stichtag & Szenario & erkannt am Tag & auslösende Skala & Tage mit Kennwert im Kontrolllauf & auswertbar \\
 \midrule
-2016-12-02 & Sprung +20 \% & - & - & 0 \\
-2017-01-13 & Sprung +20 \% & 15 & - & 0 \\
-2017-02-20 & Sprung +20 \% & - & - & 0 \\
-2016-12-02 & Sprung \textminus{}20 \% & 31 & - & 0 \\
-2017-01-13 & Sprung \textminus{}20 \% & 38 & - & 0 \\
-2017-02-20 & Sprung \textminus{}20 \% & - & - & 0 \\
-2016-12-02 & Rampe über 28 Tage +20 \% & 50 & - & 0 \\
-2017-01-13 & Rampe über 28 Tage +20 \% & 17 & - & 0 \\
-2017-02-20 & Rampe über 28 Tage +20 \% & - & - & 0 \\
-2016-12-02 & Rampe über 28 Tage \textminus{}20 \% & 31 & - & 0 \\
-2017-01-13 & Rampe über 28 Tage \textminus{}20 \% & 41 & - & 0 \\
-2017-02-20 & Rampe über 28 Tage \textminus{}20 \% & 57 & - & 0 \\
-2016-12-02 & Rampe über 56 Tage +20 \% & 57 & - & 0 \\
-2017-01-13 & Rampe über 56 Tage +20 \% & 29 & - & 0 \\
-2017-02-20 & Rampe über 56 Tage +20 \% & - & - & 0 \\
-2016-12-02 & Rampe über 56 Tage \textminus{}20 \% & - & - & 0 \\
-2017-01-13 & Rampe über 56 Tage \textminus{}20 \% & - & - & 0 \\
-2017-02-20 & Rampe über 56 Tage \textminus{}20 \% & 57 & - & 0 \\
-2016-12-02 & Spitze +670 W über 6 h & - & - & 1 \\
-2017-01-13 & Spitze +670 W über 6 h & - & - & 1 \\
-2017-02-20 & Spitze +670 W über 6 h & 1 & weekday & 0 \\
-\bottomrule
-\end{tabular}
+SF6 & scaled & - & - & 0 & ja \\
+SF6 & scaled\_\allowbreak{}down & 31 & weekly + long\_\allowbreak{}term & 0 & ja \\
+SF6 & ramp\_\allowbreak{}28 & 50 & weekly + long\_\allowbreak{}term & 0 & ja \\
+SF6 & ramp\_\allowbreak{}28\_\allowbreak{}down & 31 & weekly + long\_\allowbreak{}term & 0 & ja \\
+SF6 & ramp\_\allowbreak{}56 & 57 & weekly + long\_\allowbreak{}term & 0 & ja \\
+SF6 & ramp\_\allowbreak{}56\_\allowbreak{}down & - & - & 0 & ja \\
+SF6 & peak & - & - & 1 & nein \\
+SF7 & scaled & 15 & weekly + long\_\allowbreak{}term & 0 & ja \\
+SF7 & scaled\_\allowbreak{}down & 38 & weekly + long\_\allowbreak{}term & 0 & ja \\
+SF7 & ramp\_\allowbreak{}28 & 17 & weekly + long\_\allowbreak{}term & 0 & ja \\
+SF7 & ramp\_\allowbreak{}28\_\allowbreak{}down & 41 & weekly + long\_\allowbreak{}term & 0 & ja \\
+SF7 & ramp\_\allowbreak{}56 & 29 & weekly + long\_\allowbreak{}term & 0 & ja \\
+SF7 & ramp\_\allowbreak{}56\_\allowbreak{}down & - & - & 0 & ja \\
+SF7 & peak & - & - & 1 & nein \\
+SF8 & scaled & - & - & 0 & ja \\
+SF8 & scaled\_\allowbreak{}down & - & - & 0 & ja \\
+SF8 & ramp\_\allowbreak{}28 & - & - & 0 & ja \\
+SF8 & ramp\_\allowbreak{}28\_\allowbreak{}down & 57 & weekly + long\_\allowbreak{}term & 0 & ja \\
+SF8 & ramp\_\allowbreak{}56 & - & - & 0 & ja \\
+SF8 & ramp\_\allowbreak{}56\_\allowbreak{}down & 57 & weekly + long\_\allowbreak{}term & 0 & ja \\
+SF8 & peak & 1 & weekday & 0 & ja \\
+\end{tabzahlen}

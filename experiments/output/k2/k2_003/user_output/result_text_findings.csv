@@ -54,9 +54,7 @@ Ebene 2,gemma4:e4b-mlx,2015-01-21 peak_strong,,anomaly.level
 Ebene 2,gemma4:e4b-mlx,2015-04-08 scaled_strong,,anomaly.level
 Ebene 2,gemma4:e4b-mlx,2015-04-09 peak_strong,,anomaly.level
 Ebene 1,qwen3.5:9b,absence_drift_down,,context.events.<index>.title
-Ebene 1,qwen3.5:9b,new_pattern,control: einschalt,
-Ebene 1,qwen3.5:9b,new_pattern_at_min_scales_boundary,control: einschalt,
-Ebene 1,ministral-3:8b,absence_drift_down,number: 21. Dezember,context.events.<index>.title
+Ebene 1,ministral-3:8b,absence_drift_down,number: 8. bis zum 21. Dezember,context.events.<index>.title
 Ebene 1,qwen3:4b,absence_drift_down,,anomaly.scale_anomaly_streak_days.long_term
 Ebene 1,qwen3:4b,new_pattern,,anomaly.scale_anomaly_streak_days.long_term
 Ebene 1,qwen3:4b,new_pattern_at_min_scales_boundary,,anomaly.scale_anomaly_streak_days.long_term
