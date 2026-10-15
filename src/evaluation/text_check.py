@@ -10,7 +10,7 @@ MONTHS = (
 )
 DATE_IN_TEXT = re.compile(r"\b(\d{1,2})\.(\d{1,2})\.(\d{4})?")
 DAY_AND_MONTH_IN_TEXT = re.compile(
-    rf"\b(\d{{1,2}})\.(?:\s+bis\s+(\d{{1,2}})\.)?\s+(?:{MONTHS})"
+    rf"\b(\d{{1,2}})\.(?:[^\d]{{1,20}}?(\d{{1,2}})\.)?\s+(?:{MONTHS})"
 )
 TIME_IN_TEXT = re.compile(r"\b(\d{1,2}):(\d{2})\b")
 NUMBER_IN_TEXT = re.compile(r"\d+(?:[.,]\d+)?")

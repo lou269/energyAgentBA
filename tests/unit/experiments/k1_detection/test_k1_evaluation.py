@@ -87,7 +87,9 @@ def test_diagnosis_counts_only_resets_before_the_control() -> None:
 def test_single_day_threshold_closest_to_target() -> None:
     scores = pd.Series([np.nan] + list(np.arange(0.5, 10.0, 0.5)))
 
-    shares = single_day_shares(scores, (3.0, 5.0, 8.0))
+    directions = pd.Series("high", index=scores.index)
+
+    shares = single_day_shares(scores, directions, (3.0, 5.0, 8.0))
     summary = summarize_single_day(shares, target_share=0.4)
 
     # 19 gültige Tage: ab 5,0 schlagen 10 an
