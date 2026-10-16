@@ -12,6 +12,7 @@ DAYS_PER_WEEK = 7
 def build_e2_return_plot(
     curve: pd.DataFrame,
     output_directory: Path,
+    file_name: str,
     *,
     context_label: str,
     reference_label: str,
@@ -26,4 +27,4 @@ def build_e2_return_plot(
     axis.set_ylabel(f"Differenz Tagesfehler [W]\n{context_label} − {reference_label}")
     style_axis(axis)
 
-    save_figure(figure, output_directory, "e2_return")
+    save_figure(figure, output_directory, file_name)

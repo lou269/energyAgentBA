@@ -16,6 +16,8 @@ PRECHECK_RUN_PREFIX = "e2_precheck"
 COMPARISON_FILE = "e2_comparison_summary"
 REDUCTION_FILE = "e2_reduction_by_day"
 CLASSIFICATION_FILE = "e2_classification_days"
+RETURN_PLOT_FILE = "e2_return"
+RETURN_CONTEXT_PLOT_FILE = "e2_return_ctx0"
 # von e2_select_channels geschrieben (nilmtk-env), von e2_scenarios gelesen
 CHANNEL_RANKING_FILE = "absence_channel_ranking"
 CHANNEL_DATA_FILE = "absence_channel_data_hourly"

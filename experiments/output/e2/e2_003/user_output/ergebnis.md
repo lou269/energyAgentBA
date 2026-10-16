@@ -105,6 +105,8 @@
 
 ![e2_return.png](e2_return.png)
 
+![e2_return_ctx0.png](e2_return_ctx0.png)
+
 ## Anhang
 
 ### Ereignisreihen: Bewertungstag (auslösende Skala) je Ereignis

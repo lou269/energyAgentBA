@@ -4,8 +4,10 @@
 
 \captionsetup[table]{name=Tab., position=top, skip=6pt, font=small, labelfont=bf, labelsep=colon}
 
-\AtBeginEnvironment{table}{\small}
-\AtBeginEnvironment{longtable}{\small}
+% Alle Tabellen in \small, \tabkleinfalse davor wuerde sie normal setzen
+\newif\iftabklein\tabkleintrue
+\newcommand{\anhangklein}{\global\tabkleintrue}
+\newcommand{\tabgroesse}{\iftabklein\small\fi}
 \renewcommand{\arraystretch}{1.15}
 
 \newif\iftabkopf
@@ -38,24 +40,24 @@
   \multicolumn{#1}{@{}l}{\textbf{#2}}\\}
 
 \newenvironment{tabtext}[1]
-  {\tabularx{\linewidth}{@{}#1@{}}\toprule}
+  {\tabgroesse\tabularx{\linewidth}{@{}#1@{}}\toprule}
   {\bottomrule\endtabularx}
 
 \newenvironment{tabkompakt}[1]
-  {\tabular{@{}#1@{}}\toprule}
+  {\tabgroesse\tabular{@{}#1@{}}\toprule}
   {\bottomrule\endtabular}
 
 \newenvironment{tabzahlen}[1]
-  {\csname tabular*\endcsname{\linewidth}{@{\extracolsep{\fill}}#1@{}}\toprule}
+  {\tabgroesse\csname tabular*\endcsname{\linewidth}{@{\extracolsep{\fill}}#1@{}}\toprule}
   {\bottomrule\csname endtabular*\endcsname}
 
 \newenvironment{kriterien}
-  {\tabularx{\linewidth}{@{} L P{2.6cm} P{4.2cm} M @{}}
+  {\tabgroesse\tabularx{\linewidth}{@{} L P{2.6cm} P{4.2cm} M @{}}
    \toprule Kriterium & Ziel & Ergebnis & erfüllt \\ \midrule}
   {\bottomrule\endtabularx}
 
 \newenvironment{konfig}[1]
-  {\longtable{@{} K{0.62\linewidth} K{\dimexpr0.38\linewidth-2\tabcolsep\relax} @{}}
+  {\small\longtable{@{} K{0.62\linewidth} K{\dimexpr0.38\linewidth-2\tabcolsep\relax} @{}}
    \caption{Konfiguration \texttt{#1}}\label{tab:cfg-#1}\\
    \toprule Parameter & Wert \\ \midrule
    \endfirsthead
@@ -67,13 +69,13 @@
   {\endlongtable}
 
 \newcommand{\tabkopflinie}{\noalign{\global\tabkopftrue}\tabOrigToprule}
-\newenvironment{tablang}[3][\small]
+\newenvironment{tablang}[3][\tabgroesse]
   {#1\xltabular{\linewidth}{@{}#2@{}}\toprule #3 \\ \midrule \endfirsthead
    \tabkopflinie #3 \\ \midrule \endhead}
   {\bottomrule\endxltabular}
 
 \newenvironment{konfigvar}[4]
-  {\longtable{@{} K{0.30\linewidth} *{#3}{C} @{}}
+  {\small\longtable{@{} K{0.30\linewidth} *{#3}{C} @{}}
    \caption{#1}\label{#2}\\
    \toprule #4 \\ \midrule
    \endfirsthead

@@ -42,6 +42,8 @@ from experiments.e2_absence.e2_config import (
     COMPARISON_FILE,
     PRECHECK_RUN_PREFIX,
     REDUCTION_FILE,
+    RETURN_CONTEXT_PLOT_FILE,
+    RETURN_PLOT_FILE,
     RUN_PREFIX,
     E2Config,
 )
@@ -735,17 +737,22 @@ def write_full_report(run_directory: Path) -> None:
             build_phase_overview_table(phases, labels),
         ),
     }
-    build_e2_return_plot(
-        summarize_return_curve(
-            summaries,
-            config=CONTEXT_CONFIG,
-            reference_config=reference,
-            smoothing_days=E2Config().smoothing_days,
-        ),
-        output_directory,
-        context_label=CONFIG_LABELS[CONTEXT_CONFIG],
-        reference_label=CONFIG_LABELS[reference],
-    )
+    for plot_reference, plot_file in (
+        (reference, RETURN_PLOT_FILE),
+        (context_reference, RETURN_CONTEXT_PLOT_FILE),
+    ):
+        build_e2_return_plot(
+            summarize_return_curve(
+                summaries,
+                config=CONTEXT_CONFIG,
+                reference_config=plot_reference,
+                smoothing_days=E2Config().smoothing_days,
+            ),
+            output_directory,
+            plot_file,
+            context_label=CONFIG_LABELS[CONTEXT_CONFIG],
+            reference_label=CONFIG_LABELS[plot_reference],
+        )
 
     write_result_report(
         output_directory,
@@ -772,7 +779,7 @@ def write_full_report(run_directory: Path) -> None:
         tables=tables,
         notes=NOTES
         + [f"Ausfälle des Sprachmodells in den Urlaubsläufen: {failed_days} Tage"],
-        images=["e2_return.png"],
+        images=[f"{RETURN_PLOT_FILE}.png", f"{RETURN_CONTEXT_PLOT_FILE}.png"],
         decimals=STANDARD_CONFIG.decimals,
         appendix=appendix,
         appendix_text=[

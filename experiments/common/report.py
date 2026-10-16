@@ -267,9 +267,9 @@ def latex_long_table(table: pd.DataFrame, decimals: int) -> str:
         for row in table.itertuples(index=False)
     ]
     size = (
-        r"[\footnotesize\setlength{\tabcolsep}{3pt}]"
+        r"[\small\setlength{\tabcolsep}{3pt}]"
         if len(demand) > WIDE_TABLE_COLUMNS
-        else ""
+        else r"[\small]"
     )
 
     return "\n".join(
